@@ -252,7 +252,7 @@ class lineageTree(object):
             done[c] = [P, self.vert_space_factor*self.time[c]]
             return P
 
-    def print_to_SVG(self, file_name, roots=None, draw_nodes=True, draw_edges=True,
+    def print_to_svg(self, file_name, roots=None, draw_nodes=True, draw_edges=True,
                      order_key=None, vert_space_factor=.5, horizontal_space=1,
                      node_size=None, stroke_width=None, factor=1.,
                      node_color=None, stroke_color=None, positions=None):
@@ -473,83 +473,6 @@ class lineageTree(object):
 
         f.write(")")
         f.close()
-
-    def median_average(self, subset):
-        ''' Build the median vector of a subset *subset* of cells. *WARNING DEPRECATED*
-            Since deprecated, no more doc.
-        '''
-        subset_dist = [np.mean([di.pos for di in c.D], axis = 0) - c.pos for c in subset if c.D != []]
-        target_C = [c for c in subset if c.D != []]
-        if subset_dist != []:
-            med_distance = spatial.distance.squareform(spatial.distance.pdist(subset_dist))
-            return subset_dist[np.argmin(np.sum(med_distance, axis=0))]
-        else:
-            return [0, 0, 0]
-
-    def median_average_bw(self, subset):
-        ''' Build the median vector of a subset *subset* of cells. *WARNING DEPRECATED*
-            Since deprecated, no more doc.
-        '''
-        subset_dist = [c.M.pos - c.pos for c in subset if c.M != self.R]
-        target_C = [c for c in subset if c.D != []]
-        if subset_dist != []:
-            med_distance = spatial.distance.squareform(spatial.distance.pdist(subset_dist))
-            return subset_dist[np.argmin(np.sum(med_distance, axis=0))]
-        else:
-            return [0, 0, 0]
-
-    def build_median_vector(self, C, dist_th, delta_t=2):
-        ''' Computes the median vector for a cell *C*. *WARNING DEPRECATED*
-            Since deprecated, no more doc.
-        '''
-        if not hasattr(self, 'spatial_edges'):
-            self.compute_spatial_edges(dist_th)
-        subset = [C]
-        subset += C.N
-        added_D = added_M = subset
-        for i in range(delta_t):
-            _added_D = []
-            _added_M = []
-            for c in added_D:
-                _added_D += c.D
-            for c in added_M:
-                if not c.M is None:
-                    _added_M += [c.M]
-            subset += _added_M
-            subset += _added_D
-            added_D = _added_D
-            added_M = _added_M
-
-
-        return self.median_average(subset)
-
-    def build_vector_field(self, dist_th=50):
-        ''' Builds the median vectors of every nodes using the cells at a distance *dist_th*. *WARNING DEPRECATED*
-            Since deprecated, no more doc.
-        '''
-        ruler = 0
-        for C in self.nodes:
-            if ruler != C.time:
-                print(C.time)
-            C.direction = self.build_median_vector(C, dist_th)
-            ruler = C.time
-
-    def single_cell_propagation(self, params):
-        ''' Computes the incoming displacement vector of a cell. *WARNING DEPRECATED*
-            Since deprecated, no more doc.
-        '''
-        C, t, nb_max, dist_max, to_check_self, R, pos, successor, predecessor = params
-        idx3d = self.kdtrees[t]
-        closest_cells = np.array(to_check_self)[list(idx3d.query(tuple(pos[C]), nb_max)[1])]
-        max_value = np.min(np.where(np.array([_dist_v(pos[C], pos[ci]) for ci in closest_cells]+[dist_max+1])>dist_max))
-        cells_to_keep = closest_cells[:max_value]
-        subset_dist = [np.mean([pos[cii] for cii in predecessor[ci]], axis=0) - pos[ci] for ci in cells_to_keep if not ci in R]
-        if subset_dist != []:
-            med_distance = spatial.distance.squareform(spatial.distance.pdist(subset_dist))
-            med = subset_dist[np.argmin(np.sum(med_distance, axis=0))]
-        else:
-            med = [0, 0, 0]
-        return C, med
 
     def read_from_csv(self, file_path, z_mult, link=1, delim=','):
         def convert_for_csv(v):
@@ -1204,7 +1127,7 @@ class lineageTree(object):
 
     def get_idx3d(self, t):
         ''' Get a 3d kdtree for the dataset at time *t*
-            The  kdtree is stored in self.kdtrees[t]
+            The  kdtree is stored in `self.kdtrees[t]`
             Args:
                 t: int, time
             Returns:
