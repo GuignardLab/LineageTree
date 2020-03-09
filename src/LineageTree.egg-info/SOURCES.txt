@@ -1,0 +1,9 @@
+README.md
+setup.py
+src/LineageTree/__init__.py
+src/LineageTree/lineageTree.py
+src/LineageTree.egg-info/PKG-INFO
+src/LineageTree.egg-info/SOURCES.txt
+src/LineageTree.egg-info/dependency_links.txt
+src/LineageTree.egg-info/requires.txt
+src/LineageTree.egg-info/top_level.txt
