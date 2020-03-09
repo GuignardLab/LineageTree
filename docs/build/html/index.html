@@ -1,0 +1,454 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Welcome to LineageTree’s documentation! &#8212; LineageTree  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="welcome-to-lineagetree-s-documentation">
+<h1>Welcome to LineageTree’s documentation!<a class="headerlink" href="#welcome-to-lineagetree-s-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</div>
+<div class="section" id="module-LineageTree.lineageTree">
+<span id="modules"></span><h1>Modules<a class="headerlink" href="#module-LineageTree.lineageTree" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="LineageTree.lineageTree.lineageTree">
+<em class="property">class </em><code class="sig-prename descclassname">LineageTree.lineageTree.</code><code class="sig-name descname">lineageTree</code><span class="sig-paren">(</span><em class="sig-param">file_format=None</em>, <em class="sig-param">tb=None</em>, <em class="sig-param">te=None</em>, <em class="sig-param">z_mult=1.0</em>, <em class="sig-param">mask=None</em>, <em class="sig-param">MaMuT=False</em>, <em class="sig-param">celegans=False</em>, <em class="sig-param">ASTEC=False</em>, <em class="sig-param">csv=False</em>, <em class="sig-param">link=True</em>, <em class="sig-param">delim='</em>, <em class="sig-param">'</em>, <em class="sig-param">eigen=False</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree" title="Permalink to this definition">¶</a></dt>
+<dd><p>lineageTree is a class container for lineage tree structures
+The main attributes are the following:
+self.nodes: [int, ], list of node/cell ids
+self.edges: [(int, int), ], a list of couple of cell/objects ids that represents the edges
+self.time_nodes: {int, [int, ]}, a dictionary that maps time points to</p>
+<blockquote>
+<div><p>a list of cell ids that belong to that time point</p>
+</div></blockquote>
+<dl class="simple">
+<dt>self.time_edges: {int, [(int, int), ]}, a dictionary that maps time points to</dt><dd><p>a list of edges couples that belong to that time point</p>
+</dd>
+<dt>self.successor: {int, [int, ]}, a dictionary that maps a cell id to</dt><dd><p>the list of its successors in time</p>
+</dd>
+<dt>self.predecessor: {int, [int, ]}, a dictionary that maps a cell id to</dt><dd><p>the list of its predecessors in time</p>
+</dd>
+<dt>self.time: {int: int, }, a dictionary that maps a cell to the time</dt><dd><p>it belongs to.</p>
+</dd>
+</dl>
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.add_node">
+<code class="sig-name descname">add_node</code><span class="sig-paren">(</span><em class="sig-param">t=None</em>, <em class="sig-param">succ=None</em>, <em class="sig-param">pos=None</em>, <em class="sig-param">id=None</em>, <em class="sig-param">reverse=False</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.add_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a node to the lineageTree and update it accordingly.
+:param t: int, time to which to add the node
+:param succ: id of the node the new node is a successor to
+:param pos: [float, ], list of three floats representing the 3D spatial position of the node
+:param id: id value of the new node, to be used carefully,</p>
+<blockquote>
+<div><p>if None is provided the new id is automatically computed.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>reverse</strong> – bool, True if in this lineageTree the predecessors are the successors and reciprocally.
+This is there for bacward compatibility, should be left at False.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>int, id of the new node.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>C_next</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.compute_spatial_density">
+<code class="sig-name descname">compute_spatial_density</code><span class="sig-paren">(</span><em class="sig-param">t_b=0</em>, <em class="sig-param">t_e=200</em>, <em class="sig-param">n_size=10</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.compute_spatial_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the average distance between the <em>n_size</em> closest object for a set of time points
+The results is stored in self.spatial_density
+:param t_b: int, starting time to look at
+:param t_e: int, ending time to look at
+:param n_size: int, number of neighbors to look at</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.compute_spatial_edges">
+<code class="sig-name descname">compute_spatial_edges</code><span class="sig-paren">(</span><em class="sig-param">th=50</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.compute_spatial_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Innefitiently computes the connection between cells at a given distance
+Writes the output in self.spatial_edges
+:param th: float, distance to consider neighbors</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.fuse_nodes">
+<code class="sig-name descname">fuse_nodes</code><span class="sig-paren">(</span><em class="sig-param">c1</em>, <em class="sig-param">c2</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.fuse_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fuses together two nodes that belong to the same time point
+and update the lineageTree accordingly.
+:param c1: int, id of the first node to fuse
+:param c2: int, id of the second node to fuse</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.get_cycle">
+<code class="sig-name descname">get_cycle</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">depth=None</em>, <em class="sig-param">depth_pred=None</em>, <em class="sig-param">depth_succ=None</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.get_cycle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the predecessors and successors of the node <em>x</em> up to
+<em>depth_pred</em> predecessors plus <em>depth_succ</em> successors.
+If the value <em>depth</em> is provided and not None,
+<em>depth_pred</em> and <em>depth_succ</em> are overwrited by <em>depth</em>.
+The ordered list of ids is returned
+:param x: int, id of the node to compute
+:param depth: int, maximum number of predecessors and successor to return
+:param depth_pred: int, maximum number of predecessors to return
+:param depth_succ: int, maximum number of successors to return</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>[int, ], list of ids</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>cycle</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.get_gabriel_graph">
+<code class="sig-name descname">get_gabriel_graph</code><span class="sig-paren">(</span><em class="sig-param">t</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.get_gabriel_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build the Gabriel graph of the given graph for time point <em>t</em>
+The Garbiel graph is then stored in self.Gabriel_graph.
+<em>WARNING: the graph is not recomputed if already computed. even if nodes were added</em>.
+:param t: int, time</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.get_idx3d">
+<code class="sig-name descname">get_idx3d</code><span class="sig-paren">(</span><em class="sig-param">t</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.get_idx3d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a 3d kdtree for the dataset at time <em>t</em>
+The  kdtree is stored in self.kdtrees[t]
+:param t: int, time</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>kdtree, the built kdtree
+to_check_self: the correspondancy list:</p>
+<blockquote>
+<div><p>If the query in the kdtree gives you the value i,
+then it corresponds to the id in the tree to_check_self[i]</p>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>idx3d</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.get_next_id">
+<code class="sig-name descname">get_next_id</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.get_next_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the next authorized id.
+:returns: int, next authorized id</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.get_predecessors">
+<code class="sig-name descname">get_predecessors</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">depth=None</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.get_predecessors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the predecessors of the node <em>x</em> up to
+<em>depth</em> predecessors. The ordered list of ids is returned
+:param x: int, id of the node to compute
+:param depth: int, maximum number of predecessors to return</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>[int, ], list of ids, the last id is <em>x</em></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>cycle</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.get_successors">
+<code class="sig-name descname">get_successors</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">depth=None</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.get_successors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the successors of the node <em>x</em> up to
+<em>depth</em> successors. The ordered list of ids is returned
+:param x: int, id of the node to compute
+:param depth: int, maximum number of predecessors to return</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>[int, ], list of ids, the first id is <em>x</em></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>cycle</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.print_to_svg">
+<code class="sig-name descname">print_to_svg</code><span class="sig-paren">(</span><em class="sig-param">file_name</em>, <em class="sig-param">roots=None</em>, <em class="sig-param">draw_nodes=True</em>, <em class="sig-param">draw_edges=True</em>, <em class="sig-param">order_key=None</em>, <em class="sig-param">vert_space_factor=0.5</em>, <em class="sig-param">horizontal_space=1</em>, <em class="sig-param">node_size=None</em>, <em class="sig-param">stroke_width=None</em>, <em class="sig-param">factor=1.0</em>, <em class="sig-param">node_color=None</em>, <em class="sig-param">stroke_color=None</em>, <em class="sig-param">positions=None</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.print_to_svg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes the lineage tree to an SVG file.
+Node and edges coloring and size can be provided.
+:param file_name: str, filesystem filename valid for <cite>open()</cite>
+:param roots: [int, …], list of node ids to be drawn. If <cite>None</cite> all the nodes will be drawn. Default <cite>None</cite>
+:param draw_nodes: bool, wether to print the nodes or not, default <cite>True</cite>
+:param draw_edges: bool, wether to print the edges or not, default <cite>True</cite>
+:param order_key: function that would work for the attribute <cite>key=</cite> for the <cite>sort</cite>/<cite>sorted</cite> function
+:param vert_space_factor: float, the vertical position of a node is its time. <cite>vert_space_factor</cite> is a</p>
+<blockquote>
+<div><p>multiplier to space more or less nodes in time</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>horizontal_space</strong> – float, space between two consecutive nodes</p></li>
+<li><p><strong>node_size</strong> – func, a function that maps a node id to a <cite>float</cite> value that will determine the
+radius of the node. The default function return the constant value <cite>vertical_space_factor/2.1</cite></p></li>
+<li><p><strong>stroke_width</strong> – func, a function that maps a node id to a <cite>float</cite> value that will determine the
+width of the daughter edge.  The default function return the constant value <cite>vertical_space_factor/2.1</cite></p></li>
+<li><p><strong>factor</strong> – float, scaling factor for nodes positions, default 1</p></li>
+<li><p><strong>node_color</strong> – func, a function that maps a node id to a triplet between 0 and 255.
+The triplet will determine the color of the node.</p></li>
+<li><p><strong>stroke_color</strong> – func, a function that maps a node id to a triplet between 0 and 255.
+The triplet will determine the color of the stroke of the inward edge.</p></li>
+<li><p><strong>positions</strong> – {int: [float, float], …}, dictionary that maps a node id to a 2D position.
+Default <cite>None</cite>. If provided it will be used to position the nodes.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.read_from_binary">
+<code class="sig-name descname">read_from_binary</code><span class="sig-paren">(</span><em class="sig-param">fname</em>, <em class="sig-param">reverse_time=False</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.read_from_binary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads a binary lineageTree file name.
+Format description:</p>
+<blockquote>
+<div><p>see self.to_binary</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fname</strong> – string, path to the binary file</p></li>
+<li><p><strong>reverse_time</strong> – bool, not used</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.read_from_mamut_xml">
+<code class="sig-name descname">read_from_mamut_xml</code><span class="sig-paren">(</span><em class="sig-param">path</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.read_from_mamut_xml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a lineage tree from a MaMuT xml.
+:param path: string, path to the MaMut xml</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.read_tgmm_xml">
+<code class="sig-name descname">read_tgmm_xml</code><span class="sig-paren">(</span><em class="sig-param">file_format</em>, <em class="sig-param">tb</em>, <em class="sig-param">te</em>, <em class="sig-param">z_mult=1.0</em>, <em class="sig-param">mask=None</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.read_tgmm_xml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads a lineage tree from TGMM xml output.
+:param file_format: string, path to the xmls location.</p>
+<blockquote>
+<div><dl class="simple">
+<dt>it should be written as follow:</dt><dd><p>path/to/xml/standard_name_t%06d.xml where (as an example)
+%06d means a series of 6 digits representing the time and
+if the time values is smaller that 6 digits, the missing
+digits are filed with 0s</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tb</strong> – int, first time point to read</p></li>
+<li><p><strong>te</strong> – int, last time point to read</p></li>
+<li><p><strong>z_mult</strong> – float, aspect ratio</p></li>
+<li><p><strong>mask</strong> – SpatialImage, binary image that specify the region to read</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.remove_node">
+<code class="sig-name descname">remove_node</code><span class="sig-paren">(</span><em class="sig-param">c</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.remove_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes a node and update the lineageTree accordingly
+:param c: int, id of the node to remove</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.to_binary">
+<code class="sig-name descname">to_binary</code><span class="sig-paren">(</span><em class="sig-param">fname</em>, <em class="sig-param">starting_points=None</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.to_binary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes the lineage tree (a forest) as a binary structure
+(assuming it is a binary tree, it would not work for <em>n*ary tree with 2 &lt; *n</em>).
+The binary file is composed of 3 sequences of numbers and
+a header specifying the size of each of these sequences.
+The first sequence, <em>number_sequence</em>, represents the lineage tree
+as a DFT preporder transversal list. -1 signifying a leaf and -2 a branching
+The second sequence, <em>time_sequence</em>, represent the starting time of each tree.
+The third sequence, <em>pos_sequence</em>, reprensent the 3D coordinates of the objects.
+The header specify the size of each of these sequences.
+Each size is stored as a long long
+The <em>number_sequence</em> is stored as a list of long long (0 -&gt; 2^(8*8)-1)
+The <em>time_sequence</em> is stored as a list of unsigned short (0 -&gt; 2^(8*2)-1)
+The <em>pos_sequence</em> is stored as a list of double
+:param fname: string, name of the binary file
+:param starting_points: [int, ], list of the roots to be written.</p>
+<blockquote>
+<div><p>If None, all roots are written
+Default: None</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.to_tlp">
+<code class="sig-name descname">to_tlp</code><span class="sig-paren">(</span><em class="sig-param">fname</em>, <em class="sig-param">t_min=-1</em>, <em class="sig-param">t_max=inf</em>, <em class="sig-param">nodes_to_use=None</em>, <em class="sig-param">temporal=True</em>, <em class="sig-param">spatial=False</em>, <em class="sig-param">VF=False</em>, <em class="sig-param">write_layout=True</em>, <em class="sig-param">node_properties=None</em>, <em class="sig-param">Names=False</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.to_tlp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a lineage tree into an understable tulip file
+:param fname: string, path to the tulip file to create
+:param t_min: int, minimum time to consider, default -1
+:param t_max: int, maximum time to consider, default np.inf
+:param nodes_to_use: [int, ], list of nodes to show in the graph,</p>
+<blockquote>
+<div><p>default <em>None</em>, then self.nodes is used
+(taking into account <em>t_min</em> and <em>t_max</em>)</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>temporal</strong> – boolean, True if the temporal links should be printed, default True</p></li>
+<li><p><strong>spatial</strong> – boolean, True if the special links should be printed, default True</p></li>
+<li><p><strong>VF</strong> – boolean, useless</p></li>
+<li><p><strong>write_layout</strong> – boolean, True, write the spatial position as layout,
+False, do not write spatial positionm
+default True</p></li>
+<li><p><strong>= {'p_name'</strong> (<em>node_properties</em>) – [{id:p_value, }, default]}, a dictionary of properties to write
+To a key representing the name of the property is
+paired a dictionary that maps a cell id to a property
+and a default value for this property</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="LineageTree.lineageTree.lineageTree.write_to_am">
+<code class="sig-name descname">write_to_am</code><span class="sig-paren">(</span><em class="sig-param">path_format</em>, <em class="sig-param">t_b=None</em>, <em class="sig-param">t_e=None</em>, <em class="sig-param">length=5</em>, <em class="sig-param">manual_labels=None</em>, <em class="sig-param">default_label=5</em>, <em class="sig-param">new_pos=None</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.lineageTree.write_to_am" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes a lineageTree into an Amira readable data (.am format).
+:param path_format: string, path to the output. It should contain 1 %03d where the time step will be entered
+:param t_b: int, first time point to write (if None, min(LT.to_take_time) is taken)
+:param t_e: int, last time point to write (if None, max(LT.to_take_time) is taken)</p>
+<blockquote>
+<div><dl class="simple">
+<dt>note: if there is no ‘to_take_time’ attribute, self.time_nodes is considered instead</dt><dd><p>(historical)</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>length</strong> – int, length of the track to print (how many time before).</p></li>
+<li><p><strong>manual_labels</strong> – {id: label, }, dictionary that maps cell ids to</p></li>
+<li><p><strong>default_label</strong> – int, default value for the manual label</p></li>
+<li><p><strong>new_pos</strong> – {id: [x, y, z]}, dictionary that maps a 3D position to a cell ID.
+if new_pos == None (default) then self.pos is considered.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">LineageTree</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Leo Guignard.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
