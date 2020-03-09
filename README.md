@@ -55,6 +55,8 @@ lT = lineageTree('path/to/single_time_file{t:04d}.xml', tb=0, te=500)
 Some dependecies are requiered:
   - general python dependecies:
     - numpy, scipy
+  - specific dependency:
+  	- svgwrite if svg output is needed
     
 ## Quick install
 To quickly install the script so it can be call from the terminal and install too the common dependecies one can run
