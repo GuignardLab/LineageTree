@@ -21,6 +21,7 @@ Once installed the library can be called the following way (as an example):
 from LineageTree import lineageTree
 ```
 and one can then load lineage trees the following way:
+
 For ASTEC data:
 ```python
 lT = lineageTree('path/to/ASTEC.pkl', ASTEC=True)
