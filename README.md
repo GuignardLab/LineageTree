@@ -2,12 +2,12 @@
 
 This library allows to import and work with cell (but not limited to cells) lineage trees.
 With LineageTree you can read from:
-	- TGMM algorithm outputs described in [Fernando et al. 2014](https://www.nature.com/articles/nmeth.3036)
-	- TrackMate files described in [Tivenez et al. 2017](https://doi.org/10.1016/j.ymeth.2016.09.016)
-	- MaMuT files described in [Wolff et al. 2018](https://doi.org/10.7554/eLife.34410)
-	- SVF algorithm outputs described in [McDole, Guignard et al. 2018](https://doi.org/10.1016/j.cell.2018.09.031)
-	- ASTEC algorithm outputs described in [Guignard, Fiuza et al. 2020](https://doi.org/10.1126/science.aar5663)
-	- and few others
+  - TGMM algorithm outputs described in [Fernando et al. 2014](https://www.nature.com/articles/nmeth.3036)
+  - TrackMate files described in [Tivenez et al. 2017](https://doi.org/10.1016/j.ymeth.2016.09.016)
+  - MaMuT files described in [Wolff et al. 2018](https://doi.org/10.7554/eLife.34410)
+  - SVF algorithm outputs described in [McDole, Guignard et al. 2018](https://doi.org/10.1016/j.cell.2018.09.031)
+  - ASTEC algorithm outputs described in [Guignard, Fiuza et al. 2020](https://doi.org/10.1126/science.aar5663)
+  - and few others
 
 ## Description of the repository
   - src: folder containing the package
