@@ -94,16 +94,16 @@
 \label{\detokenize{index:modules}}\index{lineageTree (class in LineageTree)@\spxentry{lineageTree}\spxextra{class in LineageTree}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{index:LineageTree.lineageTree}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{class }}\sphinxcode{\sphinxupquote{LineageTree.}}\sphinxbfcode{\sphinxupquote{lineageTree}}}{\emph{file\_format=None}, \emph{tb=None}, \emph{te=None}, \emph{z\_mult=1.0}, \emph{mask=None}, \emph{file\_type=\textquotesingle{}\textquotesingle{}}, \emph{delim=\textquotesingle{}}, \emph{\textquotesingle{}}, \emph{eigen=False}}{}~\index{\_\_init\_\_() (LineageTree.lineageTree method)@\spxentry{\_\_init\_\_()}\spxextra{LineageTree.lineageTree method}}
+\phantomsection\label{\detokenize{index:LineageTree.lineageTree}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{class }}\sphinxcode{\sphinxupquote{LineageTree.}}\sphinxbfcode{\sphinxupquote{lineageTree}}}{\emph{file\_format=None}, \emph{tb=None}, \emph{te=None}, \emph{z\_mult=1.0}, \emph{file\_type=\textquotesingle{}\textquotesingle{}}, \emph{delim=\textquotesingle{}}, \emph{\textquotesingle{}}, \emph{eigen=False}}{}~\index{\_\_init\_\_() (LineageTree.lineageTree method)@\spxentry{\_\_init\_\_()}\spxextra{LineageTree.lineageTree method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{index:LineageTree.lineageTree.__init__}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{\_\_init\_\_}}}{\emph{file\_format=None}, \emph{tb=None}, \emph{te=None}, \emph{z\_mult=1.0}, \emph{mask=None}, \emph{file\_type=\textquotesingle{}\textquotesingle{}}, \emph{delim=\textquotesingle{}}, \emph{\textquotesingle{}}, \emph{eigen=False}}{}
+\phantomsection\label{\detokenize{index:LineageTree.lineageTree.__init__}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{\_\_init\_\_}}}{\emph{file\_format=None}, \emph{tb=None}, \emph{te=None}, \emph{z\_mult=1.0}, \emph{file\_type=\textquotesingle{}\textquotesingle{}}, \emph{delim=\textquotesingle{}}, \emph{\textquotesingle{}}, \emph{eigen=False}}{}
 Main library to build tree graph representation of lineage tree data
 It can read TGMM, ASTEC, SVF, MaMuT and TrackMate outputs.
 \begin{quote}\begin{description}
 \item[{Parameters}] \leavevmode\begin{itemize}
 \item {} 
-\sphinxstyleliteralstrong{\sphinxupquote{file\_format}} (\sphinxstyleliteralemphasis{\sphinxupquote{string}}) \textendash{} either \sphinxhyphen{} path format to TGMM xmls
+\sphinxstyleliteralstrong{\sphinxupquote{file\_format}} (\sphinxstyleliteralemphasis{\sphinxupquote{strr}}) \textendash{} either \sphinxhyphen{} path format to TGMM xmls
 \sphinxhyphen{} path to the MaMuT xml
 \sphinxhyphen{} path to the binary file
 
@@ -115,9 +115,6 @@ It can read TGMM, ASTEC, SVF, MaMuT and TrackMate outputs.
 
 \item {} 
 \sphinxstyleliteralstrong{\sphinxupquote{z\_mult}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} z aspect ratio if necessary (usually only for TGMM xmls)
-
-\item {} 
-\sphinxstyleliteralstrong{\sphinxupquote{mask}} (\sphinxstyleliteralemphasis{\sphinxupquote{SpatialImage}}) \textendash{} binary image that specify the region to read (for TGMM xmls only)
 
 \item {} 
 \sphinxstyleliteralstrong{\sphinxupquote{file\_type}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} type of input file. Accepts:
@@ -520,7 +517,7 @@ Read a lineage tree from a MaMuT xml.
 \index{read\_tgmm\_xml() (LineageTree.lineageTree method)@\spxentry{read\_tgmm\_xml()}\spxextra{LineageTree.lineageTree method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{index:LineageTree.lineageTree.read_tgmm_xml}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{read\_tgmm\_xml}}}{\emph{file\_format}, \emph{tb}, \emph{te}, \emph{z\_mult=1.0}, \emph{mask=None}}{}
+\phantomsection\label{\detokenize{index:LineageTree.lineageTree.read_tgmm_xml}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{read\_tgmm\_xml}}}{\emph{file\_format}, \emph{tb}, \emph{te}, \emph{z\_mult=1.0}}{}
 Reads a lineage tree from TGMM xml output.
 \begin{quote}\begin{description}
 \item[{Parameters}] \leavevmode\begin{itemize}
@@ -540,9 +537,6 @@ digits are filed with 0s
 
 \item {} 
 \sphinxstyleliteralstrong{\sphinxupquote{z\_mult}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} aspect ratio
-
-\item {} 
-\sphinxstyleliteralstrong{\sphinxupquote{mask}} (\sphinxstyleliteralemphasis{\sphinxupquote{SpatialImage}}) \textendash{} binary image that specify the region to read
 
 \end{itemize}
 

@@ -39,22 +39,21 @@
 <h1>Modules<a class="headerlink" href="#modules" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="LineageTree.lineageTree">
-<em class="property">class </em><code class="sig-prename descclassname">LineageTree.</code><code class="sig-name descname">lineageTree</code><span class="sig-paren">(</span><em class="sig-param">file_format=None</em>, <em class="sig-param">tb=None</em>, <em class="sig-param">te=None</em>, <em class="sig-param">z_mult=1.0</em>, <em class="sig-param">mask=None</em>, <em class="sig-param">file_type=''</em>, <em class="sig-param">delim='</em>, <em class="sig-param">'</em>, <em class="sig-param">eigen=False</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">LineageTree.</code><code class="sig-name descname">lineageTree</code><span class="sig-paren">(</span><em class="sig-param">file_format=None</em>, <em class="sig-param">tb=None</em>, <em class="sig-param">te=None</em>, <em class="sig-param">z_mult=1.0</em>, <em class="sig-param">file_type=''</em>, <em class="sig-param">delim='</em>, <em class="sig-param">'</em>, <em class="sig-param">eigen=False</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="LineageTree.lineageTree.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">file_format=None</em>, <em class="sig-param">tb=None</em>, <em class="sig-param">te=None</em>, <em class="sig-param">z_mult=1.0</em>, <em class="sig-param">mask=None</em>, <em class="sig-param">file_type=''</em>, <em class="sig-param">delim='</em>, <em class="sig-param">'</em>, <em class="sig-param">eigen=False</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">file_format=None</em>, <em class="sig-param">tb=None</em>, <em class="sig-param">te=None</em>, <em class="sig-param">z_mult=1.0</em>, <em class="sig-param">file_type=''</em>, <em class="sig-param">delim='</em>, <em class="sig-param">'</em>, <em class="sig-param">eigen=False</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Main library to build tree graph representation of lineage tree data
 It can read TGMM, ASTEC, SVF, MaMuT and TrackMate outputs.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>file_format</strong> (<em>string</em>) – either - path format to TGMM xmls
+<li><p><strong>file_format</strong> (<em>strr</em>) – either - path format to TGMM xmls
 - path to the MaMuT xml
 - path to the binary file</p></li>
 <li><p><strong>tb</strong> (<em>int</em>) – first time point (necessary for TGMM xmls only)</p></li>
 <li><p><strong>te</strong> (<em>int</em>) – last time point (necessary for TGMM xmls only)</p></li>
 <li><p><strong>z_mult</strong> (<em>float</em>) – z aspect ratio if necessary (usually only for TGMM xmls)</p></li>
-<li><p><strong>mask</strong> (<em>SpatialImage</em>) – binary image that specify the region to read (for TGMM xmls only)</p></li>
 <li><p><strong>file_type</strong> (<em>str</em>) – type of input file. Accepts:
 ‘TGMM, ‘ASTEC’, MaMuT’, ‘TrackMate’, ‘csv’, ‘celegans’, ‘binary’
 default is ‘binary’</p></li>
@@ -377,7 +376,7 @@ Format description: see self.to_binary</p>
 
 <dl class="method">
 <dt id="LineageTree.lineageTree.read_tgmm_xml">
-<code class="sig-name descname">read_tgmm_xml</code><span class="sig-paren">(</span><em class="sig-param">file_format</em>, <em class="sig-param">tb</em>, <em class="sig-param">te</em>, <em class="sig-param">z_mult=1.0</em>, <em class="sig-param">mask=None</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.read_tgmm_xml" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">read_tgmm_xml</code><span class="sig-paren">(</span><em class="sig-param">file_format</em>, <em class="sig-param">tb</em>, <em class="sig-param">te</em>, <em class="sig-param">z_mult=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#LineageTree.lineageTree.read_tgmm_xml" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reads a lineage tree from TGMM xml output.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -391,7 +390,6 @@ digits are filed with 0s</p></li>
 <li><p><strong>tb</strong> (<em>int</em>) – first time point to read</p></li>
 <li><p><strong>te</strong> (<em>int</em>) – last time point to read</p></li>
 <li><p><strong>z_mult</strong> (<em>float</em>) – aspect ratio</p></li>
-<li><p><strong>mask</strong> (<em>SpatialImage</em>) – binary image that specify the region to read</p></li>
 </ul>
 </dd>
 </dl>
