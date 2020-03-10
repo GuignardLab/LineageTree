@@ -20,6 +20,7 @@ class lineageTree(object):
 
     def get_next_id(self):
         """ Computes the next authorized id.
+
             Returns:
                 int: next authorized id
         """
@@ -31,6 +32,7 @@ class lineageTree(object):
 
     def add_node(self, t=None, succ=None, pos=None, id=None, reverse=False):
         """ Adds a node to the lineageTree and update it accordingly.
+
             Args:
                 t (int): int, time to which to add the node
                 succ (int): id of the node the new node is a successor to
@@ -65,6 +67,7 @@ class lineageTree(object):
 
     def remove_node(self, c):
         """ Removes a node and update the lineageTree accordingly
+
             Args:
                 c (int): id of the node to remove
         """
@@ -96,6 +99,7 @@ class lineageTree(object):
     def fuse_nodes(self, c1, c2):
         """ Fuses together two nodes that belong to the same time point
             and update the lineageTree accordingly.
+
             Args:
                 c1 (int): id of the first node to fuse
                 c2 (int): id of the second node to fuse
@@ -121,6 +125,7 @@ class lineageTree(object):
 
     def _write_header_am(self, f, nb_points, length):
         """ Header for Amira .am files
+
         """
         f.write('# AmiraMesh 3D ASCII 2.0\n')
         f.write('define VERTEX %d\n'%(nb_points*2))
@@ -142,12 +147,13 @@ class lineageTree(object):
     def write_to_am(self, path_format, t_b=None, t_e=None, length=5, manual_labels=None,
                       default_label=5, new_pos=None):
         """ Writes a lineageTree into an Amira readable data (.am format).
+
             Args:
                 path_format (str): path to the output. It should contain 1 %03d where the time step will be entered
                 t_b (int): first time point to write (if None, min(LT.to_take_time) is taken)
                 t_e (int): last time point to write (if None, max(LT.to_take_time) is taken)
-                    note: if there is no 'to_take_time' attribute, self.time_nodes is considered instead
-                        (historical)
+                    note, if there is no 'to_take_time' attribute, self.time_nodes
+                    is considered instead (historical)
                 length (int): length of the track to print (how many time before).
                 manual_labels ({id: label, }): dictionary that maps cell ids to
                 default_label (int): default value for the manual label
@@ -220,6 +226,7 @@ class lineageTree(object):
     def _get_height(self, c, done):
         """ Recursively computes the height of a cell within a tree * a space factor.
             This function is specific to the function write_to_svg.
+
             Args:
                 c (int): id of a cell in a lineage tree from which the height will be computed from
                 done ({int: [int, int]}): a dictionary that maps a cell id to its vertical and horizontal position
@@ -239,6 +246,7 @@ class lineageTree(object):
                      node_color=None, stroke_color=None, positions=None):
         """ Writes the lineage tree to an SVG file.
             Node and edges coloring and size can be provided.
+
             Args:
                 file_name: str, filesystem filename valid for `open()`
                 roots: [int, ...], list of node ids to be drawn. If `None` all the nodes will be drawn. Default `None`
@@ -333,8 +341,8 @@ class lineageTree(object):
 
     def to_tlp(self, fname, t_min=-1, t_max=np.inf, nodes_to_use=None, temporal=True, 
                spatial=None, write_layout=True, node_properties=None, Names=False):
-        """
-        Write a lineage tree into an understable tulip file
+        """ Write a lineage tree into an understable tulip file.
+
         Args:
             fname (str): path to the tulip file to create
             t_min (int): minimum time to consider, default -1
@@ -353,15 +361,15 @@ class lineageTree(object):
             write_layout (bool): True, write the spatial position as layout,
                                    False, do not write spatial positionm
                                    default True
-            node_properties ({'p_name':[{id:p_value, }, default]}): a dictionary of properties to write
+            node_properties ({`p_name`, [{id, p_value}, default]}): a dictionary of properties to write
                                                 To a key representing the name of the property is
                                                 paired a dictionary that maps a cell id to a property
                                                 and a default value for this property
             Names (bool): Only works with ASTEC outputs, True to sort the cells by their names
         """
         def format_names(names_which_matter):
-            """
-            Return an ensured formated cell names
+            """ Return an ensured formated cell names
+
             """
             tmp={}
             for k, v in names_which_matter.items():
@@ -379,7 +387,7 @@ class lineageTree(object):
             for t, gg in self.s_g.items():
                 for c, N in gg.items():
                    s_edges.update([tuple(sorted([c, ni])) for ni in N]) 
-           return s_edges
+            return s_edges
 
         f=open(fname, "w")
         f.write("(tlp \"2.0\"\n")
@@ -542,7 +550,8 @@ class lineageTree(object):
         self.t_e = max(self.time_nodes)
 
     def read_from_ASTEC(self, file_path, eigen=False):
-        """ Read an `xml` or `pkl` file produced by the ASTEC algorithm
+        """ Read an `xml` or `pkl` file produced by the ASTEC algorithm.
+
             Args:
                 file_path (str): path to an output generated by ASTEC
                 eigen (bool): whether or not to read the eigen values, default False
@@ -792,17 +801,18 @@ class lineageTree(object):
 
     def read_tgmm_xml(self, file_format, tb, te, z_mult=1., mask=None):
         """ Reads a lineage tree from TGMM xml output.
+
             Args:
-                file_format: string, path to the xmls location.
+                file_format (str): path to the xmls location.
                         it should be written as follow:
-                            path/to/xml/standard_name_t%06d.xml where (as an example)
-                            %06d means a series of 6 digits representing the time and
-                            if the time values is smaller that 6 digits, the missing
-                            digits are filed with 0s
-                tb: int, first time point to read
-                te: int, last time point to read
-                z_mult: float, aspect ratio
-                mask: SpatialImage, binary image that specify the region to read
+                        path/to/xml/standard_name_t{t:06d}.xml where (as an example)
+                        {t:06d} means a series of 6 digits representing the time and
+                        if the time values is smaller that 6 digits, the missing
+                        digits are filed with 0s
+                tb (int): first time point to read
+                te (int): last time point to read
+                z_mult (float): aspect ratio
+                mask (SpatialImage): binary image that specify the region to read
         """
         self.time_nodes = {}
         self.time_edges = {}
@@ -880,8 +890,9 @@ class lineageTree(object):
 
     def read_from_mamut_xml(self, path):
         """ Read a lineage tree from a MaMuT xml.
+
             Args:
-                path: string, path to the MaMut xml
+                path (str): path to the MaMut xml
         """
         tree = ET.parse(path)
         Model = tree.getroot()[0]
@@ -934,7 +945,7 @@ class lineageTree(object):
 
     def to_binary(self, fname, starting_points=None):
         """ Writes the lineage tree (a forest) as a binary structure
-            (assuming it is a binary tree, it would not work for *n*ary tree with 2 < *n*).
+            (assuming it is a binary tree, it would not work for *n* ary tree with 2 < *n*).
             The binary file is composed of 3 sequences of numbers and
             a header specifying the size of each of these sequences.
             The first sequence, *number_sequence*, represents the lineage tree
@@ -945,12 +956,12 @@ class lineageTree(object):
             Each size is stored as a long long
             The *number_sequence* is stored as a list of long long (0 -> 2^(8*8)-1)
             The *time_sequence* is stored as a list of unsigned short (0 -> 2^(8*2)-1)
-            The *pos_sequence* is stored as a list of double
+            The *pos_sequence* is stored as a list of double.
+
             Args:
-                fname: string, name of the binary file
-                starting_points: [int, ], list of the roots to be written.
-                        If None, all roots are written
-                        Default: None
+                fname (str): name of the binary file
+                starting_points ([int, ]): list of the roots to be written.
+                    If None, all roots are written, default value, None
         """
         if starting_points is None:
             starting_points = [c for c in self.successor.keys() if self.predecessor.get(c, []) == []]
@@ -993,8 +1004,8 @@ class lineageTree(object):
 
     def read_from_binary(self, fname, reverse_time=False):
         """ Reads a binary lineageTree file name.
-            Format description:
-                see self.to_binary
+            Format description: see self.to_binary
+
             Args:
                 fname: string, path to the binary file
                 reverse_time: bool, not used
@@ -1117,17 +1128,18 @@ class lineageTree(object):
         self.max_id = max(self.nodes)
 
     def get_idx3d(self, t):
-        """ Get a 3d kdtree for the dataset at time *t*
-            The  kdtree is stored in `self.kdtrees[t]`
+        """ Get a 3d kdtree for the dataset at time *t* .
+            The  kdtree is stored in *self.kdtrees[t]*
+
             Args:
                 t (int): time
             Returns:
-                kdtree: the built kdtree
-                [int, ]: the correspondancy list:
+                (kdtree, [int, ]): the built kdtree and
+                    the correspondancy list,
                     If the query in the kdtree gives you the value i,
                     then it corresponds to the id in the tree to_check_self[i]
         """
-        to_check_self = self.time_nodes[t]
+        to_check_self = list(self.time_nodes[t])
         if t not in self.kdtrees:
             data_corres = {}
             data = []
@@ -1144,10 +1156,11 @@ class lineageTree(object):
         """ Build the Gabriel graph of the given graph for time point `t`
             The Garbiel graph is then stored in self.Gabriel_graph and returned
             *WARNING: the graph is not recomputed if already computed. even if nodes were added*.
+
             Args:
                 t (int): time
             Returns:
-                {int: set([int, ])}: a dictionary that maps a node to
+                {int, set([int, ])}: a dictionary that maps a node to
                     the set of its neighbors
         """
         if not hasattr(self, 'Gabriel_graph'):
@@ -1187,7 +1200,8 @@ class lineageTree(object):
 
     def get_predecessors(self, x, depth=None):
         """ Computes the predecessors of the node *x* up to
-            *depth* predecessors. The ordered list of ids is returned
+            *depth* predecessors. The ordered list of ids is returned.
+
             Args:
                 x (int): id of the node to compute
                 depth (int): maximum number of predecessors to return
@@ -1204,7 +1218,8 @@ class lineageTree(object):
 
     def get_successors(self, x, depth=None):
         """ Computes the successors of the node *x* up to
-            *depth* successors. The ordered list of ids is returned
+            *depth* successors. The ordered list of ids is returned.
+
             Args:
                 x (int): id of the node to compute
                 depth (int): maximum number of predecessors to return
@@ -1224,7 +1239,8 @@ class lineageTree(object):
             *depth_pred* predecessors plus *depth_succ* successors.
             If the value *depth* is provided and not None,
             *depth_pred* and *depth_succ* are overwrited by *depth*.
-            The ordered list of ids is returned
+            The ordered list of ids is returned.
+
             Args:
                 x (int): id of the node to compute
                 depth (int): maximum number of predecessors and successor to return
@@ -1241,7 +1257,8 @@ class lineageTree(object):
         """ Computes the list of cells from the subtree spawned by *x*
             The default output order is breadth first traversal.
             Unless preorder is `True` in that case the order is
-            Depth first traversal preordered
+            Depth first traversal preordered.
+
             Args:
                 x (int): id of root node
                 preorder (bool): if True the output is preorder DFT
@@ -1263,14 +1280,15 @@ class lineageTree(object):
     def compute_spatial_density(self, t_b=None, t_e=None, th=50):
         """ Computes the spatial density of cells between `t_b` and `t_e`.
             The spatial density is computed as follow:
-            $\frac{\#cell}{4/3*\pi*th^3}$
-            The results is stored in self.spatial_density is returned
+            #cell/(4/3*pi*th^3)
+            The results is stored in self.spatial_density is returned.
+
             Args:
                 t_b (int): starting time to look at, default first time point
                 t_e (int): ending time to look at, default last time point
                 th (float): size of the neighbourhood
             Returns:
-                {int: float}: dictionary that maps a cell id to its spatial density
+                {int, float}: dictionary that maps a cell id to its spatial density
         """
         s_vol = 4/3.*np.pi*th**3
         time_range = set(range(t_b, t_e+1)).intersection(lT.time_nodes)
@@ -1280,14 +1298,36 @@ class lineageTree(object):
             self.spatial_density.update(dict(zip(nodes, nb_ni)))
         return self.spatial_density
 
+    def compute_k_nearest_neighbours(self, k=10):
+        """ Computes the k-nearest neighbors
+            Writes the output in the attribute `kn_graph`
+            and returns it.
+
+            Args:
+                k (float): number of nearest neighours
+            Returns:
+                {int, set([int, ...])}: dictionary that maps
+                    a cell id to its `k` nearest neighbors
+        """
+        self.kn_graph = {}
+        for t, Cs in self.time_nodes.items():
+            use_k = k if k<len(nodes) else len(nodes)
+            idx3d, nodes = self.get_idx3d(t)
+            pos = [self.pos[c] for c in nodes]
+            dist, neighbs = idx3d.query(pos, use_k)
+            out = dict(zip(nodes, [set(nodes[ni[1:]]) for ni in neighbs]))
+            self.kn_graph.update(out)
+        return self.kn_graph
+
     def compute_spatial_edges(self, th=50):
         """ Computes the neighbors at a distance `th`
             Writes the output in the attribute `th_edge`
-            and returns it
+            and returns it.
+
             Args:
                 th (float): distance to consider neighbors
             Returns:
-                {int: set([int, ...])}: dictionary that maps
+                {int, set([int, ...])}: dictionary that maps
                     a cell id to its neighbors at a distance `th`
         """
         self.th_edges = {}
@@ -1296,11 +1336,13 @@ class lineageTree(object):
             neighbs = idx3d.query_ball_tree(idx3d, th)
             out = dict(zip(nodes, [set(nodes[ni]) for ni in neighbs]))
             self.th_edges.update({k:v.difference([k]) for k, v in out.items()})
+        return self.th_edges
 
     def __init__(self, file_format=None, tb=None, te=None, z_mult=1., mask=None,
                  file_type='', delim=',', eigen=False):
         """ Main library to build tree graph representation of lineage tree data
-            It can read TGMM, ASTEC, SVF, MaMuT and TrackMate outputs,
+            It can read TGMM, ASTEC, SVF, MaMuT and TrackMate outputs.
+
             Args:
                 file_format (string): either - path format to TGMM xmls
                                              - path to the MaMuT xml
@@ -1333,13 +1375,13 @@ class lineageTree(object):
             self.read_tgmm_xml(file_format, tb, te, z_mult=z_mult, mask = mask)
             self.t_b = tb
             self.t_e = te
-        if file_type == 'mamut' or file_type == 'trackmate':
+        elif file_type == 'mamut' or file_type == 'trackmate':
             self.read_from_mamut_xml(file_format)
-        if file_type == 'celegans':
+        elif file_type == 'celegans':
             self.read_from_txt_for_celegans(file_format)
-        if file_type == 'astec':
+        elif file_type == 'astec':
             self.read_from_ASTEC(file_format, eigen)
-        if file_type == 'csv':
+        elif file_type == 'csv':
             self.read_from_csv(file_format, z_mult, link=link, delim=delim)
         elif file_format is not None:
             self.read_from_binary(file_format)

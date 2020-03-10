@@ -22,5 +22,6 @@ Welcome to LineageTree's documentation!
 Modules
 =======
 
-.. automodule:: LineageTree.lineageTree
+.. autoclass:: LineageTree.lineageTree
+	:special-members:
 	:members:

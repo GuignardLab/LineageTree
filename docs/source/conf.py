@@ -12,7 +12,8 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../LineageTree'))
+sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../src'))
 
 
 # -- Project information -----------------------------------------------------
@@ -32,6 +33,12 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.napoleon',
 ]
+
+autodoc_default_options = {
+    'special-members': '__init__',
+    'undoc-members': True,
+    'exclude-members': '__weakref__'
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
