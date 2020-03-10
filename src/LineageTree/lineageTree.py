@@ -236,7 +236,7 @@ class lineageTree(object):
         if c in done:
             return done[c][0]
         else:
-            P = np.mean([self.get_height(di, done) for di in self.successor[c]])
+            P = np.mean([self._get_height(di, done) for di in self.successor[c]])
             done[c] = [P, self.vert_space_factor*self.time[c]]
             return P
 
@@ -306,7 +306,7 @@ class lineageTree(object):
                     r_leaves += [curr]
             r_pos = {l: [prev_x+horizontal_space*(1+j), self.vert_space_factor*self.time[l]]
                          for j, l in enumerate(r_leaves)}
-            self.get_height(r, r_pos)
+            self._get_height(r, r_pos)
             prev_x = np.max(list(r_pos.values()), axis=0)[0]
             if not pos_given:
                 positions.update(r_pos)
@@ -799,7 +799,7 @@ class lineageTree(object):
                     self.time_edges.setdefault(t-1, set()).append((p, c))
             self.max_id = unique_id
 
-    def read_tgmm_xml(self, file_format, tb, te, z_mult=1., mask=None):
+    def read_tgmm_xml(self, file_format, tb, te, z_mult=1.):
         """ Reads a lineage tree from TGMM xml output.
 
             Args:
@@ -812,7 +812,6 @@ class lineageTree(object):
                 tb (int): first time point to read
                 te (int): last time point to read
                 z_mult (float): aspect ratio
-                mask (SpatialImage): binary image that specify the region to read
         """
         self.time_nodes = {}
         self.time_edges = {}
@@ -854,31 +853,30 @@ class lineageTree(object):
                                                     float(it.attrib['alphaPrior']))
                         pos = np.array(pos)
                         pos_tmp = np.round(pos).astype(np.uint16)
-                        if mask is None or mask[pos_tmp[0], pos_tmp[1], pos_tmp[2]]:
-                            C = unique_id
-                            pos[-1] = pos[-1]*z_mult
-                            if (t-1, M_id) in self.time_id:
-                                M = self.time_id[(t-1, M_id)]
-                                self.successor.setdefault(M, []).append(C)
-                                self.predecessor.setdefault(C, []).append(M)
-                                self.edges.add((M, C))
-                                self.time_edges[t].add((M, C))
-                            else:
-                                if M_id != -1:
-                                    self.mother_not_found.append(C)
-                            self.pos[C] = pos
-                            self.nodes.add(C)
-                            self.time_nodes[t].add(C)
-                            self.time_id[(t, cell_id)] = C
-                            self.time[C] = t
-                            self.svIdx[C] = svIdx
-                            self.lin.setdefault(lin_id, []).append(C)
-                            self.C_lin[C] = lin_id
-                            self.intensity[C] = max(alpha - alphaPrior, 0)
-                            tmp = list(np.array(W) * nu)
-                            self.W[C] = np.array(W).reshape(3, 3)
-                            self.coeffs[C] = tmp[:3] + tmp[4:6] + tmp[8:9] + list(pos)
-                            unique_id += 1
+                        C = unique_id
+                        pos[-1] = pos[-1]*z_mult
+                        if (t-1, M_id) in self.time_id:
+                            M = self.time_id[(t-1, M_id)]
+                            self.successor.setdefault(M, []).append(C)
+                            self.predecessor.setdefault(C, []).append(M)
+                            self.edges.add((M, C))
+                            self.time_edges[t].add((M, C))
+                        else:
+                            if M_id != -1:
+                                self.mother_not_found.append(C)
+                        self.pos[C] = pos
+                        self.nodes.add(C)
+                        self.time_nodes[t].add(C)
+                        self.time_id[(t, cell_id)] = C
+                        self.time[C] = t
+                        self.svIdx[C] = svIdx
+                        self.lin.setdefault(lin_id, []).append(C)
+                        self.C_lin[C] = lin_id
+                        self.intensity[C] = max(alpha - alphaPrior, 0)
+                        tmp = list(np.array(W) * nu)
+                        self.W[C] = np.array(W).reshape(3, 3)
+                        self.coeffs[C] = tmp[:3] + tmp[4:6] + tmp[8:9] + list(pos)
+                        unique_id += 1
                     except Exception as e:
                         pass
                 else:
@@ -1338,19 +1336,18 @@ class lineageTree(object):
             self.th_edges.update({k:v.difference([k]) for k, v in out.items()})
         return self.th_edges
 
-    def __init__(self, file_format=None, tb=None, te=None, z_mult=1., mask=None,
+    def __init__(self, file_format=None, tb=None, te=None, z_mult=1.,
                  file_type='', delim=',', eigen=False):
         """ Main library to build tree graph representation of lineage tree data
             It can read TGMM, ASTEC, SVF, MaMuT and TrackMate outputs.
 
             Args:
-                file_format (string): either - path format to TGMM xmls
+                file_format (strr): either - path format to TGMM xmls
                                              - path to the MaMuT xml
                                              - path to the binary file
                 tb (int): first time point (necessary for TGMM xmls only)
                 te (int): last time point (necessary for TGMM xmls only)
                 z_mult (float): z aspect ratio if necessary (usually only for TGMM xmls)
-                mask (SpatialImage): binary image that specify the region to read (for TGMM xmls only)
                 file_type (str): type of input file. Accepts:
                     'TGMM, 'ASTEC', MaMuT', 'TrackMate', 'csv', 'celegans', 'binary'
                     default is 'binary'
@@ -1372,7 +1369,7 @@ class lineageTree(object):
         self.progeny = {}
         file_type = file_type.lower()
         if file_type == 'tgmm':
-            self.read_tgmm_xml(file_format, tb, te, z_mult=z_mult, mask = mask)
+            self.read_tgmm_xml(file_format, tb, te, z_mult)
             self.t_b = tb
             self.t_e = te
         elif file_type == 'mamut' or file_type == 'trackmate':
