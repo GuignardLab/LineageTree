@@ -1,0 +1,62 @@
+\begin{sphinxtheindex}
+\let\bigletter\sphinxstyleindexlettergroup
+\let\spxpagem \sphinxstyleindexpagemain
+\let\spxentry \sphinxstyleindexentry
+\let\spxextra \sphinxstyleindexextra
+
+  \bigletter {\sphinxsymbolsname}
+  \item \spxentry{\_\_init\_\_()}\spxextra{LineageTree.lineageTree method}, \hyperpage{1}
+
+  \indexspace
+  \bigletter A
+  \item \spxentry{add\_node()}\spxextra{LineageTree.lineageTree method}, \hyperpage{1}
+
+  \indexspace
+  \bigletter C
+  \item \spxentry{compute\_k\_nearest\_neighbours()}\spxextra{LineageTree.lineageTree method}, 
+		\hyperpage{1}
+  \item \spxentry{compute\_spatial\_density()}\spxextra{LineageTree.lineageTree method}, 
+		\hyperpage{2}
+  \item \spxentry{compute\_spatial\_edges()}\spxextra{LineageTree.lineageTree method}, 
+		\hyperpage{2}
+
+  \indexspace
+  \bigletter F
+  \item \spxentry{fuse\_nodes()}\spxextra{LineageTree.lineageTree method}, \hyperpage{2}
+
+  \indexspace
+  \bigletter G
+  \item \spxentry{get\_cycle()}\spxextra{LineageTree.lineageTree method}, \hyperpage{2}
+  \item \spxentry{get\_gabriel\_graph()}\spxextra{LineageTree.lineageTree method}, \hyperpage{2}
+  \item \spxentry{get\_idx3d()}\spxextra{LineageTree.lineageTree method}, \hyperpage{3}
+  \item \spxentry{get\_next\_id()}\spxextra{LineageTree.lineageTree method}, \hyperpage{3}
+  \item \spxentry{get\_predecessors()}\spxextra{LineageTree.lineageTree method}, \hyperpage{3}
+  \item \spxentry{get\_sub\_tree()}\spxextra{LineageTree.lineageTree method}, \hyperpage{3}
+  \item \spxentry{get\_successors()}\spxextra{LineageTree.lineageTree method}, \hyperpage{3}
+
+  \indexspace
+  \bigletter L
+  \item \spxentry{lineageTree}\spxextra{class in LineageTree}, \hyperpage{1}
+
+  \indexspace
+  \bigletter R
+  \item \spxentry{read\_from\_ASTEC()}\spxextra{LineageTree.lineageTree method}, \hyperpage{3}
+  \item \spxentry{read\_from\_binary()}\spxextra{LineageTree.lineageTree method}, \hyperpage{4}
+  \item \spxentry{read\_from\_csv()}\spxextra{LineageTree.lineageTree method}, \hyperpage{4}
+  \item \spxentry{read\_from\_mamut\_xml()}\spxextra{LineageTree.lineageTree method}, \hyperpage{4}
+  \item \spxentry{read\_from\_txt\_for\_celegans()}\spxextra{LineageTree.lineageTree method}, 
+		\hyperpage{4}
+  \item \spxentry{read\_tgmm\_xml()}\spxextra{LineageTree.lineageTree method}, \hyperpage{4}
+  \item \spxentry{remove\_node()}\spxextra{LineageTree.lineageTree method}, \hyperpage{4}
+
+  \indexspace
+  \bigletter T
+  \item \spxentry{to\_binary()}\spxextra{LineageTree.lineageTree method}, \hyperpage{4}
+  \item \spxentry{to\_tlp()}\spxextra{LineageTree.lineageTree method}, \hyperpage{4}
+
+  \indexspace
+  \bigletter W
+  \item \spxentry{write\_to\_am()}\spxextra{LineageTree.lineageTree method}, \hyperpage{5}
+  \item \spxentry{write\_to\_svg()}\spxextra{LineageTree.lineageTree method}, \hyperpage{5}
+
+\end{sphinxtheindex}
