@@ -1,7 +1,7 @@
 #!python
 # This file is subject to the terms and conditions defined in
 # file 'LICENCE', which is part of this source code package.
-# Author: Leo Guignard (guignardl...@AT@...janelia.hhmi.org)
+# Author: Leo Guignard (guignardl...@AT@...gmail.com)
 
 from scipy.spatial import cKDTree as KDTree
 import os
@@ -17,39 +17,12 @@ import struct
 import sys
 
 class lineageTree(object):
-    ''' lineageTree is a class container for lineage tree structures
-        The main attributes are the following:
-        self.nodes: [int, ], list of node/cell ids
-        self.edges: [(int, int), ], a list of couple of cell/objects ids that represents the edges
-        self.time_nodes: {int, [int, ]}, a dictionary that maps time points to
-            a list of cell ids that belong to that time point
-        self.time_edges: {int, [(int, int), ]}, a dictionary that maps time points to
-            a list of edges couples that belong to that time point
-        self.successor: {int, [int, ]}, a dictionary that maps a cell id to
-            the list of its successors in time
-        self.predecessor: {int, [int, ]}, a dictionary that maps a cell id to
-            the list of its predecessors in time
-        self.time: {int: int, }, a dictionary that maps a cell to the time
-            it belongs to.
-    '''
-
-    def _dist_v(self, v1, v2):
-        ''' Computes the L2 norm between two vectors v1 and v2
-            Args:
-                v1: [float, ], list of values for the first vector
-                v2: [float, ], list of values for the second vector
-            Return:
-                float: L2 norm between v1 and v2
-        '''
-        v1 = np.array(v1)
-        v2 = np.array(v2)
-        return np.sum((v1-v2)**2)**(.5)
 
     def get_next_id(self):
-        ''' Computes the next authorized id.
+        """ Computes the next authorized id.
             Returns:
-                int, next authorized id
-        '''
+                int: next authorized id
+        """
         if self.next_id == []:
             self.max_id += 1
             return self.max_id
@@ -57,18 +30,18 @@ class lineageTree(object):
             return self.next_id.pop()
 
     def add_node(self, t=None, succ=None, pos=None, id=None, reverse=False):
-        ''' Adds a node to the lineageTree and update it accordingly.
+        """ Adds a node to the lineageTree and update it accordingly.
             Args:
-                t: int, time to which to add the node
-                succ: id of the node the new node is a successor to
-                pos: [float, ], list of three floats representing the 3D spatial position of the node
-                id: id value of the new node, to be used carefully,
+                t (int): int, time to which to add the node
+                succ (int): id of the node the new node is a successor to
+                pos ([float, ]): list of three floats representing the 3D spatial position of the node
+                id (int): id value of the new node, to be used carefully,
                     if None is provided the new id is automatically computed.
-                reverse: bool, True if in this lineageTree the predecessors are the successors and reciprocally.
+                reverse (bool): True if in this lineageTree the predecessors are the successors and reciprocally.
                     This is there for bacward compatibility, should be left at False.
             Returns:
-                C_next: int, id of the new node.
-        '''
+                int: id of the new node.
+        """
         if id is None:
             C_next = self.get_next_id()
         else:
@@ -91,10 +64,10 @@ class lineageTree(object):
         return C_next
 
     def remove_node(self, c):
-        ''' Removes a node and update the lineageTree accordingly
+        """ Removes a node and update the lineageTree accordingly
             Args:
-                c: int, id of the node to remove
-        '''
+                c (int): id of the node to remove
+        """
         self.nodes.remove(c)
         self.time_nodes[self.time[c]].remove(c)
         # self.time_nodes.pop(c, 0)
@@ -121,12 +94,12 @@ class lineageTree(object):
         return e_to_remove, succ, s_to_remove, pred, p_to_remove, pos
 
     def fuse_nodes(self, c1, c2):
-        ''' Fuses together two nodes that belong to the same time point
+        """ Fuses together two nodes that belong to the same time point
             and update the lineageTree accordingly.
             Args:
-                c1: int, id of the first node to fuse
-                c2: int, id of the second node to fuse
-        '''
+                c1 (int): id of the first node to fuse
+                c2 (int): id of the second node to fuse
+        """
         e_to_remove, succ, s_to_remove, pred, p_to_remove, c2_pos = self.remove_node(c2)
         for e in e_to_remove:
             new_e = [c1] + [other_c for other_c in e if e != c2]
@@ -147,8 +120,8 @@ class lineageTree(object):
 
 
     def _write_header_am(self, f, nb_points, length):
-        ''' Header for Amira .am files
-        '''
+        """ Header for Amira .am files
+        """
         f.write('# AmiraMesh 3D ASCII 2.0\n')
         f.write('define VERTEX %d\n'%(nb_points*2))
         f.write('define EDGE %d\n'%nb_points)
@@ -168,19 +141,19 @@ class lineageTree(object):
 
     def write_to_am(self, path_format, t_b=None, t_e=None, length=5, manual_labels=None,
                       default_label=5, new_pos=None):
-        ''' Writes a lineageTree into an Amira readable data (.am format).
+        """ Writes a lineageTree into an Amira readable data (.am format).
             Args:
-                path_format: string, path to the output. It should contain 1 %03d where the time step will be entered
-                t_b: int, first time point to write (if None, min(LT.to_take_time) is taken)
-                t_e: int, last time point to write (if None, max(LT.to_take_time) is taken)
+                path_format (str): path to the output. It should contain 1 %03d where the time step will be entered
+                t_b (int): first time point to write (if None, min(LT.to_take_time) is taken)
+                t_e (int): last time point to write (if None, max(LT.to_take_time) is taken)
                     note: if there is no 'to_take_time' attribute, self.time_nodes is considered instead
                         (historical)
-                length: int, length of the track to print (how many time before).
-                manual_labels: {id: label, }, dictionary that maps cell ids to
-                default_label: int, default value for the manual label
-                new_pos: {id: [x, y, z]}, dictionary that maps a 3D position to a cell ID.
+                length (int): length of the track to print (how many time before).
+                manual_labels ({id: label, }): dictionary that maps cell ids to
+                default_label (int): default value for the manual label
+                new_pos ({id: [x, y, z]}): dictionary that maps a 3D position to a cell ID.
                     if new_pos == None (default) then self.pos is considered.
-        '''
+        """
         if not hasattr(self, 'to_take_time'):
             self.to_take_time = self.time_nodes
         if t_b is None:
@@ -244,7 +217,15 @@ class lineageTree(object):
                 f.write('%d\n'%(0))
             f.close()
 
-    def get_height(self, c, done):
+    def _get_height(self, c, done):
+        """ Recursively computes the height of a cell within a tree * a space factor.
+            This function is specific to the function write_to_svg.
+            Args:
+                c (int): id of a cell in a lineage tree from which the height will be computed from
+                done ({int: [int, int]}): a dictionary that maps a cell id to its vertical and horizontal position
+            Returns:
+                float: 
+        """
         if c in done:
             return done[c][0]
         else:
@@ -252,11 +233,11 @@ class lineageTree(object):
             done[c] = [P, self.vert_space_factor*self.time[c]]
             return P
 
-    def print_to_svg(self, file_name, roots=None, draw_nodes=True, draw_edges=True,
+    def write_to_svg(self, file_name, roots=None, draw_nodes=True, draw_edges=True,
                      order_key=None, vert_space_factor=.5, horizontal_space=1,
                      node_size=None, stroke_width=None, factor=1.,
                      node_color=None, stroke_color=None, positions=None):
-        ''' Writes the lineage tree to an SVG file.
+        """ Writes the lineage tree to an SVG file.
             Node and edges coloring and size can be provided.
             Args:
                 file_name: str, filesystem filename valid for `open()`
@@ -278,7 +259,7 @@ class lineageTree(object):
                               The triplet will determine the color of the stroke of the inward edge.
                 positions: {int: [float, float], ...}, dictionary that maps a node id to a 2D position.
                            Default `None`. If provided it will be used to position the nodes.
-        '''
+        """
         import svgwrite
 
         if roots is None:
@@ -350,28 +331,34 @@ class lineageTree(object):
                     dwg.add(dwg.circle((factor*x1, factor*y1), node_size(c), fill=svgwrite.rgb(*(node_color(c)))))
         dwg.save()
 
-    def to_tlp(self, fname, t_min=-1, t_max=np.inf, nodes_to_use=None, temporal=True, spatial=False,
-               VF=False, write_layout=True, node_properties=None, Names=False):
-        '''
+    def to_tlp(self, fname, t_min=-1, t_max=np.inf, nodes_to_use=None, temporal=True, 
+               spatial=None, write_layout=True, node_properties=None, Names=False):
+        """
         Write a lineage tree into an understable tulip file
         Args:
-            fname: string, path to the tulip file to create
-            t_min: int, minimum time to consider, default -1
-            t_max: int, maximum time to consider, default np.inf
-            nodes_to_use: [int, ], list of nodes to show in the graph,
+            fname (str): path to the tulip file to create
+            t_min (int): minimum time to consider, default -1
+            t_max (int): maximum time to consider, default np.inf
+            nodes_to_use ([int, ]): list of nodes to show in the graph,
                           default *None*, then self.nodes is used
                           (taking into account *t_min* and *t_max*)
-            temporal: boolean, True if the temporal links should be printed, default True
-            spatial: boolean, True if the special links should be printed, default True
-            VF: boolean, useless
-            write_layout: boolean, True, write the spatial position as layout,
+            temporal (bool): True if the temporal links should be printed, default True
+            spatial (str): Build spatial edges from a spatial neighbourhood graph.
+                The graph has to be computed before running this function
+                'ball': neighbours at a given distance,
+                'kn': k-nearest neighbours,
+                'GG': gabriel graph,
+                None: no spatial edges are writen.
+                Default None
+            write_layout (bool): True, write the spatial position as layout,
                                    False, do not write spatial positionm
                                    default True
-            node_properties = {'p_name':[{id:p_value, }, default]}, a dictionary of properties to write
+            node_properties ({'p_name':[{id:p_value, }, default]}): a dictionary of properties to write
                                                 To a key representing the name of the property is
                                                 paired a dictionary that maps a cell id to a property
                                                 and a default value for this property
-        '''
+            Names (bool): Only works with ASTEC outputs, True to sort the cells by their names
+        """
         def format_names(names_which_matter):
             """
             Return an ensured formated cell names
@@ -387,9 +374,24 @@ class lineageTree(object):
                     exit()
             return tmp
 
+        def spatial_adjlist_to_set(s_g):
+            s_edges = set()
+            for t, gg in self.s_g.items():
+                for c, N in gg.items():
+                   s_edges.update([tuple(sorted([c, ni])) for ni in N]) 
+           return s_edges
+
         f=open(fname, "w")
         f.write("(tlp \"2.0\"\n")
         f.write("(nodes ")
+
+
+        if spatial.lower()=='gg' and hasattr(self, 'Gabriel_graph'):
+            s_edges = spatial_adjlist_to_set(self.Gabriel_graph)
+        elif spatial.lower()=='kn' and hasattr(self, 'kn_graph'):
+            s_edges = spatial_adjlist_to_set(self.kn_graph)
+        elif spatial.lower()=='ball' and hasattr(self, 'th_edges'):
+            s_edges = spatial_adjlist_to_set(self.th_edges)
 
         if not nodes_to_use:
             if t_max!=np.inf or -1<t_min:
@@ -398,20 +400,20 @@ class lineageTree(object):
                 if temporal:
                     edges_to_use += [e for e in self.edges if t_min<self.time[e[0]]<t_max]
                 if spatial:
-                    edges_to_use += [e for e in self.spatial_edges if t_min<self.time[e[0]]<t_max]
+                    edges_to_use += [(e, ei) for e in s_edges if t_min<self.time[e[0]]<t_max]
             else:
                 nodes_to_use = list(self.nodes)
                 edges_to_use = []
                 if temporal:
-                    edges_to_use += self.edges
+                    edges_to_use += list(self.edges)
                 if spatial:
-                    edges_to_use += self.spatial_edges
+                    edges_to_use += list(s_edges)
         else:
             edges_to_use = []
             if temporal:
                 edges_to_use += [e for e in self.edges if e[0] in nodes_to_use and e[1] in nodes_to_use]
             if spatial:
-                edges_to_use += [e for e in self.spatial_edges if t_min<e[0].time<t_max]
+                edges_to_use += [e for e in s_edges if t_min<self.time[e[0]]<t_max]
         nodes_to_use = set(nodes_to_use)
         if Names:
             names_which_matter = { k : v for k, v in node_properties[Names][0].items()
@@ -453,7 +455,7 @@ class lineageTree(object):
             f.write("(property 0 double \"distance\"\n")
             f.write("\t(default \"0\" \"0\")\n")
             for i, e in enumerate(edges_to_use):
-                d_tmp = self._dist_v(self.pos[e[0]], self.pos[e[1]])
+                d_tmp = np.linalg.norm(self.pos[e[0]]-self.pos[e[1]])
                 f.write("\t(edge " + str(i) + str(" \"") + str(d_tmp) + "\")\n")
                 f.write("\t(node " + str(e[0]) + str(" \"") + str(d_tmp) + "\")\n")
             f.write(")\n")
@@ -524,12 +526,12 @@ class lineageTree(object):
                 self.predecessor[C] = [M]
                 self.successor.setdefault(M, []).append(C)
                 self.edges.add((M, C))
-                self.time_edges.setdefault(t, []).append((M, C))
+                self.time_edges.setdefault(t, set()).add((M, C))
                 self.lin.setdefault(lin_id, []).append(C)
                 self.C_lin[C] = lin_id
             self.pos[C] = pos
             self.nodes.add(C)
-            self.time_nodes.setdefault(t, []).append(C)
+            self.time_nodes.setdefault(t, set()).add(C)
             # self.time_id[(t, cell_id)] = C
             self.time[C] = t
             if not link:
@@ -540,6 +542,11 @@ class lineageTree(object):
         self.t_e = max(self.time_nodes)
 
     def read_from_ASTEC(self, file_path, eigen=False):
+        """ Read an `xml` or `pkl` file produced by the ASTEC algorithm
+            Args:
+                file_path (str): path to an output generated by ASTEC
+                eigen (bool): whether or not to read the eigen values, default False
+        """
         if os.path.splitext(file_path)[-1] == '.xml':
             tmp_data = self._read_from_ASTEC_xml(file_path)
         else:
@@ -612,8 +619,8 @@ class lineageTree(object):
             self.pkl2lT[n] = unique_id
             self.name[unique_id] = names.get(n, '')
             position = np.array(pos.get(n, [0, 0, 0]), dtype=np.float)
-            self.time_nodes.setdefault(t, []).append(unique_id)
-            self.nodes += [unique_id]
+            self.time_nodes.setdefault(t, set()).add(unique_id)
+            self.nodes.add(unique_id)
             self.pos[unique_id] = position
             self.time[unique_id] = t
             id_corres[n] = unique_id
@@ -639,10 +646,10 @@ class lineageTree(object):
                 self.predecessor[new_id] = [id_corres[ni] for ni in inv[n]]
             if n in lt:
                 self.successor[new_id] = [id_corres[ni] for ni in lt[n] if ni in id_corres]
-                self.edges += [(new_id, ni) for ni in self.successor[new_id]]
+                self.edges.update([(new_id, ni) for ni in self.successor[new_id]])
                 for ni in self.successor[new_id]:
                     # self.edges += [(new_id, ni)]
-                    self.time_edges.setdefault(t-1, []).append((new_id, ni))
+                    self.time_edges.setdefault(t-1, set()).add((new_id, ni))
 
         self.t_b = min(self.time_nodes)
         self.t_e = max(self.time_nodes)
@@ -744,10 +751,9 @@ class lineageTree(object):
             'Z2': 'P4',
             'Z3': 'P4'
         }
-
-        f = open(file, 'r')
-        raw = f.readlines()[1:]
-        f.close()
+        with open(file, 'r') as f:
+            raw = f.readlines()[1:]
+            f.close()
         self.name = {}
 
         unique_id = 0
@@ -755,8 +761,8 @@ class lineageTree(object):
             t = int(l.split('\t')[0])
             self.name[unique_id] = l.split('\t')[1]
             position = np.array(l.split('\t')[2:5], dtype = np.float)
-            self.time_nodes.setdefault(t, []).append(unique_id)
-            self.nodes += [unique_id]
+            self.time_nodes.setdefault(t, set()).add(unique_id)
+            self.nodes.add(unique_id)
             self.pos[unique_id] = position
             self.time[unique_id] = t
             unique_id += 1
@@ -780,14 +786,12 @@ class lineageTree(object):
                         p = None
                     self.predecessor.setdefault(c, []).append(p)
                     self.successor.setdefault(p, []).append(c)
-                    self.edges += [(p, c)]
-                    self.time_edges.setdefault(t-1, []).append((p, c))
+                    self.edges.add((p, c))
+                    self.time_edges.setdefault(t-1, set()).append((p, c))
             self.max_id = unique_id
 
-
-
     def read_tgmm_xml(self, file_format, tb, te, z_mult=1., mask=None):
-        ''' Reads a lineage tree from TGMM xml output.
+        """ Reads a lineage tree from TGMM xml output.
             Args:
                 file_format: string, path to the xmls location.
                         it should be written as follow:
@@ -799,13 +803,12 @@ class lineageTree(object):
                 te: int, last time point to read
                 z_mult: float, aspect ratio
                 mask: SpatialImage, binary image that specify the region to read
-        '''
+        """
         self.time_nodes = {}
         self.time_edges = {}
         unique_id = 0
-        self.nodes = []
-        self.edges = []
-        self.roots = []
+        self.nodes = set()
+        self.edges = set()
         self.successor = {}
         self.predecessor = {}
         self.pos = {}
@@ -814,7 +817,6 @@ class lineageTree(object):
         self.mother_not_found = []
         self.ind_cells = {}
         self.svIdx = {}
-        self.is_root = {}
         self.lin = {}
         self.C_lin = {}
         self.coeffs = {}
@@ -826,8 +828,8 @@ class lineageTree(object):
                 print()
             tree = ET.parse(file_format.format(t=t))
             root = tree.getroot()
-            self.time_nodes[t] = []
-            self.time_edges[t] = []
+            self.time_nodes[t] = set()
+            self.time_edges[t] = set()
             for it in root:
                 if not '-1.#IND' in it.attrib['m'] and not 'nan' in it.attrib['m']:
                     M_id, pos, cell_id, svIdx, lin_id = (int(it.attrib['parent']),
@@ -849,17 +851,14 @@ class lineageTree(object):
                                 M = self.time_id[(t-1, M_id)]
                                 self.successor.setdefault(M, []).append(C)
                                 self.predecessor.setdefault(C, []).append(M)
-                                self.edges.append((M, C))
-                                self.time_edges[t].append((M, C))
-                                self.is_root[C] = False
+                                self.edges.add((M, C))
+                                self.time_edges[t].add((M, C))
                             else:
                                 if M_id != -1:
                                     self.mother_not_found.append(C)
-                                self.roots.append(C)
-                                self.is_root[C] = True
                             self.pos[C] = pos
-                            self.nodes.append(C)
-                            self.time_nodes[t].append(C)
+                            self.nodes.add(C)
+                            self.time_nodes[t].add(C)
                             self.time_id[(t, cell_id)] = C
                             self.time[C] = t
                             self.svIdx[C] = svIdx
@@ -880,36 +879,36 @@ class lineageTree(object):
         self.max_id = unique_id - 1
 
     def read_from_mamut_xml(self, path):
-        ''' Read a lineage tree from a MaMuT xml.
+        """ Read a lineage tree from a MaMuT xml.
             Args:
                 path: string, path to the MaMut xml
-        '''
+        """
         tree = ET.parse(path)
         Model = tree.getroot()[0]
         FeatureDeclarations, AllSpots, AllTracks, FilteredTracks = list(Model)
 
         self.time_nodes = {}
         self.time_edges = {}
-        self.nodes = []
+        self.nodes = set()
         self.pos = {}
         self.time = {}
         self.node_name = {}
         for frame in AllSpots:
             t = int(frame.attrib['frame'])
-            self.time_nodes[t] = []
+            self.time_nodes[t] = set()
             for cell in frame:
                 cell_id, n, x, y, z = (int(cell.attrib['ID']),
                                        cell.attrib['name'],
                                        float(cell.attrib['POSITION_X']),
                                        float(cell.attrib['POSITION_Y']),
                                        float(cell.attrib['POSITION_Z']))
-                self.time_nodes[t].append(cell_id)
-                self.nodes.append(cell_id)
+                self.time_nodes[t].add(cell_id)
+                self.nodes.add(cell_id)
                 self.pos[cell_id] = np.array([x, y, z])
                 self.time[cell_id] = t
                 self.node_name[cell_id] = n
 
-        self.edges = []
+        self.edges = set()
         self.roots = []
         tracks = {}
         self.successor = {}
@@ -929,12 +928,12 @@ class lineageTree(object):
                     self.track_name[s] = t_name
                     self.track_name[t] = t_name
                     tracks[t_id].append((s, t))
-                    self.edges.append((s, t))
+                    self.edges.add((s, t))
         self.t_b = min(self.time_nodes.keys())
         self.t_e = max(self.time_nodes.keys())
 
     def to_binary(self, fname, starting_points=None):
-        ''' Writes the lineage tree (a forest) as a binary structure
+        """ Writes the lineage tree (a forest) as a binary structure
             (assuming it is a binary tree, it would not work for *n*ary tree with 2 < *n*).
             The binary file is composed of 3 sequences of numbers and
             a header specifying the size of each of these sequences.
@@ -952,7 +951,7 @@ class lineageTree(object):
                 starting_points: [int, ], list of the roots to be written.
                         If None, all roots are written
                         Default: None
-        '''
+        """
         if starting_points is None:
             starting_points = [c for c in self.successor.keys() if self.predecessor.get(c, []) == []]
         number_sequence = [-1]
@@ -993,13 +992,13 @@ class lineageTree(object):
 
 
     def read_from_binary(self, fname, reverse_time=False):
-        ''' Reads a binary lineageTree file name.
+        """ Reads a binary lineageTree file name.
             Format description:
                 see self.to_binary
             Args:
                 fname: string, path to the binary file
                 reverse_time: bool, not used
-        '''
+        """
         q_size = struct.calcsize('q')
         H_size = struct.calcsize('H')
         d_size = struct.calcsize('d')
@@ -1028,12 +1027,11 @@ class lineageTree(object):
         i = 0
         done = False
         if max(number_sequence[::2]) == -1:
-            # number_sequence = number_sequence[1::2]
             tmp = number_sequence[1::2]
             if len(tmp)*3 == len(pos_sequence) == len(time_sequence)*3:
                 time = dict(list(zip(tmp, time_sequence)))
                 for c, t in time.items():
-                    time_nodes.setdefault(t, []).append(c)
+                    time_nodes.setdefault(t, set()).add(c)
                 pos = dict(list(zip(tmp, np.reshape(pos_sequence, (len_time, 3)))))
                 is_root = {c:True for c in tmp}
                 nodes = tmp
@@ -1041,18 +1039,12 @@ class lineageTree(object):
         shown = set()
         while i < len(number_sequence) and not done:#, c in enumerate(number_sequence[:-1]):
             c = number_sequence[i]
-            # if (1000.*i)//len(number_sequence)%10==0 and not (1000.*i)//len(number_sequence) in shown:
-            #     shown.add((1000.*i)//len(number_sequence))
-            #     sys.stdout.write('\b'*(4))
-            #     sys.stdout.flush()
-            #     sys.stdout.write("%03d"%((100*i)//len(number_sequence))+"%")#(100*i)//len(number_sequence)
-            #     sys.stdout.flush()
             if c == -1:
                 if waiting_list != []:
                     prev_mother = waiting_list.pop()
                     successor[prev_mother].insert(0, number_sequence[i+1])
                     edges.append((prev_mother, number_sequence[i+1]))
-                    time_edges.setdefault(t, []).append((prev_mother, number_sequence[i+1]))
+                    time_edges.setdefault(t, set()).add((prev_mother, number_sequence[i+1]))
                     is_root[number_sequence[i+1]] = False
                     t = time[prev_mother] + 1
                 else:
@@ -1062,25 +1054,25 @@ class lineageTree(object):
             elif c == -2:
                 successor[waiting_list[-1]] = [number_sequence[i+1]]
                 edges.append((waiting_list[-1], number_sequence[i+1]))
-                time_edges.setdefault(t, []).append((waiting_list[-1], number_sequence[i+1]))
+                time_edges.setdefault(t, set()).add((waiting_list[-1], number_sequence[i+1]))
                 is_root[number_sequence[i+1]] = False
                 pos[waiting_list[-1]] = pos_sequence[:3]
                 pos_sequence = pos_sequence[3:]
                 nodes.append(waiting_list[-1])
                 time[waiting_list[-1]] = t
-                time_nodes.setdefault(t, []).append(waiting_list[-1])
+                time_nodes.setdefault(t, set()).add(waiting_list[-1])
                 t += 1
 
             elif number_sequence[i+1] >= 0:
                 successor[c] = [number_sequence[i+1]]
                 edges.append((c, number_sequence[i+1]))
-                time_edges.setdefault(t, []).append((c, number_sequence[i+1]))
+                time_edges.setdefault(t, set()).add((c, number_sequence[i+1]))
                 is_root[number_sequence[i+1]] = False
                 pos[c] = pos_sequence[:3]
                 pos_sequence = pos_sequence[3:]
                 nodes.append(c)
                 time[c] = t
-                time_nodes.setdefault(t, []).append(c)
+                time_nodes.setdefault(t, set()).add(c)
                 t += 1
 
             elif number_sequence[i+1] == -2:
@@ -1091,14 +1083,14 @@ class lineageTree(object):
                 pos_sequence = pos_sequence[3:]
                 nodes.append(c)
                 time[c] = t
-                time_nodes.setdefault(t, []).append(c)
+                time_nodes.setdefault(t, set()).add(c)
                 t += 1
                 i += 1
                 if waiting_list != []:
                     prev_mother = waiting_list.pop()
                     successor[prev_mother].insert(0, number_sequence[i+1])
                     edges.append((prev_mother, number_sequence[i+1]))
-                    time_edges.setdefault(t, []).append((prev_mother, number_sequence[i+1]))
+                    time_edges.setdefault(t, set()).add((prev_mother, number_sequence[i+1]))
                     if i+1<len(number_sequence):
                         is_root[number_sequence[i+1]] = False
                     t = time[prev_mother] + 1
@@ -1110,7 +1102,6 @@ class lineageTree(object):
             i += 1
 
         predecessor = {vi: [k] for k, v in successor.items() for vi in v}
-        print('100%')
 
         self.successor = successor
         self.predecessor = predecessor
@@ -1118,24 +1109,24 @@ class lineageTree(object):
         self.time_nodes = time_nodes
         self.time_edges = time_edges
         self.pos = pos
-        self.nodes = nodes
-        self.edges = edges
+        self.nodes = set(nodes)
+        self.edges = set(edges)
         self.t_b = min(time_nodes.keys())
         self.t_e = max(time_nodes.keys())
         self.is_root = is_root
         self.max_id = max(self.nodes)
 
     def get_idx3d(self, t):
-        ''' Get a 3d kdtree for the dataset at time *t*
+        """ Get a 3d kdtree for the dataset at time *t*
             The  kdtree is stored in `self.kdtrees[t]`
             Args:
-                t: int, time
+                t (int): time
             Returns:
-                idx3d: kdtree, the built kdtree
-                to_check_self: the correspondancy list:
+                kdtree: the built kdtree
+                [int, ]: the correspondancy list:
                     If the query in the kdtree gives you the value i,
                     then it corresponds to the id in the tree to_check_self[i]
-        '''
+        """
         to_check_self = self.time_nodes[t]
         if t not in self.kdtrees:
             data_corres = {}
@@ -1147,15 +1138,18 @@ class lineageTree(object):
             self.kdtrees[t] = idx3d
         else:
             idx3d = self.kdtrees[t]
-        return idx3d, to_check_self
+        return idx3d, np.array(to_check_self)
 
     def get_gabriel_graph(self, t):
-        ''' Build the Gabriel graph of the given graph for time point *t*
-            The Garbiel graph is then stored in self.Gabriel_graph.
+        """ Build the Gabriel graph of the given graph for time point `t`
+            The Garbiel graph is then stored in self.Gabriel_graph and returned
             *WARNING: the graph is not recomputed if already computed. even if nodes were added*.
             Args:
-                t: int, time
-        '''
+                t (int): time
+            Returns:
+                {int: set([int, ])}: a dictionary that maps a node to
+                    the set of its neighbors
+        """
         if not hasattr(self, 'Gabriel_graph'):
             self.Gabriel_graph = {}
 
@@ -1186,33 +1180,20 @@ class lineageTree(object):
                             for i in delaunay_graph[e1].intersection(delaunay_graph[ni])]):
                         Gabriel_graph.setdefault(data_corres[e1], set()).add(data_corres[ni])
                         Gabriel_graph.setdefault(data_corres[ni], set()).add(data_corres[e1])
-            # for e1, ni in delaunay_graph.iteritems():
-            #     ni = list(ni)
-            #     pos_e1 = data[e1]
-            #     distances = np.array([self._dist_v(pos_e1, data[e2]) for e2 in ni])
-            #     sorted_neighbs = list(np.array(ni)[np.argsort(distances)])
-            #     tmp_pt = sorted_neighbs.pop(0)
-            #     while not tmp_pt is None and len(idx3d.query_ball_point((data[tmp_pt] + pos_e1)/2., (self._dist_v(pos_e1, data[tmp_pt])/2)-10**-3))<=2:
-            #         Gabriel_graph.setdefault(nodes[e1], set()).add(nodes[tmp_pt])
-            #         Gabriel_graph.setdefault(nodes[tmp_pt], set()).add(nodes[e1])
-            #         if sorted_neighbs != []:
-            #             tmp_pt = sorted_neighbs.pop(0)
-            #         else:
-            #             tmp_pt = None
 
             self.Gabriel_graph[t] = Gabriel_graph
 
         return self.Gabriel_graph[t]
 
     def get_predecessors(self, x, depth=None):
-        ''' Computes the predecessors of the node *x* up to
+        """ Computes the predecessors of the node *x* up to
             *depth* predecessors. The ordered list of ids is returned
             Args:
-                x: int, id of the node to compute
-                depth: int, maximum number of predecessors to return
+                x (int): id of the node to compute
+                depth (int): maximum number of predecessors to return
             Returns:
-                cycle: [int, ], list of ids, the last id is *x*
-        '''
+                [int, ]: list of ids, the last id is *x*
+        """
         cycle = [x]
         acc = 0
         while (len(self.successor.get(self.predecessor.get(cycle[0], [-1])[0], [])) == 1
@@ -1222,14 +1203,14 @@ class lineageTree(object):
         return cycle
 
     def get_successors(self, x, depth=None):
-        ''' Computes the successors of the node *x* up to
+        """ Computes the successors of the node *x* up to
             *depth* successors. The ordered list of ids is returned
             Args:
-                x: int, id of the node to compute
-                depth: int, maximum number of predecessors to return
+                x (int): id of the node to compute
+                depth (int): maximum number of predecessors to return
             Returns:
-                cycle: [int, ], list of ids, the first id is *x*
-        '''
+                [int, ]: list of ids, the first id is *x*
+        """
         cycle = [x]
         acc = 0
         while (len(self.successor.get(cycle[-1], [])) == 1
@@ -1239,85 +1220,106 @@ class lineageTree(object):
         return cycle
 
     def get_cycle(self, x, depth=None, depth_pred=None, depth_succ=None):
-        ''' Computes the predecessors and successors of the node *x* up to
+        """ Computes the predecessors and successors of the node *x* up to
             *depth_pred* predecessors plus *depth_succ* successors.
             If the value *depth* is provided and not None,
             *depth_pred* and *depth_succ* are overwrited by *depth*.
             The ordered list of ids is returned
             Args:
-                x: int, id of the node to compute
-                depth: int, maximum number of predecessors and successor to return
-                depth_pred: int, maximum number of predecessors to return
-                depth_succ: int, maximum number of successors to return
+                x (int): id of the node to compute
+                depth (int): maximum number of predecessors and successor to return
+                depth_pred (int): maximum number of predecessors to return
+                depth_succ (int): maximum number of successors to return
             Returns:
-                cycle: [int, ], list of ids
-        '''
+                [int, ]: list of ids
+        """
         if depth is not None:
             depth_pred = depth_succ = depth
         return (self.get_predecessors(x, depth_pred)[:-1] + self.get_successors(x, depth_succ))
 
-    def compute_spatial_density(self, t_b=0, t_e=200, n_size=10):
-        ''' Computes the average distance between the *n_size* closest object for a set of time points
-            The results is stored in self.spatial_density
+    def get_sub_tree(self, x, preorder=False):
+        """ Computes the list of cells from the subtree spawned by *x*
+            The default output order is breadth first traversal.
+            Unless preorder is `True` in that case the order is
+            Depth first traversal preordered
             Args:
-                t_b: int, starting time to look at
-                t_e: int, ending time to look at
-                n_size: int, number of neighbors to look at
-        '''
-        time_range = [t for t in list(self.time_nodes.keys()) if t_b <= t <= t_e]
-        for t in time_range:
-            Cs = self.time_nodes[t]
-            data_corres = {}
-            data = []
-            for i, C in enumerate(Cs):
-                data.append(tuple(self.pos[C]))
-                data_corres[i] = C
-            if t not in self.kdtrees:
-                idx3d = KDTree(data)
+                x (int): id of root node
+                preorder (bool): if True the output is preorder DFT
+            Returns:
+                ([int, ...]): the ordered list of node ids
+        """
+        to_do = [x]
+        sub_trec = []
+        while 0<len(to_do):
+            curr = to_do.pop(0)
+            succ = lT.successor.get(curr, [])
+            if preorder:
+                to_do = succ + to_do
             else:
-                idx3d = self.kdtrees[t]
-            distances, indices = idx3d.query(data, n_size)
-            self.spatial_density.update(dict(list(zip(Cs, np.mean(distances[:, 1:], axis=1)))))
+                to_do += succ
+            sub_tree += [curr]
+        return sub_tree
+
+    def compute_spatial_density(self, t_b=None, t_e=None, th=50):
+        """ Computes the spatial density of cells between `t_b` and `t_e`.
+            The spatial density is computed as follow:
+            $\frac{\#cell}{4/3*\pi*th^3}$
+            The results is stored in self.spatial_density is returned
+            Args:
+                t_b (int): starting time to look at, default first time point
+                t_e (int): ending time to look at, default last time point
+                th (float): size of the neighbourhood
+            Returns:
+                {int: float}: dictionary that maps a cell id to its spatial density
+        """
+        s_vol = 4/3.*np.pi*th**3
+        time_range = set(range(t_b, t_e+1)).intersection(lT.time_nodes)
+        for t in time_range:
+            idx3d, nodes = self.get_idx3d(t)
+            nb_ni = [(len(ni)-1)/s_vol for ni in idx3d.query_ball_tree(idx3d, th)]
+            self.spatial_density.update(dict(zip(nodes, nb_ni)))
+        return self.spatial_density
 
     def compute_spatial_edges(self, th=50):
-        ''' Innefitiently computes the connection between cells at a given distance
-            Writes the output in self.spatial_edges
+        """ Computes the neighbors at a distance `th`
+            Writes the output in the attribute `th_edge`
+            and returns it
             Args:
-                th: float, distance to consider neighbors
-        '''
-        self.spatial_edges=[]
+                th (float): distance to consider neighbors
+            Returns:
+                {int: set([int, ...])}: dictionary that maps
+                    a cell id to its neighbors at a distance `th`
+        """
+        self.th_edges = {}
         for t, Cs in self.time_nodes.items():
-            nodes_tmp, pos_tmp = list(zip(*[(C, C.pos) for C in Cs]))
-            nodes_tmp = np.array(nodes_tmp)
-            distances = spatial.distance.squareform(spatial.distance.pdist(pos_tmp))
-            nodes_to_match = np.where((0<distances) & (distances<th))
-            to_link = list(zip(nodes_tmp[nodes_to_match[0]], nodes_tmp[nodes_to_match[1]]))
-            self.spatial_edges.extend(to_link)
-            for C1, C2 in to_link:
-                C1.N.append(C2)
+            idx3d, nodes = self.get_idx3d(t)
+            neighbs = idx3d.query_ball_tree(idx3d, th)
+            out = dict(zip(nodes, [set(nodes[ni]) for ni in neighbs]))
+            self.th_edges.update({k:v.difference([k]) for k, v in out.items()})
 
     def __init__(self, file_format=None, tb=None, te=None, z_mult=1., mask=None,
-                 MaMuT=False, celegans=False, ASTEC=False, csv=False,
-                 link=True, delim=',', eigen=False):
-        ''' Main library to build tree graph representation of TGMM and SVF data
-            It can read TGMM xml outputs, MaMuT files and binary files (see to_binary and read_from_binary)
+                 file_type='', delim=',', eigen=False):
+        """ Main library to build tree graph representation of lineage tree data
+            It can read TGMM, ASTEC, SVF, MaMuT and TrackMate outputs,
             Args:
-                file_format: string, either: - path format to the TGMM xml
-                                             - path to the MaMuT file
+                file_format (string): either - path format to TGMM xmls
+                                             - path to the MaMuT xml
                                              - path to the binary file
-                tb: int, first time point (necessary for TGMM xmls only)
-                te: int, last time point (necessary for TGMM xmls only)
-                z_mult: float, z aspect ratio if necessary (usually only for TGMM xmls)
-                mask: SpatialImage, binary image that specify the region to read (for TGMM xmls only)
-                MaMuT: boolean, to specify that a MaMuT file is read
-        '''
+                tb (int): first time point (necessary for TGMM xmls only)
+                te (int): last time point (necessary for TGMM xmls only)
+                z_mult (float): z aspect ratio if necessary (usually only for TGMM xmls)
+                mask (SpatialImage): binary image that specify the region to read (for TGMM xmls only)
+                file_type (str): type of input file. Accepts:
+                    'TGMM, 'ASTEC', MaMuT', 'TrackMate', 'csv', 'celegans', 'binary'
+                    default is 'binary'
+        """
         self.time_nodes = {}
         self.time_edges = {}
         self.max_id = -1
         self.next_id = []
-        self.nodes = []
-        self.edges = []
-        self.roots = []
+        self.nodes = set()
+        self.edges = set()
+        self.roots = set()
         self.successor = {}
         self.predecessor = {}
         self.pos = {}
@@ -1326,17 +1328,18 @@ class lineageTree(object):
         self.kdtrees = {}
         self.spatial_density = {}
         self.progeny = {}
-        if not (file_format is None or tb is None or te is None or MaMuT):
+        file_type = file_type.lower()
+        if file_type == 'tgmm':
             self.read_tgmm_xml(file_format, tb, te, z_mult=z_mult, mask = mask)
             self.t_b = tb
             self.t_e = te
-        elif not (file_format is None) and MaMuT:
+        if file_type == 'mamut' or file_type == 'trackmate':
             self.read_from_mamut_xml(file_format)
-        elif not (file_format is None) and celegans:
+        if file_type == 'celegans':
             self.read_from_txt_for_celegans(file_format)
-        elif not (file_format is None) and ASTEC:
+        if file_type == 'astec':
             self.read_from_ASTEC(file_format, eigen)
-        elif not (file_format is None) and csv:
+        if file_type == 'csv':
             self.read_from_csv(file_format, z_mult, link=link, delim=delim)
-        elif not (file_format is None):
+        elif file_format is not None:
             self.read_from_binary(file_format)
