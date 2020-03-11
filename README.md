@@ -24,11 +24,11 @@ and one can then load lineage trees the following way:
 
 For ASTEC data:
 ```python
-lT = lineageTree('path/to/ASTEC.pkl', ASTEC=True)
+lT = lineageTree('path/to/ASTEC.pkl', file_type='ASTEC')
 ```
 or
 ```python
-lT = lineageTree('path/to/ASTEC.xml', ASTEC=True)
+lT = lineageTree('path/to/ASTEC.xml', file_type='ASTEC')
 ```
 
 For SVF:
@@ -38,17 +38,17 @@ lT = lineageTree('path/to/SVF.bin')
 
 For MaMuT:
 ```python
-lT = lineageTree('path/to/MaMuT.xml', MaMuT=True)
+lT = lineageTree('path/to/MaMuT.xml', file_type='MaMuT')
 ```
 
 For TrackMate:
 ```python
-lT = lineageTree('path/to/MaMuT.xml', TrackMate=True)
+lT = lineageTree('path/to/MaMuT.xml', file_type='TrackMate')
 ```
 
 For TGMM:
 ```python
-lT = lineageTree('path/to/single_time_file{t:04d}.xml', tb=0, te=500)
+lT = lineageTree('path/to/single_time_file{t:04d}.xml', tb=0, te=500, file_type='TGMM')
 ```
 
 ## Dependencies
