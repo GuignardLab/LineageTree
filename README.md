@@ -59,7 +59,7 @@ Some dependecies are requiered:
   	- svgwrite if svg output is needed
     
 ## Quick install
-To quickly install the script so it can be call from the terminal and install too the common dependecies one can run
+To quickly install the library together with its dependencies one can run:
 ```shell
 pip install .
 ```
