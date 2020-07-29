@@ -15,7 +15,7 @@ from itertools import combinations
 from numbers import Number
 import struct
 import sys
-from scipy.distance import cdist
+from scipy.spatial.distance import cdist
 
 class lineageTree(object):
 
