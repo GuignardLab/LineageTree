@@ -1268,13 +1268,14 @@ class lineageTree(object):
             Returns:
                 ([[int, ...], ...]): list of lists containing track cell ids
         """
-        self.all_tracks = []
-        to_do = set(self.nodes)
-        while len(to_do) != 0:
-            current = to_do.pop()
-            track = self.get_cycle(current)
-            self.all_tracks += [track]
-            to_do -= set(track)
+        if not hasattr(self, 'all_tracks'):
+            self.all_tracks = []
+            to_do = set(self.nodes)
+            while len(to_do) != 0:
+                current = to_do.pop()
+                track = self.get_cycle(current)
+                self.all_tracks += [track]
+                to_do -= set(track)
         return self.all_tracks
 
     def get_sub_tree(self, x, preorder=False):
