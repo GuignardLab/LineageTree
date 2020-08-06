@@ -1261,6 +1261,22 @@ class lineageTree(object):
             depth_pred = depth_succ = depth
         return (self.get_predecessors(x, depth_pred)[:-1] + self.get_successors(x, depth_succ))
 
+    def get_all_tracks(self):
+        """ Computes all the tracks of a given lineage tree,
+            stores it in *self.all_tracks* and returns it.
+
+            Returns:
+                ([[int, ...], ...]): list of lists containing track cell ids
+        """
+        self.all_tracks = []
+        to_do = set(self.nodes)
+        while len(to_do) != 0:
+            current = to_do.pop()
+            track = self.get_cycle(current)
+            self.all_tracks += [track]
+            to_do -= set(track)
+        return self.all_tracks
+
     def get_sub_tree(self, x, preorder=False):
         """ Computes the list of cells from the subtree spawned by *x*
             The default output order is breadth first traversal.
