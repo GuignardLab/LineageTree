@@ -926,6 +926,14 @@ class lineageTree(object):
                 self.pos[cell_id] = np.array([x, y, z])
                 self.time[cell_id] = t
                 self.node_name[cell_id] = n
+                if 'TISSUE_NAME' in cell.attrib:
+                    if not hasattr(self, 'fate'):
+                        self.fate = {}
+                    self.fate[cell_id] = cell.attrib['TISSUE_NAME']
+                if 'TISSUE_TYPE' in cell.attrib:
+                    if not hasattr(self, 'fate_nb'):
+                        self.fate_nb = {}
+                    self.fate_nb[cell_id] = eval(cell.attrib['TISSUE_TYPE'])
 
         self.edges = set()
         self.roots = []
