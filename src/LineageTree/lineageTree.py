@@ -1391,6 +1391,11 @@ class lineageTree(object):
             Returns:
                 float: the dynamic time warping distance between the two tracks
         """
+        from scipy.sparse import
+        pos_t1 = [self.pos[ti] for ti in t1]
+        pos_t2 = [self.pos[ti] for ti in t2]
+        distance_matrix = np.zeros((len(t1), len(t2))) + np.inf
+
         c = distance.cdist(exp_data, num_data, metric=metric, **kwargs)
 
         d = np.zeros(c.shape)
@@ -1448,6 +1453,6 @@ class lineageTree(object):
         elif file_type == 'astec':
             self.read_from_ASTEC(file_format, eigen)
         elif file_type == 'csv':
-            self.read_from_csv(file_format, z_mult, link=link, delim=delim)
+            self.read_from_csv(file_format, z_mult, link=1, delim=delim)
         elif file_format is not None:
             self.read_from_binary(file_format)
