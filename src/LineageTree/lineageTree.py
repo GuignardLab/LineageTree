@@ -394,13 +394,13 @@ class lineageTree(object):
         f.write("(tlp \"2.0\"\n")
         f.write("(nodes ")
 
-
-        if spatial.lower()=='gg' and hasattr(self, 'Gabriel_graph'):
-            s_edges = spatial_adjlist_to_set(self.Gabriel_graph)
-        elif spatial.lower()=='kn' and hasattr(self, 'kn_graph'):
-            s_edges = spatial_adjlist_to_set(self.kn_graph)
-        elif spatial.lower()=='ball' and hasattr(self, 'th_edges'):
-            s_edges = spatial_adjlist_to_set(self.th_edges)
+        if spatial:
+            if spatial.lower()=='gg' and hasattr(self, 'Gabriel_graph'):
+                s_edges = spatial_adjlist_to_set(self.Gabriel_graph)
+            elif spatial.lower()=='kn' and hasattr(self, 'kn_graph'):
+                s_edges = spatial_adjlist_to_set(self.kn_graph)
+            elif spatial.lower()=='ball' and hasattr(self, 'th_edges'):
+                s_edges = spatial_adjlist_to_set(self.th_edges)
 
         if not nodes_to_use:
             if t_max!=np.inf or -1<t_min:
@@ -806,7 +806,71 @@ class lineageTree(object):
                     self.predecessor.setdefault(c, []).append(p)
                     self.successor.setdefault(p, []).append(c)
                     self.edges.add((p, c))
-                    self.time_edges.setdefault(t-1, set()).append((p, c))
+                    self.time_edges.setdefault(t-1, set()).add((p, c))
+            self.max_id = unique_id
+
+    def read_from_txt_for_celegans_CAO(self, file,
+                                       reorder=False,
+                                       raw_size=None,
+                                       shape=None):
+        implicit_l_t = {
+            'AB': 'P0',
+            'P1': 'P0',
+            'EMS': 'P1',
+            'P2': 'P1',
+            'MS': 'EMS',
+            'E': 'EMS',
+            'C': 'P2',
+            'P3': 'P2',
+            'D': 'P3',
+            'P4': 'P3',
+            'Z2': 'P4',
+            'Z3': 'P4'
+        }
+        split_line = lambda line: (line.split()[0], eval(line.split()[1]),
+                                   eval(line.split()[2]), eval(line.split()[3]),
+                                   eval(line.split()[4]))
+        with open(file, 'r') as f:
+            raw = f.readlines()[1:]
+            f.close()
+        self.name = {}
+
+        unique_id = 0
+        for name, t, z, x, y in map(split_line, raw):
+            self.name[unique_id] = name
+            position = np.array([x, y, z], dtype = np.float)
+            self.time_nodes.setdefault(t, set()).add(unique_id)
+            self.nodes.add(unique_id)
+            if reorder:
+                flip = lambda x: np.array([x[0], x[1], raw_size[2] - x[2]])
+                adjust = lambda x: (shape/raw_size * flip(x))[[1, 0, 2]]
+                self.pos[unique_id] = adjust(position)
+            else:
+                self.pos[unique_id] = position
+            self.time[unique_id] = t
+            unique_id += 1
+
+        self.t_b = min(self.time_nodes)
+        self.t_e = max(self.time_nodes)
+
+        for t, cells in self.time_nodes.items():
+            if t != self.t_b:
+                prev_cells = self.time_nodes[t-1]
+                name_to_id = {self.name[c]: c for c in prev_cells}
+                for c in cells:
+                    if self.name[c] in name_to_id:
+                        p = name_to_id[self.name[c]]
+                    elif self.name[c][:-1] in name_to_id:
+                        p = name_to_id[self.name[c][:-1]]
+                    elif implicit_l_t.get(self.name[c]) in name_to_id:
+                        p = name_to_id[implicit_l_t.get(self.name[c])]
+                    else:
+                        print('error, cell %s has no predecessors'%self.name[c])
+                        p = None
+                    self.predecessor.setdefault(c, []).append(p)
+                    self.successor.setdefault(p, []).append(c)
+                    self.edges.add((p, c))
+                    self.time_edges.setdefault(t-1, set()).add((p, c))
             self.max_id = unique_id
 
     def read_tgmm_xml(self, file_format, tb, te, z_mult=1.):
@@ -1419,7 +1483,8 @@ class lineageTree(object):
     #     return d[-1, -1], d
 
     def __init__(self, file_format=None, tb=None, te=None, z_mult=1.,
-                 file_type='', delim=',', eigen=False):
+                 file_type='', delim=',', eigen=False,
+                 shape=None, raw_size=None, reorder=False):
         """ Main library to build tree graph representation of lineage tree data
             It can read TGMM, ASTEC, SVF, MaMuT and TrackMate outputs.
 
@@ -1458,6 +1523,9 @@ class lineageTree(object):
             self.read_from_mamut_xml(file_format)
         elif file_type == 'celegans':
             self.read_from_txt_for_celegans(file_format)
+        elif file_type == 'celegans_cao':
+            self.read_from_txt_for_celegans_CAO(file_format, reorder=reorder,
+                                                shape=shape, raw_size=raw_size)
         elif file_type == 'astec':
             self.read_from_ASTEC(file_format, eigen)
         elif file_type == 'csv':
