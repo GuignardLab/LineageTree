@@ -967,7 +967,9 @@ class lineageTree(object):
                 path (str): path to the MaMut xml
         """
         tree = ET.parse(path)
-        Model = tree.getroot()[0]
+        for elem in tree.getroot():
+            if elem.tag == 'Model':
+                Model = elem
         FeatureDeclarations, AllSpots, AllTracks, FilteredTracks = list(Model)
 
         self.time_nodes = {}
@@ -1366,7 +1368,7 @@ class lineageTree(object):
         sub_trec = []
         while 0<len(to_do):
             curr = to_do.pop(0)
-            succ = lT.successor.get(curr, [])
+            succ = self.successor.get(curr, [])
             if preorder:
                 to_do = succ + to_do
             else:
@@ -1388,7 +1390,7 @@ class lineageTree(object):
                 {int, float}: dictionary that maps a cell id to its spatial density
         """
         s_vol = 4/3.*np.pi*th**3
-        time_range = set(range(t_b, t_e+1)).intersection(lT.time_nodes)
+        time_range = set(range(t_b, t_e+1)).intersection(self.time_nodes)
         for t in time_range:
             idx3d, nodes = self.get_idx3d(t)
             nb_ni = [(len(ni)-1)/s_vol for ni in idx3d.query_ball_tree(idx3d, th)]
