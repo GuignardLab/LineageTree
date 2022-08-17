@@ -277,13 +277,17 @@ class lineageTree(object):
             vert_space_factor: float, the vertical position of a node is its time. `vert_space_factor` is a
                                multiplier to space more or less nodes in time
             horizontal_space: float, space between two consecutive nodes
-            node_size: func, a function that maps a node id to a `float` value that will determine the
+            node_size: func | str, a function that maps a node id to a `float` value that will determine the
                        radius of the node. The default function return the constant value `vertical_space_factor/2.1`
+                       If a string is given instead and it is a property of the tree,
+                       the the size will be mapped according to the property
             stroke_width: func, a function that maps a node id to a `float` value that will determine the
                           width of the daughter edge.  The default function return the constant value `vertical_space_factor/2.1`
             factor: float, scaling factor for nodes positions, default 1
-            node_color: func, a function that maps a node id to a triplet between 0 and 255.
-                        The triplet will determine the color of the node.
+            node_color: func | str, a function that maps a node id to a triplet between 0 and 255.
+                        The triplet will determine the color of the node. If a string is given instead and it is a property
+                        of the tree, the the color will be mapped according to the property
+            node_color_map: str, the name of the colormap to use to color the nodes
             stroke_color: func, a function that maps a node id to a triplet between 0 and 255.
                           The triplet will determine the color of the stroke of the inward edge.
             positions: {int: [float, float], ...}, dictionary that maps a node id to a 2D position.
