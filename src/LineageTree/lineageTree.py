@@ -319,7 +319,6 @@ class lineageTree(object):
         elif isinstance(node_color, str) and node_color in self.__dict__:
             if isinstance(node_color_map, str):
                 from matplotlib import colormaps
-
                 if node_color_map in colormaps:
                     node_color_map = colormaps[node_color_map]
                 else:

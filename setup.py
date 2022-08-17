@@ -28,4 +28,7 @@ setup(
     package_dir= { '' : 'src' },
 
     install_requires=['scipy', 'numpy'],
+    extras_require={
+        'svg': ['svgwrite', 'matplotlib']
+    }
 )
