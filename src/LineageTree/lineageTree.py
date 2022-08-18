@@ -331,6 +331,18 @@ class lineageTree(object):
         coloring_edges = not stroke_color is None
         if not coloring_edges:
             stroke_color = lambda x: (0, 0, 0)
+        elif isinstance(stroke_color, str) and stroke_color in self.__dict__:
+            if isinstance(node_color_map, str):
+                from matplotlib import colormaps
+                if node_color_map in colormaps:
+                    node_color_map = colormaps[node_color_map]
+                else:
+                    node_color_map = colormaps["viridis"]
+            values = np.array([self[stroke_color][c] for c in self.nodes])
+            normed_vals = normalize_values(values, self.nodes, 1, 0, 1)
+            stroke_color = lambda x: [
+                k * 255 for k in node_color_map(normed_vals(x))[:-1]
+            ]
         prev_x = 0
         self.vert_space_factor = vert_space_factor
         if order_key is not None:
