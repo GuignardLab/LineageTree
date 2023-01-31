@@ -8,3 +8,4 @@ __pycache__/
 *.pyc
 lineageTree2Treex.py
 .DS_Store
+dist
