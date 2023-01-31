@@ -8,14 +8,12 @@ from scipy.spatial import cKDTree as KDTree
 import os
 import xml.etree.ElementTree as ET
 from copy import copy
-from scipy import spatial
 import numpy as np
 from multiprocessing import Pool
 from scipy.spatial import Delaunay
 from itertools import combinations
 from numbers import Number
 import struct
-import sys
 from scipy.spatial.distance import cdist
 
 
@@ -54,14 +52,12 @@ class lineageTree(object):
         if not succ is None and not reverse:
             self.successor.setdefault(succ, []).append(C_next)
             self.predecessor.setdefault(C_next, []).append(succ)
-            self.edges.append((succ, C_next))
+            self.edges.add((succ, C_next))
         elif not succ is None:
             self.predecessor.setdefault(succ, []).append(C_next)
             self.successor.setdefault(C_next, []).append(succ)
-            self.edges.append((C_next, succ))
-        else:
-            self.roots.append(C_next)
-        self.nodes.append(C_next)
+            self.edges.add((C_next, succ))
+        self.nodes.add(C_next)
         self.pos[C_next] = pos
         self.progeny[C_next] = 0
         self.time[C_next] = t
@@ -106,10 +102,17 @@ class lineageTree(object):
             c1 (int): id of the first node to fuse
             c2 (int): id of the second node to fuse
         """
-        e_to_remove, succ, s_to_remove, pred, p_to_remove, c2_pos = self.remove_node(c2)
+        (
+            e_to_remove,
+            succ,
+            s_to_remove,
+            pred,
+            p_to_remove,
+            c2_pos,
+        ) = self.remove_node(c2)
         for e in e_to_remove:
             new_e = [c1] + [other_c for other_c in e if e != c2]
-            self.edges.append(new_e)
+            self.edges.add(new_e)
 
         self.successor.setdefault(c1, []).extend(succ)
         self.predecessor.setdefault(c1, []).extend(pred)
@@ -217,13 +220,21 @@ class lineageTree(object):
             f.write("@6\n")
             for i, C in enumerate(self.to_take_time[t]):
                 f.write(
-                    "%d\n" % (int(manual_labels.get(C, default_label) != default_label))
+                    "%d\n"
+                    % (
+                        int(
+                            manual_labels.get(C, default_label)
+                            != default_label
+                        )
+                    )
                 )
                 f.write("%d\n" % (0))
 
             f.write("@7\n")
             for i, C in enumerate(self.to_take_time[t]):
-                f.write("%f\n" % (np.linalg.norm(points_v[C][0] - points_v[C][-1])))
+                f.write(
+                    "%f\n" % (np.linalg.norm(points_v[C][0] - points_v[C][-1]))
+                )
 
             f.write("@8\n")
             for i, C in enumerate(self.to_take_time[t]):
@@ -244,7 +255,9 @@ class lineageTree(object):
         if c in done:
             return done[c][0]
         else:
-            P = np.mean([self._get_height(di, done) for di in self.successor[c]])
+            P = np.mean(
+                [self._get_height(di, done) for di in self.successor[c]]
+            )
             done[c] = [P, self.vert_space_factor * self.time[c]]
             return P
 
@@ -319,6 +332,7 @@ class lineageTree(object):
         elif isinstance(node_color, str) and node_color in self.__dict__:
             if isinstance(node_color_map, str):
                 from matplotlib import colormaps
+
                 if node_color_map in colormaps:
                     node_color_map = colormaps[node_color_map]
                 else:
@@ -334,6 +348,7 @@ class lineageTree(object):
         elif isinstance(stroke_color, str) and stroke_color in self.__dict__:
             if isinstance(node_color_map, str):
                 from matplotlib import colormaps
+
                 if node_color_map in colormaps:
                     node_color_map = colormaps[node_color_map]
                 else:
@@ -440,6 +455,37 @@ class lineageTree(object):
                     )
         dwg.save()
 
+    def to_treex(self):
+        """Convert the lineage tree into a treex file."""
+        from treex.tree import Tree
+
+        # id_to_tree = {id: Tree() for id in self.nodes}
+
+        # for id_m, ids_d in self.successor.items():
+        #     for id_d in ids_d:
+        #         id_to_tree[id_m].add_subtree(id_to_tree[id_d])
+        # roots = [id_to_tree[id] for id in set(self.successor).difference(self.predecessor)]
+
+        roots = set(self.successor).difference(self.predecessor)
+        id_to_tree = {}
+        root_trees = []
+        for r in roots:
+            to_do = [r]
+            while 0 < len(to_do):
+                curr = to_do.pop()
+                cycle = self.get_cycle(curr)
+                lifetime = len(cycle)
+                cell = Tree()
+                cell.add_attribute_to_id("len", lifetime)
+                if cycle[0] in self.predecessor:
+                    id_to_tree[self.predecessor[cycle[0]][0]].add_subtree(cell)
+                else:
+                    root_trees.append(cell)
+                id_to_tree[cycle[-1]] = cell
+                to_do.extend(self.successor.get(cycle[-1], []))
+
+        return roots
+
     def to_tlp(
         self,
         fname,
@@ -499,7 +545,7 @@ class lineageTree(object):
 
         def spatial_adjlist_to_set(s_g):
             s_edges = set()
-            for t, gg in self.s_g.items():
+            for t, gg in s_g.items():
                 for c, N in gg.items():
                     s_edges.update([tuple(sorted([c, ni])) for ni in N])
             return s_edges
@@ -518,15 +564,21 @@ class lineageTree(object):
 
         if not nodes_to_use:
             if t_max != np.inf or -1 < t_min:
-                nodes_to_use = [n for n in self.nodes if t_min < self.time[n] <= t_max]
+                nodes_to_use = [
+                    n for n in self.nodes if t_min < self.time[n] <= t_max
+                ]
                 edges_to_use = []
                 if temporal:
                     edges_to_use += [
-                        e for e in self.edges if t_min < self.time[e[0]] < t_max
+                        e
+                        for e in self.edges
+                        if t_min < self.time[e[0]] < t_max
                     ]
                 if spatial:
                     edges_to_use += [
-                        (e, ei) for e in s_edges if t_min < self.time[e[0]] < t_max
+                        (e, ei)
+                        for e in s_edges
+                        if t_min < self.time[e[0]] < t_max
                     ]
             else:
                 nodes_to_use = list(self.nodes)
@@ -544,7 +596,9 @@ class lineageTree(object):
                     if e[0] in nodes_to_use and e[1] in nodes_to_use
                 ]
             if spatial:
-                edges_to_use += [e for e in s_edges if t_min < self.time[e[0]] < t_max]
+                edges_to_use += [
+                    e for e in s_edges if t_min < self.time[e[0]] < t_max
+                ]
         nodes_to_use = set(nodes_to_use)
         if Names:
             names_which_matter = {
@@ -560,7 +614,12 @@ class lineageTree(object):
             tmp_names = {}
             for k, v in node_properties[Names][0].items():
                 if (
-                    len(self.successor.get(self.predecessor.get(k, [-1])[0], [])) != 1
+                    len(
+                        self.successor.get(
+                            self.predecessor.get(k, [-1])[0], []
+                        )
+                    )
+                    != 1
                     or self.time[k] == t_min + 1
                 ):
                     tmp_names[k] = v
@@ -577,12 +636,16 @@ class lineageTree(object):
         nodes_to_use.update(order_on_nodes)
 
         for i, e in enumerate(edges_to_use):
-            f.write("(edge " + str(i) + " " + str(e[0]) + " " + str(e[1]) + ")\n")
+            f.write(
+                "(edge " + str(i) + " " + str(e[0]) + " " + str(e[1]) + ")\n"
+            )
 
         f.write('(property 0 int "time"\n')
         f.write('\t(default "0" "0")\n')
         for n in nodes_to_use:
-            f.write("\t(node " + str(n) + str(' "') + str(self.time[n]) + '")\n')
+            f.write(
+                "\t(node " + str(n) + str(' "') + str(self.time[n]) + '")\n'
+            )
         f.write(")\n")
 
         if write_layout:
@@ -590,7 +653,11 @@ class lineageTree(object):
             f.write('\t(default "(0, 0, 0)" "()")\n')
             for n in nodes_to_use:
                 f.write(
-                    "\t(node " + str(n) + str(' "') + str(tuple(self.pos[n])) + '")\n'
+                    "\t(node "
+                    + str(n)
+                    + str(' "')
+                    + str(tuple(self.pos[n]))
+                    + '")\n'
                 )
             f.write(")\n")
             f.write('(property 0 double "distance"\n')
@@ -598,7 +665,9 @@ class lineageTree(object):
             for i, e in enumerate(edges_to_use):
                 d_tmp = np.linalg.norm(self.pos[e[0]] - self.pos[e[1]])
                 f.write("\t(edge " + str(i) + str(' "') + str(d_tmp) + '")\n')
-                f.write("\t(node " + str(e[0]) + str(' "') + str(d_tmp) + '")\n')
+                f.write(
+                    "\t(node " + str(e[0]) + str(' "') + str(d_tmp) + '")\n'
+                )
             f.write(")\n")
 
         if node_properties:
@@ -649,7 +718,9 @@ class lineageTree(object):
         lines_to_int = []
         corres = {}
         for l in lines:
-            lines_to_int += [[convert_for_csv(v.strip()) for v in l.split(delim)]]
+            lines_to_int += [
+                [convert_for_csv(v.strip()) for v in l.split(delim)]
+            ]
         lines_to_int = np.array(lines_to_int)
         if link == 2:
             lines_to_int = lines_to_int[np.argsort(lines_to_int[:, 0])]
@@ -663,6 +734,7 @@ class lineageTree(object):
             else:
                 id_, t, z, y, x, dz, dy, dx = l
                 pred = None
+                lin_id = None
             t = int(t)
             pos = np.array([x, y, z])
             C = unique_id
@@ -745,9 +817,16 @@ class lineageTree(object):
             },
             "barycenter": {
                 "output_key": "cell_barycenter",
-                "input_keys": ["cell_barycenter", "Barycenters", "barycenters"],
+                "input_keys": [
+                    "cell_barycenter",
+                    "Barycenters",
+                    "barycenters",
+                ],
             },
-            "fate": {"output_key": "cell_fate", "input_keys": ["cell_fate", "Fate"]},
+            "fate": {
+                "output_key": "cell_fate",
+                "input_keys": ["cell_fate", "Fate"],
+            },
             "fate2": {
                 "output_key": "cell_fate_2",
                 "input_keys": ["cell_fate_2", "Fate2"],
@@ -780,11 +859,19 @@ class lineageTree(object):
             },
             "contact": {
                 "output_key": "cell_contact_surface",
-                "input_keys": ["cell_contact_surface", "cell_cell_contact_information"],
+                "input_keys": [
+                    "cell_contact_surface",
+                    "cell_cell_contact_information",
+                ],
             },
             "history": {
                 "output_key": "cell_history",
-                "input_keys": ["cell_history", "Cells history", "cell_life", "life"],
+                "input_keys": [
+                    "cell_history",
+                    "Cells history",
+                    "cell_life",
+                    "life",
+                ],
             },
             "principal-vector": {
                 "output_key": "cell_principal_vectors",
@@ -798,7 +885,10 @@ class lineageTree(object):
                 "output_key": "problematic_cells",
                 "input_keys": ["problematic_cells"],
             },
-            "unknown": {"output_key": "unknown_key", "input_keys": ["unknown_key"]},
+            "unknown": {
+                "output_key": "unknown_key",
+                "input_keys": ["unknown_key"],
+            },
         }
         if os.path.splitext(file_path)[-1] == ".xml":
             tmp_data = self._read_from_ASTEC_xml(file_path)
@@ -881,7 +971,7 @@ class lineageTree(object):
             self.lT2pkl[unique_id] = n
             self.pkl2lT[n] = unique_id
             self.name[unique_id] = names.get(n, "")
-            position = np.array(pos.get(n, [0, 0, 0]), dtype=np.float)
+            position = np.array(pos.get(n, [0, 0, 0]), dtype=float)
             self.time_nodes.setdefault(t, set()).add(unique_id)
             self.nodes.add(unique_id)
             self.pos[unique_id] = position
@@ -914,7 +1004,9 @@ class lineageTree(object):
                 self.successor[new_id] = [
                     id_corres[ni] for ni in lt[n] if ni in id_corres
                 ]
-                self.edges.update([(new_id, ni) for ni in self.successor[new_id]])
+                self.edges.update(
+                    [(new_id, ni) for ni in self.successor[new_id]]
+                )
                 for ni in self.successor[new_id]:
                     # self.edges += [(new_id, ni)]
                     self.time_edges.setdefault(t - 1, set()).add((new_id, ni))
@@ -995,7 +1087,7 @@ class lineageTree(object):
         for l in raw:
             t = int(l.split("\t")[0])
             self.name[unique_id] = l.split("\t")[1]
-            position = np.array(l.split("\t")[2:5], dtype=np.float)
+            position = np.array(l.split("\t")[2:5], dtype=float)
             self.time_nodes.setdefault(t, set()).add(unique_id)
             self.nodes.add(unique_id)
             self.pos[unique_id] = position
@@ -1017,7 +1109,9 @@ class lineageTree(object):
                     elif implicit_l_t.get(self.name[c]) in name_to_id:
                         p = name_to_id[implicit_l_t.get(self.name[c])]
                     else:
-                        print("error, cell %s has no predecessors" % self.name[c])
+                        print(
+                            "error, cell %s has no predecessors" % self.name[c]
+                        )
                         p = None
                     self.predecessor.setdefault(c, []).append(p)
                     self.successor.setdefault(p, []).append(c)
@@ -1084,7 +1178,9 @@ class lineageTree(object):
                     elif implicit_l_t.get(self.name[c]) in name_to_id:
                         p = name_to_id[implicit_l_t.get(self.name[c])]
                     else:
-                        print("error, cell %s has no predecessors" % self.name[c])
+                        print(
+                            "error, cell %s has no predecessors" % self.name[c]
+                        )
                         p = None
                     self.predecessor.setdefault(c, []).append(p)
                     self.successor.setdefault(p, []).append(c)
@@ -1133,18 +1229,33 @@ class lineageTree(object):
             self.time_nodes[t] = set()
             self.time_edges[t] = set()
             for it in root:
-                if not "-1.#IND" in it.attrib["m"] and not "nan" in it.attrib["m"]:
+                if (
+                    not "-1.#IND" in it.attrib["m"]
+                    and not "nan" in it.attrib["m"]
+                ):
                     M_id, pos, cell_id, svIdx, lin_id = (
                         int(it.attrib["parent"]),
-                        [float(v) for v in it.attrib["m"].split(" ") if v != ""],
+                        [
+                            float(v)
+                            for v in it.attrib["m"].split(" ")
+                            if v != ""
+                        ],
                         int(it.attrib["id"]),
-                        [int(v) for v in it.attrib["svIdx"].split(" ") if v != ""],
+                        [
+                            int(v)
+                            for v in it.attrib["svIdx"].split(" ")
+                            if v != ""
+                        ],
                         int(it.attrib["lineage"]),
                     )
                     try:
                         alpha, W, nu, alphaPrior = (
                             float(it.attrib["alpha"]),
-                            [float(v) for v in it.attrib["W"].split(" ") if v != ""],
+                            [
+                                float(v)
+                                for v in it.attrib["W"].split(" ")
+                                if v != ""
+                            ],
                             float(it.attrib["nu"]),
                             float(it.attrib["alphaPrior"]),
                         )
@@ -1172,7 +1283,9 @@ class lineageTree(object):
                         self.intensity[C] = max(alpha - alphaPrior, 0)
                         tmp = list(np.array(W) * nu)
                         self.W[C] = np.array(W).reshape(3, 3)
-                        self.coeffs[C] = tmp[:3] + tmp[4:6] + tmp[8:9] + list(pos)
+                        self.coeffs[C] = (
+                            tmp[:3] + tmp[4:6] + tmp[8:9] + list(pos)
+                        )
                         unique_id += 1
                     except Exception as e:
                         pass
@@ -1281,7 +1394,9 @@ class lineageTree(object):
         """
         if starting_points is None:
             starting_points = [
-                c for c in self.successor.keys() if self.predecessor.get(c, []) == []
+                c
+                for c in self.successor.keys()
+                if self.predecessor.get(c, []) == []
             ]
         number_sequence = [-1]
         pos_sequence = []
@@ -1335,9 +1450,15 @@ class lineageTree(object):
         len_tree = struct.unpack("q", f.read(q_size))[0]
         len_time = struct.unpack("q", f.read(q_size))[0]
         len_pos = struct.unpack("q", f.read(q_size))[0]
-        number_sequence = list(struct.unpack("q" * len_tree, f.read(q_size * len_tree)))
-        time_sequence = list(struct.unpack("H" * len_time, f.read(H_size * len_time)))
-        pos_sequence = np.array(struct.unpack("d" * len_pos, f.read(d_size * len_pos)))
+        number_sequence = list(
+            struct.unpack("q" * len_tree, f.read(q_size * len_tree))
+        )
+        time_sequence = list(
+            struct.unpack("H" * len_time, f.read(H_size * len_time))
+        )
+        pos_sequence = np.array(
+            struct.unpack("d" * len_pos, f.read(d_size * len_pos))
+        )
 
         f.close()
 
@@ -1360,7 +1481,9 @@ class lineageTree(object):
                 time = dict(list(zip(tmp, time_sequence)))
                 for c, t in time.items():
                     time_nodes.setdefault(t, set()).add(c)
-                pos = dict(list(zip(tmp, np.reshape(pos_sequence, (len_time, 3)))))
+                pos = dict(
+                    list(zip(tmp, np.reshape(pos_sequence, (len_time, 3))))
+                )
                 is_root = {c: True for c in tmp}
                 nodes = tmp
                 done = True
@@ -1400,7 +1523,9 @@ class lineageTree(object):
             elif number_sequence[i + 1] >= 0:
                 successor[c] = [number_sequence[i + 1]]
                 edges.append((c, number_sequence[i + 1]))
-                time_edges.setdefault(t, set()).add((c, number_sequence[i + 1]))
+                time_edges.setdefault(t, set()).add(
+                    (c, number_sequence[i + 1])
+                )
                 is_root[number_sequence[i + 1]] = False
                 pos[c] = pos_sequence[:3]
                 pos_sequence = pos_sequence[3:]
@@ -1517,7 +1642,9 @@ class lineageTree(object):
                         [
                             np.linalg.norm((data[ni] + data[e1]) / 2 - data[i])
                             < np.linalg.norm(data[ni] - data[e1]) / 2
-                            for i in delaunay_graph[e1].intersection(delaunay_graph[ni])
+                            for i in delaunay_graph[e1].intersection(
+                                delaunay_graph[ni]
+                            )
                         ]
                     ):
                         Gabriel_graph.setdefault(data_corres[e1], set()).add(
@@ -1544,7 +1671,10 @@ class lineageTree(object):
         cycle = [x]
         acc = 0
         while (
-            len(self.successor.get(self.predecessor.get(cycle[0], [-1])[0], [])) == 1
+            len(
+                self.successor.get(self.predecessor.get(cycle[0], [-1])[0], [])
+            )
+            == 1
             and acc != depth
         ):
             cycle.insert(0, self.predecessor[cycle[0]][0])
@@ -1619,7 +1749,7 @@ class lineageTree(object):
             ([int, ...]): the ordered list of node ids
         """
         to_do = [x]
-        sub_trec = []
+        sub_tree = []
         while 0 < len(to_do):
             curr = to_do.pop(0)
             succ = self.successor.get(curr, [])
@@ -1647,7 +1777,10 @@ class lineageTree(object):
         time_range = set(range(t_b, t_e + 1)).intersection(self.time_nodes)
         for t in time_range:
             idx3d, nodes = self.get_idx3d(t)
-            nb_ni = [(len(ni) - 1) / s_vol for ni in idx3d.query_ball_tree(idx3d, th)]
+            nb_ni = [
+                (len(ni) - 1) / s_vol
+                for ni in idx3d.query_ball_tree(idx3d, th)
+            ]
             self.spatial_density.update(dict(zip(nodes, nb_ni)))
         return self.spatial_density
 
@@ -1688,7 +1821,9 @@ class lineageTree(object):
             idx3d, nodes = self.get_idx3d(t)
             neighbs = idx3d.query_ball_tree(idx3d, th)
             out = dict(zip(nodes, [set(nodes[ni]) for ni in neighbs]))
-            self.th_edges.update({k: v.difference([k]) for k, v in out.items()})
+            self.th_edges.update(
+                {k: v.difference([k]) for k, v in out.items()}
+            )
         return self.th_edges
 
     # def DTW(self, t1, t2, max_w=None, start_delay=None, end_delay=None,

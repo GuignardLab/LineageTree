@@ -3,3 +3,8 @@ __pycache__/
 *.svg
 *.xml
 *.png
+.pytest_cache/
+.vscode
+*.pyc
+lineageTree2Treex.py
+.DS_Store
