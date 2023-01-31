@@ -27,6 +27,6 @@ setup(
     ],
     packages=["LineageTree"],
     package_dir={"": "src"},
-    install_requires=["scipy", "numpy"],
+    install_requires=["scipy>=1.9", "numpy>=1.23"],
     extras_require={"svg": ["svgwrite", "matplotlib"]},
 )

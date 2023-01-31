@@ -9,3 +9,4 @@ __pycache__/
 lineageTree2Treex.py
 .DS_Store
 dist
+build
