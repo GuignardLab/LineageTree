@@ -13,7 +13,7 @@ with open(path.join(here, "README.md")) as f:
 
 setup(
     name="LineageTree",
-    version="1.0.1",
+    version="1.0.2",
     description="Lineage tree structure for TGMM algorithm",
     long_description=long_description,
     long_description_content_type='text/markdown',
