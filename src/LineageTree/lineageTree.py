@@ -963,11 +963,13 @@ class lineageTree(object):
 
         unique_id = 0
         id_corres = {}
+        self.image_label = {}
         for n in nodes:
             if n in prob_cells:
                 self.prob_cells.add(unique_id)
             # if n in pos and n in names:
             t = n // 10**4
+            self.image_label[unique_id] = n % 10**4
             self.lT2pkl[unique_id] = n
             self.pkl2lT[n] = unique_id
             self.name[unique_id] = names.get(n, "")
