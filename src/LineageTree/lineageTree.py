@@ -455,34 +455,26 @@ class lineageTree(object):
                     )
         dwg.save()
 
-    def to_treex(self):
+    def to_treex(self, sampling=1):
         """Convert the lineage tree into a treex file."""
         from treex.tree import Tree
 
-        # id_to_tree = {id: Tree() for id in self.nodes}
-
-        # for id_m, ids_d in self.successor.items():
-        #     for id_d in ids_d:
-        #         id_to_tree[id_m].add_subtree(id_to_tree[id_d])
-        # roots = [id_to_tree[id] for id in set(self.successor).difference(self.predecessor)]
-
-        roots = set(self.successor).difference(self.predecessor)
-        id_to_tree = {}
-        root_trees = []
-        for r in roots:
-            to_do = [r]
-            while 0 < len(to_do):
-                curr = to_do.pop()
-                cycle = self.get_cycle(curr)
-                lifetime = len(cycle)
-                cell = Tree()
-                cell.add_attribute_to_id("len", lifetime)
-                if cycle[0] in self.predecessor:
-                    id_to_tree[self.predecessor[cycle[0]][0]].add_subtree(cell)
-                else:
-                    root_trees.append(cell)
-                id_to_tree[cycle[-1]] = cell
-                to_do.extend(self.successor.get(cycle[-1], []))
+        id_to_tree = {id: Tree() for id in self.nodes}
+        times_to_consider = [t for t, n in self.time_nodes.items() if 0<len(n)]
+        times_to_consider = times_to_consider[::sampling]
+        for t in times_to_consider:
+            for id_mother in self.time_nodes[t]:
+                ids_daughters = self.successor.get(id_mother, [])
+                new_ids_daughters = ids_daughters.copy()
+                for _ in range(sampling-1):
+                    tmp = []
+                    for d in new_ids_daughters:
+                        tmp.extend(self.successor.get(d, [d]))
+                    new_ids_daughters = tmp
+                for daugther in new_ids_daughters: ## For each daughter in the list of daughters
+                    id_to_tree[id_mother].add_subtree(id_to_tree[daugther]) ## Add the Treex daughter as a subtree of the Treex mother   
+        
+        roots = [id_to_tree[id] for id in set(self.successor).difference(self.predecessor)] 
 
         return roots
 
