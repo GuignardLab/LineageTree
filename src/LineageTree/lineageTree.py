@@ -15,7 +15,7 @@ from itertools import combinations
 from numbers import Number
 import struct
 from scipy.spatial.distance import cdist
-
+import pickle as pkl
 
 class lineageTree(object):
     def get_next_id(self):
@@ -568,7 +568,7 @@ class lineageTree(object):
                     ]
                 if spatial:
                     edges_to_use += [
-                        (e, ei)
+                        e
                         for e in s_edges
                         if t_min < self.time[e[0]] < t_max
                     ]
@@ -1041,8 +1041,7 @@ class lineageTree(object):
         return dictionary
 
     def _read_from_ASTEC_pkl(self, file_path, eigen=False):
-        import pickle as pkl
-
+        
         with open(file_path, "rb") as f:
             tmp_data = pkl.load(f, encoding="latin1")
             f.close()
@@ -1571,6 +1570,20 @@ class lineageTree(object):
         self.is_root = is_root
         self.max_id = max(self.nodes)
 
+    def write(self, fname):
+        if os.path.splitext(fname)[-1] != '.lT':
+            os.path.extsep.join(fname, 'lT')
+        with open(fname, 'bw') as f:
+            pkl.dump(self, f)
+            f.close()
+
+    @classmethod
+    def load(clf, fname):
+        with open(fname, 'br') as f:
+            lT = pkl.load(f)
+            f.close()
+        return lT
+
     def get_idx3d(self, t):
         """Get a 3d kdtree for the dataset at time *t* .
         The  kdtree is stored in *self.kdtrees[t]*
@@ -1930,5 +1943,7 @@ class lineageTree(object):
             self.read_from_ASTEC(file_format, eigen)
         elif file_type == "csv":
             self.read_from_csv(file_format, z_mult, link=1, delim=delim)
+        elif file_format is not None and '.lT' in file_format:
+            self.read(file_format)
         elif file_format is not None:
             self.read_from_binary(file_format)
