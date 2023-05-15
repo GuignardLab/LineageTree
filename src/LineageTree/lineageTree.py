@@ -278,6 +278,10 @@ class lineageTree(object):
         positions=None,
         node_color_map=None,
     ):
+        
+
+        ##### remove background? default True background value? default 1
+
         """Writes the lineage tree to an SVG file.
         Node and edges coloring and size can be provided.
 
@@ -317,6 +321,7 @@ class lineageTree(object):
 
         if roots is None:
             roots = list(set(self.successor).difference(self.predecessor))
+            roots = [cell for cell in roots if self.image_label[cell] != 1]
 
         if node_size is None:
             node_size = lambda x: vert_space_factor / 2.1
@@ -760,224 +765,131 @@ class lineageTree(object):
             eigen (bool): whether or not to read the eigen values, default False
         """
         self._astec_keydictionary = {
-            "lineage": {
-                "output_key": "cell_lineage",
-                "input_keys": [
+            "cell_lineage":[
                     "lineage_tree",
                     "lin_tree",
                     "Lineage tree",
                     "cell_lineage",
                 ],
-            },
-            "h_min": {
-                "output_key": "cell_h_min",
-                "input_keys": ["cell_h_min", "h_mins_information"],
-            },
-            "volume": {
-                "output_key": "cell_volume",
-                "input_keys": [
+            "cell_h_min" : ["cell_h_min", "h_mins_information"],
+            "cell_volume": [
                     "cell_volume",
                     "volumes_information",
                     "volumes information",
-                    "vol",
-                ],
-            },
-            "surface": {
-                "output_key": "cell_surface",
-                "input_keys": ["cell_surface", "cell surface"],
-            },
-            "compactness": {
-                "output_key": "cell_compactness",
-                "input_keys": [
+                    "vol"],
+            "cell_surface": ["cell_surface", "cell surface"],
+            "cell_compactness": [
                     "cell_compactness",
                     "Cell Compactness",
                     "compacity",
-                    "cell_sphericity",
-                ],
-            },
-            "sigma": {
-                "output_key": "cell_sigma",
-                "input_keys": ["cell_sigma", "sigmas_information", "sigmas"],
-            },
-            "label_in_time": {
-                "output_key": "cell_labels_in_time",
-                "input_keys": [
+                    "cell_sphericity"],
+            "cell_sigma": ["cell_sigma", "sigmas_information", "sigmas"],
+             "cell_labels_in_time": [
                     "cell_labels_in_time",
                     "Cells labels in time",
                     "time_labels",
                 ],
-            },
-            "barycenter": {
-                "output_key": "cell_barycenter",
-                "input_keys": [
+            "cell_barycenter": [
                     "cell_barycenter",
                     "Barycenters",
-                    "barycenters",
-                ],
-            },
-            "fate": {
-                "output_key": "cell_fate",
-                "input_keys": ["cell_fate", "Fate"],
-            },
-            "fate2": {
-                "output_key": "cell_fate_2",
-                "input_keys": ["cell_fate_2", "Fate2"],
-            },
-            "fate3": {
-                "output_key": "cell_fate_3",
-                "input_keys": ["cell_fate_3", "Fate3"],
-            },
-            "fate4": {
-                "output_key": "cell_fate_4",
-                "input_keys": ["cell_fate_4", "Fate4"],
-            },
-            "all-cells": {
-                "output_key": "all_cells",
-                "input_keys": [
-                    "all_cells",
+                    "barycenters"],
+            "cell_fate": ["cell_fate", "Fate"],
+            "cell_fate_2": ["cell_fate_2", "Fate2"],
+            "cell_fate_3": ["cell_fate_3", "Fate3"],
+            "cell_fate_4": ["cell_fate_4", "Fate4"],
+            "all_cells": ["all_cells",
                     "All Cells",
                     "All_Cells",
                     "all cells",
-                    "tot_cells",
-                ],
-            },
-            "principal-value": {
-                "output_key": "cell_principal_values",
-                "input_keys": ["cell_principal_values", "Principal values"],
-            },
-            "name": {
-                "output_key": "cell_name",
-                "input_keys": ["cell_name", "Names", "names", "cell_names"],
-            },
-            "contact": {
-                "output_key": "cell_contact_surface",
-                "input_keys": [
+                    "tot_cells"],
+            "cell_principal_values": ["cell_principal_values", "Principal values"],
+            "cell_name": ["cell_name", "Names", "names", "cell_names"],
+            "cell_contact_surface": [
                     "cell_contact_surface",
                     "cell_cell_contact_information",
                 ],
-            },
-            "history": {
-                "output_key": "cell_history",
-                "input_keys": [
+            "cell_history": [
                     "cell_history",
                     "Cells history",
                     "cell_life",
                     "life",
                 ],
-            },
-            "principal-vector": {
-                "output_key": "cell_principal_vectors",
-                "input_keys": ["cell_principal_vectors", "Principal vectors"],
-            },
-            "name-score": {
-                "output_key": "cell_naming_score",
-                "input_keys": ["cell_naming_score", "Scores", "scores"],
-            },
-            "problems": {
-                "output_key": "problematic_cells",
-                "input_keys": ["problematic_cells"],
-            },
-            "unknown": {
-                "output_key": "unknown_key",
-                "input_keys": ["unknown_key"],
-            },
-        }
+            "cell_principal_vectors": ["cell_principal_vectors", "Principal vectors"],
+            "cell_naming_score": ["cell_naming_score", "Scores", "scores"],
+            "problematic_cells": ["problematic_cells"],
+            "unknown_key": ["unknown_key"]
+            }
+        
         if os.path.splitext(file_path)[-1] == ".xml":
             tmp_data = self._read_from_ASTEC_xml(file_path)
         else:
             tmp_data = self._read_from_ASTEC_pkl(file_path, eigen)
 
+        #make sure these are all named liked they are in tmp_data (or change dictionary above)
         self.name = {}
         self.volume = {}
         self.lT2pkl = {}
         self.pkl2lT = {}
         self.contact = {}
         self.prob_cells = set()
-        if "cell_lineage" in tmp_data:
-            lt = tmp_data["cell_lineage"]
-        elif "lin_tree" in tmp_data:
-            lt = tmp_data["lin_tree"]
-        else:
-            lt = tmp_data["Lineage tree"]
-        if "cell_name" in tmp_data:
-            names = tmp_data["cell_name"]
-        elif "Names" in tmp_data:
-            names = tmp_data["Names"]
-        else:
-            names = {}
-        if "cell_fate" in tmp_data:
-            self.fates = {}
-            fates = tmp_data["cell_fate"]
-            do_fates = True
-        else:
-            do_fates = False
-        if "cell_volume" in tmp_data:
-            do_volumes = True
-            volumes = tmp_data["cell_volume"]
-        elif "volume_information" in tmp_data:
-            do_volumes = True
-            volumes = tmp_data["volume_information"]
-        else:
-            do_volumes = False
+        self.image_label = {}
+        
+        lt = tmp_data["cell_lineage"]
+
+        # if "cell_name" in tmp_data:
+        #     names = tmp_data["cell_name"]
+        # else:
+        #     names = {}
+
         if "cell_contact_surface" in tmp_data:
             do_surf = True
             surfaces = tmp_data["cell_contact_surface"]
         else:
             do_surf = False
-        if "problematic_cells" in tmp_data:
-            prob_cells = set(tmp_data["problematic_cells"])
-        else:
-            prob_cells = set()
-        if eigen:
-            self.eigen_vectors = {}
-            self.eigen_values = {}
-            eig_val = tmp_data["cell_principal_values"]
-            eig_vec = tmp_data["cell_principal_vectors"]
+
+        # if "problematic_cells" in tmp_data:
+        #     prob_cells = set(tmp_data["problematic_cells"])
+        # else:
+        #     prob_cells = set()
+        # if eigen:
+        #     self.eigen_vectors = {}
+        #     self.eigen_values = {}
+        #     eig_val = tmp_data["cell_principal_values"]
+        #     eig_vec = tmp_data["cell_principal_vectors"]
 
         inv = {vi: [c] for c, v in lt.items() for vi in v}
         nodes = set(lt).union(inv)
-        if "cell_barycenter" in tmp_data:
-            pos = tmp_data["cell_barycenter"]
-        elif "Barycenters" in tmp_data:
-            pos = tmp_data["Barycenters"]
-        else:
-            pos = dict(
-                list(
-                    zip(
-                        nodes,
-                        [
-                            [0.0, 0.0, 0.0],
-                        ]
-                        * len(nodes),
-                    )
-                )
-            )
+        # if "cell_barycenter" in tmp_data:
+        #     pos = tmp_data["cell_barycenter"]
+        # else:
+        #     pos = dict(list(zip(nodes,[[0.0, 0.0, 0.0]]* len(nodes))))
 
         unique_id = 0
-        id_corres = {}
-        self.image_label = {}
+        #id_corres = {}
+        
         for n in nodes:
-            if n in prob_cells:
-                self.prob_cells.add(unique_id)
+            # if n in prob_cells:
+            #     self.prob_cells.add(unique_id)
             # if n in pos and n in names:
             t = n // 10**4
             self.image_label[unique_id] = n % 10**4
             self.lT2pkl[unique_id] = n
             self.pkl2lT[n] = unique_id
-            self.name[unique_id] = names.get(n, "")
-            position = np.array(pos.get(n, [0, 0, 0]), dtype=float)
+            #self.name[unique_id] = names.get(n, "")
+            #position = np.array(pos.get(n, [0, 0, 0]), dtype=float)
             self.time_nodes.setdefault(t, set()).add(unique_id)
             self.nodes.add(unique_id)
-            self.pos[unique_id] = position
+            #self.pos[unique_id] = position
             self.time[unique_id] = t
-            id_corres[n] = unique_id
-            if do_volumes:
-                self.volume[unique_id] = volumes.get(n, 0.0)
-            if eigen:
-                self.eigen_vectors[unique_id] = eig_vec.get(n)
-                self.eigen_values[unique_id] = eig_val.get(n)
-            if do_fates:
-                self.fates[unique_id] = fates.get(n, "")
+            #id_corres[n] = unique_id
+            if "cell_volume" in tmp_data:
+                self.volume[unique_id] = tmp_data["cell_volume"].get(n, 0.0)
+            # if eigen:
+            #     self.eigen_vectors[unique_id] = eig_vec.get(n)
+            #     self.eigen_values[unique_id] = eig_val.get(n)
+            if "cell_fate" in tmp_data:
+                self.fates = {}
+                self.fates[unique_id] = tmp_data["cell_fate"].get(n, "")
 
             unique_id += 1
         # self.contact = {self.pkl2lT[c]: v for c, v in surfaces.iteritems() if c in self.pkl2lT}
@@ -990,13 +902,13 @@ class lineageTree(object):
                         if n % 10**4 == 1 or n in self.pkl2lT
                     }
 
-        for n, new_id in id_corres.items():
+        for n, new_id in self.pkl2lT.items():
             # new_id = id_corres[n]
             if n in inv:
-                self.predecessor[new_id] = [id_corres[ni] for ni in inv[n]]
+                self.predecessor[new_id] = [self.pkl2lT[ni] for ni in inv[n]]
             if n in lt:
                 self.successor[new_id] = [
-                    id_corres[ni] for ni in lt[n] if ni in id_corres
+                    self.pkl2lT[ni] for ni in lt[n] if ni in self.pkl2lT
                 ]
                 self.edges.update(
                     [(new_id, ni) for ni in self.successor[new_id]]
@@ -1008,6 +920,29 @@ class lineageTree(object):
         self.t_b = min(self.time_nodes)
         self.t_e = max(self.time_nodes)
         self.max_id = unique_id
+
+        #do this in the end of the process, skip lineage tree and whatever is stored already
+        for prop_name, prop_values in tmp_data.items():
+            if hasattr(self, prop_name):
+                continue
+            else:
+                if isinstance(prop_values, dict):
+                    dictionary = {self.pkl2lT[k]: v for k, v in prop_values.items()}
+                    #is it a regular dictionary or a dictionary with dictionaries inside?
+                    for key, value in dictionary.items():
+                        if isinstance(value, dict):
+                            #rename all ids from old to new
+                            dictionary[key] = {self.pkl2lT[k]: v for k, v in value}    
+                    self.__dict__[prop_name] = dictionary
+                #is any of this necessary? Or does it mean it anyways does not contain information about the id and a simple else: is enough?
+                elif prop_values.isinstance(set) or prop_values.isinstance(list) or prop_values.isinstance(np.array):
+                    self.__dict__[prop_name] = prop_values
+
+            #what else could it be?
+        
+        #add a list of all available properties
+
+
 
     def _read_from_ASTEC_xml(self, file_path):
         def _set_dictionary_value(root):
@@ -1030,7 +965,7 @@ class lineageTree(object):
         dictionary = {}
 
         for k, v in self._astec_keydictionary.items():
-            if root.tag == v["output_key"]:
+            if root.tag == k:
                 dictionary[str(root.tag)] = _set_dictionary_value(root)
                 break
         else:
@@ -1047,13 +982,15 @@ class lineageTree(object):
             f.close()
         new_ref = {}
         for k, v in self._astec_keydictionary.items():
-            for key in v["input_keys"]:
-                new_ref[key] = v["output_key"]
+            for key in v:
+                new_ref[key] = k
         new_dict = {}
 
         for k, v in tmp_data.items():
             if k in new_ref:
                 new_dict[new_ref[k]] = v
+            else:
+                new_dict[k] = v
         return new_dict
 
     def read_from_txt_for_celegans(self, file):
@@ -1572,7 +1509,7 @@ class lineageTree(object):
 
     def write(self, fname):
         if os.path.splitext(fname)[-1] != '.lT':
-            os.path.extsep.join(fname, 'lT')
+            os.path.extsep(fname).join('.lT')
         with open(fname, 'bw') as f:
             pkl.dump(self, f)
             f.close()
