@@ -277,6 +277,7 @@ class lineageTree(object):
         stroke_color=None,
         positions=None,
         node_color_map=None,
+        normalize=True
     ):
         
 
@@ -304,7 +305,7 @@ class lineageTree(object):
             node_color: func | str, a function that maps a node id to a triplet between 0 and 255.
                         The triplet will determine the color of the node. If a string is given instead and it is a property
                         of the tree, the the color will be mapped according to the property
-            node_color_map: str, the name of the colormap to use to color the nodes
+            node_color_map: str | func, the name of the colormap to use to color the nodes, or a colormap function
             stroke_color: func, a function that maps a node id to a triplet between 0 and 255.
                           The triplet will determine the color of the stroke of the inward edge.
             positions: {int: [float, float], ...}, dictionary that maps a node id to a 2D position.
