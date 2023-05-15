@@ -1510,7 +1510,7 @@ class lineageTree(object):
 
     def write(self, fname):
         if os.path.splitext(fname)[-1] != '.lT':
-            os.path.extsep.join(fname, 'lT')
+            fname = os.path.extsep.join((fname, 'lT'))
         with open(fname, 'bw') as f:
             pkl.dump(self, f)
             f.close()
