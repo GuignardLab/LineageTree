@@ -15,6 +15,7 @@ from itertools import combinations
 from numbers import Number
 import struct
 from scipy.spatial.distance import cdist
+#import svgwrite
 
 
 class lineageTree(object):
@@ -261,199 +262,198 @@ class lineageTree(object):
             done[c] = [P, self.vert_space_factor * self.time[c]]
             return P
 
-    def write_to_svg(
-        self,
-        file_name,
-        roots=None,
-        draw_nodes=True,
-        draw_edges=True,
-        order_key=None,
-        vert_space_factor=0.5,
-        horizontal_space=1,
-        node_size=None,
-        stroke_width=None,
-        factor=1.0,
-        node_color=None,
-        stroke_color=None,
-        positions=None,
-        node_color_map=None,
-    ):
-        """Writes the lineage tree to an SVG file.
-        Node and edges coloring and size can be provided.
+    # def write_to_svg(
+    #     self,
+    #     file_name,
+    #     roots=None,
+    #     draw_nodes=True,
+    #     draw_edges=True,
+    #     order_key=None,
+    #     vert_space_factor=0.5,
+    #     horizontal_space=1,
+    #     node_size=None,
+    #     stroke_width=None,
+    #     factor=1.0,
+    #     node_color=None,
+    #     stroke_color=None,
+    #     positions=None,
+    #     node_color_map=None,
+    # ):
+    #     """Writes the lineage tree to an SVG file.
+    #     Node and edges coloring and size can be provided.
 
-        Args:
-            file_name: str, filesystem filename valid for `open()`
-            roots: [int, ...], list of node ids to be drawn. If `None` all the nodes will be drawn. Default `None`
-            draw_nodes: bool, wether to print the nodes or not, default `True`
-            draw_edges: bool, wether to print the edges or not, default `True`
-            order_key: function that would work for the attribute `key=` for the `sort`/`sorted` function
-            vert_space_factor: float, the vertical position of a node is its time. `vert_space_factor` is a
-                               multiplier to space more or less nodes in time
-            horizontal_space: float, space between two consecutive nodes
-            node_size: func | str, a function that maps a node id to a `float` value that will determine the
-                       radius of the node. The default function return the constant value `vertical_space_factor/2.1`
-                       If a string is given instead and it is a property of the tree,
-                       the the size will be mapped according to the property
-            stroke_width: func, a function that maps a node id to a `float` value that will determine the
-                          width of the daughter edge.  The default function return the constant value `vertical_space_factor/2.1`
-            factor: float, scaling factor for nodes positions, default 1
-            node_color: func | str, a function that maps a node id to a triplet between 0 and 255.
-                        The triplet will determine the color of the node. If a string is given instead and it is a property
-                        of the tree, the the color will be mapped according to the property
-            node_color_map: str, the name of the colormap to use to color the nodes
-            stroke_color: func, a function that maps a node id to a triplet between 0 and 255.
-                          The triplet will determine the color of the stroke of the inward edge.
-            positions: {int: [float, float], ...}, dictionary that maps a node id to a 2D position.
-                       Default `None`. If provided it will be used to position the nodes.
-        """
-        import svgwrite
+    #     Args:
+    #         file_name: str, filesystem filename valid for `open()`
+    #         roots: [int, ...], list of node ids to be drawn. If `None` all the nodes will be drawn. Default `None`
+    #         draw_nodes: bool, wether to print the nodes or not, default `True`
+    #         draw_edges: bool, wether to print the edges or not, default `True`
+    #         order_key: function that would work for the attribute `key=` for the `sort`/`sorted` function
+    #         vert_space_factor: float, the vertical position of a node is its time. `vert_space_factor` is a
+    #                            multiplier to space more or less nodes in time
+    #         horizontal_space: float, space between two consecutive nodes
+    #         node_size: func | str, a function that maps a node id to a `float` value that will determine the
+    #                    radius of the node. The default function return the constant value `vertical_space_factor/2.1`
+    #                    If a string is given instead and it is a property of the tree,
+    #                    the the size will be mapped according to the property
+    #         stroke_width: func, a function that maps a node id to a `float` value that will determine the
+    #                       width of the daughter edge.  The default function return the constant value `vertical_space_factor/2.1`
+    #         factor: float, scaling factor for nodes positions, default 1
+    #         node_color: func | str, a function that maps a node id to a triplet between 0 and 255.
+    #                     The triplet will determine the color of the node. If a string is given instead and it is a property
+    #                     of the tree, the the color will be mapped according to the property
+    #         node_color_map: str, the name of the colormap to use to color the nodes
+    #         stroke_color: func, a function that maps a node id to a triplet between 0 and 255.
+    #                       The triplet will determine the color of the stroke of the inward edge.
+    #         positions: {int: [float, float], ...}, dictionary that maps a node id to a 2D position.
+    #                    Default `None`. If provided it will be used to position the nodes.
+    #     """
 
-        def normalize_values(v, nodes, range, shift, mult):
-            min_ = np.percentile(v, 1)
-            max_ = np.percentile(v, 99)
-            values = range * ((v - min_) / (max_ - min_)) + shift
-            values_dict_nodes = dict(zip(nodes, values))
-            return lambda x: values_dict_nodes[x] * mult
+    #     def normalize_values(v, nodes, range, shift, mult):
+    #         min_ = np.percentile(v, 1)
+    #         max_ = np.percentile(v, 99)
+    #         values = range * ((v - min_) / (max_ - min_)) + shift
+    #         values_dict_nodes = dict(zip(nodes, values))
+    #         return lambda x: values_dict_nodes[x] * mult
 
-        if roots is None:
-            roots = list(set(self.successor).difference(self.predecessor))
+    #     if roots is None:
+    #         roots = list(set(self.successor).difference(self.predecessor))
 
-        if node_size is None:
-            node_size = lambda x: vert_space_factor / 2.1
-        elif isinstance(node_size, str) and node_size in self.__dict__:
-            values = np.array([self[node_size][c] for c in self.nodes])
-            node_size = normalize_values(
-                values, self.nodes, 0.5, 0.5, vert_space_factor / 2.1
-            )
-        if stroke_width is None:
-            stroke_width = lambda x: vert_space_factor / 2.2
-        if node_color is None:
-            node_color = lambda x: (0, 0, 0)
-        elif isinstance(node_color, str) and node_color in self.__dict__:
-            if isinstance(node_color_map, str):
-                from matplotlib import colormaps
+    #     if node_size is None:
+    #         node_size = lambda x: vert_space_factor / 2.1
+    #     elif isinstance(node_size, str) and node_size in self.__dict__:
+    #         values = np.array([self[node_size][c] for c in self.nodes])
+    #         node_size = normalize_values(
+    #             values, self.nodes, 0.5, 0.5, vert_space_factor / 2.1
+    #         )
+    #     if stroke_width is None:
+    #         stroke_width = lambda x: vert_space_factor / 2.2
+    #     if node_color is None:
+    #         node_color = lambda x: (0, 0, 0)
+    #     elif isinstance(node_color, str) and node_color in self.__dict__:
+    #         if isinstance(node_color_map, str):
+    #             from matplotlib import colormaps
 
-                if node_color_map in colormaps:
-                    node_color_map = colormaps[node_color_map]
-                else:
-                    node_color_map = colormaps["viridis"]
-            values = np.array([self[node_color][c] for c in self.nodes])
-            normed_vals = normalize_values(values, self.nodes, 1, 0, 1)
-            node_color = lambda x: [
-                k * 255 for k in node_color_map(normed_vals(x))[:-1]
-            ]
-        coloring_edges = not stroke_color is None
-        if not coloring_edges:
-            stroke_color = lambda x: (0, 0, 0)
-        elif isinstance(stroke_color, str) and stroke_color in self.__dict__:
-            if isinstance(node_color_map, str):
-                from matplotlib import colormaps
+    #             if node_color_map in colormaps:
+    #                 node_color_map = colormaps[node_color_map]
+    #             else:
+    #                 node_color_map = colormaps["viridis"]
+    #         values = np.array([self[node_color][c] for c in self.nodes])
+    #         normed_vals = normalize_values(values, self.nodes, 1, 0, 1)
+    #         node_color = lambda x: [
+    #             k * 255 for k in node_color_map(normed_vals(x))[:-1]
+    #         ]
+    #     coloring_edges = not stroke_color is None
+    #     if not coloring_edges:
+    #         stroke_color = lambda x: (0, 0, 0)
+    #     elif isinstance(stroke_color, str) and stroke_color in self.__dict__:
+    #         if isinstance(node_color_map, str):
+    #             from matplotlib import colormaps
 
-                if node_color_map in colormaps:
-                    node_color_map = colormaps[node_color_map]
-                else:
-                    node_color_map = colormaps["viridis"]
-            values = np.array([self[stroke_color][c] for c in self.nodes])
-            normed_vals = normalize_values(values, self.nodes, 1, 0, 1)
-            stroke_color = lambda x: [
-                k * 255 for k in node_color_map(normed_vals(x))[:-1]
-            ]
-        prev_x = 0
-        self.vert_space_factor = vert_space_factor
-        if order_key is not None:
-            roots.sort(key=order_key)
-        treated_cells = []
+    #             if node_color_map in colormaps:
+    #                 node_color_map = colormaps[node_color_map]
+    #             else:
+    #                 node_color_map = colormaps["viridis"]
+    #         values = np.array([self[stroke_color][c] for c in self.nodes])
+    #         normed_vals = normalize_values(values, self.nodes, 1, 0, 1)
+    #         stroke_color = lambda x: [
+    #             k * 255 for k in node_color_map(normed_vals(x))[:-1]
+    #         ]
+    #     prev_x = 0
+    #     self.vert_space_factor = vert_space_factor
+    #     if order_key is not None:
+    #         roots.sort(key=order_key)
+    #     treated_cells = []
 
-        pos_given = not positions is None
-        if not pos_given:
-            positions = dict(
-                zip(
-                    self.nodes,
-                    [
-                        [0.0, 0.0],
-                    ]
-                    * len(self.nodes),
-                )
-            )
-        for i, r in enumerate(roots):
-            r_leaves = []
-            to_do = [r]
-            while len(to_do) != 0:
-                curr = to_do.pop(0)
-                treated_cells += [curr]
-                if curr in self.successor:
-                    if order_key is not None:
-                        to_do += sorted(self.successor[curr], key=order_key)
-                    else:
-                        to_do += self.successor[curr]
-                else:
-                    r_leaves += [curr]
-            r_pos = {
-                l: [
-                    prev_x + horizontal_space * (1 + j),
-                    self.vert_space_factor * self.time[l],
-                ]
-                for j, l in enumerate(r_leaves)
-            }
-            self._get_height(r, r_pos)
-            prev_x = np.max(list(r_pos.values()), axis=0)[0]
-            if not pos_given:
-                positions.update(r_pos)
+    #     pos_given = not positions is None
+    #     if not pos_given:
+    #         positions = dict(
+    #             zip(
+    #                 self.nodes,
+    #                 [
+    #                     [0.0, 0.0],
+    #                 ]
+    #                 * len(self.nodes),
+    #             )
+    #         )
+    #     for i, r in enumerate(roots):
+    #         r_leaves = []
+    #         to_do = [r]
+    #         while len(to_do) != 0:
+    #             curr = to_do.pop(0)
+    #             treated_cells += [curr]
+    #             if curr in self.successor:
+    #                 if order_key is not None:
+    #                     to_do += sorted(self.successor[curr], key=order_key)
+    #                 else:
+    #                     to_do += self.successor[curr]
+    #             else:
+    #                 r_leaves += [curr]
+    #         r_pos = {
+    #             l: [
+    #                 prev_x + horizontal_space * (1 + j),
+    #                 self.vert_space_factor * self.time[l],
+    #             ]
+    #             for j, l in enumerate(r_leaves)
+    #         }
+    #         self._get_height(r, r_pos)
+    #         prev_x = np.max(list(r_pos.values()), axis=0)[0]
+    #         if not pos_given:
+    #             positions.update(r_pos)
 
-        dwg = svgwrite.Drawing(
-            file_name,
-            profile="tiny",
-            size=factor * np.max(list(positions.values()), axis=0),
-        )
-        if draw_edges and not draw_nodes and not coloring_edges:
-            to_do = set(treated_cells)
-            while 0 < len(to_do):
-                curr = to_do.pop()
-                c_cycle = self.get_cycle(curr)
-                x1, y1 = positions[c_cycle[0]]
-                x2, y2 = positions[c_cycle[-1]]
-                dwg.add(
-                    dwg.line(
-                        (factor * x1, factor * y1),
-                        (factor * x2, factor * y2),
-                        stroke=svgwrite.rgb(0, 0, 0),
-                    )
-                )
-                for si in self.successor.get(c_cycle[-1], []):
-                    x3, y3 = positions[si]
-                    dwg.add(
-                        dwg.line(
-                            (factor * x2, factor * y2),
-                            (factor * x3, factor * y3),
-                            stroke=svgwrite.rgb(0, 0, 0),
-                        )
-                    )
-                to_do.difference_update(c_cycle)
-        else:
-            for c in treated_cells:
-                x1, y1 = positions[c]
-                for si in self.successor.get(c, []):
-                    x2, y2 = positions[si]
-                    if draw_edges:
-                        dwg.add(
-                            dwg.line(
-                                (factor * x1, factor * y1),
-                                (factor * x2, factor * y2),
-                                stroke=svgwrite.rgb(*(stroke_color(si))),
-                                stroke_width=svgwrite.pt(stroke_width(si)),
-                            )
-                        )
-            for c in treated_cells:
-                x1, y1 = positions[c]
-                if draw_nodes:
-                    dwg.add(
-                        dwg.circle(
-                            (factor * x1, factor * y1),
-                            node_size(c),
-                            fill=svgwrite.rgb(*(node_color(c))),
-                        )
-                    )
-        dwg.save()
+    #     dwg = svgwrite.Drawing(
+    #         file_name,
+    #         profile="tiny",
+    #         size=factor * np.max(list(positions.values()), axis=0),
+    #     )
+    #     if draw_edges and not draw_nodes and not coloring_edges:
+    #         to_do = set(treated_cells)
+    #         while 0 < len(to_do):
+    #             curr = to_do.pop()
+    #             c_cycle = self.get_cycle(curr)
+    #             x1, y1 = positions[c_cycle[0]]
+    #             x2, y2 = positions[c_cycle[-1]]
+    #             dwg.add(
+    #                 dwg.line(
+    #                     (factor * x1, factor * y1),
+    #                     (factor * x2, factor * y2),
+    #                     stroke=svgwrite.rgb(0, 0, 0),
+    #                 )
+    #             )
+    #             for si in self.successor.get(c_cycle[-1], []):
+    #                 x3, y3 = positions[si]
+    #                 dwg.add(
+    #                     dwg.line(
+    #                         (factor * x2, factor * y2),
+    #                         (factor * x3, factor * y3),
+    #                         stroke=svgwrite.rgb(0, 0, 0),
+    #                     )
+    #                 )
+    #             to_do.difference_update(c_cycle)
+    #     else:
+    #         for c in treated_cells:
+    #             x1, y1 = positions[c]
+    #             for si in self.successor.get(c, []):
+    #                 x2, y2 = positions[si]
+    #                 if draw_edges:
+    #                     dwg.add(
+    #                         dwg.line(
+    #                             (factor * x1, factor * y1),
+    #                             (factor * x2, factor * y2),
+    #                             stroke=svgwrite.rgb(*(stroke_color(si))),
+    #                             stroke_width=svgwrite.pt(stroke_width(si)),
+    #                         )
+    #                     )
+    #         for c in treated_cells:
+    #             x1, y1 = positions[c]
+    #             if draw_nodes:
+    #                 dwg.add(
+    #                     dwg.circle(
+    #                         (factor * x1, factor * y1),
+    #                         node_size(c),
+    #                         fill=svgwrite.rgb(*(node_color(c))),
+    #                     )
+    #                 )
+    #     dwg.save()
 
     
     def to_treex(self, sampling=1,start=0,finish=10**9,many=False):
@@ -583,8 +583,8 @@ class lineageTree(object):
                         if t_min < self.time[e[0]] < t_max
                     ]
                 if spatial:
-                    edges_to_use += [
-                        (e, ei)
+                    edges_to_useei += [
+                        (e, )
                         for e in s_edges
                         if t_min < self.time[e[0]] < t_max
                     ]
