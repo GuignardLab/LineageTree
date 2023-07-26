@@ -461,12 +461,18 @@ class lineageTree(object):
                     )
         dwg.save()
 
-    def to_treexfinal(self, sampling=1,start=0,finish=10000,many=False):
+    def to_treex(self, sampling=1,start=0,finish=10000,many=True):
             """Convert the lineage tree into a treex file."""
             """ start/finish refer to first index in the new array times_to_consider"""
             from treex.tree import Tree
             start//=sampling
+            # if start<=0:
+            #     print("Bigger Start")
+            #     return False
             finish//=sampling
+            if finish-start<=0:
+                print("Bigger Finish")
+                return False
             id_to_tree = {id: Tree() for id in self.nodes}
             times_to_consider = [t for t, n in self.time_nodes.items() if 0<len(n)]
             times_to_consider = times_to_consider[::sampling]
@@ -484,8 +490,11 @@ class lineageTree(object):
                     for daugther in new_ids_daughters: ## For each daughter in the list of daughters
                         id_to_tree[id_mother].add_subtree(id_to_tree[daugther]) ## Add the Treex daughter as a subtree of the Treex mother   
             
-            roots = [id_to_tree[id] for id in set(self.time_nodes[start_time])] 
-            if many==False:
+            roots = [id_to_tree[id] for id in set(self.time_nodes[start_time])]
+            for root, ids in zip(roots,set(self.time_nodes[start_time])):
+                
+                root.add_attribute_to_id("ID",ids)
+            if not many:
                 reroot=Tree()
                 for root in roots:
                     reroot.add_subtree(root)
