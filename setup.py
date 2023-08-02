@@ -17,7 +17,7 @@ setup(
     description="Lineage tree structure for TGMM algorithm",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url="https://github.com/leoguignard/TGMMlibraries",
+    url="https://github.com/leoguignard/LineageTree",
     author="Leo Guignard",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
@@ -27,6 +27,6 @@ setup(
     ],
     packages=["LineageTree"],
     package_dir={"": "src"},
-    install_requires=["scipy>=1.9", "numpy>=1.23"],
+    install_requires=["scipy>=1.9", "numpy>=1.23", "mastodon-reader"],
     extras_require={"svg": ["svgwrite", "matplotlib"]},
 )
