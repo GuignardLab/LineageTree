@@ -1281,8 +1281,10 @@ class lineageTree(object):
             unique_id = c.name
             x, y, z = c.x, c.y, c.z
             t = c.t
-            if name:
+            if name is not None:
                 n = c[name]
+            else:
+                n = ""
             self.time_nodes.setdefault(t, set()).add(unique_id)
             self.nodes.add(unique_id)
             self.time[unique_id] = t
