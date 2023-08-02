@@ -1240,7 +1240,6 @@ class lineageTree(object):
             x, y, z = c.x, c.y, c.z
             t = c.t
             if name:
-                # print(name, c)
                 n = c[name]
             self.time_nodes.setdefault(t, set()).add(unique_id)
             self.nodes.add(unique_id)
@@ -1917,6 +1916,6 @@ class lineageTree(object):
         elif file_type == "csv":
             self.read_from_csv(file_format, z_mult, link=1, delim=delim)
         elif file_format is not None and '.lT' in file_format:
-            self.read(file_format)
+            self.load(file_format)
         elif file_format is not None:
             self.read_from_binary(file_format)

@@ -13,3 +13,4 @@ build
 test.tlp
 *.mastodon
 *.ipynb*
+*.lT
