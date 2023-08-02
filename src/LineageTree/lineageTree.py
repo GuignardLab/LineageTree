@@ -462,21 +462,22 @@ class lineageTree(object):
         dwg.save()
 
     def to_treex(self, sampling=1,start=0,finish=10000,many=True):
-            """Convert the lineage tree into a treex file."""
-            """ start/finish refer to first index in the new array times_to_consider"""
+            """
+            Convert the lineage tree into a treex file.
+            
+            start/finish refer to first index in the new array times_to_consider
+             
+            """
             from treex.tree import Tree
+            from warnings import warn
             start//=sampling
-            # if start<=0:
-            #     print("Bigger Start")
-            #     return False
             finish//=sampling
             if finish-start<=0:
-                print("Bigger Finish")
-                return False
+                    warn("Will return None, because start = finish")
+                return None
             id_to_tree = {id: Tree() for id in self.nodes}
             times_to_consider = [t for t, n in self.time_nodes.items() if 0<len(n)]
-            times_to_consider = times_to_consider[::sampling]
-            times_to_consider= times_to_consider[start:finish]
+            times_to_consider= times_to_consider[start:finish:sampling]
             start_time=times_to_consider[0]
             for t in times_to_consider:
                 for id_mother in self.time_nodes[t]:
@@ -489,16 +490,13 @@ class lineageTree(object):
                         new_ids_daughters = tmp
                     for daugther in new_ids_daughters: ## For each daughter in the list of daughters
                         id_to_tree[id_mother].add_subtree(id_to_tree[daugther]) ## Add the Treex daughter as a subtree of the Treex mother   
-            
             roots = [id_to_tree[id] for id in set(self.time_nodes[start_time])]
-            for root, ids in zip(roots,set(self.time_nodes[start_time])):
-                
+            for root, ids in zip(roots,set(self.time_nodes[start_time])): 
                 root.add_attribute_to_id("ID",ids)
             if not many:
                 reroot=Tree()
                 for root in roots:
                     reroot.add_subtree(root)
-
                 return reroot
             else: return roots
 
@@ -1301,8 +1299,11 @@ class lineageTree(object):
         self.predecessor = {}
         self.track_name = {}
         for track in AllTracks:
-            t_id = int(track.attrib["TRACK_ID"])
-            
+            if "TRACK_DURATION" in track.attrib:
+                t_id, l = int(track.attrib["TRACK_ID"]), float(
+                track.attrib["TRACK_DURATION"])
+            else:
+                t_id = int(track.attrib["TRACK_ID"])
             t_name = track.attrib["name"]
             tracks[t_id] = []
             for edge in track:
