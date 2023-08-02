@@ -10,3 +10,5 @@ lineageTree2Treex.py
 .DS_Store
 dist
 build
+test.tlp
+*.mastodon

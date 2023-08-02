@@ -1227,6 +1227,38 @@ class lineageTree(object):
                         self.ind_cells[t] = 1
         self.max_id = unique_id - 1
 
+    def read_from_mastodon(self, path, name):
+        from mastodon_reader import MastodonReader
+        mr = MastodonReader(path)
+        spots, links = mr.read_tables()
+        mr.read_tags(spots, links)
+
+        self.node_name = {}
+
+        for c in spots.iloc:
+            unique_id = c.name
+            x, y, z = c.x, c.y, c.z
+            t = c.t
+            if name:
+                # print(name, c)
+                n = c[name]
+            self.time_nodes.setdefault(t, set()).add(unique_id)
+            self.nodes.add(unique_id)
+            self.time[unique_id] = t
+            self.node_name[unique_id] = n
+            self.pos[unique_id] = np.array([x, y, z])
+
+        for e in links.iloc:
+            source = e.source_idx
+            target = e.target_idx
+            self.predecessor.setdefault(target, []).append(source)
+            self.successor.setdefault(source, []).append(target)
+            self.edges.add((source, target))
+            self.time_edges.setdefault(self.time[source], set()).add((source, target))
+        self.t_b = min(self.time_nodes.keys())
+        self.t_e = max(self.time_nodes.keys())
+        
+
     def read_from_mamut_xml(self, path):
         """Read a lineage tree from a MaMuT xml.
 
@@ -1833,6 +1865,7 @@ class lineageTree(object):
         raw_size=None,
         reorder=False,
         xml_attributes=[],
+        name=None,
     ):
         """Main library to build tree graph representation of lineage tree data
         It can read TGMM, ASTEC, SVF, MaMuT and TrackMate outputs.
@@ -1871,6 +1904,8 @@ class lineageTree(object):
             self.t_e = te
         elif file_type == "mamut" or file_type == "trackmate":
             self.read_from_mamut_xml(file_format)
+        elif file_type == "mastodon":
+            self.read_from_mastodon(file_format, name)
         elif file_type == "celegans":
             self.read_from_txt_for_celegans(file_format)
         elif file_type == "celegans_cao":
