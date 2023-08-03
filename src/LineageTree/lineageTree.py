@@ -1286,7 +1286,7 @@ class lineageTree(object):
 
         for spot in spots:
             unique_id = int(spot[1])
-            x, y, z = spot[5:8]
+            x, y, z = int(spot[5]),int(spot[6]),int(spot[7])
             t = int(spot[4])
             self.time_nodes.setdefault(t, set()).add(unique_id)
             self.nodes.add(unique_id)
