@@ -1267,33 +1267,36 @@ class lineageTree(object):
                     else:
                         self.ind_cells[t] = 1
         self.max_id = unique_id - 1
-
-    def read_from_mastodon(self, path, name):
-        from mastodon_reader import MastodonReader
-
-        mr = MastodonReader(path)
-        spots, links = mr.read_tables()
-        mr.read_tags(spots, links)
-
+    def read_from_mastodon_csv(self, path_vertices,path_edges):
+        spots=[]
+        links=[]
         self.node_name = {}
+        
+        with open(path_vertices, 'r') as file:
+            csvreader = csv.reader(file)
+            for row in csvreader:
+                spots.append(row)
+        spots=spots[3:]
 
-        for c in spots.iloc:
-            unique_id = c.name
-            x, y, z = c.x, c.y, c.z
-            t = c.t
-            if name is not None:
-                n = c[name]
-            else:
-                n = ""
+        with open(path_edges, 'r') as file:
+            csvreader = csv.reader(file)
+            for row in csvreader:
+                links.append(row)
+        links=links[3:]
+
+        for spot in spots:
+            unique_id = int(spot[1])
+            x, y, z = spot[5:8]
+            t = int(spot[4])
             self.time_nodes.setdefault(t, set()).add(unique_id)
             self.nodes.add(unique_id)
             self.time[unique_id] = t
-            self.node_name[unique_id] = n
+            self.node_name[unique_id] = spot[1]
             self.pos[unique_id] = np.array([x, y, z])
 
-        for e in links.iloc:
-            source = e.source_idx
-            target = e.target_idx
+        for link in links:
+            source = int(float(link[4]))
+            target = int(float(link[5]))
             self.predecessor.setdefault(target, []).append(source)
             self.successor.setdefault(source, []).append(target)
             self.edges.add((source, target))
@@ -1902,6 +1905,7 @@ class lineageTree(object):
     def __init__(
         self,
         file_format=None,
+        file_format2=None,
         tb=None,
         te=None,
         z_mult=1.0,
@@ -1951,14 +1955,14 @@ class lineageTree(object):
             self.t_e = te
         elif file_type == "mamut" or file_type == "trackmate":
             self.read_from_mamut_xml(file_format)
-        elif file_type == "mastodon":
-            self.read_from_mastodon(file_format, name)
         elif file_type == "celegans":
             self.read_from_txt_for_celegans(file_format)
         elif file_type == "celegans_cao":
             self.read_from_txt_for_celegans_CAO(
                 file_format, reorder=reorder, shape=shape, raw_size=raw_size
             )
+        elif file_type == "mastodon-csv":
+            self.read_from_mastodon_csv(file_format, file_format2)
         elif file_type == "astec":
             self.read_from_ASTEC(file_format, eigen)
         elif file_type == "csv":
