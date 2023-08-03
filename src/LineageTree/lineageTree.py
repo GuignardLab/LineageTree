@@ -16,7 +16,7 @@ from numbers import Number
 import struct
 from scipy.spatial.distance import cdist
 import pickle as pkl
-
+import csv
 
 class lineageTree(object):
     def get_next_id(self):
