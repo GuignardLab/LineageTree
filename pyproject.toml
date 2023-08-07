@@ -24,6 +24,3 @@ push = false
 "src/LineageTree/__init__.py" = [
     '__version__ = "{version}"',
 ]
-"setup.py" = [
-    'version="{version}"',
-]
