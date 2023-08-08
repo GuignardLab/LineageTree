@@ -16,6 +16,8 @@ from numbers import Number
 import struct
 from scipy.spatial.distance import cdist
 import pickle as pkl
+import csv
+
 
 class lineageTree(object):
     def get_next_id(self):
@@ -277,9 +279,8 @@ class lineageTree(object):
         stroke_color=None,
         positions=None,
         node_color_map=None,
-        normalize=True
+        normalize=True,
     ):
-        
 
         ##### remove background? default True background value? default 1
 
@@ -461,38 +462,54 @@ class lineageTree(object):
                     )
         dwg.save()
 
-    def to_treexfinal(self, sampling=1,start=0,finish=10000,many=False):
-            """Convert the lineage tree into a treex file."""
-            """ start/finish refer to first index in the new array times_to_consider"""
-            from treex.tree import Tree
-            start//=sampling
-            finish//=sampling
-            id_to_tree = {id: Tree() for id in self.nodes}
-            times_to_consider = [t for t, n in self.time_nodes.items() if 0<len(n)]
-            times_to_consider = times_to_consider[::sampling]
-            times_to_consider= times_to_consider[start:finish]
-            start_time=times_to_consider[0]
-            for t in times_to_consider:
-                for id_mother in self.time_nodes[t]:
-                    ids_daughters = self.successor.get(id_mother, [])
-                    new_ids_daughters = ids_daughters.copy()
-                    for _ in range(sampling-1):
-                        tmp = []
-                        for d in new_ids_daughters:
-                            tmp.extend(self.successor.get(d, [d]))
-                        new_ids_daughters = tmp
-                    for daugther in new_ids_daughters: ## For each daughter in the list of daughters
-                        id_to_tree[id_mother].add_subtree(id_to_tree[daugther]) ## Add the Treex daughter as a subtree of the Treex mother   
-            
-            roots = [id_to_tree[id] for id in set(self.time_nodes[start_time])] 
-            if many==False:
-                reroot=Tree()
-                for root in roots:
-                    reroot.add_subtree(root)
+    def to_treex(self, sampling=1, start=0, finish=10000, many=True):
+        """
+        Convert the lineage tree into a treex file.
 
-                return reroot
-            else: return roots
+        start/finish refer to first index in the new array times_to_consider
 
+        """
+        from treex.tree import Tree
+        from warnings import warn
+
+        start //= sampling
+        finish //= sampling
+        if finish - start <= 0:
+            warn("Will return None, because start = finish")
+            return None
+        id_to_tree = {id: Tree() for id in self.nodes}
+        times_to_consider = sorted([
+            t for t, n in self.time_nodes.items() if 0 < len(n)
+        ])
+        times_to_consider = times_to_consider[start:finish:sampling]
+        start_time = times_to_consider[0]
+        for t in times_to_consider:
+            for id_mother in self.time_nodes[t]:
+                ids_daughters = self.successor.get(id_mother, [])
+                new_ids_daughters = ids_daughters.copy()
+                for _ in range(sampling - 1):
+                    tmp = []
+                    for d in new_ids_daughters:
+                        tmp.extend(self.successor.get(d, [d]))
+                    new_ids_daughters = tmp
+                for (
+                    daugther
+                ) in (
+                    new_ids_daughters
+                ):  ## For each daughter in the list of daughters
+                    id_to_tree[id_mother].add_subtree(
+                        id_to_tree[daugther]
+                    )  ## Add the Treex daughter as a subtree of the Treex mother
+        roots = [id_to_tree[id] for id in set(self.time_nodes[start_time])]
+        for root, ids in zip(roots, set(self.time_nodes[start_time])):
+            root.add_attribute_to_id("ID", ids)
+        if not many:
+            reroot = Tree()
+            for root in roots:
+                reroot.add_subtree(root)
+            return reroot
+        else:
+            return roots
 
     def to_tlp(
         self,
@@ -584,9 +601,7 @@ class lineageTree(object):
                     ]
                 if spatial:
                     edges_to_use += [
-                        e
-                        for e in s_edges
-                        if t_min < self.time[e[0]] < t_max
+                        e for e in s_edges if t_min < self.time[e[0]] < t_max
                     ]
             else:
                 nodes_to_use = list(self.nodes)
@@ -776,67 +791,78 @@ class lineageTree(object):
             eigen (bool): whether or not to read the eigen values, default False
         """
         self._astec_keydictionary = {
-            "cell_lineage":[
-                    "lineage_tree",
-                    "lin_tree",
-                    "Lineage tree",
-                    "cell_lineage",
-                ],
-            "cell_h_min" : ["cell_h_min", "h_mins_information"],
+            "cell_lineage": [
+                "lineage_tree",
+                "lin_tree",
+                "Lineage tree",
+                "cell_lineage",
+            ],
+            "cell_h_min": ["cell_h_min", "h_mins_information"],
             "cell_volume": [
-                    "cell_volume",
-                    "volumes_information",
-                    "volumes information",
-                    "vol"],
+                "cell_volume",
+                "volumes_information",
+                "volumes information",
+                "vol",
+            ],
             "cell_surface": ["cell_surface", "cell surface"],
             "cell_compactness": [
-                    "cell_compactness",
-                    "Cell Compactness",
-                    "compacity",
-                    "cell_sphericity"],
+                "cell_compactness",
+                "Cell Compactness",
+                "compacity",
+                "cell_sphericity",
+            ],
             "cell_sigma": ["cell_sigma", "sigmas_information", "sigmas"],
-             "cell_labels_in_time": [
-                    "cell_labels_in_time",
-                    "Cells labels in time",
-                    "time_labels",
-                ],
+            "cell_labels_in_time": [
+                "cell_labels_in_time",
+                "Cells labels in time",
+                "time_labels",
+            ],
             "cell_barycenter": [
-                    "cell_barycenter",
-                    "Barycenters",
-                    "barycenters"],
+                "cell_barycenter",
+                "Barycenters",
+                "barycenters",
+            ],
             "cell_fate": ["cell_fate", "Fate"],
             "cell_fate_2": ["cell_fate_2", "Fate2"],
             "cell_fate_3": ["cell_fate_3", "Fate3"],
             "cell_fate_4": ["cell_fate_4", "Fate4"],
-            "all_cells": ["all_cells",
-                    "All Cells",
-                    "All_Cells",
-                    "all cells",
-                    "tot_cells"],
-            "cell_principal_values": ["cell_principal_values", "Principal values"],
+            "all_cells": [
+                "all_cells",
+                "All Cells",
+                "All_Cells",
+                "all cells",
+                "tot_cells",
+            ],
+            "cell_principal_values": [
+                "cell_principal_values",
+                "Principal values",
+            ],
             "cell_name": ["cell_name", "Names", "names", "cell_names"],
             "cell_contact_surface": [
-                    "cell_contact_surface",
-                    "cell_cell_contact_information",
-                ],
+                "cell_contact_surface",
+                "cell_cell_contact_information",
+            ],
             "cell_history": [
-                    "cell_history",
-                    "Cells history",
-                    "cell_life",
-                    "life",
-                ],
-            "cell_principal_vectors": ["cell_principal_vectors", "Principal vectors"],
+                "cell_history",
+                "Cells history",
+                "cell_life",
+                "life",
+            ],
+            "cell_principal_vectors": [
+                "cell_principal_vectors",
+                "Principal vectors",
+            ],
             "cell_naming_score": ["cell_naming_score", "Scores", "scores"],
             "problematic_cells": ["problematic_cells"],
-            "unknown_key": ["unknown_key"]
-            }
-        
+            "unknown_key": ["unknown_key"],
+        }
+
         if os.path.splitext(file_path)[-1] == ".xml":
             tmp_data = self._read_from_ASTEC_xml(file_path)
         else:
             tmp_data = self._read_from_ASTEC_pkl(file_path, eigen)
 
-        #make sure these are all named liked they are in tmp_data (or change dictionary above)
+        # make sure these are all named liked they are in tmp_data (or change dictionary above)
         self.name = {}
         self.volume = {}
         self.lT2pkl = {}
@@ -844,7 +870,7 @@ class lineageTree(object):
         self.contact = {}
         self.prob_cells = set()
         self.image_label = {}
-        
+
         lt = tmp_data["cell_lineage"]
 
         # if "cell_name" in tmp_data:
@@ -876,8 +902,8 @@ class lineageTree(object):
         #     pos = dict(list(zip(nodes,[[0.0, 0.0, 0.0]]* len(nodes))))
 
         unique_id = 0
-        #id_corres = {}
-        
+        # id_corres = {}
+
         for n in nodes:
             # if n in prob_cells:
             #     self.prob_cells.add(unique_id)
@@ -886,13 +912,13 @@ class lineageTree(object):
             self.image_label[unique_id] = n % 10**4
             self.lT2pkl[unique_id] = n
             self.pkl2lT[n] = unique_id
-            #self.name[unique_id] = names.get(n, "")
-            #position = np.array(pos.get(n, [0, 0, 0]), dtype=float)
+            # self.name[unique_id] = names.get(n, "")
+            # position = np.array(pos.get(n, [0, 0, 0]), dtype=float)
             self.time_nodes.setdefault(t, set()).add(unique_id)
             self.nodes.add(unique_id)
-            #self.pos[unique_id] = position
+            # self.pos[unique_id] = position
             self.time[unique_id] = t
-            #id_corres[n] = unique_id
+            # id_corres[n] = unique_id
             if "cell_volume" in tmp_data:
                 self.volume[unique_id] = tmp_data["cell_volume"].get(n, 0.0)
             # if eigen:
@@ -932,28 +958,34 @@ class lineageTree(object):
         self.t_e = max(self.time_nodes)
         self.max_id = unique_id
 
-        #do this in the end of the process, skip lineage tree and whatever is stored already
+        # do this in the end of the process, skip lineage tree and whatever is stored already
         for prop_name, prop_values in tmp_data.items():
             if hasattr(self, prop_name):
                 continue
             else:
                 if isinstance(prop_values, dict):
-                    dictionary = {self.pkl2lT[k]: v for k, v in prop_values.items()}
-                    #is it a regular dictionary or a dictionary with dictionaries inside?
+                    dictionary = {
+                        self.pkl2lT[k]: v for k, v in prop_values.items()
+                    }
+                    # is it a regular dictionary or a dictionary with dictionaries inside?
                     for key, value in dictionary.items():
                         if isinstance(value, dict):
-                            #rename all ids from old to new
-                            dictionary[key] = {self.pkl2lT[k]: v for k, v in value}    
+                            # rename all ids from old to new
+                            dictionary[key] = {
+                                self.pkl2lT[k]: v for k, v in value
+                            }
                     self.__dict__[prop_name] = dictionary
-                #is any of this necessary? Or does it mean it anyways does not contain information about the id and a simple else: is enough?
-                elif prop_values.isinstance(set) or prop_values.isinstance(list) or prop_values.isinstance(np.array):
+                # is any of this necessary? Or does it mean it anyways does not contain information about the id and a simple else: is enough?
+                elif (
+                    prop_values.isinstance(set)
+                    or prop_values.isinstance(list)
+                    or prop_values.isinstance(np.array)
+                ):
                     self.__dict__[prop_name] = prop_values
 
-            #what else could it be?
-        
-        #add a list of all available properties
+            # what else could it be?
 
-
+        # add a list of all available properties
 
     def _read_from_ASTEC_xml(self, file_path):
         def _set_dictionary_value(root):
@@ -987,7 +1019,7 @@ class lineageTree(object):
         return dictionary
 
     def _read_from_ASTEC_pkl(self, file_path, eigen=False):
-        
+
         with open(file_path, "rb") as f:
             tmp_data = pkl.load(f, encoding="latin1")
             f.close()
@@ -1236,6 +1268,79 @@ class lineageTree(object):
                     else:
                         self.ind_cells[t] = 1
         self.max_id = unique_id - 1
+    def read_from_mastodon(self, path, name):
+        from mastodon_reader import MastodonReader
+
+        mr = MastodonReader(path)
+        spots, links = mr.read_tables()
+        mr.read_tags(spots, links)
+
+        self.node_name = {}
+
+        for c in spots.iloc:
+            unique_id = c.name
+            x, y, z = c.x, c.y, c.z
+            t = c.t
+            if name is not None:
+                n = c[name]
+            else:
+                n = ""
+            self.time_nodes.setdefault(t, set()).add(unique_id)
+            self.nodes.add(unique_id)
+            self.time[unique_id] = t
+            self.node_name[unique_id] = n
+            self.pos[unique_id] = np.array([x, y, z])
+
+        for e in links.iloc:
+            source = e.source_idx
+            target = e.target_idx
+            self.predecessor.setdefault(target, []).append(source)
+            self.successor.setdefault(source, []).append(target)
+            self.edges.add((source, target))
+            self.time_edges.setdefault(self.time[source], set()).add(
+                (source, target)
+            )
+        self.t_b = min(self.time_nodes.keys())
+        self.t_e = max(self.time_nodes.keys())
+
+    def read_from_mastodon_csv(self, path):
+        spots=[]
+        links=[]
+        self.node_name = {}
+        
+        with open(path[0], 'r') as file:
+            csvreader = csv.reader(file)
+            for row in csvreader:
+                spots.append(row)
+        spots=spots[3:]
+
+        with open(path[1], 'r') as file:
+            csvreader = csv.reader(file)
+            for row in csvreader:
+                links.append(row)
+        links=links[3:]
+
+        for spot in spots:
+            unique_id = int(spot[1])
+            x, y, z = spot[5:8]
+            t = int(spot[4])
+            self.time_nodes.setdefault(t, set()).add(unique_id)
+            self.nodes.add(unique_id)
+            self.time[unique_id] = t
+            self.node_name[unique_id] = spot[1]
+            self.pos[unique_id] = np.array([x, y, z])
+
+        for link in links:
+            source = int(float(link[4]))
+            target = int(float(link[5]))
+            self.predecessor.setdefault(target, []).append(source)
+            self.successor.setdefault(source, []).append(target)
+            self.edges.add((source, target))
+            self.time_edges.setdefault(self.time[source], set()).add(
+                (source, target)
+            )
+        self.t_b = min(self.time_nodes.keys())
+        self.t_e = max(self.time_nodes.keys())
 
     def read_from_mamut_xml(self, path):
         """Read a lineage tree from a MaMuT xml.
@@ -1292,8 +1397,12 @@ class lineageTree(object):
         self.predecessor = {}
         self.track_name = {}
         for track in AllTracks:
-            t_id = int(track.attrib["TRACK_ID"])
-            
+            if "TRACK_DURATION" in track.attrib:
+                t_id, l = int(track.attrib["TRACK_ID"]), float(
+                    track.attrib["TRACK_DURATION"]
+                )
+            else:
+                t_id = int(track.attrib["TRACK_ID"])
             t_name = track.attrib["name"]
             tracks[t_id] = []
             for edge in track:
@@ -1518,15 +1627,15 @@ class lineageTree(object):
         self.max_id = max(self.nodes)
 
     def write(self, fname):
-        if os.path.splitext(fname)[-1] != '.lT':
-            fname = os.path.extsep.join((fname, 'lT'))
-        with open(fname, 'bw') as f:
+        if os.path.splitext(fname)[-1] != ".lT":
+            fname = os.path.extsep.join((fname, "lT"))
+        with open(fname, "bw") as f:
             pkl.dump(self, f)
             f.close()
 
     @classmethod
     def load(clf, fname):
-        with open(fname, 'br') as f:
+        with open(fname, "br") as f:
             lT = pkl.load(f)
             f.close()
         return lT
@@ -1832,6 +1941,7 @@ class lineageTree(object):
     def __init__(
         self,
         file_format=None,
+        file_format2=None,
         tb=None,
         te=None,
         z_mult=1.0,
@@ -1842,6 +1952,7 @@ class lineageTree(object):
         raw_size=None,
         reorder=False,
         xml_attributes=[],
+        name=None,
     ):
         """Main library to build tree graph representation of lineage tree data
         It can read TGMM, ASTEC, SVF, MaMuT and TrackMate outputs.
@@ -1886,11 +1997,15 @@ class lineageTree(object):
             self.read_from_txt_for_celegans_CAO(
                 file_format, reorder=reorder, shape=shape, raw_size=raw_size
             )
+        elif file_type == "mastodon":
+            if len(file_format)==2:
+                self.read_from_mastodon_csv(file_format)
+            else: self.read_from_mastodon(file_format,name)
         elif file_type == "astec":
             self.read_from_ASTEC(file_format, eigen)
         elif file_type == "csv":
             self.read_from_csv(file_format, z_mult, link=1, delim=delim)
-        elif file_format is not None and '.lT' in file_format:
-            self.read(file_format)
+        elif file_format is not None and ".lT" in file_format:
+            self.load(file_format)
         elif file_format is not None:
             self.read_from_binary(file_format)
