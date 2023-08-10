@@ -1941,7 +1941,6 @@ class lineageTree(object):
     def __init__(
         self,
         file_format=None,
-        file_format2=None,
         tb=None,
         te=None,
         z_mult=1.0,
@@ -1998,9 +1997,12 @@ class lineageTree(object):
                 file_format, reorder=reorder, shape=shape, raw_size=raw_size
             )
         elif file_type == "mastodon":
-            if len(file_format)==2:
+            if isinstance(file_format, list) and len(file_format)==2:
                 self.read_from_mastodon_csv(file_format)
-            else: self.read_from_mastodon(file_format,name)
+            else:
+                if isinstance(file_format, list):
+                    file_format=file_format[0]
+                self.read_from_mastodon(file_format,name)
         elif file_type == "astec":
             self.read_from_ASTEC(file_format, eigen)
         elif file_type == "csv":

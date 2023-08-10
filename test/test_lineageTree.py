@@ -1,7 +1,7 @@
 from LineageTree import lineageTree
 
-lT = lineageTree("test/data/test-mamut.xml", file_type="MaMuT")
-
+lT = lineageTree("LineageTree-1/test/data/test-mamut.xml", file_type="MaMuT")
+lT=lineageTree("LineageTree-1/test/data/test.mastodon", file_type="mastodon")
 
 def test_read_MaMuT_xml():
     assert len(lT.nodes) == 2430
