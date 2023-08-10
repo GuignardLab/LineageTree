@@ -281,7 +281,6 @@ class lineageTree(object):
         node_color_map=None,
         normalize=True,
     ):
-
         ##### remove background? default True background value? default 1
 
         """Writes the lineage tree to an SVG file.
@@ -478,9 +477,9 @@ class lineageTree(object):
             warn("Will return None, because start = finish")
             return None
         id_to_tree = {id: Tree() for id in self.nodes}
-        times_to_consider = sorted([
-            t for t, n in self.time_nodes.items() if 0 < len(n)
-        ])
+        times_to_consider = sorted(
+            [t for t, n in self.time_nodes.items() if 0 < len(n)]
+        )
         times_to_consider = times_to_consider[start:finish:sampling]
         start_time = times_to_consider[0]
         for t in times_to_consider:
@@ -1019,7 +1018,6 @@ class lineageTree(object):
         return dictionary
 
     def _read_from_ASTEC_pkl(self, file_path, eigen=False):
-
         with open(file_path, "rb") as f:
             tmp_data = pkl.load(f, encoding="latin1")
             f.close()
@@ -1268,6 +1266,7 @@ class lineageTree(object):
                     else:
                         self.ind_cells[t] = 1
         self.max_id = unique_id - 1
+
     def read_from_mastodon(self, path, name):
         from mastodon_reader import MastodonReader
 
@@ -1304,21 +1303,21 @@ class lineageTree(object):
         self.t_e = max(self.time_nodes.keys())
 
     def read_from_mastodon_csv(self, path):
-        spots=[]
-        links=[]
+        spots = []
+        links = []
         self.node_name = {}
-        
-        with open(path[0], 'r') as file:
+
+        with open(path[0], "r") as file:
             csvreader = csv.reader(file)
             for row in csvreader:
                 spots.append(row)
-        spots=spots[3:]
+        spots = spots[3:]
 
-        with open(path[1], 'r') as file:
+        with open(path[1], "r") as file:
             csvreader = csv.reader(file)
             for row in csvreader:
                 links.append(row)
-        links=links[3:]
+        links = links[3:]
 
         for spot in spots:
             unique_id = int(spot[1])
@@ -1997,17 +1996,17 @@ class lineageTree(object):
                 file_format, reorder=reorder, shape=shape, raw_size=raw_size
             )
         elif file_type == "mastodon":
-            if isinstance(file_format, list) and len(file_format)==2:
+            if isinstance(file_format, list) and len(file_format) == 2:
                 self.read_from_mastodon_csv(file_format)
             else:
                 if isinstance(file_format, list):
-                    file_format=file_format[0]
-                self.read_from_mastodon(file_format,name)
+                    file_format = file_format[0]
+                self.read_from_mastodon(file_format, name)
         elif file_type == "astec":
             self.read_from_ASTEC(file_format, eigen)
         elif file_type == "csv":
             self.read_from_csv(file_format, z_mult, link=1, delim=delim)
-        elif file_format.endswith('.lT'):
+        elif file_format.endswith(".lT"):
             with open(file_format, "br") as f:
                 tmp = pkl.load(f)
                 f.close()
