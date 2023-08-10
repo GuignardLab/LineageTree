@@ -1957,9 +1957,9 @@ class lineageTree(object):
         It can read TGMM, ASTEC, SVF, MaMuT and TrackMate outputs.
 
         Args:
-            file_format (strr): either - path format to TGMM xmls
-                                       - path to the MaMuT xml
-                                       - path to the binary file
+            file_format (str): either - path format to TGMM xmls
+                                      - path to the MaMuT xml
+                                      - path to the binary file
             tb (int): first time point (necessary for TGMM xmls only)
             te (int): last time point (necessary for TGMM xmls only)
             z_mult (float): z aspect ratio if necessary (usually only for TGMM xmls)
@@ -2007,7 +2007,10 @@ class lineageTree(object):
             self.read_from_ASTEC(file_format, eigen)
         elif file_type == "csv":
             self.read_from_csv(file_format, z_mult, link=1, delim=delim)
-        elif file_format is not None and ".lT" in file_format:
-            self.load(file_format)
+        elif file_format.endswith('.lT'):
+            with open(file_format, "br") as f:
+                tmp = pkl.load(f)
+                f.close()
+            self.__dict__.update(tmp.__dict__)
         elif file_format is not None:
             self.read_from_binary(file_format)
