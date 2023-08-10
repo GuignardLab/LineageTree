@@ -16,6 +16,7 @@ from numbers import Number
 import struct
 from scipy.spatial.distance import cdist
 import pickle as pkl
+import csv
 
 
 class lineageTree(object):
@@ -477,9 +478,9 @@ class lineageTree(object):
             warn("Will return None, because start = finish")
             return None
         id_to_tree = {id: Tree() for id in self.nodes}
-        times_to_consider = [
+        times_to_consider = sorted([
             t for t, n in self.time_nodes.items() if 0 < len(n)
-        ]
+        ])
         times_to_consider = times_to_consider[start:finish:sampling]
         start_time = times_to_consider[0]
         for t in times_to_consider:
@@ -1267,7 +1268,6 @@ class lineageTree(object):
                     else:
                         self.ind_cells[t] = 1
         self.max_id = unique_id - 1
-
     def read_from_mastodon(self, path, name):
         from mastodon_reader import MastodonReader
 
@@ -1294,6 +1294,45 @@ class lineageTree(object):
         for e in links.iloc:
             source = e.source_idx
             target = e.target_idx
+            self.predecessor.setdefault(target, []).append(source)
+            self.successor.setdefault(source, []).append(target)
+            self.edges.add((source, target))
+            self.time_edges.setdefault(self.time[source], set()).add(
+                (source, target)
+            )
+        self.t_b = min(self.time_nodes.keys())
+        self.t_e = max(self.time_nodes.keys())
+
+    def read_from_mastodon_csv(self, path):
+        spots=[]
+        links=[]
+        self.node_name = {}
+        
+        with open(path[0], 'r') as file:
+            csvreader = csv.reader(file)
+            for row in csvreader:
+                spots.append(row)
+        spots=spots[3:]
+
+        with open(path[1], 'r') as file:
+            csvreader = csv.reader(file)
+            for row in csvreader:
+                links.append(row)
+        links=links[3:]
+
+        for spot in spots:
+            unique_id = int(spot[1])
+            x, y, z = spot[5:8]
+            t = int(spot[4])
+            self.time_nodes.setdefault(t, set()).add(unique_id)
+            self.nodes.add(unique_id)
+            self.time[unique_id] = t
+            self.node_name[unique_id] = spot[1]
+            self.pos[unique_id] = np.array([x, y, z])
+
+        for link in links:
+            source = int(float(link[4]))
+            target = int(float(link[5]))
             self.predecessor.setdefault(target, []).append(source)
             self.successor.setdefault(source, []).append(target)
             self.edges.add((source, target))
@@ -1951,14 +1990,19 @@ class lineageTree(object):
             self.t_e = te
         elif file_type == "mamut" or file_type == "trackmate":
             self.read_from_mamut_xml(file_format)
-        elif file_type == "mastodon":
-            self.read_from_mastodon(file_format, name)
         elif file_type == "celegans":
             self.read_from_txt_for_celegans(file_format)
         elif file_type == "celegans_cao":
             self.read_from_txt_for_celegans_CAO(
                 file_format, reorder=reorder, shape=shape, raw_size=raw_size
             )
+        elif file_type == "mastodon":
+            if isinstance(file_format, list) and len(file_format)==2:
+                self.read_from_mastodon_csv(file_format)
+            else:
+                if isinstance(file_format, list):
+                    file_format=file_format[0]
+                self.read_from_mastodon(file_format,name)
         elif file_type == "astec":
             self.read_from_ASTEC(file_format, eigen)
         elif file_type == "csv":
