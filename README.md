@@ -51,6 +51,17 @@ For TGMM:
 lT = lineageTree('path/to/single_time_file{t:04d}.xml', tb=0, te=500, file_type='TGMM')
 ```
 
+For Mastodon:
+```python
+lT = lineageTree('path/to/Mastodon.mastodon', file_type='mastodon')
+```
+
+or, for Mastodon csv file:
+
+```python
+lT = lineageTree(['path/to/nodes.csv', 'path/to/links.csv'], file_type='mastodon')
+```
+
 ## Dependencies
 Some dependecies are requiered:
   - general python dependecies:
@@ -60,10 +71,19 @@ Some dependecies are requiered:
     
 ## Quick install
 To quickly install the library together with its dependencies one can run:
+
+```shell
+pip install LineageTree
+```
+
+or, for the latest version if you have cloned the directory:
+
 ```shell
 pip install .
 ```
-or
+
+or for the latest version wihtout cloning the directory
+
 ```shell
-python setup.py install [--user]
+pip install git+https://github.com/leoguignard/LineageTree
 ```
