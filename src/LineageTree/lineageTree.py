@@ -470,8 +470,7 @@ class lineageTree(object):
 
         """
         from treex.tree import Tree
-        from warnings import warn
-
+        from warnings importprint("Peos2")
         start //= sampling
         finish //= sampling
         if finish - start <= 0:
@@ -481,7 +480,8 @@ class lineageTree(object):
         times_to_consider = sorted([
             t for t, n in self.time_nodes.items() if 0 < len(n)
         ])
-        times_to_consider = times_to_consider[start:finish:sampling]
+        times_to_consider = times_to_consider[::sampling]
+        times_to_consider = times_to_consider[start:finish]
         start_time = times_to_consider[0]
         for t in times_to_consider:
             for id_mother in self.time_nodes[t]:
