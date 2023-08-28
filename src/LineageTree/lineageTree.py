@@ -470,18 +470,19 @@ class lineageTree(object):
 
         """
         from treex.tree import Tree
-        from warnings importprint("Peos2")
-        start //= sampling
-        finish //= sampling
+        from warnings import warn
+
+        # start //= sampling
+        # finish //= sampling
         if finish - start <= 0:
             warn("Will return None, because start = finish")
             return None
         id_to_tree = {id: Tree() for id in self.nodes}
         times_to_consider = sorted([
+        times_to_consider = sorted([
             t for t, n in self.time_nodes.items() if 0 < len(n)
         ])
-        times_to_consider = times_to_consider[::sampling]
-        times_to_consider = times_to_consider[start:finish]
+        times_to_consider = times_to_consider[start:finish:sampling]
         start_time = times_to_consider[0]
         for t in times_to_consider:
             for id_mother in self.time_nodes[t]:
@@ -1308,13 +1309,13 @@ class lineageTree(object):
         links=[]
         self.node_name = {}
         
-        with open(path[0], 'r') as file:
+        with open(path[0], 'r',encoding= "utf-8",errors="ignore") as file:
             csvreader = csv.reader(file)
             for row in csvreader:
                 spots.append(row)
         spots=spots[3:]
 
-        with open(path[1], 'r') as file:
+        with open(path[1], 'r', encoding= "utf-8",errors="ignore") as file:
             csvreader = csv.reader(file)
             for row in csvreader:
                 links.append(row)
