@@ -472,13 +472,11 @@ class lineageTree(object):
         from treex.tree import Tree
         from warnings import warn
 
-        # start //= sampling
-        # finish //= sampling
+
         if finish - start <= 0:
             warn("Will return None, because start = finish")
             return None
         id_to_tree = {id: Tree() for id in self.nodes}
-        times_to_consider = sorted([
         times_to_consider = sorted([
             t for t, n in self.time_nodes.items() if 0 < len(n)
         ])
