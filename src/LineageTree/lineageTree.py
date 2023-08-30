@@ -468,8 +468,7 @@ class lineageTree(object):
         from treex.tree import Tree
         from warnings import warn
 
-        start //= sampling
-        finish //= sampling
+
         if finish - start <= 0:
             warn("Will return None, because start = finish")
             return None
@@ -1301,14 +1300,14 @@ class lineageTree(object):
         spots = []
         links = []
         self.node_name = {}
-
-        with open(path[0], "r") as file:
+        
+        with open(path[0], 'r',encoding= "utf-8",errors="ignore") as file:
             csvreader = csv.reader(file)
             for row in csvreader:
                 spots.append(row)
         spots = spots[3:]
 
-        with open(path[1], "r") as file:
+        with open(path[1], 'r', encoding= "utf-8",errors="ignore") as file:
             csvreader = csv.reader(file)
             for row in csvreader:
                 links.append(row)
