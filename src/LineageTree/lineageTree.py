@@ -319,7 +319,8 @@ class lineageTree(object):
 
         if roots is None:
             roots = list(set(self.successor).difference(self.predecessor))
-            roots = [cell for cell in roots if self.image_label[cell] != 1]
+            if hasattr(self, "image_label"):
+                roots = [cell for cell in roots if self.image_label[cell] != 1]
 
         if node_size is None:
             node_size = lambda x: vert_space_factor / 2.1
@@ -467,7 +468,6 @@ class lineageTree(object):
         """
         from treex.tree import Tree
         from warnings import warn
-
 
         if finish - start <= 0:
             warn("Will return None, because start = finish")
@@ -1300,14 +1300,14 @@ class lineageTree(object):
         spots = []
         links = []
         self.node_name = {}
-        
-        with open(path[0], 'r',encoding= "utf-8",errors="ignore") as file:
+
+        with open(path[0], "r", encoding="utf-8", errors="ignore") as file:
             csvreader = csv.reader(file)
             for row in csvreader:
                 spots.append(row)
         spots = spots[3:]
 
-        with open(path[1], 'r', encoding= "utf-8",errors="ignore") as file:
+        with open(path[1], "r", encoding="utf-8", errors="ignore") as file:
             csvreader = csv.reader(file)
             for row in csvreader:
                 links.append(row)
