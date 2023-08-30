@@ -3,18 +3,14 @@
 # file 'LICENCE', which is part of this source code package.
 # Author: Leo Guignard (leo.guignard...@AT@...gmail.com)
 
-from turtle import color
 from scipy.spatial import cKDTree as KDTree
 import os
 import xml.etree.ElementTree as ET
-from copy import copy
 import numpy as np
-from multiprocessing import Pool
 from scipy.spatial import Delaunay
 from itertools import combinations
 from numbers import Number
 import struct
-from scipy.spatial.distance import cdist
 import pickle as pkl
 import csv
 
@@ -38,10 +34,12 @@ class lineageTree(object):
         Args:
             t (int): int, time to which to add the node
             succ (int): id of the node the new node is a successor to
-            pos ([float, ]): list of three floats representing the 3D spatial position of the node
+            pos ([float, ]): list of three floats representing the 3D
+                spatial position of the node
             id (int): id value of the new node, to be used carefully,
                 if None is provided the new id is automatically computed.
-            reverse (bool): True if in this lineageTree the predecessors are the successors and reciprocally.
+            reverse (bool): True if in this lineageTree the predecessors
+                are the successors and reciprocally.
                 This is there for bacward compatibility, should be left at False.
         Returns:
             int: id of the new node.
@@ -51,11 +49,11 @@ class lineageTree(object):
         else:
             C_next = id
         self.time_nodes.setdefault(t, []).append(C_next)
-        if not succ is None and not reverse:
+        if succ is not None and not reverse:
             self.successor.setdefault(succ, []).append(C_next)
             self.predecessor.setdefault(C_next, []).append(succ)
             self.edges.add((succ, C_next))
-        elif not succ is None:
+        elif succ is not None:
             self.predecessor.setdefault(succ, []).append(C_next)
             self.successor.setdefault(C_next, []).append(succ)
             self.edges.add((C_next, succ))
@@ -209,7 +207,6 @@ class lineageTree(object):
                 f.write("%d\n" % (length))
 
             f.write("@4\n")
-            tmp_velocity = {}
             for i, C in enumerate(self.to_take_time[t]):
                 for p in points_v[C]:
                     f.write("%f %f %f\n" % tuple(p))
@@ -348,7 +345,7 @@ class lineageTree(object):
             node_color = lambda x: [
                 k * 255 for k in node_color_map(normed_vals(x))[:-1]
             ]
-        coloring_edges = not stroke_color is None
+        coloring_edges = stroke_color is not None
         if not coloring_edges:
             stroke_color = lambda x: (0, 0, 0)
         elif isinstance(stroke_color, str) and stroke_color in self.__dict__:
@@ -370,7 +367,7 @@ class lineageTree(object):
             roots.sort(key=order_key)
         treated_cells = []
 
-        pos_given = not positions is None
+        pos_given = positions is not None
         if not pos_given:
             positions = dict(
                 zip(
@@ -395,11 +392,11 @@ class lineageTree(object):
                 else:
                     r_leaves += [curr]
             r_pos = {
-                l: [
+                leave: [
                     prev_x + horizontal_space * (1 + j),
-                    self.vert_space_factor * self.time[l],
+                    self.vert_space_factor * self.time[leave],
                 ]
-                for j, l in enumerate(r_leaves)
+                for j, leave in enumerate(r_leaves)
             }
             self._get_height(r, r_pos)
             prev_x = np.max(list(r_pos.values()), axis=0)[0]
@@ -554,7 +551,6 @@ class lineageTree(object):
             tmp = {}
             for k, v in names_which_matter.items():
                 try:
-                    val = v.split(".")[1][:-1]
                     tmp[k] = (
                         v.split(".")[0][0]
                         + "%02d" % int(v.split(".")[0][1:])
@@ -562,7 +558,7 @@ class lineageTree(object):
                         + "%04d" % int(v.split(".")[1][:-1])
                         + v.split(".")[1][-1]
                     )
-                except Exception as e:
+                except Exception:
                     print(v)
                     exit()
             return tmp
@@ -739,22 +735,22 @@ class lineageTree(object):
             self.displacement = {}
         lines_to_int = []
         corres = {}
-        for l in lines:
+        for line in lines:
             lines_to_int += [
-                [convert_for_csv(v.strip()) for v in l.split(delim)]
+                [convert_for_csv(v.strip()) for v in line.split(delim)]
             ]
         lines_to_int = np.array(lines_to_int)
         if link == 2:
             lines_to_int = lines_to_int[np.argsort(lines_to_int[:, 0])]
         else:
             lines_to_int = lines_to_int[np.argsort(lines_to_int[:, 1])]
-        for l in lines_to_int:
+        for line in lines_to_int:
             if link == 1:
-                id_, t, z, y, x, pred, lin_id = l
+                id_, t, z, y, x, pred, lin_id = line
             elif link == 2:
-                t, z, y, x, id_, pred, lin_id = l
+                t, z, y, x, id_, pred, lin_id = line
             else:
-                id_, t, z, y, x, dz, dy, dx = l
+                id_, t, z, y, x, dz, dy, dx = line
                 pred = None
                 lin_id = None
             t = int(t)
@@ -1055,10 +1051,10 @@ class lineageTree(object):
         self.name = {}
 
         unique_id = 0
-        for l in raw:
-            t = int(l.split("\t")[0])
-            self.name[unique_id] = l.split("\t")[1]
-            position = np.array(l.split("\t")[2:5], dtype=float)
+        for line in raw:
+            t = int(line.split("\t")[0])
+            self.name[unique_id] = line.split("\t")[1]
+            position = np.array(line.split("\t")[2:5], dtype=float)
             self.time_nodes.setdefault(t, set()).add(unique_id)
             self.nodes.add(unique_id)
             self.pos[unique_id] = position
@@ -1201,8 +1197,8 @@ class lineageTree(object):
             self.time_edges[t] = set()
             for it in root:
                 if (
-                    not "-1.#IND" in it.attrib["m"]
-                    and not "nan" in it.attrib["m"]
+                    "-1.#IND" not in it.attrib["m"]
+                    and "nan" not in it.attrib["m"]
                 ):
                     M_id, pos, cell_id, svIdx, lin_id = (
                         int(it.attrib["parent"]),
@@ -1231,7 +1227,6 @@ class lineageTree(object):
                             float(it.attrib["alphaPrior"]),
                         )
                         pos = np.array(pos)
-                        pos_tmp = np.round(pos).astype(np.uint16)
                         C = unique_id
                         pos[-1] = pos[-1] * z_mult
                         if (t - 1, M_id) in self.time_id:
@@ -1258,7 +1253,7 @@ class lineageTree(object):
                             tmp[:3] + tmp[4:6] + tmp[8:9] + list(pos)
                         )
                         unique_id += 1
-                    except Exception as e:
+                    except Exception:
                         pass
                 else:
                     if t in self.ind_cells:
@@ -1397,7 +1392,7 @@ class lineageTree(object):
         self.track_name = {}
         for track in AllTracks:
             if "TRACK_DURATION" in track.attrib:
-                t_id, l = int(track.attrib["TRACK_ID"]), float(
+                t_id, _ = int(track.attrib["TRACK_ID"]), float(
                     track.attrib["TRACK_DURATION"]
                 )
             else:
@@ -1449,7 +1444,6 @@ class lineageTree(object):
         number_sequence = [-1]
         pos_sequence = []
         time_sequence = []
-        default_lin = -1
         for c in starting_points:
             time_sequence.append(self.time.get(c, 0))
             to_treat = [c]
@@ -1535,7 +1529,6 @@ class lineageTree(object):
                 is_root = {c: True for c in tmp}
                 nodes = tmp
                 done = True
-        shown = set()
         while (
             i < len(number_sequence) and not done
         ):  # , c in enumerate(number_sequence[:-1]):
@@ -1858,11 +1851,11 @@ class lineageTree(object):
                 a cell id to its `k` nearest neighbors
         """
         self.kn_graph = {}
-        for t, Cs in self.time_nodes.items():
+        for t, nodes in self.time_nodes.items():
             use_k = k if k < len(nodes) else len(nodes)
             idx3d, nodes = self.get_idx3d(t)
             pos = [self.pos[c] for c in nodes]
-            dist, neighbs = idx3d.query(pos, use_k)
+            _, neighbs = idx3d.query(pos, use_k)
             out = dict(zip(nodes, [set(nodes[ni[1:]]) for ni in neighbs]))
             self.kn_graph.update(out)
         return self.kn_graph
