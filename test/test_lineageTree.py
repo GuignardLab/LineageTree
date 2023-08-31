@@ -1,7 +1,6 @@
 from LineageTree import lineageTree
 
 
-
 def test_read_MaMuT_xml():
     lT = lineageTree("test/data/test.mastodon", file_type="mastodon")
     assert len(lT.nodes) == 41
