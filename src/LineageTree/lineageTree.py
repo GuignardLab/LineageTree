@@ -8,6 +8,7 @@ import os
 import pickle as pkl
 import struct
 import xml.etree.ElementTree as ET
+from functools import partial
 from itertools import combinations
 from numbers import Number
 from typing import TextIO
@@ -238,7 +239,8 @@ class lineageTree:
                 f.write("@7\n")
                 for C in self.to_take_time[t]:
                     f.write(
-                        "%f\n" % (np.linalg.norm(points_v[C][0] - points_v[C][-1]))
+                        "%f\n"
+                        % (np.linalg.norm(points_v[C][0] - points_v[C][-1]))
                     )
 
                 f.write("@8\n")
@@ -577,17 +579,13 @@ class lineageTree:
             """Return an ensured formated cell names"""
             tmp = {}
             for k, v in names_which_matter.items():
-                try:
-                    tmp[k] = (
-                        v.split(".")[0][0]
-                        + "%02d" % int(v.split(".")[0][1:])
-                        + "."
-                        + "%04d" % int(v.split(".")[1][:-1])
-                        + v.split(".")[1][-1]
-                    )
-                except Exception:
-                    print(v)
-                    exit()
+                tmp[k] = (
+                    v.split(".")[0][0]
+                    + "%02d" % int(v.split(".")[0][1:])
+                    + "."
+                    + "%04d" % int(v.split(".")[1][:-1])
+                    + v.split(".")[1][-1]
+                )
             return tmp
 
         def spatial_adjlist_to_set(s_g):
@@ -623,7 +621,9 @@ class lineageTree:
                         ]
                     if spatial:
                         edges_to_use += [
-                            e for e in s_edges if t_min < self.time[e[0]] < t_max
+                            e
+                            for e in s_edges
+                            if t_min < self.time[e[0]] < t_max
                         ]
                 else:
                     nodes_to_use = list(self.nodes)
@@ -682,13 +682,21 @@ class lineageTree:
 
             for i, e in enumerate(edges_to_use):
                 f.write(
-                    "(edge " + str(i) + " " + str(e[0]) + " " + str(e[1]) + ")\n"
+                    "(edge "
+                    + str(i)
+                    + " "
+                    + str(e[0])
+                    + " "
+                    + str(e[1])
+                    + ")\n"
                 )
 
             f.write('(property 0 int "time"\n')
             f.write('\t(default "0" "0")\n')
             for n in nodes_to_use:
-                f.write("\t(node " + str(n) + ' "' + str(self.time[n]) + '")\n')
+                f.write(
+                    "\t(node " + str(n) + ' "' + str(self.time[n]) + '")\n'
+                )
             f.write(")\n")
 
             if write_layout:
@@ -708,7 +716,9 @@ class lineageTree:
                 for i, e in enumerate(edges_to_use):
                     d_tmp = np.linalg.norm(self.pos[e[0]] - self.pos[e[1]])
                     f.write("\t(edge " + str(i) + ' "' + str(d_tmp) + '")\n')
-                    f.write("\t(node " + str(e[0]) + ' "' + str(d_tmp) + '")\n')
+                    f.write(
+                        "\t(node " + str(e[0]) + ' "' + str(d_tmp) + '")\n'
+                    )
                 f.write(")\n")
 
             if node_properties:
@@ -1986,6 +1996,39 @@ class lineageTree:
             ]
         return nodes, adj_list, list2nid
 
+    def unordered_tree_edit_distances_at_time_t(
+        self,
+        t: int,
+        delta: callable = None,
+        norm: callable = None,
+        recompute: bool = False,
+    ):
+        """
+        Compute all the pairwise unordered tree edit distances from Zhang 1996 between the trees spawned at time `t`
+
+        Args:
+            t (int): time to look at
+            delta (callable): comparison function (see edist doc for more information)
+            norm (callable): norming function that takes the number of nodes
+                of the tree spawned by `n1` and the number of nodes
+                of the tree spawned by `n2` as arguments.
+            recompute (bool): if True, forces to recompute the distances (default: False)
+
+        Returns:
+            (dict) a dictionary that maps a pair of cell ids at time `t` to their unordered tree edit distance
+        """
+        if not hasattr(self, "uted"):
+            self.uted = {}
+        elif t in self.uted and not recompute:
+            return self.uted[t]
+        self.uted[t] = {}
+        roots = self.time_nodes[t]
+        for n1, n2 in combinations(roots, 2):
+            self.uted[t][(n1, n2)] = self.unordered_tree_edit_distance(
+                n1, n2, delta=delta, norm=norm
+            )
+        return self.uted[t]
+
     def unordered_tree_edit_distance(
         self, n1: int, n2: int, delta: callable = None, norm: callable = None
     ) -> float:
@@ -2007,7 +2050,6 @@ class lineageTree:
         Returns:
             (float) The normed unordered tree edit distance
         """
-        from functools import partial
 
         from edist.uted import uted
 
