@@ -10,6 +10,7 @@ import struct
 import xml.etree.ElementTree as ET
 from itertools import combinations
 from numbers import Number
+from typing import TextIO
 
 import numpy as np
 from scipy.spatial import Delaunay
@@ -29,7 +30,14 @@ class lineageTree:
         else:
             return self.next_id.pop()
 
-    def add_node(self, t=None, succ=None, pos=None, id=None, reverse=False):
+    def add_node(
+        self,
+        t: int = None,
+        succ: int = None,
+        pos: np.ndarray = None,
+        nid: int = None,
+        reverse: bool = False,
+    ) -> int:
         """Adds a node to the lineageTree and update it accordingly.
 
         Args:
@@ -37,7 +45,7 @@ class lineageTree:
             succ (int): id of the node the new node is a successor to
             pos ([float, ]): list of three floats representing the 3D
                 spatial position of the node
-            id (int): id value of the new node, to be used carefully,
+            nid (int): id value of the new node, to be used carefully,
                 if None is provided the new id is automatically computed.
             reverse (bool): True if in this lineageTree the predecessors
                 are the successors and reciprocally.
@@ -45,7 +53,7 @@ class lineageTree:
         Returns:
             int: id of the new node.
         """
-        C_next = self.get_next_id() if id is None else id
+        C_next = self.get_next_id() if nid is None else nid
         self.time_nodes.setdefault(t, []).append(C_next)
         if succ is not None and not reverse:
             self.successor.setdefault(succ, []).append(C_next)
@@ -61,7 +69,7 @@ class lineageTree:
         self.time[C_next] = t
         return C_next
 
-    def remove_node(self, c):
+    def remove_node(self, c: int) -> tuple:
         """Removes a node and update the lineageTree accordingly
 
         Args:
@@ -92,7 +100,7 @@ class lineageTree:
         self.next_id.append(c)
         return e_to_remove, succ, s_to_remove, pred, p_to_remove, pos
 
-    def fuse_nodes(self, c1, c2):
+    def fuse_nodes(self, c1: int, c2: int):
         """Fuses together two nodes that belong to the same time point
         and update the lineageTree accordingly.
 
@@ -124,7 +132,7 @@ class lineageTree:
         self.pos[c1] = np.mean([self.pos[c1], c2_pos], axis=0)
         self.progeny[c1] += 1
 
-    def _write_header_am(self, f, nb_points, length):
+    def _write_header_am(self, f: TextIO, nb_points: int, length: int):
         """Header for Amira .am files"""
         f.write("# AmiraMesh 3D ASCII 2.0\n")
         f.write("define VERTEX %d\n" % (nb_points * 2))
@@ -145,13 +153,13 @@ class lineageTree:
 
     def write_to_am(
         self,
-        path_format,
-        t_b=None,
-        t_e=None,
-        length=5,
-        manual_labels=None,
-        default_label=5,
-        new_pos=None,
+        path_format: str,
+        t_b: int = None,
+        t_e: int = None,
+        length: int = 5,
+        manual_labels: dict = None,
+        default_label: int = 5,
+        new_pos: np.ndarray = None,
     ):
         """Writes a lineageTree into an Amira readable data (.am format).
 
@@ -179,67 +187,67 @@ class lineageTree:
         if manual_labels is None:
             manual_labels = {}
         for t in range(t_b, t_e + 1):
-            f = open(path_format % t, "w")
-            nb_points = len(self.to_take_time[t])
-            self._write_header_am(f, nb_points, length)
-            points_v = {}
-            for C in self.to_take_time[t]:
-                C_tmp = C
-                positions = []
-                for _ in range(length):
-                    C_tmp = self.predecessor.get(C_tmp, [C_tmp])[0]
-                    positions.append(new_pos[C_tmp])
-                points_v[C] = positions
+            with open(path_format % t, "w") as f:
+                nb_points = len(self.to_take_time[t])
+                self._write_header_am(f, nb_points, length)
+                points_v = {}
+                for C in self.to_take_time[t]:
+                    C_tmp = C
+                    positions = []
+                    for _ in range(length):
+                        C_tmp = self.predecessor.get(C_tmp, [C_tmp])[0]
+                        positions.append(new_pos[C_tmp])
+                    points_v[C] = positions
 
-            f.write("@1\n")
-            for C in self.to_take_time[t]:
-                f.write("{:f} {:f} {:f}\n".format(*tuple(points_v[C][0])))
-                f.write("{:f} {:f} {:f}\n".format(*tuple(points_v[C][-1])))
+                f.write("@1\n")
+                for C in self.to_take_time[t]:
+                    f.write("{:f} {:f} {:f}\n".format(*tuple(points_v[C][0])))
+                    f.write("{:f} {:f} {:f}\n".format(*tuple(points_v[C][-1])))
 
-            f.write("@2\n")
-            for i, _ in enumerate(self.to_take_time[t]):
-                f.write("%d %d\n" % (2 * i, 2 * i + 1))
+                f.write("@2\n")
+                for i, _ in enumerate(self.to_take_time[t]):
+                    f.write("%d %d\n" % (2 * i, 2 * i + 1))
 
-            f.write("@3\n")
-            for _ in self.to_take_time[t]:
-                f.write("%d\n" % (length))
+                f.write("@3\n")
+                for _ in self.to_take_time[t]:
+                    f.write("%d\n" % (length))
 
-            f.write("@4\n")
-            for C in self.to_take_time[t]:
-                for p in points_v[C]:
-                    f.write("{:f} {:f} {:f}\n".format(*tuple(p)))
+                f.write("@4\n")
+                for C in self.to_take_time[t]:
+                    for p in points_v[C]:
+                        f.write("{:f} {:f} {:f}\n".format(*tuple(p)))
 
-            f.write("@5\n")
-            for C in self.to_take_time[t]:
-                f.write("%f\n" % (manual_labels.get(C, default_label)))
-                f.write(f"{0:f}\n")
+                f.write("@5\n")
+                for C in self.to_take_time[t]:
+                    f.write("%f\n" % (manual_labels.get(C, default_label)))
+                    f.write(f"{0:f}\n")
 
-            f.write("@6\n")
-            for C in self.to_take_time[t]:
-                f.write(
-                    "%d\n"
-                    % (
-                        int(
-                            manual_labels.get(C, default_label)
-                            != default_label
+                f.write("@6\n")
+                for C in self.to_take_time[t]:
+                    f.write(
+                        "%d\n"
+                        % (
+                            int(
+                                manual_labels.get(C, default_label)
+                                != default_label
+                            )
                         )
                     )
-                )
-                f.write("%d\n" % (0))
+                    f.write("%d\n" % (0))
 
-            f.write("@7\n")
-            for C in self.to_take_time[t]:
-                f.write(
-                    "%f\n" % (np.linalg.norm(points_v[C][0] - points_v[C][-1]))
-                )
+                f.write("@7\n")
+                for C in self.to_take_time[t]:
+                    f.write(
+                        "%f\n" % (np.linalg.norm(points_v[C][0] - points_v[C][-1]))
+                    )
 
-            f.write("@8\n")
-            for _ in self.to_take_time[t]:
-                f.write("%d\n" % (1))
-                f.write("%d\n" % (0))
-            f.close()
+                f.write("@8\n")
+                for _ in self.to_take_time[t]:
+                    f.write("%d\n" % (1))
+                    f.write("%d\n" % (0))
+                f.close()
 
-    def _get_height(self, c, done):
+    def _get_height(self, c: int, done: dict):
         """Recursively computes the height of a cell within a tree * a space factor.
         This function is specific to the function write_to_svg.
 
@@ -260,21 +268,21 @@ class lineageTree:
 
     def write_to_svg(
         self,
-        file_name,
-        roots=None,
-        draw_nodes=True,
-        draw_edges=True,
-        order_key=None,
-        vert_space_factor=0.5,
-        horizontal_space=1,
-        node_size=None,
-        stroke_width=None,
-        factor=1.0,
-        node_color=None,
-        stroke_color=None,
-        positions=None,
-        node_color_map=None,
-        normalize=True,
+        file_name: str,
+        roots: list = None,
+        draw_nodes: bool = True,
+        draw_edges: bool = True,
+        order_key: callable = None,
+        vert_space_factor: float = 0.5,
+        horizontal_space: float = 1,
+        node_size: callable = None,
+        stroke_width: callable = None,
+        factor: float = 1.0,
+        node_color: callable = None,
+        stroke_color: callable = None,
+        positions: dict = None,
+        node_color_map: callable = None,
+        normalize: bool = True,
     ):
         ##### remove background? default True background value? default 1
 
@@ -282,28 +290,28 @@ class lineageTree:
         Node and edges coloring and size can be provided.
 
         Args:
-            file_name: str, filesystem filename valid for `open()`
-            roots: [int, ...], list of node ids to be drawn. If `None` all the nodes will be drawn. Default `None`
-            draw_nodes: bool, wether to print the nodes or not, default `True`
-            draw_edges: bool, wether to print the edges or not, default `True`
-            order_key: function that would work for the attribute `key=` for the `sort`/`sorted` function
-            vert_space_factor: float, the vertical position of a node is its time. `vert_space_factor` is a
+            file_name (str): filesystem filename valid for `open()`
+            roots ([int, ...]): list of node ids to be drawn. If `None` all the nodes will be drawn. Default `None`
+            draw_nodes (bool): wether to print the nodes or not, default `True`
+            draw_edges (bool): wether to print the edges or not, default `True`
+            order_key (callable): function that would work for the attribute `key=` for the `sort`/`sorted` function
+            vert_space_factor (float): the vertical position of a node is its time. `vert_space_factor` is a
                                multiplier to space more or less nodes in time
-            horizontal_space: float, space between two consecutive nodes
-            node_size: func | str, a function that maps a node id to a `float` value that will determine the
+            horizontal_space (float): space between two consecutive nodes
+            node_size (callable | str): a function that maps a node id to a `float` value that will determine the
                        radius of the node. The default function return the constant value `vertical_space_factor/2.1`
                        If a string is given instead and it is a property of the tree,
                        the the size will be mapped according to the property
-            stroke_width: func, a function that maps a node id to a `float` value that will determine the
+            stroke_width (callable): a function that maps a node id to a `float` value that will determine the
                           width of the daughter edge.  The default function return the constant value `vertical_space_factor/2.1`
-            factor: float, scaling factor for nodes positions, default 1
-            node_color: func | str, a function that maps a node id to a triplet between 0 and 255.
+            factor (float): scaling factor for nodes positions, default 1
+            node_color (callable | str): a function that maps a node id to a triplet between 0 and 255.
                         The triplet will determine the color of the node. If a string is given instead and it is a property
                         of the tree, the the color will be mapped according to the property
-            node_color_map: str | func, the name of the colormap to use to color the nodes, or a colormap function
-            stroke_color: func, a function that maps a node id to a triplet between 0 and 255.
+            node_color_map (callable | str): the name of the colormap to use to color the nodes, or a colormap function
+            stroke_color (callable): a function that maps a node id to a triplet between 0 and 255.
                           The triplet will determine the color of the stroke of the inward edge.
-            positions: {int: [float, float], ...}, dictionary that maps a node id to a 2D position.
+            positions ({int: [float, float], ...}): dictionary that maps a node id to a 2D position.
                        Default `None`. If provided it will be used to position the nodes.
         """
         import svgwrite
@@ -471,8 +479,15 @@ class lineageTree:
                     )
         dwg.save()
 
-    def to_treex(self, sampling=1, start=0, finish=10000, many=True):
+    def to_treex(
+        self,
+        sampling: int = 1,
+        start: int = 0,
+        finish: int = 10000,
+        many: bool = True,
+    ):
         """
+        TODO: finish the doc
         Convert the lineage tree into a treex file.
 
         start/finish refer to first index in the new array times_to_consider
@@ -483,7 +498,7 @@ class lineageTree:
         from treex.tree import Tree
 
         if finish - start <= 0:
-            warn("Will return None, because start = finish")
+            warn("Will return None, because start = finish", stacklevel=2)
             return None
         id_to_tree = {_id: Tree() for _id in self.nodes}
         times_to_consider = sorted(
@@ -521,15 +536,15 @@ class lineageTree:
 
     def to_tlp(
         self,
-        fname,
-        t_min=-1,
-        t_max=np.inf,
-        nodes_to_use=None,
-        temporal=True,
-        spatial=None,
-        write_layout=True,
-        node_properties=None,
-        Names=False,
+        fname: str,
+        t_min: int = -1,
+        t_max: int = np.inf,
+        nodes_to_use: list = None,
+        temporal: bool = True,
+        spatial: str = None,
+        write_layout: bool = True,
+        node_properties: dict = None,
+        Names: bool = False,
     ):
         """Write a lineage tree into an understable tulip file.
 
@@ -582,142 +597,148 @@ class lineageTree:
                     s_edges.update([tuple(sorted([c, ni])) for ni in N])
             return s_edges
 
-        f = open(fname, "w")
-        f.write('(tlp "2.0"\n')
-        f.write("(nodes ")
+        with open(fname, "w") as f:
+            f.write('(tlp "2.0"\n')
+            f.write("(nodes ")
 
-        if spatial:
-            if spatial.lower() == "gg" and hasattr(self, "Gabriel_graph"):
-                s_edges = spatial_adjlist_to_set(self.Gabriel_graph)
-            elif spatial.lower() == "kn" and hasattr(self, "kn_graph"):
-                s_edges = spatial_adjlist_to_set(self.kn_graph)
-            elif spatial.lower() == "ball" and hasattr(self, "th_edges"):
-                s_edges = spatial_adjlist_to_set(self.th_edges)
+            if spatial:
+                if spatial.lower() == "gg" and hasattr(self, "Gabriel_graph"):
+                    s_edges = spatial_adjlist_to_set(self.Gabriel_graph)
+                elif spatial.lower() == "kn" and hasattr(self, "kn_graph"):
+                    s_edges = spatial_adjlist_to_set(self.kn_graph)
+                elif spatial.lower() == "ball" and hasattr(self, "th_edges"):
+                    s_edges = spatial_adjlist_to_set(self.th_edges)
 
-        if not nodes_to_use:
-            if t_max != np.inf or t_min > -1:
-                nodes_to_use = [
-                    n for n in self.nodes if t_min < self.time[n] <= t_max
-                ]
+            if not nodes_to_use:
+                if t_max != np.inf or t_min > -1:
+                    nodes_to_use = [
+                        n for n in self.nodes if t_min < self.time[n] <= t_max
+                    ]
+                    edges_to_use = []
+                    if temporal:
+                        edges_to_use += [
+                            e
+                            for e in self.edges
+                            if t_min < self.time[e[0]] < t_max
+                        ]
+                    if spatial:
+                        edges_to_use += [
+                            e for e in s_edges if t_min < self.time[e[0]] < t_max
+                        ]
+                else:
+                    nodes_to_use = list(self.nodes)
+                    edges_to_use = []
+                    if temporal:
+                        edges_to_use += list(self.edges)
+                    if spatial:
+                        edges_to_use += list(s_edges)
+            else:
                 edges_to_use = []
                 if temporal:
                     edges_to_use += [
                         e
                         for e in self.edges
-                        if t_min < self.time[e[0]] < t_max
+                        if e[0] in nodes_to_use and e[1] in nodes_to_use
                     ]
                 if spatial:
                     edges_to_use += [
                         e for e in s_edges if t_min < self.time[e[0]] < t_max
                     ]
-            else:
-                nodes_to_use = list(self.nodes)
-                edges_to_use = []
-                if temporal:
-                    edges_to_use += list(self.edges)
-                if spatial:
-                    edges_to_use += list(s_edges)
-        else:
-            edges_to_use = []
-            if temporal:
-                edges_to_use += [
-                    e
-                    for e in self.edges
-                    if e[0] in nodes_to_use and e[1] in nodes_to_use
+            nodes_to_use = set(nodes_to_use)
+            if Names:
+                names_which_matter = {
+                    k: v
+                    for k, v in node_properties[Names][0].items()
+                    if v != "" and v != "NO" and k in nodes_to_use
+                }
+                names_formated = format_names(names_which_matter)
+                order_on_nodes = np.array(list(names_formated.keys()))[
+                    np.argsort(list(names_formated.values()))
                 ]
-            if spatial:
-                edges_to_use += [
-                    e for e in s_edges if t_min < self.time[e[0]] < t_max
-                ]
-        nodes_to_use = set(nodes_to_use)
-        if Names:
-            names_which_matter = {
-                k: v
-                for k, v in node_properties[Names][0].items()
-                if v != "" and v != "NO" and k in nodes_to_use
-            }
-            names_formated = format_names(names_which_matter)
-            order_on_nodes = np.array(list(names_formated.keys()))[
-                np.argsort(list(names_formated.values()))
-            ]
-            nodes_to_use = set(nodes_to_use).difference(order_on_nodes)
-            tmp_names = {}
-            for k, v in node_properties[Names][0].items():
-                if (
-                    len(
-                        self.successor.get(
-                            self.predecessor.get(k, [-1])[0], []
+                nodes_to_use = set(nodes_to_use).difference(order_on_nodes)
+                tmp_names = {}
+                for k, v in node_properties[Names][0].items():
+                    if (
+                        len(
+                            self.successor.get(
+                                self.predecessor.get(k, [-1])[0], []
+                            )
                         )
-                    )
-                    != 1
-                    or self.time[k] == t_min + 1
-                ):
-                    tmp_names[k] = v
-            node_properties[Names][0] = tmp_names
-            for n in order_on_nodes:
-                f.write(str(n) + " ")
-        else:
-            order_on_nodes = set()
+                        != 1
+                        or self.time[k] == t_min + 1
+                    ):
+                        tmp_names[k] = v
+                node_properties[Names][0] = tmp_names
+                for n in order_on_nodes:
+                    f.write(str(n) + " ")
+            else:
+                order_on_nodes = set()
 
-        for n in nodes_to_use:
-            f.write(str(n) + " ")
-        f.write(")\n")
-
-        nodes_to_use.update(order_on_nodes)
-
-        for i, e in enumerate(edges_to_use):
-            f.write(
-                "(edge " + str(i) + " " + str(e[0]) + " " + str(e[1]) + ")\n"
-            )
-
-        f.write('(property 0 int "time"\n')
-        f.write('\t(default "0" "0")\n')
-        for n in nodes_to_use:
-            f.write("\t(node " + str(n) + ' "' + str(self.time[n]) + '")\n')
-        f.write(")\n")
-
-        if write_layout:
-            f.write('(property 0 layout "viewLayout"\n')
-            f.write('\t(default "(0, 0, 0)" "()")\n')
             for n in nodes_to_use:
-                f.write(
-                    "\t(node "
-                    + str(n)
-                    + ' "'
-                    + str(tuple(self.pos[n]))
-                    + '")\n'
-                )
-            f.write(")\n")
-            f.write('(property 0 double "distance"\n')
-            f.write('\t(default "0" "0")\n')
-            for i, e in enumerate(edges_to_use):
-                d_tmp = np.linalg.norm(self.pos[e[0]] - self.pos[e[1]])
-                f.write("\t(edge " + str(i) + ' "' + str(d_tmp) + '")\n')
-                f.write("\t(node " + str(e[0]) + ' "' + str(d_tmp) + '")\n')
+                f.write(str(n) + " ")
             f.write(")\n")
 
-        if node_properties:
-            for p_name, (p_dict, default) in node_properties.items():
-                if type(list(p_dict.values())[0]) == str:
-                    f.write('(property 0 string "%s"\n' % p_name)
-                    f.write(f"\t(default {default} {default})\n")
-                elif isinstance(list(p_dict.values())[0], Number):
-                    f.write('(property 0 double "%s"\n' % p_name)
-                    f.write('\t(default "0" "0")\n')
+            nodes_to_use.update(order_on_nodes)
+
+            for i, e in enumerate(edges_to_use):
+                f.write(
+                    "(edge " + str(i) + " " + str(e[0]) + " " + str(e[1]) + ")\n"
+                )
+
+            f.write('(property 0 int "time"\n')
+            f.write('\t(default "0" "0")\n')
+            for n in nodes_to_use:
+                f.write("\t(node " + str(n) + ' "' + str(self.time[n]) + '")\n')
+            f.write(")\n")
+
+            if write_layout:
+                f.write('(property 0 layout "viewLayout"\n')
+                f.write('\t(default "(0, 0, 0)" "()")\n')
                 for n in nodes_to_use:
                     f.write(
                         "\t(node "
                         + str(n)
                         + ' "'
-                        + str(p_dict.get(n, default))
+                        + str(tuple(self.pos[n]))
                         + '")\n'
                     )
                 f.write(")\n")
+                f.write('(property 0 double "distance"\n')
+                f.write('\t(default "0" "0")\n')
+                for i, e in enumerate(edges_to_use):
+                    d_tmp = np.linalg.norm(self.pos[e[0]] - self.pos[e[1]])
+                    f.write("\t(edge " + str(i) + ' "' + str(d_tmp) + '")\n')
+                    f.write("\t(node " + str(e[0]) + ' "' + str(d_tmp) + '")\n')
+                f.write(")\n")
 
-        f.write(")")
-        f.close()
+            if node_properties:
+                for p_name, (p_dict, default) in node_properties.items():
+                    if type(list(p_dict.values())[0]) == str:
+                        f.write('(property 0 string "%s"\n' % p_name)
+                        f.write(f"\t(default {default} {default})\n")
+                    elif isinstance(list(p_dict.values())[0], Number):
+                        f.write('(property 0 double "%s"\n' % p_name)
+                        f.write('\t(default "0" "0")\n')
+                    for n in nodes_to_use:
+                        f.write(
+                            "\t(node "
+                            + str(n)
+                            + ' "'
+                            + str(p_dict.get(n, default))
+                            + '")\n'
+                        )
+                    f.write(")\n")
 
-    def read_from_csv(self, file_path, z_mult, link=1, delim=","):
+            f.write(")")
+            f.close()
+
+    def read_from_csv(
+        self, file_path: str, z_mult: float, link: int = 1, delim: str = ","
+    ):
+        """
+        TODO: write doc
+        """
+
         def convert_for_csv(v):
             if v.isdigit():
                 return int(v)
@@ -786,8 +807,9 @@ class lineageTree:
         self.t_b = min(self.time_nodes)
         self.t_e = max(self.time_nodes)
 
-    def read_from_ASTEC(self, file_path, eigen=False):
-        """Read an `xml` or `pkl` file produced by the ASTEC algorithm.
+    def read_from_ASTEC(self, file_path: str, eigen: bool = False):
+        """
+        Read an `xml` or `pkl` file produced by the ASTEC algorithm.
 
         Args:
             file_path (str): path to an output generated by ASTEC
@@ -876,63 +898,32 @@ class lineageTree:
 
         lt = tmp_data["cell_lineage"]
 
-        # if "cell_name" in tmp_data:
-        #     names = tmp_data["cell_name"]
-        # else:
-        #     names = {}
-
         if "cell_contact_surface" in tmp_data:
             do_surf = True
             surfaces = tmp_data["cell_contact_surface"]
         else:
             do_surf = False
 
-        # if "problematic_cells" in tmp_data:
-        #     prob_cells = set(tmp_data["problematic_cells"])
-        # else:
-        #     prob_cells = set()
-        # if eigen:
-        #     self.eigen_vectors = {}
-        #     self.eigen_values = {}
-        #     eig_val = tmp_data["cell_principal_values"]
-        #     eig_vec = tmp_data["cell_principal_vectors"]
-
         inv = {vi: [c] for c, v in lt.items() for vi in v}
         nodes = set(lt).union(inv)
-        # if "cell_barycenter" in tmp_data:
-        #     pos = tmp_data["cell_barycenter"]
-        # else:
-        #     pos = dict(list(zip(nodes,[[0.0, 0.0, 0.0]]* len(nodes))))
 
         unique_id = 0
-        # id_corres = {}
 
         for n in nodes:
-            # if n in prob_cells:
-            #     self.prob_cells.add(unique_id)
-            # if n in pos and n in names:
             t = n // 10**4
             self.image_label[unique_id] = n % 10**4
             self.lT2pkl[unique_id] = n
             self.pkl2lT[n] = unique_id
-            # self.name[unique_id] = names.get(n, "")
-            # position = np.array(pos.get(n, [0, 0, 0]), dtype=float)
             self.time_nodes.setdefault(t, set()).add(unique_id)
             self.nodes.add(unique_id)
-            # self.pos[unique_id] = position
             self.time[unique_id] = t
-            # id_corres[n] = unique_id
             if "cell_volume" in tmp_data:
                 self.volume[unique_id] = tmp_data["cell_volume"].get(n, 0.0)
-            # if eigen:
-            #     self.eigen_vectors[unique_id] = eig_vec.get(n)
-            #     self.eigen_values[unique_id] = eig_val.get(n)
             if "cell_fate" in tmp_data:
                 self.fates = {}
                 self.fates[unique_id] = tmp_data["cell_fate"].get(n, "")
 
             unique_id += 1
-        # self.contact = {self.pkl2lT[c]: v for c, v in surfaces.iteritems() if c in self.pkl2lT}
         if do_surf:
             for c in nodes:
                 if c in surfaces and c in self.pkl2lT:
@@ -943,7 +934,6 @@ class lineageTree:
                     }
 
         for n, new_id in self.pkl2lT.items():
-            # new_id = id_corres[n]
             if n in inv:
                 self.predecessor[new_id] = [self.pkl2lT[ni] for ni in inv[n]]
             if n in lt:
@@ -954,7 +944,6 @@ class lineageTree:
                     [(new_id, ni) for ni in self.successor[new_id]]
                 )
                 for ni in self.successor[new_id]:
-                    # self.edges += [(new_id, ni)]
                     self.time_edges.setdefault(t - 1, set()).add((new_id, ni))
 
         self.t_b = min(self.time_nodes)
@@ -978,7 +967,8 @@ class lineageTree:
                                 self.pkl2lT[k]: v for k, v in value
                             }
                     self.__dict__[prop_name] = dictionary
-                # is any of this necessary? Or does it mean it anyways does not contain information about the id and a simple else: is enough?
+                # is any of this necessary? Or does it mean it anyways does not contain
+                # information about the id and a simple else: is enough?
                 elif (
                     prop_values.isinstance(set)
                     or prop_values.isinstance(list)
@@ -990,7 +980,7 @@ class lineageTree:
 
         # add a list of all available properties
 
-    def _read_from_ASTEC_xml(self, file_path):
+    def _read_from_ASTEC_xml(self, file_path: str):
         def _set_dictionary_value(root):
             if len(root) == 0:
                 if root.text is None:
@@ -1021,7 +1011,7 @@ class lineageTree:
                     dictionary[str(child.tag)] = value
         return dictionary
 
-    def _read_from_ASTEC_pkl(self, file_path, eigen=False):
+    def _read_from_ASTEC_pkl(self, file_path: str, eigen: bool = False):
         with open(file_path, "rb") as f:
             tmp_data = pkl.load(f, encoding="latin1")
             f.close()
@@ -1038,7 +1028,13 @@ class lineageTree:
                 new_dict[k] = v
         return new_dict
 
-    def read_from_txt_for_celegans(self, file):
+    def read_from_txt_for_celegans(self, file: str):
+        """
+        Read a C. elegans lineage tree
+
+        Args:
+            file (str): Path to the file to read
+        """
         implicit_l_t = {
             "AB": "P0",
             "P1": "P0",
@@ -1095,8 +1091,19 @@ class lineageTree:
             self.max_id = unique_id
 
     def read_from_txt_for_celegans_CAO(
-        self, file, reorder=False, raw_size=None, shape=None
+        self,
+        file: str,
+        reorder: bool = False,
+        raw_size: float = None,
+        shape: float = None,
     ):
+        """
+        Read a C. elegans lineage tree from Cao et al.
+
+        Args:
+            file (str): Path to the file to read
+        """
+
         implicit_l_t = {
             "AB": "P0",
             "P1": "P0",
@@ -1171,7 +1178,9 @@ class lineageTree:
                     self.time_edges.setdefault(t - 1, set()).add((p, c))
             self.max_id = unique_id
 
-    def read_tgmm_xml(self, file_format, tb, te, z_mult=1.0):
+    def read_tgmm_xml(
+        self, file_format: str, tb: int, te: int, z_mult: float = 1.0
+    ):
         """Reads a lineage tree from TGMM xml output.
 
         Args:
@@ -1278,7 +1287,10 @@ class lineageTree:
                         self.ind_cells[t] = 1
         self.max_id = unique_id - 1
 
-    def read_from_mastodon(self, path, name):
+    def read_from_mastodon(self, path: str, name: str):
+        """
+        TODO: write doc
+        """
         from mastodon_reader import MastodonReader
 
         mr = MastodonReader(path)
@@ -1310,7 +1322,10 @@ class lineageTree:
         self.t_b = min(self.time_nodes.keys())
         self.t_e = max(self.time_nodes.keys())
 
-    def read_from_mastodon_csv(self, path):
+    def read_from_mastodon_csv(self, path: str):
+        """
+        TODO: Write doc
+        """
         spots = []
         links = []
         self.node_name = {}
@@ -1349,7 +1364,7 @@ class lineageTree:
         self.t_b = min(self.time_nodes.keys())
         self.t_e = max(self.time_nodes.keys())
 
-    def read_from_mamut_xml(self, path):
+    def read_from_mamut_xml(self, path: str):
         """Read a lineage tree from a MaMuT xml.
 
         Args:
@@ -1428,7 +1443,7 @@ class lineageTree:
         self.t_b = min(self.time_nodes.keys())
         self.t_e = max(self.time_nodes.keys())
 
-    def to_binary(self, fname, starting_points=None):
+    def to_binary(self, fname: str, starting_points: list = None):
         """Writes the lineage tree (a forest) as a binary structure
         (assuming it is a binary tree, it would not work for *n* ary tree with 2 < *n*).
         The binary file is composed of 3 sequences of numbers and
@@ -1477,18 +1492,19 @@ class lineageTree:
             pos_sequence += list(self.pos[c])
             number_sequence.append(-1)
 
-        f = open(fname, "wb")
-        f.write(struct.pack("q", len(number_sequence)))
-        f.write(struct.pack("q", len(time_sequence)))
-        f.write(struct.pack("q", len(pos_sequence)))
-        f.write(struct.pack("q" * len(number_sequence), *number_sequence))
-        f.write(struct.pack("H" * len(time_sequence), *time_sequence))
-        f.write(struct.pack("d" * len(pos_sequence), *pos_sequence))
+        with open(fname, "wb") as f:
+            f.write(struct.pack("q", len(number_sequence)))
+            f.write(struct.pack("q", len(time_sequence)))
+            f.write(struct.pack("q", len(pos_sequence)))
+            f.write(struct.pack("q" * len(number_sequence), *number_sequence))
+            f.write(struct.pack("H" * len(time_sequence), *time_sequence))
+            f.write(struct.pack("d" * len(pos_sequence), *pos_sequence))
 
-        f.close()
+            f.close()
 
-    def read_from_binary(self, fname, reverse_time=False):
-        """Reads a binary lineageTree file name.
+    def read_from_binary(self, fname: str):
+        """
+        Reads a binary lineageTree file name.
         Format description: see self.to_binary
 
         Args:
@@ -1499,21 +1515,21 @@ class lineageTree:
         H_size = struct.calcsize("H")
         d_size = struct.calcsize("d")
 
-        f = open(fname, "rb")
-        len_tree = struct.unpack("q", f.read(q_size))[0]
-        len_time = struct.unpack("q", f.read(q_size))[0]
-        len_pos = struct.unpack("q", f.read(q_size))[0]
-        number_sequence = list(
-            struct.unpack("q" * len_tree, f.read(q_size * len_tree))
-        )
-        time_sequence = list(
-            struct.unpack("H" * len_time, f.read(H_size * len_time))
-        )
-        pos_sequence = np.array(
-            struct.unpack("d" * len_pos, f.read(d_size * len_pos))
-        )
+        with open(fname, "rb") as f:
+            len_tree = struct.unpack("q", f.read(q_size))[0]
+            len_time = struct.unpack("q", f.read(q_size))[0]
+            len_pos = struct.unpack("q", f.read(q_size))[0]
+            number_sequence = list(
+                struct.unpack("q" * len_tree, f.read(q_size * len_tree))
+            )
+            time_sequence = list(
+                struct.unpack("H" * len_time, f.read(H_size * len_time))
+            )
+            pos_sequence = np.array(
+                struct.unpack("d" * len_pos, f.read(d_size * len_pos))
+            )
 
-        f.close()
+            f.close()
 
         successor = {}
         predecessor = {}
@@ -1629,7 +1645,13 @@ class lineageTree:
         self.is_root = is_root
         self.max_id = max(self.nodes)
 
-    def write(self, fname):
+    def write(self, fname: str):
+        """
+        Write a lineage tree on disk as an .lT file.
+
+        Args:
+            fname (str): path to and name of the file to save
+        """
         if os.path.splitext(fname)[-1] != ".lT":
             fname = os.path.extsep.join((fname, "lT"))
         with open(fname, "bw") as f:
@@ -1637,13 +1659,22 @@ class lineageTree:
             f.close()
 
     @classmethod
-    def load(clf, fname):
+    def load(clf, fname: str):
+        """
+        Loading a lineage tree from a ".lT" file.
+
+        Args:
+            fname (str): path to and name of the file to read
+
+        Returns:
+            (lineageTree): loaded file
+        """
         with open(fname, "br") as f:
             lT = pkl.load(f)
             f.close()
         return lT
 
-    def get_idx3d(self, t):
+    def get_idx3d(self, t: int) -> tuple:
         """Get a 3d kdtree for the dataset at time *t* .
         The  kdtree is stored in *self.kdtrees[t]*
 
@@ -1668,7 +1699,7 @@ class lineageTree:
             idx3d = self.kdtrees[t]
         return idx3d, np.array(to_check_self)
 
-    def get_gabriel_graph(self, t):
+    def get_gabriel_graph(self, t: int) -> dict:
         """Build the Gabriel graph of the given graph for time point `t`
         The Garbiel graph is then stored in self.Gabriel_graph and returned
         *WARNING: the graph is not recomputed if already computed. even if nodes were added*.
@@ -1722,7 +1753,7 @@ class lineageTree:
 
         return self.Gabriel_graph[t]
 
-    def get_predecessors(self, x, depth=None):
+    def get_predecessors(self, x: int, depth: int = None) -> list:
         """Computes the predecessors of the node *x* up to
         *depth* predecessors. The ordered list of ids is returned.
 
@@ -1745,7 +1776,7 @@ class lineageTree:
             acc += 1
         return cycle
 
-    def get_successors(self, x, depth=None):
+    def get_successors(self, x: int, depth: int = None) -> list:
         """Computes the successors of the node *x* up to
         *depth* successors. The ordered list of ids is returned.
 
@@ -1762,7 +1793,13 @@ class lineageTree:
             acc += 1
         return cycle
 
-    def get_cycle(self, x, depth=None, depth_pred=None, depth_succ=None):
+    def get_cycle(
+        self,
+        x: int,
+        depth: int = None,
+        depth_pred: int = None,
+        depth_succ: int = None,
+    ) -> list:
         """Computes the predecessors and successors of the node *x* up to
         *depth_pred* predecessors plus *depth_succ* successors.
         If the value *depth* is provided and not None,
@@ -1783,7 +1820,7 @@ class lineageTree:
             x, depth_succ
         )
 
-    def get_all_tracks(self):
+    def get_all_tracks(self) -> list:
         """Computes all the tracks of a given lineage tree,
         stores it in *self.all_tracks* and returns it.
 
@@ -1800,7 +1837,7 @@ class lineageTree:
                 to_do -= set(track)
         return self.all_tracks
 
-    def get_sub_tree(self, x, preorder=False):
+    def get_sub_tree(self, x: int, preorder: bool = False) -> list:
         """Computes the list of cells from the subtree spawned by *x*
         The default output order is breadth first traversal.
         Unless preorder is `True` in that case the order is
@@ -1824,7 +1861,9 @@ class lineageTree:
             sub_tree += [curr]
         return sub_tree
 
-    def compute_spatial_density(self, t_b=None, t_e=None, th=50):
+    def compute_spatial_density(
+        self, t_b: int = None, t_e: int = None, th: float = 50
+    ) -> dict:
         """Computes the spatial density of cells between `t_b` and `t_e`.
         The spatial density is computed as follow:
         #cell/(4/3*pi*th^3)
@@ -1848,7 +1887,7 @@ class lineageTree:
             self.spatial_density.update(dict(zip(nodes, nb_ni)))
         return self.spatial_density
 
-    def compute_k_nearest_neighbours(self, k=10):
+    def compute_k_nearest_neighbours(self, k: int = 10) -> dict:
         """Computes the k-nearest neighbors
         Writes the output in the attribute `kn_graph`
         and returns it.
@@ -1869,7 +1908,7 @@ class lineageTree:
             self.kn_graph.update(out)
         return self.kn_graph
 
-    def compute_spatial_edges(self, th=50):
+    def compute_spatial_edges(self, th: int = 50) -> dict:
         """Computes the neighbors at a distance `th`
         Writes the output in the attribute `th_edge`
         and returns it.
@@ -1890,7 +1929,7 @@ class lineageTree:
             )
         return self.th_edges
 
-    def get_simple_tree(self, r, time_resolution=1):
+    def get_simple_tree(self, r: int, time_resolution: int = 1) -> tuple:
         """
         Get a "simple" version of the tree spawned by the node `r`
         This simple version is just one node per cell (as opposed to
@@ -1924,7 +1963,7 @@ class lineageTree:
         return out_dict, self.cycle_time
 
     @staticmethod
-    def __edist_format(adj_dict):
+    def __edist_format(adj_dict: dict):
         inv_adj = {vi: k for k, v in adj_dict.items() for vi in v}
         roots = set(adj_dict).difference(inv_adj)
         nid2list = {}
@@ -1947,7 +1986,9 @@ class lineageTree:
             ]
         return nodes, adj_list, list2nid
 
-    def unordered_tree_edit_distance(self, n1, n2, delta=None, norm=None):
+    def unordered_tree_edit_distance(
+        self, n1: int, n2: int, delta: callable = None, norm: callable = None
+    ) -> float:
         """
         Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
         by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
@@ -1958,13 +1999,13 @@ class lineageTree:
         Args:
             n1 (int): id of the first node to compare
             n2 (int): id of the second node to compare
-            delta (function): comparison function (see edist doc for more information)
-            norm (function): norming function that takes the number of nodes
+            delta (callable): comparison function (see edist doc for more information)
+            norm (callable): norming function that takes the number of nodes
                 of the tree spawned by `n1` and the number of nodes
                 of the tree spawned by `n2` as arguments.
 
         Returns:
-            The normed unordered tree edit distance
+            (float) The normed unordered tree edit distance
         """
         from functools import partial
 
@@ -2049,24 +2090,29 @@ class lineageTree:
     #     return d[-1, -1], d
 
     def __getitem__(self, item):
-        return self.__dict__[item]
+        if isinstance(item, str):
+            return self.__dict__[item]
+        elif isinstance(item, int):
+            return self.successor[item]
 
     def __init__(
         self,
-        file_format=None,
-        tb=None,
-        te=None,
-        z_mult=1.0,
-        file_type="",
-        delim=",",
-        eigen=False,
-        shape=None,
-        raw_size=None,
-        reorder=False,
-        xml_attributes=None,
-        name=None,
+        file_format: str = None,
+        tb: int = None,
+        te: int = None,
+        z_mult: float = 1.0,
+        file_type: str = "",
+        delim: str = ",",
+        eigen: bool = False,
+        shape: tuple = None,
+        raw_size: tuple = None,
+        reorder: bool = False,
+        xml_attributes: tuple = None,
+        name: str = None,
     ):
-        """Main library to build tree graph representation of lineage tree data
+        """
+        TODO: complete the doc
+        Main library to build tree graph representation of lineage tree data
         It can read TGMM, ASTEC, SVF, MaMuT and TrackMate outputs.
 
         Args:
