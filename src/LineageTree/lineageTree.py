@@ -1970,6 +1970,8 @@ class lineageTree:
                 out_dict[current] = _next
             to_do.extend(_next)
             self.cycle_time[current] = len(cycle) * time_resolution
+        if out_dict == {}:
+            out_dict[r] = []
         return out_dict, self.cycle_time
 
     @staticmethod
@@ -1994,6 +1996,7 @@ class lineageTree:
                 [nid2list[d] for d in adj_dict.get(list2nid[_id], [])]
                 for _id in nodes
             ]
+
         return nodes, adj_list, list2nid
 
     def unordered_tree_edit_distances_at_time_t(
@@ -2056,11 +2059,15 @@ class lineageTree:
         if delta is None or not isinstance(delta, callable):
 
             def delta(x, y, corres1, corres2, times):
-                if x is None or y is None:
-                    return 1
+                if x is None:
+                    return times[corres2[y]]
+                if y is None:
+                    return times[corres1[x]]
+                if x is None and y is None:
+                    return 0
                 len_x = times[corres1[x]]
                 len_y = times[corres2[y]]
-                return np.abs(len_x - len_y) / (len_x + len_y)
+                return np.abs(len_x - len_y)
 
         if norm is None or not isinstance(norm, callable):
 
@@ -2081,9 +2088,9 @@ class lineageTree:
         delta_tmp = partial(
             delta, corres1=corres1, corres2=corres2, times=self.cycle_time
         )
-        return uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / norm(
-            nodes1, nodes2
-        )
+        return uted(
+            nodes1, adj1, nodes2, adj2, delta=delta_tmp
+        )  # / max(len(self.get_sub_tree(n1)),len(self.get_sub_tree(n2)))
 
     # def DTW(self, t1, t2, max_w=None, start_delay=None, end_delay=None,
     #         metric='euclidian', **kwargs):
@@ -2130,6 +2137,139 @@ class lineageTree:
     #         for j in range(1, m):
     #             d[i, j] = c[i, j] + min((d[i-1, j], d[i, j-1], d[i-1, j-1]))
     #     return d[-1, -1], d
+    
+    def time_register(self):
+        """
+        Time registration of the emryo so it does not move over time, maybe I could add a window.
+        Also the first timepoints should not be moved, so it starts from tp10
+        """
+        import random
+        def sampler(target_time):
+            source = []
+            target = []
+            for cell in self.time_nodes[target_time-1]:
+                try:
+                    cell_next = self.successor[cell]
+                    source.append([float(i) for i in self.pos[cell]])
+                    data_div=[]
+                    for cell in cell_next:
+                        data_div.append([float(i) for i in self.pos[cell]])
+                    data_div = np.array(data_div)
+                    target.append(np.mean(data_div, axis=0))
+                except:pass
+            # print(np.array(target).shape, np.array(source).shape)
+            return source, target
+        def kd_tree(target_time):
+            source_data = []
+            target_data = []
+            for cell in self.time_nodes[target_time-1]:
+                source_data.append([i for i in self.pos[cell]])
+            for cell in self.time_nodes[target_time]:
+                target_data.append([i for i in self.pos[cell]])
+            target_data= np.array(target_data)
+            source_data = np.array(source_data)
+            self.get_idx3d(target_time)
+            distances, indices = self.kdtrees[target_time].query(source_data, k=1)
+            # good_corr = distances<100
+            return source_data, target_data[indices]
+
+
+        def align_point_clouds(target, source):
+            # Compute the centroids
+            centroid_target = np.mean(target, axis=0)
+            centroid_source = np.mean(source, axis=0)
+
+            # Center the point clouds
+            centered_target = target - centroid_target
+            centered_source = source - centroid_source
+
+            # Calculate the cross-covariance matrix
+            cov_matrix = np.dot(centered_target.T, centered_source)
+
+            # Perform SVD to find rotation matrix
+            u, _, vh = np.linalg.svd(cov_matrix)
+            rotation_matrix = np.dot(vh.T, u.T)
+            # if np.linalg.det(rotation_matrix)<0:
+            #     vh[-1,:]*=-1
+            rotation_matrix = np.dot(vh.T, u.T)
+
+            # Calculate the translation vector
+            translation_vector = centroid_source - np.dot(rotation_matrix, centroid_target)
+
+            return rotation_matrix, translation_vector
+        for repeats in range(4):
+            rotation = []
+            for i in range(4,int(self.t_e)):
+                # for repetition in range(5):
+                for repeat in range(2):
+                    source, target = kd_tree(i)
+                    if len(target)> 10:
+                        
+                        rotation, t =  align_point_clouds(target,source)
+                        
+                    
+                        for cell in self.time_nodes[i]:
+                            self.pos[cell] = np.dot(rotation,self.pos[cell])+ t
+                    else:
+                        if rotation!=[]:
+                            for cell in self.time_nodes[i]:
+                                self.pos[cell] = np.dot(rotation,self.pos[cell])+ t
+
+
+    def orient_embryo(self):
+        """
+        Orient the emrbryo so that the axis of the highest variance is parallel to y-axis
+        """
+        data = []
+        for cell in self.nodes:
+            data_pre = [float(i) for i in self.pos[cell]]
+            data.append(data_pre)
+        data = np.array(data)
+        centered_data = data - np.mean(data, axis=0)
+        cov = np.dot(centered_data.T, centered_data)
+        eigenvalues, eigenvectors = np.linalg.eig(cov)
+        fpc_index = np.argmax(eigenvalues)
+        self.eigenv = eigenvectors[:, fpc_index]
+        rot_mat = self.rotation_matrix_to_align_vector_with_axis(self.eigenv)
+        for cell in self.nodes:
+            data_pre = [float(i) for i in self.pos[cell]]
+            self.pos[cell] = np.array(rot_mat @ data_pre, dtype="float32")
+        tmp = rot_mat @ data.T
+        correct_neg = [np.min(tmp[0]), np.min(tmp[1]), np.min(tmp[2])]
+        scale = np.max(tmp[1]) - correct_neg[1]
+        for cell in self.nodes:
+            data_pre = [float(i) for i in self.pos[cell]]
+            self.pos[cell] -= correct_neg
+            # self.pos[cell] =self.pos[cell]@((1000/scale)*np.eye(3))
+
+    def rotation_matrix_to_align_vector_with_axis(
+        self, vector, target_axis=[0, 1, 0]
+    ):
+        vector = vector / np.linalg.norm(vector)
+        target_axis = target_axis / np.linalg.norm(target_axis)
+
+        # Calculate the rotation axis (cross product)
+        rotation_axis = np.cross(vector, target_axis)
+
+        # Calculate the rotation angle (dot product)
+        dot_product = np.dot(vector, target_axis)
+        rotation_angle = np.arccos(dot_product)
+
+        # Build the rotation matrix using the axis-angle rotation formula
+        c = np.cos(rotation_angle)
+        s = np.sin(rotation_angle)
+        t = 1 - c
+        x, y, z = rotation_axis
+
+        rotation_matrix = np.array(
+            [
+                [t * x * x + c, t * x * y - s * z, t * x * z + s * y],
+                [t * x * y + s * z, t * y * y + c, t * y * z - s * x],
+                [t * x * z - s * y, t * y * z + s * x, t * z * z + c],
+            ]
+        )
+
+        return rotation_matrix
 
     def __getitem__(self, item):
         if isinstance(item, str):
@@ -2183,6 +2323,7 @@ class lineageTree:
         self.kdtrees = {}
         self.spatial_density = {}
         self.progeny = {}
+
         if xml_attributes is None:
             self.xml_attributes = []
         else:
