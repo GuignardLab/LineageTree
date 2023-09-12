@@ -2137,55 +2137,39 @@ class lineageTree:
     #         for j in range(1, m):
     #             d[i, j] = c[i, j] + min((d[i-1, j], d[i, j-1], d[i-1, j-1]))
     #     return d[-1, -1], d
-
-    def time_register(self):
-        """
-        Time registration of the emryo so it does not move over time, maybe I could add a window.
-        Also the first timepoints should not be moved, so it starts from tp10
-        """
-        import random
-
-        # def sampler(target_time):
-        #     source = []
-        #     target = []
-        #     for cell in self.time_nodes[target_time - 1]:
-        #         try:
-        #             cell_next = self.successor[cell]
-        #             source.append([float(i) for i in self.pos[cell]])
-        #             data_div = []
-        #             for cell in cell_next:
-        #                 data_div.append([float(i) for i in self.pos[cell]])
-        #             data_div = np.array(data_div)
-        #             target.append(np.mean(data_div, axis=0))
-        #         except:
-        #             pass
-        #     return source, target
-
+    def brute_force_register(self):
+        from scipy.spatial import ConvexHull
         def kd_tree(target_time, source_time):
             source_data = []
             target_data = []
             weights = []
             for cell in self.time_nodes[source_time]:
                 source_data.append([i for i in self.pos[cell]])
-                weights.append(self.spatial_density[cell])
             for cell in self.time_nodes[target_time]:
                 target_data.append([i for i in self.pos[cell]])
             target_data = np.array(target_data)
             source_data = np.array(source_data)
-            kdtree = KDTree(target_data)
-            distances, indices = kdtree.query(
-                source_data, k=1
-            )
-            weights = np.array(weights)
-            good_corr = distances<np.mean(distances)
-            return source_data[good_corr], target_data[indices[good_corr]],weights[good_corr]
+            hull_source = ConvexHull(source_data)
+            hull_target = ConvexHull(target_data)
+            new_data_source = np.array(hull_source.points)
+            new_data_target = np.array(hull_target.points)
 
-        def align_point_clouds(target,weights, source):
+            for simplice in hull_source.simplices:
+                new_data_source = np.append(new_data_source, generate_points_in_triangle(source_data[simplice[0]],source_data[simplice[1]],source_data[simplice[2]],5),0)
+            for simplice in hull_target.simplices:
+                new_data_target = np.append(new_data_target, generate_points_in_triangle(target_data[simplice[0]],target_data[simplice[1]],target_data[simplice[2]],5),0)
+            kdtree = KDTree(new_data_target)
+            distances, indices = kdtree.query(
+                new_data_source, k=1
+            )
+            # good_corr = distances< np.mean(distances)
+            return new_data_source, new_data_target[indices]
+        def align_point_clouds(target,source):
             centroid_target = np.mean(target, axis=0)
             centroid_source = np.mean(source, axis=0)
             centered_target = target - centroid_target
             centered_source = source - centroid_source
-            weighted_centered_source = np.dot(weights,centered_source)
+            # weighted_centered_source = np.dot(weights,centered_source)
             cov_matrix = np.dot(centered_target.T, centered_source)
             u, _, vh = np.linalg.svd(cov_matrix)
             rotation_matrix = np.dot(vh.T, u.T)
@@ -2197,21 +2181,121 @@ class lineageTree:
             )
 
             return rotation_matrix, translation_vector
+        
+        def generate_points_in_triangle(vertex1, vertex2, vertex3, num_points):
+            """
+            Generate random points uniformly distributed within a 3D triangle.
 
-        self.compute_spatial_density(th= 1000)
+            Parameters:
+            - vertex1, vertex2, vertex3: The vertices of the triangle (3D points as numpy arrays).
+            - num_points: The number of points to generate.
+
+            Returns:
+            - points: A numpy array containing the generated points inside the triangle.
+            """
+            points = np.random.rand(num_points, 2)
+            sqrt_points = np.sqrt(points[:, 0])
+            u = 1 - sqrt_points
+            v = points[:, 1] * sqrt_points
+
+            w = 1 - u - v
+
+            points_inside_triangle = np.array([
+                u[:, np.newaxis] * vertex1 +
+                v[:, np.newaxis] * vertex2 +
+                w[:, np.newaxis] * vertex3
+            ])
+            points_inside_triangle = points_inside_triangle.reshape(num_points,3)
+            return points_inside_triangle
+
+        for target_time in range(20, int(self.t_e)-10):
+                for source_time in range(target_time-3,target_time):
+
+                    source, target = kd_tree(target_time,source_time)
+                    if len(target) > 3:
+                        rotation, t = align_point_clouds(target, source)
+
+                        for cell in self.time_nodes[target_time]:
+                            self.pos[cell] = (
+                                np.dot(rotation, self.pos[cell]) + t
+                            )
+
+    def time_register(self):
+        """
+        Time registration of the emryo so it does not move over time, maybe I could add a window.
+        Also the first timepoints should not be moved, so it starts from tp10
+        """
+        import random
+
+        def sampler(target_time):
+            source = []
+            target = []
+            weights = []
+            for cell in self.time_nodes[target_time - 1]:
+                try:
+                    cell_next = self.successor[cell]
+                    source.append([float(i) for i in self.pos[cell]])
+                    weights.append(1/(self.spatial_density[cell])**1)
+                    data_div = []
+                    for cell in cell_next:
+                        data_div.append([float(i) for i in self.pos[cell]])
+                    data_div = np.array(data_div)
+                    target.append(np.mean(data_div, axis=0))
+                except:
+                    pass
+            return source, target, weights
+
+        def kd_tree(target_time, source_time):
+            source_data = []
+            target_data = []
+            weights = []
+            for cell in self.time_nodes[source_time]:
+                source_data.append([i for i in self.pos[cell]])
+                weights.append(1/(self.spatial_density[cell])**2)
+            for cell in self.time_nodes[target_time]:
+                target_data.append([i for i in self.pos[cell]])
+            target_data = np.array(target_data)
+            source_data = np.array(source_data)
+            kdtree = KDTree(target_data)
+            distances, indices = kdtree.query(
+                source_data, k=1
+            )
+            weights = np.array(weights)
+            good_corr = distances<200
+            return source_data[good_corr], target_data[indices[good_corr]],weights[good_corr]
+
+        def align_point_clouds(target,weights, source):
+            centroid_target = np.mean(target, axis=0)
+            centroid_source = np.mean(source, axis=0)
+            centered_target = target - centroid_target
+            centered_source = source - centroid_source
+            weighted_centered_source = [weights[i]*centered_source[i] for i in range(len(weights))]#np.dot(weights,centered_source)
+            cov_matrix = np.dot(centered_target.T, weighted_centered_source)
+            u, _, vh = np.linalg.svd(cov_matrix)
+            rotation_matrix = np.dot(vh.T, u.T)
+            # if np.linalg.det(rotation_matrix)<0:
+            #     vh[-1,:]*=-1
+            rotation_matrix = np.dot(vh.T, u.T)
+            translation_vector = centroid_source - np.dot(
+                rotation_matrix, centroid_target
+            )
+
+            return rotation_matrix, translation_vector
+
+        self.compute_spatial_density(th= 1200)
         maximum = 0
         for key in self.spatial_density.keys():  
             if self.spatial_density[key]>maximum:
                 maximum = self.spatial_density[key]
         for key in self.spatial_density.keys():
                 self.spatial_density[key]=self.spatial_density[key]/float(maximum)
-        for repeat in range(2):
-            rotation = []
-            t = [0,0,0]
-            for target_time in range(30, int(self.t_e)-3):
-                    for source_time in range(target_time-3,target_time+3):
+        rotation = []
+        t = [0,0,0]
+        for repeat in range(3):
+            for target_time in range(60, int(self.t_e)-10):
+                    # for source_time in range(target_time-4,target_time+4):
 
-                        source, target, weights = kd_tree(target_time,source_time)
+                        source, target, weights = sampler(target_time)
                         if len(target) > 10:
                             rotation, t = align_point_clouds(target, weights, source)
 
