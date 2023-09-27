@@ -2142,7 +2142,6 @@ class lineageTree:
         def kd_tree(target_time, source_time):
             source_data = []
             target_data = []
-            weights = []
             for cell in self.time_nodes[source_time]:
                 source_data.append([i for i in self.pos[cell]])
             for cell in self.time_nodes[target_time]:
@@ -2193,11 +2192,11 @@ class lineageTree:
             Returns:
             - points: A numpy array containing the generated points inside the triangle.
             """
+            #Producing barycentric coordinates using the sqrt of points
             points = np.random.rand(num_points, 2)
             sqrt_points = np.sqrt(points[:, 0])
             u = 1 - sqrt_points
             v = points[:, 1] * sqrt_points
-
             w = 1 - u - v
 
             points_inside_triangle = np.array([
@@ -2314,28 +2313,32 @@ class lineageTree:
         """
         Orient the emrbryo so that the axis of the highest variance is parallel to y-axis
         """
-        from scipy.spatial import ConvexHull
 
-        data = []
-        for cell in self.nodes:
-            data_pre = [float(i) for i in self.pos[cell]]
-            data.append(data_pre)
-        data = np.array(data)
+        # data = []
+        # for cell in self.nodes:
+        #     data_pre = [float(i) for i in self.pos[cell]]
+        #     data.append(data_pre)
+        # data = np.array(data)
+        data = np.array([i for i in self.pos.values()],dtype =float)
+        cells = [i for i in self.pos.keys()]
         centered_data = data - np.mean(data, axis=0)
         cov = np.dot(centered_data.T, centered_data)
         eigenvalues, eigenvectors = np.linalg.eig(cov)
         fpc_index = np.argmax(eigenvalues)
         self.eigenv = eigenvectors[:, fpc_index]
         rot_mat = self.rotation_matrix_to_align_vector_with_axis(self.eigenv)
-        for cell in self.nodes:
-            data_pre = [float(i) for i in self.pos[cell]]
-            self.pos[cell] = np.array(rot_mat @ data_pre, dtype="float32")
-        tmp = rot_mat @ data.T
-        correct_neg = [np.min(tmp[0]), np.min(tmp[1]), np.min(tmp[2])]
-        scale = np.max(tmp[1]) - correct_neg[1]
-        for cell in self.nodes:
-            data_pre = [float(i) for i in self.pos[cell]]
-            self.pos[cell] -= correct_neg
+        #     self.pos[cell] = np.array(rot_mat @ data_pre, dtype="float32")
+        # tmp = rot_mat @ data.T
+        data = rot_mat @ data.T
+        correct_neg = np.array([np.min(data[0]), np.min(data[1]), np.min(data[2])])
+        data = [i - correct_neg for i in data.T]
+        self.pos = {i:k for i,k in zip(cells,data)}
+        # for cell in self.nodes:
+        #     data_pre = [float(i) for i in self.pos[cell]]
+        # scale = np.max(tmp[1]) - correct_neg[1]
+        # for cell in self.nodes:
+        #     data_pre = [float(i) for i in self.pos[cell]]
+        #     self.pos[cell] -= correct_neg
         # convex_hull = ConvexHull(data)
         # self.median_convex_hull = np.array([np.mean(convex_hull.points[convex_hull.vertices,0]),
         #                            np.mean(convex_hull.points[convex_hull.vertices,1]),
