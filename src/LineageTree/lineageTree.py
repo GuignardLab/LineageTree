@@ -2054,7 +2054,7 @@ class lineageTree:
 
         from edist.uted import uted
 
-        if delta is None or not isinstance(delta, callable):
+        if delta is None or not callable(delta):
 
             def delta(x, y, corres1, corres2, times):
                 if x is None or y is None:
@@ -2063,7 +2063,7 @@ class lineageTree:
                 len_y = times[corres2[y]]
                 return np.abs(len_x - len_y) / (len_x + len_y)
 
-        if norm is None or not isinstance(norm, callable):
+        if norm is None or not callable(norm):
 
             def norm(x, y):
                 return max(len(x), len(y))
