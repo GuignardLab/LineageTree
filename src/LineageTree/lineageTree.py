@@ -1887,7 +1887,7 @@ class lineageTree:
             {int, float}: dictionary that maps a cell id to its spatial density
         """
         s_vol = 4 / 3.0 * np.pi * th**3
-        time_range = set(range(0,int(self.t_e)))
+        time_range = set(range(int(self.t_e)))
         for t in time_range:
             idx3d, nodes = self.get_idx3d(t)
             nb_ni = [
@@ -2143,9 +2143,9 @@ class lineageTree:
             source_data = []
             target_data = []
             for cell in self.time_nodes[source_time]:
-                source_data.append([i for i in self.pos[cell]])
+                source_data.append(list(self.pos[cell]))
             for cell in self.time_nodes[target_time]:
-                target_data.append([i for i in self.pos[cell]])
+                target_data.append(list(self.pos[cell]))
             target_data = np.array(target_data)
             source_data = np.array(source_data)
             hull_source = ConvexHull(source_data)
@@ -2154,33 +2154,34 @@ class lineageTree:
             new_data_target = np.array(hull_target.points)
 
             for simplice in hull_source.simplices:
-                new_data_source = np.append(new_data_source, generate_points_in_triangle(source_data[simplice[0]],source_data[simplice[1]],source_data[simplice[2]],5),0)
+                new_data_source = np.append(new_data_source, generate_points_in_triangle(
+                    source_data[simplice[0]],
+                    source_data[simplice[1]],
+                    source_data[simplice[2]],5),0)
             for simplice in hull_target.simplices:
-                new_data_target = np.append(new_data_target, generate_points_in_triangle(target_data[simplice[0]],target_data[simplice[1]],target_data[simplice[2]],5),0)
+                new_data_target = np.append(new_data_target, generate_points_in_triangle(
+                    target_data[simplice[0]],
+                    target_data[simplice[1]],
+                    target_data[simplice[2]],5),0)
             kdtree = KDTree(new_data_target)
             distances, indices = kdtree.query(
                 new_data_source, k=1
             )
-            # good_corr = distances< np.mean(distances)
             return new_data_source, new_data_target[indices]
         def align_point_clouds(target,source):
             centroid_target = np.mean(target, axis=0)
             centroid_source = np.mean(source, axis=0)
             centered_target = target - centroid_target
             centered_source = source - centroid_source
-            # weighted_centered_source = np.dot(weights,centered_source)
             cov_matrix = np.dot(centered_target.T, centered_source)
             u, _, vh = np.linalg.svd(cov_matrix)
-            rotation_matrix = np.dot(vh.T, u.T)
-            # if np.linalg.det(rotation_matrix)<0:
-            #     vh[-1,:]*=-1
             rotation_matrix = np.dot(vh.T, u.T)
             translation_vector = centroid_source - np.dot(
                 rotation_matrix, centroid_target
             )
 
             return rotation_matrix, translation_vector
-        
+
         def generate_points_in_triangle(vertex1, vertex2, vertex3, num_points):
             """
             Generate random points uniformly distributed within a 3D triangle.
@@ -2224,7 +2225,6 @@ class lineageTree:
         Time registration of the emryo so it does not move over time, maybe I could add a window.
         Also the first timepoints should not be moved, so it starts from tp10
         """
-        import random
 
         def sampler(target_time):
             source = []
@@ -2249,10 +2249,10 @@ class lineageTree:
             target_data = []
             weights = []
             for cell in self.time_nodes[source_time]:
-                source_data.append([i for i in self.pos[cell]])
+                source_data.append(list(self.pos[cell]))
                 weights.append(1/(self.spatial_density[cell])**2)
             for cell in self.time_nodes[target_time]:
-                target_data.append([i for i in self.pos[cell]])
+                target_data.append(list(self.pos[cell]))
             target_data = np.array(target_data)
             source_data = np.array(source_data)
             kdtree = KDTree(target_data)
@@ -2272,9 +2272,6 @@ class lineageTree:
             cov_matrix = np.dot(centered_target.T, weighted_centered_source)
             u, _, vh = np.linalg.svd(cov_matrix)
             rotation_matrix = np.dot(vh.T, u.T)
-            # if np.linalg.det(rotation_matrix)<0:
-            #     vh[-1,:]*=-1
-            rotation_matrix = np.dot(vh.T, u.T)
             translation_vector = centroid_source - np.dot(
                 rotation_matrix, centroid_target
             )
@@ -2283,14 +2280,14 @@ class lineageTree:
 
         self.compute_spatial_density(th= 1200)
         maximum = 0
-        for key in self.spatial_density.keys():  
+        for key in self.spatial_density:
             if self.spatial_density[key]>maximum:
                 maximum = self.spatial_density[key]
-        for key in self.spatial_density.keys():
+        for key in self.spatial_density:
                 self.spatial_density[key]=self.spatial_density[key]/float(maximum)
         rotation = []
         t = [0,0,0]
-        for repeat in range(3):
+        for _repeat in range(3):
             for target_time in range(60, int(self.t_e)-10):
                     # for source_time in range(target_time-4,target_time+4):
 
@@ -2313,54 +2310,24 @@ class lineageTree:
         """
         Orient the emrbryo so that the axis of the highest variance is parallel to y-axis
         """
-
-        # data = []
-        # for cell in self.nodes:
-        #     data_pre = [float(i) for i in self.pos[cell]]
-        #     data.append(data_pre)
-        # data = np.array(data)
-        data = np.array([i for i in self.pos.values()],dtype =float)
-        cells = [i for i in self.pos.keys()]
+        data = np.array(list(self.pos.values()),dtype =float)
+        cells = list(self.pos.keys())
         centered_data = data - np.mean(data, axis=0)
         cov = np.dot(centered_data.T, centered_data)
         eigenvalues, eigenvectors = np.linalg.eig(cov)
         fpc_index = np.argmax(eigenvalues)
         self.eigenv = eigenvectors[:, fpc_index]
         rot_mat = self.rotation_matrix_to_align_vector_with_axis(self.eigenv)
-        #     self.pos[cell] = np.array(rot_mat @ data_pre, dtype="float32")
-        # tmp = rot_mat @ data.T
         data = rot_mat @ data.T
         correct_neg = np.array([np.min(data[0]), np.min(data[1]), np.min(data[2])])
         data = [i - correct_neg for i in data.T]
-        self.pos = {i:k for i,k in zip(cells,data)}
-        # for cell in self.nodes:
-        #     data_pre = [float(i) for i in self.pos[cell]]
-        # scale = np.max(tmp[1]) - correct_neg[1]
-        # for cell in self.nodes:
-        #     data_pre = [float(i) for i in self.pos[cell]]
-        #     self.pos[cell] -= correct_neg
-        # convex_hull = ConvexHull(data)
-        # self.median_convex_hull = np.array([np.mean(convex_hull.points[convex_hull.vertices,0]),
-        #                            np.mean(convex_hull.points[convex_hull.vertices,1]),
-        #                            np.mean(convex_hull.points[convex_hull.vertices,2])])
-        # for i in range(int(self.t_e)):
-        #     data = []
-        #     for cell in self.time_nodes[i]:
-        #         data_pre = [float(i) for i in self.pos[cell]]
-        #         data.append(data_pre)
-        #     if len(data)>10:
-        #         temp_convex = ConvexHull(data)
-                
-        #         temp_median_convex_hull = np.array([np.mean(temp_convex.points[temp_convex.vertices,0]),
-        #                             np.mean(temp_convex.points[temp_convex.vertices,1]),
-        #                             np.mean(temp_convex.points[temp_convex.vertices,2])])
-        #         for cell in self.time_nodes[i]:
-        #             self.pos[cell] = np.array([float(i) for i in self.pos[cell]])-np.array(temp_median_convex_hull-self.median_convex_hull)
-                
+        self.pos = dict(zip(cells,data))
 
     def rotation_matrix_to_align_vector_with_axis(
-        self, vector, target_axis=[0, 1, 0]
+        self, vector, target_axis=None
     ):
+        if target_axis is None:
+            target_axis = [0, 1, 0]
         vector = vector / np.linalg.norm(vector)
         target_axis = target_axis / np.linalg.norm(target_axis)
 
@@ -2428,7 +2395,6 @@ class lineageTree:
         self.time_edges = {}
         self.max_id = -1
         self.next_id = []
-        # self.median_convex_hull=[]
         self.nodes = set()
         self.edges = set()
         self.roots = set()
