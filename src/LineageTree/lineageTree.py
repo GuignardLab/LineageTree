@@ -2138,6 +2138,7 @@ class lineageTree:
     #         for j in range(1, m):
     #             d[i, j] = c[i, j] + min((d[i-1, j], d[i, j-1], d[i-1, j-1]))
     #     return d[-1, -1], d
+    
     def brute_force_register(self):
         from scipy.spatial import ConvexHull
         def kd_tree(target_time, source_time):
@@ -2169,6 +2170,7 @@ class lineageTree:
                 new_data_source, k=1
             )
             return new_data_source, new_data_target[indices]
+        
         def align_point_clouds(target,source):
             centroid_target = np.mean(target, axis=0)
             centroid_source = np.mean(source, axis=0)
@@ -2269,14 +2271,13 @@ class lineageTree:
             centroid_source = np.mean(source, axis=0)
             centered_target = target - centroid_target
             centered_source = source - centroid_source
-            weighted_centered_source = [weights[i]*centered_source[i] for i in range(len(weights))]#np.dot(weights,centered_source)
+            weighted_centered_source = [weights[i]*centered_source[i] for i in range(len(weights))]
             cov_matrix = np.dot(centered_target.T, weighted_centered_source)
             u, _, vh = np.linalg.svd(cov_matrix)
             rotation_matrix = np.dot(vh.T, u.T)
             translation_vector = centroid_source - np.dot(
                 rotation_matrix, centroid_target
             )
-
             return rotation_matrix, translation_vector
 
         self.compute_spatial_density(th= 1200)
