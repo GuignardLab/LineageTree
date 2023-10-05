@@ -2005,7 +2005,7 @@ class lineageTree:
         delta: callable = None,
         norm: callable = None,
         recompute: bool = False,
-    ):
+    ) -> dict:
         """
         Compute all the pairwise unordered tree edit distances from Zhang 1996 between the trees spawned at time `t`
 
@@ -2027,7 +2027,8 @@ class lineageTree:
         self.uted[t] = {}
         roots = self.time_nodes[t]
         for n1, n2 in combinations(roots, 2):
-            self.uted[t][(n1, n2)] = self.unordered_tree_edit_distance(
+            key = tuple(sorted((n1, n2)))
+            self.uted[t][key] = self.unordered_tree_edit_distance(
                 n1, n2, delta=delta, norm=norm
             )
         return self.uted[t]
@@ -2056,7 +2057,7 @@ class lineageTree:
 
         from edist.uted import uted
 
-        if delta is None or not isinstance(delta, callable):
+        if delta is None or not callable(delta):
 
             def delta(x, y, corres1, corres2, times):
                 if x is None:
@@ -2069,7 +2070,7 @@ class lineageTree:
                 len_y = times[corres2[y]]
                 return np.abs(len_x - len_y)
 
-        if norm is None or not isinstance(norm, callable):
+        if norm is None or not callable(norm):
 
             def norm(x, y):
                 return max(len(x), len(y))
