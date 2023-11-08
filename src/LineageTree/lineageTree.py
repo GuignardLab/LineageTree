@@ -133,6 +133,12 @@ class lineageTree:
         self.pos[c1] = np.mean([self.pos[c1], c2_pos], axis=0)
         self.progeny[c1] += 1
 
+    @property
+    def roots(self):
+        if not hasattr(self, "_roots"):
+            self._roots = set(self.successor).difference(self.predecessor)
+        return self._roots
+
     def _write_header_am(self, f: TextIO, nb_points: int, length: int):
         """Header for Amira .am files"""
         f.write("# AmiraMesh 3D ASCII 2.0\n")
@@ -1423,7 +1429,6 @@ class lineageTree:
                         self.__dict__[attr][cell_id] = eval(cell.attrib[attr])
 
         self.edges = set()
-        self.roots = []
         tracks = {}
         self.successor = {}
         self.predecessor = {}
@@ -1764,14 +1769,15 @@ class lineageTree:
         return self.Gabriel_graph[t]
 
     def get_predecessors(self, x: int, depth: int = None) -> list:
-        """Computes the predecessors of the node *x* up to
-        *depth* predecessors. The ordered list of ids is returned.
+        """Computes the predecessors of the node `x` up to
+        `depth` predecessors or the begining of the life of `x`.
+        The ordered list of ids is returned.
 
         Args:
             x (int): id of the node to compute
             depth (int): maximum number of predecessors to return
         Returns:
-            [int, ]: list of ids, the last id is *x*
+            [int, ]: list of ids, the last id is `x`
         """
         cycle = [x]
         acc = 0
@@ -1787,14 +1793,15 @@ class lineageTree:
         return cycle
 
     def get_successors(self, x: int, depth: int = None) -> list:
-        """Computes the successors of the node *x* up to
-        *depth* successors. The ordered list of ids is returned.
+        """Computes the successors of the node `x` up to
+        `depth` successors or the end of the life of `x`.
+        The ordered list of ids is returned.
 
         Args:
             x (int): id of the node to compute
             depth (int): maximum number of predecessors to return
         Returns:
-            [int, ]: list of ids, the first id is *x*
+            [int, ]: list of ids, the first id is `x`
         """
         cycle = [x]
         acc = 0
@@ -1810,10 +1817,10 @@ class lineageTree:
         depth_pred: int = None,
         depth_succ: int = None,
     ) -> list:
-        """Computes the predecessors and successors of the node *x* up to
-        *depth_pred* predecessors plus *depth_succ* successors.
-        If the value *depth* is provided and not None,
-        *depth_pred* and *depth_succ* are overwrited by *depth*.
+        """Computes the predecessors and successors of the node `x` up to
+        `depth_pred` predecessors plus `depth_succ` successors.
+        If the value `depth` is provided and not None,
+        `depth_pred` and `depth_succ` are overwriten by `depth`.
         The ordered list of ids is returned.
 
         Args:
@@ -1832,7 +1839,7 @@ class lineageTree:
 
     def get_all_tracks(self) -> list:
         """Computes all the tracks of a given lineage tree,
-        stores it in *self.all_tracks* and returns it.
+        stores it in `self.all_tracks` and returns it.
 
         Returns:
             ([[int, ...], ...]): list of lists containing track cell ids
@@ -1930,7 +1937,7 @@ class lineageTree:
                 a cell id to its neighbors at a distance `th`
         """
         self.th_edges = {}
-        for t, _Cs in self.time_nodes.items():
+        for t, _ in self.time_nodes.items():
             idx3d, nodes = self.get_idx3d(t)
             neighbs = idx3d.query_ball_tree(idx3d, th)
             out = dict(zip(nodes, [set(nodes[ni]) for ni in neighbs]))
@@ -2202,7 +2209,6 @@ class lineageTree:
         self.next_id = []
         self.nodes = set()
         self.edges = set()
-        self.roots = set()
         self.successor = {}
         self.predecessor = {}
         self.pos = {}
