@@ -1939,6 +1939,33 @@ class lineageTree:
             )
         return self.th_edges
 
+    def get_ancestor_at_t(self, n: int, time: int=None):
+        """
+        Find the id of the ancestor of a give node `n`
+        at a given time `time`.
+
+        If there is no ancestor, returns `-1`
+
+        Args:
+            n (int): node for which to look the ancestor
+            time (int): time at which the ancestor has to be found.
+                If `None` the ancestor at the first time point
+                will be found (default `None`)
+        
+        Returns:
+            (int): the id of the ancestor at time `time`,
+                `-1` if it does not exist
+        """
+        if not n in self.nodes:
+            return
+        if time is None:
+            time = self.t_b
+        t = self.time[n]
+        ancestor = n
+        while time<self.time.get(ancestor, -1):
+            ancestor = self.predecessor.get(ancestor, [-1])[0]
+        return ancestor
+
     def get_simple_tree(self, r: int, time_resolution: int = 1) -> tuple:
         """
         Get a "simple" version of the tree spawned by the node `r`
