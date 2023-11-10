@@ -332,7 +332,7 @@ class lineageTree:
             return lambda x: values_dict_nodes[x] * mult
 
         if roots is None:
-            roots = list(set(self.successor).difference(self.predecessor))
+            roots = self.roots
             if hasattr(self, "image_label"):
                 roots = [cell for cell in roots if self.image_label[cell] != 1]
 
