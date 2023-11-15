@@ -2245,7 +2245,7 @@ class lineageTree:
             self.read_from_ASTEC(file_format, eigen)
         elif file_type == "csv":
             self.read_from_csv(file_format, z_mult, link=1, delim=delim)
-        elif file_format.endswith(".lT"):
+        elif file_format and file_format.endswith(".lT"):
             with open(file_format, "br") as f:
                 tmp = pkl.load(f)
                 f.close()
