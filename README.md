@@ -27,6 +27,12 @@ from LineageTree import lineageTree
 
 and one can then load lineage trees the following way:
 
+For `.lT` files:
+
+```python
+lT = lineageTree('path/to/file.lT')
+```
+
 For ASTEC data:
 
 ```python
