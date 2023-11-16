@@ -332,7 +332,7 @@ class lineageTree:
             return lambda x: values_dict_nodes[x] * mult
 
         if roots is None:
-            roots = list(set(self.successor).difference(self.predecessor))
+            roots = self.roots
             if hasattr(self, "image_label"):
                 roots = [cell for cell in roots if self.image_label[cell] != 1]
 
@@ -2470,7 +2470,7 @@ class lineageTree:
             self.read_from_ASTEC(file_format, eigen)
         elif file_type == "csv":
             self.read_from_csv(file_format, z_mult, link=1, delim=delim)
-        elif file_format.endswith(".lT"):
+        elif file_format and file_format.endswith(".lT"):
             with open(file_format, "br") as f:
                 tmp = pkl.load(f)
                 f.close()
