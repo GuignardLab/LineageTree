@@ -2039,6 +2039,7 @@ class lineageTree:
         delta: callable = None,
         norm: callable = None,
         recompute: bool = False,
+        specific_roots = None
     ) -> dict:
         """
         Compute all the pairwise unordered tree edit distances from Zhang 1996 between the trees spawned at time `t`
@@ -2059,12 +2060,15 @@ class lineageTree:
         elif t in self.uted and not recompute:
             return self.uted[t]
         self.uted[t] = {}
-        roots = self.time_nodes[t]
+        if specific_roots:
+            roots = [i for i in self.time_nodes[t] if self.get_ancestor_at_t(i) in set(specific_roots) ]
+        else:
+            roots = self.time_nodes[t] 
         for n1, n2 in combinations(roots, 2):
-            key = tuple(sorted((n1, n2)))
-            self.uted[t][key] = self.unordered_tree_edit_distance(
-                n1, n2, delta=delta, norm=norm
-            )
+                key = tuple(sorted((n1, n2)))
+                self.uted[t][key] = self.unordered_tree_edit_distance(
+                    n1, n2, delta=delta, norm=norm
+                )
         return self.uted[t]
 
     def unordered_tree_edit_distance(
@@ -2395,6 +2399,9 @@ class lineageTree:
             return self.__dict__[item]
         elif isinstance(item, int):
             return self.successor[item]
+        
+    def first_labelling(self):
+        self.labels =  {i:"Enter_Label" for i in self.time_nodes[0]}
 
     def __init__(
         self,
@@ -2437,6 +2444,7 @@ class lineageTree:
         self.predecessor = {}
         self.pos = {}
         self.time_id = {}
+        self.labels={}
         self.time = {}
         self.kdtrees = {}
         self.spatial_density = {}
