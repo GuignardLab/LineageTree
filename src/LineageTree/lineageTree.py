@@ -2199,19 +2199,21 @@ class lineageTree:
                 "Only integer or string are valid key for lineageTree"
             )
 
-    def get_cells_at_t_from_root(self, r: int, t: int = None) -> list:
+    def get_cells_at_t_from_root(self, r: [int, list], t: int = None) -> list:
         """
         Returns the list of cells at time `t` that are spawn by the node `r`.
 
             Args:
-                r (int): id of the spawning node
+                r (int | list): id or list of ids of the spawning node
                 t (int): target time, if None goes as far as possible
                         (default None)
 
             Returns:
                 (list) list of nodes at time `t` spawned by `r`
         """
-        to_do = [r]
+        if not isinstance(r, list):
+            r = [r]
+        to_do = list(r)
         final_nodes = []
         while 0<len(to_do):
             curr = to_do.pop()
