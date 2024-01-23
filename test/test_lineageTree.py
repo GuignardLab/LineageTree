@@ -14,3 +14,8 @@ def test_writting_svg():
     lT = lineageTree("test/data/test-mamut.xml", file_type="MaMuT")
     lT = lineageTree("test/data/test.mastodon", file_type="mastodon")
     lT.write_to_svg("test/test.svg")
+
+
+def test_all_tracks():
+    lT = lineageTree("test/data/test-mamut.xml", file_type="MaMuT")
+    assert len(lT.all_tracks) == 18
