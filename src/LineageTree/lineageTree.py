@@ -70,21 +70,6 @@ class lineageTree:
         self.time[C_next] = t
         return C_next
 
-    def remove_track(self, track: list):
-        self.nodes.difference_update(track)
-        times = {self.time[n] for n in track}
-        for t in times:
-            self.time_nodes[t] = list(
-                set(self.time_nodes[t]).difference(track)
-            )
-        for i, c in enumerate(track):
-            self.pos.pop(c)
-            if i != 0:
-                self.predecessor.pop(c)
-            if i < len(track) - 1:
-                self.successor.pop(c)
-            self.time.pop(c)
-
     def remove_node(self, c: int) -> tuple:
         """Removes a node and update the lineageTree accordingly
 
@@ -153,10 +138,6 @@ class lineageTree:
         if not hasattr(self, "_roots"):
             self._roots = set(self.successor).difference(self.predecessor)
         return self._roots
-
-    @property
-    def leaves(self):
-        return set(self.predecessor).difference(self.successor)
 
     def _write_header_am(self, f: TextIO, nb_points: int, length: int):
         """Header for Amira .am files"""
@@ -748,7 +729,7 @@ class lineageTree:
 
             if node_properties:
                 for p_name, (p_dict, default) in node_properties.items():
-                    if isinstance(list(p_dict.values())[0], str):
+                    if type(list(p_dict.values())[0]) == str:
                         f.write('(property 0 string "%s"\n' % p_name)
                         f.write(f"\t(default {default} {default})\n")
                     elif isinstance(list(p_dict.values())[0], Number):
@@ -1856,28 +1837,22 @@ class lineageTree:
             x, depth_succ
         )
 
-    @property
-    def all_tracks(self):
-        if not hasattr(self, "_all_tracks"):
-            self._all_tracks = self.get_all_tracks()
-        return self._all_tracks
-
-    def get_all_tracks(self, force_recompute: bool = False) -> list:
+    def get_all_tracks(self) -> list:
         """Computes all the tracks of a given lineage tree,
         stores it in `self.all_tracks` and returns it.
 
         Returns:
             ([[int, ...], ...]): list of lists containing track cell ids
         """
-        if not hasattr(self, "_all_tracks"):
-            self._all_tracks = []
+        if not hasattr(self, "all_tracks"):
+            self.all_tracks = []
             to_do = set(self.nodes)
             while len(to_do) != 0:
                 current = to_do.pop()
                 track = self.get_cycle(current)
-                self._all_tracks += [track]
+                self.all_tracks += [track]
                 to_do -= set(track)
-        return self._all_tracks
+        return self.all_tracks
 
     def get_sub_tree(self, x: int, preorder: bool = False) -> list:
         """Computes the list of cells from the subtree spawned by *x*
@@ -1971,7 +1946,7 @@ class lineageTree:
             )
         return self.th_edges
 
-    def get_ancestor_at_t(self, n: int, time: int = None):
+    def get_ancestor_at_t(self, n: int, time: int=None):
         """
         Find the id of the ancestor of a give node `n`
         at a given time `time`.
@@ -1983,17 +1958,18 @@ class lineageTree:
             time (int): time at which the ancestor has to be found.
                 If `None` the ancestor at the first time point
                 will be found (default `None`)
-
+        
         Returns:
             (int): the id of the ancestor at time `time`,
                 `-1` if it does not exist
         """
-        if n not in self.nodes:
+        if not n in self.nodes:
             return
         if time is None:
             time = self.t_b
+        t = self.time[n]
         ancestor = n
-        while time < self.time.get(ancestor, -1):
+        while time<self.time.get(ancestor, -1):
             ancestor = self.predecessor.get(ancestor, [-1])[0]
         return ancestor
 
@@ -2028,6 +2004,8 @@ class lineageTree:
                 out_dict[current] = _next
             to_do.extend(_next)
             self.cycle_time[current] = len(cycle) * time_resolution
+        if out_dict == {}:
+            out_dict[r] = []
         return out_dict, self.cycle_time
 
     @staticmethod
@@ -2052,6 +2030,7 @@ class lineageTree:
                 [nid2list[d] for d in adj_dict.get(list2nid[_id], [])]
                 for _id in nodes
             ]
+
         return nodes, adj_list, list2nid
 
     def unordered_tree_edit_distances_at_time_t(
@@ -2060,6 +2039,7 @@ class lineageTree:
         delta: callable = None,
         norm: callable = None,
         recompute: bool = False,
+        specific_roots = [],
     ) -> dict:
         """
         Compute all the pairwise unordered tree edit distances from Zhang 1996 between the trees spawned at time `t`
@@ -2071,7 +2051,8 @@ class lineageTree:
                 of the tree spawned by `n1` and the number of nodes
                 of the tree spawned by `n2` as arguments.
             recompute (bool): if True, forces to recompute the distances (default: False)
-
+            specific_roots (list): If list is empty the function will select all the sub lineages
+            for comparison else just the descendants of the elements of the list.
         Returns:
             (dict) a dictionary that maps a pair of cell ids at time `t` to their unordered tree edit distance
         """
@@ -2080,12 +2061,17 @@ class lineageTree:
         elif t in self.uted and not recompute:
             return self.uted[t]
         self.uted[t] = {}
-        roots = self.time_nodes[t]
+        if specific_roots:
+            roots = []
+            for r in specific_roots:
+                roots += self.get_cells_at_t_from_root(r, t)
+        else:
+            roots = self.time_nodes[t] 
         for n1, n2 in combinations(roots, 2):
-            key = tuple(sorted((n1, n2)))
-            self.uted[t][key] = self.unordered_tree_edit_distance(
-                n1, n2, delta=delta, norm=norm
-            )
+                key = tuple(sorted((n1, n2)))
+                self.uted[t][key] = self.unordered_tree_edit_distance(
+                    n1, n2, delta=delta, norm=norm
+                )
         return self.uted[t]
 
     def unordered_tree_edit_distance(
@@ -2115,8 +2101,12 @@ class lineageTree:
         if delta is None or not callable(delta):
 
             def delta(x, y, corres1, corres2, times):
-                if x is None or y is None:
-                    return 1
+                if x is None:
+                    return times[corres2[y]]
+                if y is None:
+                    return times[corres1[x]]
+                if x is None and y is None:
+                    return 0
                 len_x = times[corres1[x]]
                 len_y = times[corres2[y]]
                 return np.abs(len_x - len_y) / (len_x + len_y)
@@ -2140,9 +2130,9 @@ class lineageTree:
         delta_tmp = partial(
             delta, corres1=corres1, corres2=corres2, times=self.cycle_time
         )
-        return uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / norm(
-            nodes1, nodes2
-        )
+        return uted(
+            nodes1, adj1, nodes2, adj2, delta=delta_tmp
+        )   / max(len(self.get_sub_tree(n1)),len(self.get_sub_tree(n2)))
 
     # def DTW(self, t1, t2, max_w=None, start_delay=None, end_delay=None,
     #         metric='euclidian', **kwargs):
@@ -2190,6 +2180,28 @@ class lineageTree:
     #             d[i, j] = c[i, j] + min((d[i-1, j], d[i, j-1], d[i-1, j-1]))
     #     return d[-1, -1], d
 
+    def get_cells_at_t_from_root(self, r: int, t: int = None) -> list:
+            """Returns the list of cells at time `t` that are spawn by the node `r`.
+
+            Args:
+                r (int): id of the spawning node
+                t (int): target time, if None goes as far as possible
+                        (default None)
+
+            Returns:
+                (list) list of nodes at time `t` spawned by `r`
+            """
+            to_do = [r]
+            final_nodes = []
+            while 0<len(to_do):
+                curr = to_do.pop()
+                for next in self[curr]:
+                    if self.time[next] < t:
+                        to_do.append(next)
+                    elif self.time[next] == t:
+                        final_nodes.append(next)
+            return final_nodes
+
     def __getitem__(self, item):
         if isinstance(item, str):
             return self.__dict__[item]
@@ -2199,31 +2211,8 @@ class lineageTree:
             raise KeyError(
                 "Only integer or string are valid key for lineageTree"
             )
-
-    def get_cells_at_t_from_root(self, r: [int, list], t: int = None) -> list:
-        """
-        Returns the list of cells at time `t` that are spawn by the node(s) `r`.
-
-            Args:
-                r (int | list): id or list of ids of the spawning node
-                t (int): target time, if None goes as far as possible
-                        (default None)
-
-            Returns:
-                (list) list of nodes at time `t` spawned by `r`
-        """
-        if not isinstance(r, list):
-            r = [r]
-        to_do = list(r)
-        final_nodes = []
-        while len(to_do) > 0:
-            curr = to_do.pop()
-            for _next in self[curr]:
-                if self.time[_next] < t:
-                    to_do.append(_next)
-                elif self.time[_next] == t:
-                    final_nodes.append(_next)
-        return final_nodes
+    def first_labelling(self):
+        self.labels =  {i:"Enter_Label" for i in self.time_nodes[0]}
 
     def __init__(
         self,
@@ -2266,10 +2255,12 @@ class lineageTree:
         self.predecessor = {}
         self.pos = {}
         self.time_id = {}
+        self.labels={}
         self.time = {}
         self.kdtrees = {}
         self.spatial_density = {}
         self.progeny = {}
+
         if xml_attributes is None:
             self.xml_attributes = []
         else:
