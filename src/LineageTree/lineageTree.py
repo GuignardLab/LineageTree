@@ -2201,7 +2201,7 @@ class lineageTree:
 
     def get_cells_at_t_from_root(self, r: [int, list], t: int = None) -> list:
         """
-        Returns the list of cells at time `t` that are spawn by the node `r`.
+        Returns the list of cells at time `t` that are spawn by the node(s) `r`.
 
             Args:
                 r (int | list): id or list of ids of the spawning node
