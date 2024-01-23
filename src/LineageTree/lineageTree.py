@@ -2051,8 +2051,8 @@ class lineageTree:
                 of the tree spawned by `n1` and the number of nodes
                 of the tree spawned by `n2` as arguments.
             recompute (bool): if True, forces to recompute the distances (default: False)
-            specific_roots (list): If list is empty the function will select all the sub lineages
-            for comparison else just the descendants of the elements of the list.
+            specific_roots (list): If None the function will select all the sub lineages
+                for comparison else just the descendants of the elements of the list.
         Returns:
             (dict) a dictionary that maps a pair of cell ids at time `t` to their unordered tree edit distance
         """
