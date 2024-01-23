@@ -70,6 +70,19 @@ class lineageTree:
         self.time[C_next] = t
         return C_next
 
+    def remove_track(self, track: list):
+        self.nodes.difference_update(track)
+        times = set(self.time[n] for n in track)
+        for t in times:
+            self.time_nodes[t] = list(set(self.time_nodes[t]).difference(track))
+        for i, c in enumerate(track):
+            self.pos.pop(c)
+            if i!=0:
+                self.predecessor.pop(c)
+            if i<len(track)-1:
+                self.successor.pop(c)
+            self.time.pop(c)
+
     def remove_node(self, c: int) -> tuple:
         """Removes a node and update the lineageTree accordingly
 
@@ -138,6 +151,10 @@ class lineageTree:
         if not hasattr(self, "_roots"):
             self._roots = set(self.successor).difference(self.predecessor)
         return self._roots
+    
+    @property
+    def leaves(self):
+        return set(self.predecessor).difference(self.successor)
 
     def _write_header_am(self, f: TextIO, nb_points: int, length: int):
         """Header for Amira .am files"""
@@ -1837,22 +1854,28 @@ class lineageTree:
             x, depth_succ
         )
 
-    def get_all_tracks(self) -> list:
+    @property
+    def all_tracks(self):
+        if not hasattr(self, "_all_tracks"):
+            self._all_tracks = self.get_all_tracks()
+        return self._all_tracks
+
+    def get_all_tracks(self, force_recompute: bool=False) -> list:
         """Computes all the tracks of a given lineage tree,
         stores it in `self.all_tracks` and returns it.
 
         Returns:
             ([[int, ...], ...]): list of lists containing track cell ids
         """
-        if not hasattr(self, "all_tracks"):
-            self.all_tracks = []
+        if not hasattr(self, "_all_tracks"):
+            self._all_tracks = []
             to_do = set(self.nodes)
             while len(to_do) != 0:
                 current = to_do.pop()
                 track = self.get_cycle(current)
-                self.all_tracks += [track]
+                self._all_tracks += [track]
                 to_do -= set(track)
-        return self.all_tracks
+        return self._all_tracks
 
     def get_sub_tree(self, x: int, preorder: bool = False) -> list:
         """Computes the list of cells from the subtree spawned by *x*
@@ -2170,7 +2193,30 @@ class lineageTree:
         if isinstance(item, str):
             return self.__dict__[item]
         elif isinstance(item, int):
-            return self.successor[item]
+            return self.successor.get(item, [])
+
+    def get_cells_at_t_from_root(self, r: int, t: int = None) -> list:
+        """
+        Returns the list of cells at time `t` that are spawn by the node `r`.
+
+            Args:
+                r (int): id of the spawning node
+                t (int): target time, if None goes as far as possible
+                        (default None)
+
+            Returns:
+                (list) list of nodes at time `t` spawned by `r`
+        """
+        to_do = [r]
+        final_nodes = []
+        while 0<len(to_do):
+            curr = to_do.pop()
+            for next in self[curr]:
+                if self.time[next] < t:
+                    to_do.append(next)
+                elif self.time[next] == t:
+                    final_nodes.append(next)
+        return final_nodes
 
     def __init__(
         self,
