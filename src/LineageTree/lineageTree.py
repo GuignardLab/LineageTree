@@ -2192,8 +2192,12 @@ class lineageTree:
     def __getitem__(self, item):
         if isinstance(item, str):
             return self.__dict__[item]
-        elif isinstance(item, int):
+        elif np.issubdtype(type(item), np.integer):
             return self.successor.get(item, [])
+        else:
+            raise KeyError(
+                "Only integer or string are valid key for lineageTree"
+            )
 
     def get_cells_at_t_from_root(self, r: int, t: int = None) -> list:
         """
@@ -2211,11 +2215,11 @@ class lineageTree:
         final_nodes = []
         while 0<len(to_do):
             curr = to_do.pop()
-            for next in self[curr]:
-                if self.time[next] < t:
-                    to_do.append(next)
-                elif self.time[next] == t:
-                    final_nodes.append(next)
+            for _next in self[curr]:
+                if self.time[_next] < t:
+                    to_do.append(_next)
+                elif self.time[_next] == t:
+                    final_nodes.append(_next)
         return final_nodes
 
     def __init__(
