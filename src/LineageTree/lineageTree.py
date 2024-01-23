@@ -2039,7 +2039,7 @@ class lineageTree:
         delta: callable = None,
         norm: callable = None,
         recompute: bool = False,
-        specific_roots = [],
+        specific_roots = None,
     ) -> dict:
         """
         Compute all the pairwise unordered tree edit distances from Zhang 1996 between the trees spawned at time `t`
