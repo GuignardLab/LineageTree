@@ -72,14 +72,16 @@ class lineageTree:
 
     def remove_track(self, track: list):
         self.nodes.difference_update(track)
-        times = set(self.time[n] for n in track)
+        times = {self.time[n] for n in track}
         for t in times:
-            self.time_nodes[t] = list(set(self.time_nodes[t]).difference(track))
+            self.time_nodes[t] = list(
+                set(self.time_nodes[t]).difference(track)
+            )
         for i, c in enumerate(track):
             self.pos.pop(c)
-            if i!=0:
+            if i != 0:
                 self.predecessor.pop(c)
-            if i<len(track)-1:
+            if i < len(track) - 1:
                 self.successor.pop(c)
             self.time.pop(c)
 
@@ -151,7 +153,7 @@ class lineageTree:
         if not hasattr(self, "_roots"):
             self._roots = set(self.successor).difference(self.predecessor)
         return self._roots
-    
+
     @property
     def leaves(self):
         return set(self.predecessor).difference(self.successor)
@@ -746,7 +748,7 @@ class lineageTree:
 
             if node_properties:
                 for p_name, (p_dict, default) in node_properties.items():
-                    if type(list(p_dict.values())[0]) == str:
+                    if isinstance(list(p_dict.values())[0], str):
                         f.write('(property 0 string "%s"\n' % p_name)
                         f.write(f"\t(default {default} {default})\n")
                     elif isinstance(list(p_dict.values())[0], Number):
@@ -1860,7 +1862,7 @@ class lineageTree:
             self._all_tracks = self.get_all_tracks()
         return self._all_tracks
 
-    def get_all_tracks(self, force_recompute: bool=False) -> list:
+    def get_all_tracks(self, force_recompute: bool = False) -> list:
         """Computes all the tracks of a given lineage tree,
         stores it in `self.all_tracks` and returns it.
 
@@ -1969,7 +1971,7 @@ class lineageTree:
             )
         return self.th_edges
 
-    def get_ancestor_at_t(self, n: int, time: int=None):
+    def get_ancestor_at_t(self, n: int, time: int = None):
         """
         Find the id of the ancestor of a give node `n`
         at a given time `time`.
@@ -1981,18 +1983,17 @@ class lineageTree:
             time (int): time at which the ancestor has to be found.
                 If `None` the ancestor at the first time point
                 will be found (default `None`)
-        
+
         Returns:
             (int): the id of the ancestor at time `time`,
                 `-1` if it does not exist
         """
-        if not n in self.nodes:
+        if n not in self.nodes:
             return
         if time is None:
             time = self.t_b
-        t = self.time[n]
         ancestor = n
-        while time<self.time.get(ancestor, -1):
+        while time < self.time.get(ancestor, -1):
             ancestor = self.predecessor.get(ancestor, [-1])[0]
         return ancestor
 
@@ -2215,7 +2216,7 @@ class lineageTree:
             r = [r]
         to_do = list(r)
         final_nodes = []
-        while 0<len(to_do):
+        while len(to_do) > 0:
             curr = to_do.pop()
             for _next in self[curr]:
                 if self.time[_next] < t:
