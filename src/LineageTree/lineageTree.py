@@ -2225,6 +2225,9 @@ class lineageTree:
                     final_nodes.append(_next)
         return final_nodes
 
+    def first_labelling(self):
+        self.labels =  {i:"Enter_Label" for i in self.time_nodes[0]}
+
     def __init__(
         self,
         file_format: str = None,
@@ -2270,6 +2273,7 @@ class lineageTree:
         self.kdtrees = {}
         self.spatial_density = {}
         self.progeny = {}
+        self.labels = {}
         if xml_attributes is None:
             self.xml_attributes = []
         else:
