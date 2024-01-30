@@ -2223,6 +2223,7 @@ class lineageTree:
                     to_do.append(_next)
                 elif self.time[_next] == t:
                     final_nodes.append(_next)
+        if not final_nodes: return list(r)
         return final_nodes
 
     def first_labelling(self):
