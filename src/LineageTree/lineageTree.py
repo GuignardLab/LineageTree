@@ -986,26 +986,26 @@ class lineageTree:
         self.max_id = unique_id
 
         # do this in the end of the process, skip lineage tree and whatever is stored already
-        # for prop_name, prop_values in tmp_data.items():
-        #     if hasattr(self, prop_name):
-        #         continue
-        #     else:
-        #         if isinstance(prop_values, dict):
-        #             dictionary = {
-        #                 self.pkl2lT.get(k, -1): v for k, v in prop_values.items()
-        #             }
-        #             # is it a regular dictionary or a dictionary with dictionaries inside?
-        #             for key, value in dictionary.items():
-        #                 if isinstance(value, dict):
-        #                     # rename all ids from old to new
-        #                     dictionary[key] = {
-        #                         self.pkl2lT.get(k, -1): v for k, v in value
-        #                     }
-        #             self.__dict__[prop_name] = dictionary
-        #         # is any of this necessary? Or does it mean it anyways does not contain
-        #         # information about the id and a simple else: is enough?
-        #         elif isinstance(prop_values, (list, set, np.ndarray)):
-        #             self.__dict__[prop_name] = prop_values
+        for prop_name, prop_values in tmp_data.items():
+            if hasattr(self, prop_name):
+                continue
+            else:
+                if isinstance(prop_values, dict):
+                    dictionary = {
+                        self.pkl2lT.get(k, -1): v for k, v in prop_values.items()
+                    }
+                    # is it a regular dictionary or a dictionary with dictionaries inside?
+                    for key, value in dictionary.items():
+                        if isinstance(value, dict):
+                            # rename all ids from old to new
+                            dictionary[key] = {
+                                self.pkl2lT.get(k, -1): v for k, v in value.items()
+                            }
+                    self.__dict__[prop_name] = dictionary
+                # is any of this necessary? Or does it mean it anyways does not contain
+                # information about the id and a simple else: is enough?
+                elif isinstance(prop_values, (list, set, np.ndarray)):
+                    self.__dict__[prop_name] = prop_values
 
             # what else could it be?
 
