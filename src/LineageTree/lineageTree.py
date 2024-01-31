@@ -1004,11 +1004,7 @@ class lineageTree:
                     self.__dict__[prop_name] = dictionary
                 # is any of this necessary? Or does it mean it anyways does not contain
                 # information about the id and a simple else: is enough?
-                elif (
-                    prop_values.isinstance(set)
-                    or prop_values.isinstance(list)
-                    or prop_values.isinstance(np.array)
-                ):
+                elif isinstance(prop_values, (list, set, np.ndarray)):
                     self.__dict__[prop_name] = prop_values
 
             # what else could it be?
@@ -2062,7 +2058,7 @@ class lineageTree:
         recompute: bool = False,
     ) -> dict:
         """
-        Compute all the pairwise unordered tree edit distances from Zhang 1996 between the trees spawned at time `t`
+        Compute all the pairwise unordered tree edit distances from Zhang 996 between the trees spawned at time `t`
 
         Args:
             t (int): time to look at
