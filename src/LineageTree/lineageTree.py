@@ -924,7 +924,12 @@ class lineageTree:
 
         # make sure these are all named liked they are in tmp_data (or change dictionary above)
         self.name = {}
-        self.volume = {}
+        if "cell_volume" in tmp_data:
+            self.volume = {}
+        if "cell_fate" in tmp_data:
+            self.fates = {}
+        if "cell_barycenter" in tmp_data:
+            self.pos = {}
         self.lT2pkl = {}
         self.pkl2lT = {}
         self.contact = {}
@@ -955,8 +960,10 @@ class lineageTree:
             if "cell_volume" in tmp_data:
                 self.volume[unique_id] = tmp_data["cell_volume"].get(n, 0.0)
             if "cell_fate" in tmp_data:
-                self.fates = {}
                 self.fates[unique_id] = tmp_data["cell_fate"].get(n, "")
+            if "cell_barycenter" in tmp_data:
+                self.pos[unique_id] = tmp_data["cell_barycenter"].get(n, np.zeros(3))
+
 
             unique_id += 1
         if do_surf:
@@ -986,10 +993,15 @@ class lineageTree:
         self.max_id = unique_id
 
         # do this in the end of the process, skip lineage tree and whatever is stored already
+        pre_treated_prop = [
+            "cell_volume",
+            "cell_fate",
+            "cell_barycenter",
+            "cell_contact_surface",
+            "cell_lineage",
+        ]
         for prop_name, prop_values in tmp_data.items():
-            if hasattr(self, prop_name):
-                continue
-            else:
+            if not (prop_name in pre_treated_prop or hasattr(self, prop_name)):
                 if isinstance(prop_values, dict):
                     dictionary = {
                         self.pkl2lT.get(k, -1): v for k, v in prop_values.items()
