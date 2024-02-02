@@ -962,8 +962,9 @@ class lineageTree:
             if "cell_fate" in tmp_data:
                 self.fates[unique_id] = tmp_data["cell_fate"].get(n, "")
             if "cell_barycenter" in tmp_data:
-                self.pos[unique_id] = tmp_data["cell_barycenter"].get(n, np.zeros(3))
-
+                self.pos[unique_id] = tmp_data["cell_barycenter"].get(
+                    n, np.zeros(3)
+                )
 
             unique_id += 1
         if do_surf:
@@ -993,31 +994,43 @@ class lineageTree:
         self.max_id = unique_id
 
         # do this in the end of the process, skip lineage tree and whatever is stored already
-        pre_treated_prop = [
+        discard = {
             "cell_volume",
             "cell_fate",
             "cell_barycenter",
             "cell_contact_surface",
             "cell_lineage",
-        ]
+            "all_cells",
+            "cell_history",
+            "problematic_cells",
+            "cell_labels_in_time",
+        }
+        self.specific_properties = []
         for prop_name, prop_values in tmp_data.items():
-            if not (prop_name in pre_treated_prop or hasattr(self, prop_name)):
+            if not (prop_name in discard or hasattr(self, prop_name)):
                 if isinstance(prop_values, dict):
                     dictionary = {
-                        self.pkl2lT.get(k, -1): v for k, v in prop_values.items()
+                        self.pkl2lT.get(k, -1): v
+                        for k, v in prop_values.items()
                     }
                     # is it a regular dictionary or a dictionary with dictionaries inside?
                     for key, value in dictionary.items():
                         if isinstance(value, dict):
                             # rename all ids from old to new
                             dictionary[key] = {
-                                self.pkl2lT.get(k, -1): v for k, v in value.items()
+                                self.pkl2lT.get(k, -1): v
+                                for k, v in value.items()
                             }
                     self.__dict__[prop_name] = dictionary
+                    self.specific_properties.append(prop_name)
                 # is any of this necessary? Or does it mean it anyways does not contain
                 # information about the id and a simple else: is enough?
-                elif isinstance(prop_values, (list, set, np.ndarray)):
+                elif (
+                    isinstance(prop_values, (list, set, np.ndarray))
+                    and prop_name not in []
+                ):
                     self.__dict__[prop_name] = prop_values
+                    self.specific_properties.append(prop_name)
 
             # what else could it be?
 
@@ -2198,12 +2211,6 @@ class lineageTree:
     #             d[i, j] = c[i, j] + min((d[i-1, j], d[i, j-1], d[i-1, j-1]))
     #     return d[-1, -1], d
 
-    def properties(self) -> list:
-        """
-        Returns the list of the available properties of the lineageTree object
-        """
-        return list(self.__dict__.keys())
-
     def __getitem__(self, item):
         if isinstance(item, str):
             return self.__dict__[item]
@@ -2237,11 +2244,12 @@ class lineageTree:
                     to_do.append(_next)
                 elif self.time[_next] == t:
                     final_nodes.append(_next)
-        if not final_nodes: return list(r)
+        if not final_nodes:
+            return list(r)
         return final_nodes
 
     def first_labelling(self):
-        self.labels =  {i:"Enter_Label" for i in self.time_nodes[0]}
+        self.labels = {i: "Enter_Label" for i in self.time_nodes[0]}
 
     def __init__(
         self,
