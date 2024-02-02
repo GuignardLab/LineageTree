@@ -2198,6 +2198,12 @@ class lineageTree:
     #             d[i, j] = c[i, j] + min((d[i-1, j], d[i, j-1], d[i-1, j-1]))
     #     return d[-1, -1], d
 
+    def properties(self) -> list:
+        """
+        Returns the list of the available properties of the lineageTree object
+        """
+        return list(self.__dict__.keys())
+
     def __getitem__(self, item):
         if isinstance(item, str):
             return self.__dict__[item]
