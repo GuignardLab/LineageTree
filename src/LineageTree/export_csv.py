@@ -1,4 +1,4 @@
-import lineageTree
+from lineageTree import lineageTree
 import csv
 
 """Writes a lineage tree into a series of csv files.
@@ -15,7 +15,7 @@ import csv
 
 
 def export_to_csv():
-    tree = lineageTree.lineageTree("Astec-Pm10_properties.pkl", file_type="ASTEC")
+    tree = lineageTree("Astec-Pm10_properties.pkl", file_type="ASTEC")
 
     spots = [["id", "label", "timePoint", "x", "y", "z", "volume"]]
     for node_id in tree.nodes:
