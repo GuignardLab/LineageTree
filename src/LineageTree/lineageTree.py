@@ -2018,7 +2018,8 @@ class lineageTree:
             ancestor = self.predecessor.get(ancestor, [-1])[0]
         return ancestor
 
-    def get_simple_tree(self, r: int, time_resolution: int = 1) -> tuple:
+    
+    def get_simple_tree(self, r: int, time: int = 500, time_resolution: int = 1) -> tuple:
         """
         Get a "simple" version of the tree spawned by the node `r`
         This simple version is just one node per cell (as opposed to
@@ -2037,18 +2038,44 @@ class lineageTree:
                 not the first time point).
             (dict) {m (int): duration (float)}: life time duration of the cell `m`
         """
+        def custom_successor(cell: int,time_end: int) -> int:
+            """Helper function that returns the length of a cell lifetime up to a certain timepoint,
+            if the cell lifetime ends before the time_end it returns the whole cycle.
+
+            Args:
+                cell (int): Id of the cell
+                time_end (int): The final timepoint
+
+            Returns:
+                (int): Length of the life cycle of a cell up to the time_end timepoint.
+            """
+            if self.time[cell] >time_end:
+                return 0
+            if self.time[self.get_cycle(cell)[-1]]>= time_end:
+                return time_end - self.time[cell]
+            if self.time[cell]==time_end:
+                return len(self.get_predecessors(cell))
+            else: return len(self.get_cycle(cell))
+
         if not hasattr(self, "cycle_time"):
             self.cycle_time = {}
         out_dict = {}
         to_do = [r]
         while to_do:
             current = to_do.pop()
-            cycle = self.get_successors(current)
-            _next = self.successor.get(cycle[-1], [])
+            # if  self.time[current]>= time:
+            #     continue
+            cycle = custom_successor(current,time)
+            self.cycle_time[current] = int(cycle)*time_resolution #len(cycle) * time_resolution
+
+            # print(current,len(cycle),self.cycle_time[current])
+            _next = self.successor.get(self.get_cycle(current)[-1], [])
             if _next:
                 out_dict[current] = _next
             to_do.extend(_next)
-            self.cycle_time[current] = len(cycle) * time_resolution
+        for k,v in self.cycle_time.items():
+            if v <0:
+                self.cycle_time[k] = 0
         return out_dict, self.cycle_time
 
     @staticmethod
