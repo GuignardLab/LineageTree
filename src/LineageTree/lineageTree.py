@@ -2063,19 +2063,15 @@ class lineageTree:
         to_do = [r]
         while to_do:
             current = to_do.pop()
-            # if  self.time[current]>= time:
-            #     continue
             cycle = custom_successor(current,time)
-            self.cycle_time[current] = int(cycle)*time_resolution #len(cycle) * time_resolution
-
-            # print(current,len(cycle),self.cycle_time[current])
+            self.cycle_time[current] = int(cycle)*time_resolution
             _next = self.successor.get(self.get_cycle(current)[-1], [])
             if _next:
                 out_dict[current] = _next
             to_do.extend(_next)
-        for k,v in self.cycle_time.items():
-            if v <0:
-                self.cycle_time[k] = 0
+        # for k,v in self.cycle_time.items():
+        #     if v <0:
+        #         self.cycle_time[k] = 0
         return out_dict, self.cycle_time
 
     @staticmethod
