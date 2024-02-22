@@ -21,8 +21,16 @@ def export_to_csv():
     for node_id in tree.nodes:
         cell_name = tree["cell_name"].get(node_id, "unknown")
         spots.append(
-            [node_id, cell_name, tree.time.get(node_id), tree.pos[node_id][0], tree.pos[node_id][1],
-             tree.pos[node_id][2], tree.volume[node_id]])
+            [
+                node_id,
+                cell_name,
+                tree.time.get(node_id),
+                tree.pos[node_id][0],
+                tree.pos[node_id][1],
+                tree.pos[node_id][2],
+                tree.volume[node_id],
+            ]
+        )
     write("spots.csv", spots)
 
     links = [["source", "target"]]
@@ -52,10 +60,10 @@ def write_fate(fates, fate_name, tree, fate_value_name):
 
 
 def write(file_path, data):
-    with open(file_path, mode='w', newline='') as file:
+    with open(file_path, mode="w", newline="") as file:
         writer = csv.writer(file)
         writer.writerows(data)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     export_to_csv()
