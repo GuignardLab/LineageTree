@@ -2018,7 +2018,9 @@ class lineageTree:
             ancestor = self.predecessor.get(ancestor, [-1])[0]
         return ancestor
 
-    def get_simple_tree(self, r: int, end_time: int = None, time_resolution: int = 1) -> tuple:
+    def get_simple_tree(
+        self, r: int, end_time: int = None, time_resolution: int = 1
+    ) -> tuple:
         """
         Get a "simple" version of the tree spawned by the node `r`
         This simple version is just one node per cell (as opposed to
@@ -2046,9 +2048,9 @@ class lineageTree:
         to_do = [r]
         while to_do:
             current = to_do.pop()
-            cycle = self.get_successors(current)
+            cycle = np.array(self.get_successors(current))
             cycle_times = np.array([self.time[c] for c in cycle])
-            cycle = cycle[cycle_times<end_time]
+            cycle = cycle[cycle_times < end_time]
             _next = self.successor.get(cycle[-1], [])
             if 1 < len(_next):
                 out_dict[current] = _next
