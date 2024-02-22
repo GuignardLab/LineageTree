@@ -2019,7 +2019,7 @@ class lineageTree:
         return ancestor
 
     
-    def get_simple_tree(self, r: int, time: int = 500, time_resolution: int = 1) -> tuple:
+    def get_simple_tree(self, r: int, time: int = 400, time_resolution: int = 1) -> tuple:
         """
         Get a "simple" version of the tree spawned by the node `r`
         This simple version is just one node per cell (as opposed to
@@ -2029,6 +2029,7 @@ class lineageTree:
 
         Args:
             r (int): root of the tree to spawn
+            time (int): End time of the tree (for example run tree from node n until time n' )
             time_resolution (float): the time between two consecutive time points
 
         Returns:
@@ -2049,10 +2050,8 @@ class lineageTree:
             Returns:
                 (int): Length of the life cycle of a cell up to the time_end timepoint.
             """
-            if self.time[cell] >time_end:
-                return 0
             if self.time[self.get_cycle(cell)[-1]]>= time_end:
-                return time_end - self.time[cell]
+                return time_end - self.time[cell] if time_end - self.time[cell]>0 else 0
             if self.time[cell]==time_end:
                 return len(self.get_predecessors(cell))
             else: return len(self.get_cycle(cell))
@@ -2069,9 +2068,7 @@ class lineageTree:
             if _next:
                 out_dict[current] = _next
             to_do.extend(_next)
-        # for k,v in self.cycle_time.items():
-        #     if v <0:
-        #         self.cycle_time[k] = 0
+
         return out_dict, self.cycle_time
 
     @staticmethod
@@ -2159,16 +2156,18 @@ class lineageTree:
         if delta is None or not callable(delta):
 
             def delta(x, y, corres1, corres2, times):
-                if x is None or y is None:
-                    return 1
+                if x is None :
+                    return times[corres2[y]]
+                if y is None:
+                    return times[corres1[x]]
                 len_x = times[corres1[x]]
                 len_y = times[corres2[y]]
-                return np.abs(len_x - len_y) / (len_x + len_y)
+                return np.abs(len_x - len_y) #/ (len_x + len_y)
 
         if norm is None or not callable(norm):
 
             def norm(x, y):
-                return max(len(x), len(y))
+                return max(len([i for i in self.get_simple_tree(n1)[1].values() if i>0]), len([i for i in self.get_simple_tree(n2)[1].values() if i>0]))
 
         if norm is False:
 
