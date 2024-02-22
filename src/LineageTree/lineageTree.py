@@ -2018,7 +2018,7 @@ class lineageTree:
             ancestor = self.predecessor.get(ancestor, [-1])[0]
         return ancestor
 
-    def get_simple_tree(self, r: int, time_resolution: int = 1) -> tuple:
+    def get_simple_tree(self, r: int, end_time: int = None, time_resolution: int = 1) -> tuple:
         """
         Get a "simple" version of the tree spawned by the node `r`
         This simple version is just one node per cell (as opposed to
@@ -2028,6 +2028,7 @@ class lineageTree:
 
         Args:
             r (int): root of the tree to spawn
+            end_time (int): the last time point to consider
             time_resolution (float): the time between two consecutive time points
 
         Returns:
@@ -2037,6 +2038,8 @@ class lineageTree:
                 not the first time point).
             (dict) {m (int): duration (float)}: life time duration of the cell `m`
         """
+        if end_time is None:
+            end_time = self.t_e
         if not hasattr(self, "cycle_time"):
             self.cycle_time = {}
         out_dict = {}
@@ -2044,10 +2047,12 @@ class lineageTree:
         while to_do:
             current = to_do.pop()
             cycle = self.get_successors(current)
+            cycle_times = np.array([self.time[c] for c in cycle])
+            cycle = cycle[cycle_times<end_time]
             _next = self.successor.get(cycle[-1], [])
-            if _next:
+            if 1 < len(_next):
                 out_dict[current] = _next
-            to_do.extend(_next)
+                to_do.extend(_next)
             self.cycle_time[current] = len(cycle) * time_resolution
         return out_dict, self.cycle_time
 
