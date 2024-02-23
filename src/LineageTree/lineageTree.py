@@ -2143,16 +2143,18 @@ class lineageTree:
         if delta is None or not callable(delta):
 
             def delta(x, y, corres1, corres2, times):
-                if x is None or y is None:
-                    return 1
+                if x is None :
+                    return times[corres2[y]]
+                if y is None:
+                    return times[corres1[x]]
                 len_x = times[corres1[x]]
                 len_y = times[corres2[y]]
-                return np.abs(len_x - len_y) / (len_x + len_y)
+                return np.abs(len_x - len_y) #/ (len_x + len_y)
 
         if norm is None or not callable(norm):
 
             def norm(x, y):
-                return max(len(x), len(y))
+                return max(len([i for i in self.get_simple_tree(n1)[1].values() if i>0]), len([i for i in self.get_simple_tree(n2)[1].values() if i>0]))
 
         if norm is False:
 
