@@ -2051,7 +2051,7 @@ class lineageTree:
             cycle = np.array(self.get_successors(current))
             cycle_times = np.array([self.time[c] for c in cycle])
             cycle = cycle[cycle_times < end_time]
-            if cycle:
+            if cycle.size:
                 _next = self.successor.get(cycle[-1], [])
                 if 1 < len(_next):
                     out_dict[current] = _next
