@@ -2051,10 +2051,11 @@ class lineageTree:
             cycle = np.array(self.get_successors(current))
             cycle_times = np.array([self.time[c] for c in cycle])
             cycle = cycle[cycle_times < end_time]
-            _next = self.successor.get(cycle[-1], [])
-            if 1 < len(_next):
-                out_dict[current] = _next
-                to_do.extend(_next)
+            if cycle:
+                _next = self.successor.get(cycle[-1], [])
+                if 1 < len(_next):
+                    out_dict[current] = _next
+                    to_do.extend(_next)
             self.cycle_time[current] = len(cycle) * time_resolution
         return out_dict, self.cycle_time
 
@@ -2088,6 +2089,7 @@ class lineageTree:
         delta: callable = None,
         norm: callable = None,
         recompute: bool = False,
+        end_time: int = None
     ) -> dict:
         """
         Compute all the pairwise unordered tree edit distances from Zhang 996 between the trees spawned at time `t`
@@ -2099,6 +2101,8 @@ class lineageTree:
                 of the tree spawned by `n1` and the number of nodes
                 of the tree spawned by `n2` as arguments.
             recompute (bool): if True, forces to recompute the distances (default: False)
+            end_time (int): The final time point the comparison algorithm will take into account. If None all nodes
+                            will be taken into account.
 
         Returns:
             (dict) a dictionary that maps a pair of cell ids at time `t` to their unordered tree edit distance
@@ -2112,12 +2116,12 @@ class lineageTree:
         for n1, n2 in combinations(roots, 2):
             key = tuple(sorted((n1, n2)))
             self.uted[t][key] = self.unordered_tree_edit_distance(
-                n1, n2, delta=delta, norm=norm
+                n1, n2, delta=delta, norm=norm, end_time=end_time
             )
         return self.uted[t]
 
     def unordered_tree_edit_distance(
-        self, n1: int, n2: int, delta: callable = None, norm: callable = None
+        self, n1: int, n2: int, delta: callable = None, norm: callable = None, end_time: int = None
     ) -> float:
         """
         Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
@@ -2154,15 +2158,16 @@ class lineageTree:
         if norm is None or not callable(norm):
 
             def norm(x, y):
-                return max(len([i for i in self.get_simple_tree(n1)[1].values() if i>0]), len([i for i in self.get_simple_tree(n2)[1].values() if i>0]))
+                return max(sum([v for v in self.get_simple_tree(n1, end_time=end_time)[1].values()]),
+                            sum([v for v in self.get_simple_tree(n2, end_time=end_time)[1].values()]))
 
         if norm is False:
 
             def norm(*args):
                 return 1
 
-        simple_tree_1, _ = self.get_simple_tree(n1)
-        simple_tree_2, _ = self.get_simple_tree(n2)
+        simple_tree_1, _ = self.get_simple_tree(n1,end_time=end_time)
+        simple_tree_2, _ = self.get_simple_tree(n2, end_time=end_time)
         nodes1, adj1, corres1 = self.__edist_format(simple_tree_1)
         nodes2, adj2, corres2 = self.__edist_format(simple_tree_2)
         if len(nodes1) == len(nodes2) == 0:
