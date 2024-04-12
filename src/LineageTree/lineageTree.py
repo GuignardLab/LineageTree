@@ -1406,7 +1406,7 @@ class lineageTree:
             self.nodes.add(unique_id)
             self.time[unique_id] = t
             self.node_name[unique_id] = spot[1]
-            self.pos[unique_id] = np.array([x, y, z])
+            self.pos[unique_id] = np.array([x, y, z],dtype = float)
 
         for link in links:
             source = int(float(link[4]))
@@ -1882,8 +1882,27 @@ class lineageTree:
         if not hasattr(self, "_all_tracks"):
             self._all_tracks = self.get_all_tracks()
         return self._all_tracks
+    
+    def get_all_branches_of_node(self, node:int) -> list:
+        """Computes all the tracks of the subtree of a given node.
+        Similar to get_all_tracks().
 
-    def get_all_tracks(self, force_recompute: bool = False) -> list:
+        Args:
+            node (int, optional): The node that we want to get its branches.
+
+        Returns:
+            ([[int, ...], ...]): list of lists containing track cell ids
+        """
+        branches = []
+        to_do = set(self.get_sub_tree(node))
+        while len(to_do) != 0:
+            current = to_do.pop()
+            track = self.get_cycle(current)
+            branches += [track]
+            to_do -= set(track)
+        return branches
+
+    def get_all_tracks(self, force_recompute: bool = False, end_time: int = None) -> list:
         """Computes all the tracks of a given lineage tree,
         stores it in `self.all_tracks` and returns it.
 
@@ -2039,25 +2058,30 @@ class lineageTree:
                 at their first time point (except for the cell `r` if it was
                 not the first time point).
             (dict) {m (int): duration (float)}: life time duration of the cell `m`
+            (dict) {m (int): duration (float)}: life time duration of the cell `m`
         """
         if end_time is None:
             end_time = self.t_e
         if not hasattr(self, "cycle_time"):
             self.cycle_time = {}
         out_dict = {}
+        time={}
         to_do = [r]
         while to_do:
             current = to_do.pop()
             cycle = np.array(self.get_successors(current))
             cycle_times = np.array([self.time[c] for c in cycle])
-            cycle = cycle[cycle_times < end_time]
+            cycle = cycle[cycle_times <= end_time]
             if cycle.size:
                 _next = self.successor.get(cycle[-1], [])
-                if 1 < len(_next):
+                if len(_next) > 1:
                     out_dict[current] = _next
                     to_do.extend(_next)
+                else:
+                    out_dict[current] = []
             self.cycle_time[current] = len(cycle) * time_resolution
-        return out_dict, self.cycle_time
+            time[current] = len(cycle) * time_resolution
+        return out_dict, self.cycle_time, time
 
     @staticmethod
     def __edist_format(adj_dict: dict):
@@ -2132,7 +2156,7 @@ class lineageTree:
 
         Args:
             n1 (int): id of the first node to compare
-            n2 (int): id of the second node to compare
+            n2 (int): id of get_cellthe second node to compare
             delta (callable): comparison function (see edist doc for more information)
             norm (callable): norming function that takes the number of nodes
                 of the tree spawned by `n1` and the number of nodes
@@ -2147,6 +2171,8 @@ class lineageTree:
         if delta is None or not callable(delta):
 
             def delta(x, y, corres1, corres2, times):
+                if x is None and y is None:
+                    return 0
                 if x is None :
                     return times[corres2[y]]
                 if y is None:
@@ -2154,20 +2180,31 @@ class lineageTree:
                 len_x = times[corres1[x]]
                 len_y = times[corres2[y]]
                 return np.abs(len_x - len_y) #/ (len_x + len_y)
-
-        if norm is None or not callable(norm):
-
-            def norm(x, y):
-                return max(sum([v for v in self.get_simple_tree(n1, end_time=end_time)[1].values()]),
-                            sum([v for v in self.get_simple_tree(n2, end_time=end_time)[1].values()]))
-
+            # def delta(x,y,corres1,corres2,times):
+            #     if x is None:
+            #         return 1
+            #     if y is None:
+            #         return 1
+            #     len_x = times[corres1[x]]
+            #     len_y = times[corres2[y]]
+            #     return np.abs(len_x - len_y) / (len_x + len_y)
         if norm is False:
 
             def norm(*args):
                 return 1
 
-        simple_tree_1, _ = self.get_simple_tree(n1,end_time=end_time)
-        simple_tree_2, _ = self.get_simple_tree(n2, end_time=end_time)
+        if norm is None or not callable(norm):
+
+            def norm(x,y):
+                return max(sum(self.get_simple_tree(n1, end_time=end_time)[2].values()),
+                            sum(self.get_simple_tree(n2, end_time=end_time)[2].values()))
+            
+            # def norm(x,adj1,y,adj2,delta):
+            #     return max(uted(x,adj1,[],[],delta = delta), 
+            #                uted(y,adj2,[],[],delta = delta))
+
+        simple_tree_1, _ , times1= self.get_simple_tree(n1,end_time=end_time)
+        simple_tree_2, _ , times2 = self.get_simple_tree(n2, end_time=end_time)
         nodes1, adj1, corres1 = self.__edist_format(simple_tree_1)
         nodes2, adj2, corres2 = self.__edist_format(simple_tree_2)
         if len(nodes1) == len(nodes2) == 0:
@@ -2176,8 +2213,8 @@ class lineageTree:
             delta, corres1=corres1, corres2=corres2, times=self.cycle_time
         )
         return uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / norm(
-            nodes1, nodes2
-        )
+            n1,n2
+         )
 
     # def DTW(self, t1, t2, max_w=None, start_delay=None, end_delay=None,
     #         metric='euclidian', **kwargs):
