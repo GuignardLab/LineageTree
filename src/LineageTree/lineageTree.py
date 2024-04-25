@@ -14,11 +14,21 @@ from numbers import Number
 from typing import TextIO
 
 import numpy as np
+from edist.uted import uted
 from scipy.spatial import Delaunay
 from scipy.spatial import cKDTree as KDTree
 
 
 class lineageTree:
+    def __eq__(self, other):
+        ### I do not care about orientation and spatial registration as it should be taken care by the new class method ###
+        if isinstance(other, lineageTree):
+            nodes_other = other.nodes
+            nodes_self = self.nodes
+            if nodes_other == nodes_self:
+                return True
+        return False
+
     def get_next_id(self):
         """Computes the next authorized id.
 
@@ -157,6 +167,12 @@ class lineageTree:
     @property
     def leaves(self):
         return set(self.predecessor).difference(self.successor)
+        
+    @property
+    def labels(self):
+        if not hasattr(self,"_labels"):
+            self._labels = {i: "Enter_Label" for i in self.time_nodes[0]}
+        return self._labels
 
     def _write_header_am(self, f: TextIO, nb_points: int, length: int):
         """Header for Amira .am files"""
@@ -2046,61 +2062,59 @@ class lineageTree:
             ancestor = self.predecessor.get(ancestor, [-1])[0]
         return ancestor
 
-    # def get_simple_tree(
-    #     self, r: int, end_time: int = None, time_resolution: int = 1
-    # ) -> tuple:
-    #     """
-    #     Get a "simple" version of the tree spawned by the node `r`
-    #     This simple version is just one node per cell (as opposed to
-    #     one node per cell per time-point). The life time duration of
-    #     a cell `c` is stored in `self.cycle_time` and return by this
-    #     function
-
-    #     Args:
-    #         r (int): root of the tree to spawn
-    #         end_time (int): the last time point to consider
-    #         time_resolution (float): the time between two consecutive time points
-
-    #     Returns:
-    #         (dict) {m (int): [d1 (int), d2 (int)]}: a adjacency dictionnary
-    #             where the ids are the ids of the cells in the original tree
-    #             at their first time point (except for the cell `r` if it was
-    #             not the first time point).
-    #         (dict) {m (int): duration (float)}: life time duration of the cell `m`
-    #         (dict) {m (int): duration (float)}: life time duration of the cell `m`
-    #     """
-    #     if end_time is None:
-    #         end_time = self.t_e
-    #     if not hasattr(self, "cycle_time"):
-    #         self.cycle_time = {}
-    #     out_dict = {}
-    #     time={}
-    #     to_do = [r]
-    #     while to_do:
-    #         current = to_do.pop()
-    #         cycle = np.array(self.get_successors(current))
-    #         cycle_times = np.array([self.time[c] for c in cycle])
-    #         cycle = cycle[cycle_times <= end_time]
-    #         if cycle.size:
-    #             _next = self.successor.get(cycle[-1], [])
-    #             if len(_next) > 1:
-    #                 out_dict[current] = _next
-    #                 to_do.extend(_next)
-    #             else:
-    #                 out_dict[current] = []
-    #         self.cycle_time[current] = len(cycle) * time_resolution
-    #         time[current] = len(cycle) * time_resolution
-    #     return out_dict, self.cycle_time, time
-    def get_comp_tree(self,
-         r: int = 0, node_lengths = [1,3,5,7],end_time: int = None
+    def get_simple_tree(
+        self, r: int, end_time: int = None, time_resolution: int = 1
     ) -> tuple:
         """
         Get a "simple" version of the tree spawned by the node `r`
         This simple version is just one node per cell (as opposed to
         one node per cell per time-point). The life time duration of
-        a cell `c` is stored in `lT.cycle_time` and return by this
+        a cell `c` is stored in `self.cycle_time` and return by this
         function
 
+        Args:
+            r (int): root of the tree to spawn
+            end_time (int): the last time point to consider
+            time_resolution (float): the time between two consecutive time points
+
+        Returns:
+            (dict) {m (int): [d1 (int), d2 (int)]}: a adjacency dictionnary
+                where the ids are the ids of the cells in the original tree
+                at their first time point (except for the cell `r` if it was
+                not the first time point).
+            (dict) {m (int): duration (float)}: life time duration of the cell `m`
+            (dict) {m (int): duration (float)}: life time duration of the cell `m`
+        """
+        if end_time is None:
+            end_time = self.t_e
+        if not hasattr(self, "cycle_time"):
+            self.cycle_time = {}
+        out_dict = {}
+        time={}
+        to_do = [r]
+        while to_do:
+            current = to_do.pop()
+            cycle = np.array(self.get_successors(current))
+            cycle_times = np.array([self.time[c] for c in cycle])
+            cycle = cycle[cycle_times <= end_time]
+            if cycle.size:
+                _next = self.successor.get(cycle[-1], [])
+                if len(_next) > 1:
+                    out_dict[current] = _next
+                    to_do.extend(_next)
+                else:
+                    out_dict[current] = []
+            self.cycle_time[current] = len(cycle) * time_resolution
+            time[current] = len(cycle) * time_resolution
+        return out_dict, time
+
+    def get_comp_tree(self,
+         r: int = 0, node_lengths = [1,5,11,1],end_time: int = None
+    ) -> tuple:
+        """
+        Get a "complicated" version of the tree spawned by the node `r`
+        This version is 8 nodes per cell one time point in the first node_length positions and
+        the last node_length positions and the life time of each node. 
         Args:
             r (int): root of the tree to spawn
             end_time (int): the last time point to consider
@@ -2135,7 +2149,7 @@ class lineageTree:
                         times[cycle[-node_pos[i+1]-1]] = node_lengths[i]
 
                     out_dict[cycle[node_pos[-1]]] = [cycle[-node_pos[-1]-1]]
-                    times[cycle[node_pos[-1]]] = len(cycle[node_pos[-1]:-node_pos[-1]])
+                    times[cycle[node_pos[-1]]] = len(cycle[node_pos[-1]:-node_pos[-1]])-1
                 else:
                     for i in range(len(cycle)-1):
                         out_dict[cycle[i]] = [cycle[i+1]]
@@ -2217,7 +2231,8 @@ class lineageTree:
         return self.uted[t]
 
     def unordered_tree_edit_distance(
-        self, n1: int, n2: int, delta: callable = None, norm: callable = None, end_time: int = None,
+        self, n1: int, n2: int, delta: callable = None, norm: callable = None
+        , end_time: int = None, get_tree_method: str = "comp",
     ) -> float:
         """
         Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
@@ -2237,21 +2252,23 @@ class lineageTree:
         Returns:
             (float) The normed unordered tree edit distance
         """
-
-        from edist.uted import uted
+        if get_tree_method is None or "comp":
+            get_tree_method = self.get_comp_tree
+        else:
+            get_tree_method = self.get_simple_tree
 
         if delta is None or not callable(delta):
 
-            def delta(x, y, corres1, corres2, times1,times2):
+            def delta(x, y, corres1, corres2, times1, times2):
                 if x is None and y is None:
                     return 0
-                if x is None :
+                if x is None:
                     return times2[corres2[y]]
                 if y is None:
                     return times1[corres1[x]]
                 len_x = times1[corres1[x]]
                 len_y = times2[corres2[y]]
-                return np.abs(len_x - len_y) / (len_x + len_y)
+                return np.abs(len_x - len_y) #/ (len_x + len_y)
             # def delta(x,y,corres1,corres2,times):
             #     if x is None:
             #         return 1
@@ -2268,15 +2285,15 @@ class lineageTree:
         if norm is None or not callable(norm):
 
             def norm(x,y):
-                return max(sum(self.get_comp_tree(n1, end_time=end_time)[1].values()),
-                            sum(self.get_comp_tree(n2, end_time=end_time)[1].values()))
+                return max(sum(get_tree_method(n1, end_time=end_time)[1].values()),
+                            sum(get_tree_method(n2, end_time=end_time)[1].values()))
             
             # def norm(x,adj1,y,adj2,delta):
             #     return max(uted(x,adj1,[],[],delta = delta), 
             #                uted(y,adj2,[],[],delta = delta))
 
-        simple_tree_1, times1 = self.get_comp_tree(n1, end_time=end_time)
-        simple_tree_2, times2 = self.get_comp_tree(n2, end_time=end_time)
+        simple_tree_1, times1 = get_tree_method(n1, end_time=end_time)
+        simple_tree_2, times2 = get_tree_method(n2, end_time=end_time)
         nodes1, adj1, corres1 = self.__edist_format(simple_tree_1)
         nodes2, adj2, corres2 = self.__edist_format(simple_tree_2)
         if len(nodes1) == len(nodes2) == 0:
@@ -2371,8 +2388,8 @@ class lineageTree:
             return list(r)
         return final_nodes
 
-    def first_labelling(self):
-        self.labels = {i: "Enter_Label" for i in self.time_nodes[0]}
+    # def first_labelling(self):
+    #     self.labels = {i: "Enter_Label" for i in self.time_nodes[0]}
 
     def __init__(
         self,
