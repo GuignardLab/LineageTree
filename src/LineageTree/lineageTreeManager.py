@@ -24,7 +24,7 @@ class LineageTreeManager:
             if name:
                 self.lineagetrees[name] = other_tree
             else:
-                name = f"LineageTree  {self.get_next_tree()}"
+                name = other_tree.name#f"LineageTree  {self.get_next_tree()}"
                 self.lineagetrees[name] = other_tree
         if type in  ("Wt" ,"Ptb"):
             self.classification[type] = {name:other_tree }

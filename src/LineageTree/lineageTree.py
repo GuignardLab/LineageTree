@@ -11,6 +11,7 @@ import xml.etree.ElementTree as ET
 from functools import partial
 from itertools import combinations
 from numbers import Number
+from pathlib import Path
 from typing import TextIO
 
 import numpy as np
@@ -20,6 +21,7 @@ from scipy.spatial import cKDTree as KDTree
 
 
 class lineageTree:
+
     def __eq__(self, other):
         ### I do not care about orientation and spatial registration as it should be taken care by the new class method ###
         if isinstance(other, lineageTree):
@@ -2422,6 +2424,7 @@ class lineageTree:
                 'TGMM, 'ASTEC', MaMuT', 'TrackMate', 'csv', 'celegans', 'binary'
                 default is 'binary'
         """
+        self.name = name
         self.time_nodes = {}
         self.time_edges = {}
         self.max_id = -1
@@ -2436,7 +2439,7 @@ class lineageTree:
         self.kdtrees = {}
         self.spatial_density = {}
         self.progeny = {}
-        self.labels = {}
+        # self.labels = {}
         if xml_attributes is None:
             self.xml_attributes = []
         else:
@@ -2472,3 +2475,8 @@ class lineageTree:
             self.__dict__.update(tmp.__dict__)
         elif file_format is not None:
             self.read_from_binary(file_format)
+        if self.name is None:
+            try:
+                self.name = Path(file_format).stem
+            except:
+                self.name = Path(file_format[0]).stem
