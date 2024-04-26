@@ -10,13 +10,6 @@ With LineageTree you can read from:
 - ASTEC algorithm outputs described in [Guignard, Fiuza et al. 2020](https://doi.org/10.1126/science.aar5663)
 - and few others
 
-## Description of the repository
-
-- src: folder containing the package
-- setup.py: Installation script
-- README.md: This file
-- LICENCE: The licence describing file
-
 ## Basic usage
 
 Once installed the library can be called the following way (as an example):
