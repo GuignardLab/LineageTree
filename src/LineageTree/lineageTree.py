@@ -2172,7 +2172,7 @@ class lineageTree:
         return out_dict, times
 
     @staticmethod
-    def __edist_format(adj_dict: dict):
+    def _edist_format(adj_dict: dict):
         inv_adj = {vi: k for k, v in adj_dict.items() for vi in v}
         roots = set(adj_dict).difference(inv_adj)
         nid2list = {}
