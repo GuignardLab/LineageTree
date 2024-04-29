@@ -19,7 +19,7 @@ class LineageTreeManager:
         self.lineageTree_counter += 1
         return self.lineageTree_counter - 1
 
-    def add(self, other_tree:lineageTree, name: str = "", type: str = ""):
+    def add(self, other_tree:lineageTree, name: str = "", classification: str = ""):
         """Function that adds a new lineagetree object to the class.
         Can be added either by .add or by using the + operator. If a name is
         specified it will also add it as this specific name, otherwise it will
@@ -29,7 +29,7 @@ class LineageTreeManager:
         Args:
             other_tree (lineageTree): Thelineagetree to be added.
             name (str, optional): Then name of. Defaults to "".
-            type (str, optional): If the user need to add it to classification 
+            classification (str, optional): If the user need to add it to classification 
                                     provide here the name of the class.
                                     Defaults to "".
 
@@ -43,9 +43,12 @@ class LineageTreeManager:
             if name:
                 self.lineagetrees[name] = other_tree
             else:
-                name = other_tree.name
-                self.lineagetrees[name] = other_tree
-        if type in ("Wt", "Ptb"):
+                try:
+                    name = other_tree.name
+                    self.lineagetrees[name] = other_tree
+                except:
+                    self.lineagetrees[f"Lineagetree {self.get_next_tree()}"] = other_tree
+        if classification in ("Wt", "Ptb"):
             self.classification[type] = {name: other_tree}
 
     def __add__(self, other):
