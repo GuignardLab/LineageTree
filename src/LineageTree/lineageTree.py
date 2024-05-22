@@ -7,13 +7,14 @@ import csv
 import os
 import pickle as pkl
 import struct
+import networkx as nx
 import xml.etree.ElementTree as ET
 from functools import partial
 from itertools import combinations
 from numbers import Number
 from pathlib import Path
 from typing import TextIO
-
+from .utils import hierarchy_pos
 import numpy as np
 from edist.uted import uted
 from scipy.spatial import Delaunay
@@ -21,14 +22,10 @@ from scipy.spatial import cKDTree as KDTree
 
 
 class lineageTree:
-
     def __eq__(self, other):
         ### I do not care about orientation and spatial registration as it should be taken care by the new class method ###
         if isinstance(other, lineageTree):
-            nodes_other = other.nodes
-            nodes_self = self.nodes
-            if nodes_other == nodes_self:
-                return True
+            return other.roots == self.roots
         return False
 
     def get_next_id(self):
@@ -169,10 +166,10 @@ class lineageTree:
     @property
     def leaves(self):
         return set(self.predecessor).difference(self.successor)
-        
+
     @property
     def labels(self):
-        if not hasattr(self,"_labels"):
+        if not hasattr(self, "_labels"):
             self._labels = {i: "Enter_Label" for i in self.time_nodes[0]}
         return self._labels
 
@@ -1424,7 +1421,7 @@ class lineageTree:
             self.nodes.add(unique_id)
             self.time[unique_id] = t
             self.node_name[unique_id] = spot[1]
-            self.pos[unique_id] = np.array([x, y, z],dtype = float)
+            self.pos[unique_id] = np.array([x, y, z], dtype=float)
 
         for link in links:
             source = int(float(link[4]))
@@ -1493,16 +1490,18 @@ class lineageTree:
         self.track_name = {}
         for track in AllTracks:
             if "TRACK_DURATION" in track.attrib:
-                t_id, _ = int(track.attrib["TRACK_ID"]), float(
-                    track.attrib["TRACK_DURATION"]
+                t_id, _ = (
+                    int(track.attrib["TRACK_ID"]),
+                    float(track.attrib["TRACK_DURATION"]),
                 )
             else:
                 t_id = int(track.attrib["TRACK_ID"])
             t_name = track.attrib["name"]
             tracks[t_id] = []
             for edge in track:
-                s, t = int(edge.attrib["SPOT_SOURCE_ID"]), int(
-                    edge.attrib["SPOT_TARGET_ID"]
+                s, t = (
+                    int(edge.attrib["SPOT_SOURCE_ID"]),
+                    int(edge.attrib["SPOT_TARGET_ID"]),
                 )
                 if s in self.nodes and t in self.nodes:
                     if self.time[s] > self.time[t]:
@@ -1826,7 +1825,9 @@ class lineageTree:
 
         return self.Gabriel_graph[t]
 
-    def get_predecessors(self, x: int, depth: int = None, end_time: int = None) -> list:
+    def get_predecessors(
+        self, x: int, depth: int = None, end_time: int = None
+    ) -> list:
         """Computes the predecessors of the node `x` up to
         `depth` predecessors or the begining of the life of `x`.
         The ordered list of ids is returned.
@@ -1848,10 +1849,12 @@ class lineageTree:
         ):
             cycle.insert(0, self.predecessor[cycle[0]][0])
             acc += 1
-        
+
         return cycle
 
-    def get_successors(self, x: int, depth: int = None, end_time: int = None) -> list:
+    def get_successors(
+        self, x: int, depth: int = None, end_time: int = None
+    ) -> list:
         """Computes the successors of the node `x` up to
         `depth` successors or the end of the life of `x`.
         The ordered list of ids is returned.
@@ -1878,7 +1881,7 @@ class lineageTree:
         depth: int = None,
         depth_pred: int = None,
         depth_succ: int = None,
-        end_time: int = None
+        end_time: int = None,
     ) -> list:
         """Computes the predecessors and successors of the node `x` up to
         `depth_pred` predecessors plus `depth_succ` successors.
@@ -1907,8 +1910,10 @@ class lineageTree:
         if not hasattr(self, "_all_tracks"):
             self._all_tracks = self.get_all_tracks()
         return self._all_tracks
-    
-    def get_all_branches_of_node(self, node:int, end_time:int = None) -> list:
+
+    def get_all_branches_of_node(
+        self, node: int, end_time: int = None
+    ) -> list:
         """Computes all the tracks of the subtree of a given node.
         Similar to get_all_tracks().
 
@@ -1924,12 +1929,14 @@ class lineageTree:
         to_do = set(self.get_sub_tree(node))
         while len(to_do) != 0:
             current = to_do.pop()
-            track = self.get_successors(current,end_time = end_time)
+            track = self.get_successors(current, end_time=end_time)
             branches += [track]
             to_do -= set(track)
         return branches
 
-    def get_all_tracks(self, force_recompute: bool = False, end_time: int = None) -> list:
+    def get_all_tracks(
+        self, force_recompute: bool = False, end_time: int = None
+    ) -> list:
         """Computes all the tracks of a given lineage tree,
         stores it in `self.all_tracks` and returns it.
 
@@ -2092,7 +2099,7 @@ class lineageTree:
         if not hasattr(self, "cycle_time"):
             self.cycle_time = {}
         out_dict = {}
-        time={}
+        time = {}
         to_do = [r]
         while to_do:
             current = to_do.pop()
@@ -2110,13 +2117,13 @@ class lineageTree:
             time[current] = len(cycle) * time_resolution
         return out_dict, time
 
-    def get_comp_tree(self,
-         r: int = 0, node_lengths = [1,5,11,1],end_time: int = None
+    def get_comp_tree(
+        self, r: int = 0, node_lengths=[1, 5, 11, 1], end_time: int = None
     ) -> tuple:
         """
         Get a "complicated" version of the tree spawned by the node `r`
         This version is 8 nodes per cell one time point in the first node_length positions and
-        the last node_length positions and the life time of each node. 
+        the last node_length positions and the life time of each node.
         Args:
             r (int): root of the tree to spawn
             end_time (int): the last time point to consider
@@ -2131,7 +2138,9 @@ class lineageTree:
         """
         if not end_time:
             end_time = self.t_e
-        node_pos = [0]+[sum(node_lengths[:i+1]) for i in range(len(node_lengths))] #[0,1,3,5]
+        node_pos = [0] + [
+            sum(node_lengths[: i + 1]) for i in range(len(node_lengths))
+        ]  # [0,1,3,5]
         # branches = [branch for branch in self.get_all_branches_of_node(r, end_time = end_time) if branch]
         out_dict = {}
         times = {}
@@ -2140,29 +2149,33 @@ class lineageTree:
             current = to_do.pop()
             cycle = np.array(self.get_successors(current))
             cycle_times = np.array([self.time[c] for c in cycle])
-            cycle = cycle[cycle_times<=end_time]
+            cycle = cycle[cycle_times <= end_time]
             if cycle.size:
-                if len(cycle)>sum(node_lengths)*2+1:
-                    for i in range(len(node_pos)-1):
-                        out_dict[cycle[node_pos[i]]] = [cycle[node_pos[i+1]]]
+                if len(cycle) > sum(node_lengths) * 2 + 1:
+                    for i in range(len(node_pos) - 1):
+                        out_dict[cycle[node_pos[i]]] = [cycle[node_pos[i + 1]]]
                         times[cycle[node_pos[i]]] = node_lengths[i]
 
-                        out_dict[cycle[-node_pos[i+1]-1]] = [cycle[-node_pos[i]-1]]
-                        times[cycle[-node_pos[i+1]-1]] = node_lengths[i]
+                        out_dict[cycle[-node_pos[i + 1] - 1]] = [
+                            cycle[-node_pos[i] - 1]
+                        ]
+                        times[cycle[-node_pos[i + 1] - 1]] = node_lengths[i]
 
-                    out_dict[cycle[node_pos[-1]]] = [cycle[-node_pos[-1]-1]]
-                    times[cycle[node_pos[-1]]] = len(cycle[node_pos[-1]:-node_pos[-1]])-1
+                    out_dict[cycle[node_pos[-1]]] = [cycle[-node_pos[-1] - 1]]
+                    times[cycle[node_pos[-1]]] = (
+                        len(cycle[node_pos[-1] : -node_pos[-1]]) - 1
+                    )
                 else:
-                    for i in range(len(cycle)-1):
-                        out_dict[cycle[i]] = [cycle[i+1]]
+                    for i in range(len(cycle) - 1):
+                        out_dict[cycle[i]] = [cycle[i + 1]]
                         times[cycle[i]] = 1
                 current = cycle[-1]
-                _next = self.successor.get(current,[])
-                if len(_next) > 1 and self.time[_next[0]]<=end_time:
-                        out_dict[current] = _next
-                        times[current] = 1
-                        to_do.extend(_next)
-                elif len(_next)==1 and self.time[_next[0]]<=end_time:
+                _next = self.successor.get(current, [])
+                if len(_next) > 1 and self.time[_next[0]] <= end_time:
+                    out_dict[current] = _next
+                    times[current] = 1
+                    to_do.extend(_next)
+                elif len(_next) == 1 and self.time[_next[0]] <= end_time:
                     out_dict[current] = _next
                     times[current] = 1
                 else:
@@ -2233,8 +2246,13 @@ class lineageTree:
         return self.uted[t]
 
     def unordered_tree_edit_distance(
-        self, n1: int, n2: int, delta: callable = None, norm: callable = None
-        , end_time: int = None, get_tree_method: str = "comp",
+        self,
+        n1: int,
+        n2: int,
+        delta: callable = None,
+        norm: callable = None,
+        end_time: int = None,
+        get_tree_method: str = "comp",
     ) -> float:
         """
         Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
@@ -2254,10 +2272,10 @@ class lineageTree:
         Returns:
             (float) The normed unordered tree edit distance
         """
-        if get_tree_method is None or "comp":
-            get_tree_method = self.get_comp_tree
-        else:
-            get_tree_method = self.get_simple_tree
+        # if get_tree_method is None or "comp":
+        #     get_tree_method = self.get_comp_tree
+        # else:
+        #     get_tree_method = self.get_simple_tree
 
         if delta is None or not callable(delta):
 
@@ -2270,7 +2288,8 @@ class lineageTree:
                     return times1[corres1[x]]
                 len_x = times1[corres1[x]]
                 len_y = times2[corres2[y]]
-                return np.abs(len_x - len_y) #/ (len_x + len_y)
+                return np.abs(len_x - len_y)  # / (len_x + len_y)
+
             # def delta(x,y,corres1,corres2,times):
             #     if x is None:
             #         return 1
@@ -2286,26 +2305,111 @@ class lineageTree:
 
         if norm is None or not callable(norm):
 
-            def norm(x,y):
-                return max(sum(get_tree_method(n1, end_time=end_time)[1].values()),
-                            sum(get_tree_method(n2, end_time=end_time)[1].values()))
-            
+            def norm(x, y):
+                return max(
+                    sum(self.get_comp_tree(n1, end_time=end_time)[1].values()),
+                    sum(self.get_comp_tree(n2, end_time=end_time)[1].values()),
+                )
+
             # def norm(x,adj1,y,adj2,delta):
-            #     return max(uted(x,adj1,[],[],delta = delta), 
+            #     return max(uted(x,adj1,[],[],delta = delta),
             #                uted(y,adj2,[],[],delta = delta))
 
-        simple_tree_1, times1 = get_tree_method(n1, end_time=end_time)
-        simple_tree_2, times2 = get_tree_method(n2, end_time=end_time)
-        nodes1, adj1, corres1 = self.__edist_format(simple_tree_1)
-        nodes2, adj2, corres2 = self.__edist_format(simple_tree_2)
+        simple_tree_1, times1 = self.get_comp_tree(n1, end_time=end_time)
+        simple_tree_2, times2 = self.get_comp_tree(n2, end_time=end_time)
+        nodes1, adj1, corres1 = self._edist_format(simple_tree_1)
+        nodes2, adj2, corres2 = self._edist_format(simple_tree_2)
         if len(nodes1) == len(nodes2) == 0:
             return 0
         delta_tmp = partial(
-            delta, corres1=corres1, corres2=corres2, times1 = times1, times2 = times2
+            delta,
+            corres1=corres1,
+            corres2=corres2,
+            times1=times1,
+            times2=times2,
         )
-        return uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / norm(
-            n1,n2
-         )
+        return uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / norm(n1, n2)
+    
+    def export_simple_nx_graph(self, start_time: int = None):
+        """
+        Creates a networkx tree graph. This function is to be used for visualization,
+        so only the start and the end of a branch are calculated, all cells in between are not taken into account.
+        Args:
+            start_time (int): From which timepoints are the graphs to be calculated.
+                                For example if start_time is 10, then all trees that begin 
+                                on tp 10 or before are calculated.
+        returns:
+            G : list(networkx objects)
+            pos : list(dict(id:position))
+        """
+    
+        if not start_time:
+            start_time = 0
+        mothers = [root for root in self.roots if self.time[root] <= start_time]
+        all_nodes = {}
+        all_edges = {}
+        for mom in mothers:
+            nodes = []
+            edges = []
+            cells = [mom]
+            while cells != []:
+                tmp_cells = []
+                for cell in cells:
+                    new_cells = self.successor.get(self.get_cycle(cell)[-1], [])
+                    nodes.append(self.get_cycle(cell)[-1])
+                    if cell != self.get_cycle(cell)[-1]:
+                        edges.append((cell, self.get_cycle(cell)[-1]))
+                    for new_cell in new_cells:
+                        nodes.append(new_cell)
+                        edges.append((self.get_cycle(cell)[-1], new_cell))
+                        tmp_cells.append(new_cell)
+                    cells = tmp_cells.copy()
+            all_nodes[mom] = nodes
+            all_edges[mom] = edges
+            G = {}
+        for i in range(len(mothers)):
+            G[i] = nx.DiGraph()
+            G[i].add_nodes_from(all_nodes[mothers[i]])
+            G[i].add_edges_from(all_edges[mothers[i]])
+        return G
+    
+    def _postions_of_nx(self, graphs):
+        """Calculates the positions of the Lineagetree to be plotted.
+
+        Args:
+            graphs (nx.Digraph): Graphs produced by export_nx_simple_graph
+
+        Returns:
+            pos (list): The positions of the nodes of the graphs for plotting
+        """
+        pos = {}
+        for i in range(len(graphs)):
+            pos[i] = hierarchy_pos(graphs[i], self, root =  [n for n,d in graphs[i].in_degree() if d==0][0])
+        return pos
+    def plot_all_lineages(self, starting_point:int = None):
+        """Plots all lineages.
+
+        Args:
+            starting_point (int, optional): From which timepoints are the graphs to be calculated.
+                                For example if start_time is 10, then all trees that begin 
+                                on tp 10 or before are calculated. Defaults to None.
+        """
+        import matplotlib.pyplot as plt
+        graphs = self.export_simple_nx_graph(start_time=starting_point)
+        pos = self._postions_of_nx(graphs)
+        figure, axes = plt.subplots(nrows = 2, ncols=int(np.round(len(graphs)/2+1.e-10)))
+        for i, ax in enumerate(axes.flatten()):
+            nx.draw_networkx(
+                        graphs[i],
+                        pos[i],
+                        with_labels=False,
+                        arrows=False,
+                        width=0.1,
+                        node_size=1,
+                        ax=ax,
+                    )
+        
+    
 
     # def DTW(self, t1, t2, max_w=None, start_delay=None, end_delay=None,
     #         metric='euclidian', **kwargs):

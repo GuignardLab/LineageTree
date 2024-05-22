@@ -19,7 +19,9 @@ class LineageTreeManager:
         self.lineageTree_counter += 1
         return self.lineageTree_counter - 1
 
-    def add(self, other_tree:lineageTree, name: str = "", classification: str = ""):
+    def add(
+        self, other_tree: lineageTree, name: str = "", classification: str = ""
+    ):
         """Function that adds a new lineagetree object to the class.
         Can be added either by .add or by using the + operator. If a name is
         specified it will also add it as this specific name, otherwise it will
@@ -29,7 +31,7 @@ class LineageTreeManager:
         Args:
             other_tree (lineageTree): Thelineagetree to be added.
             name (str, optional): Then name of. Defaults to "".
-            classification (str, optional): If the user need to add it to classification 
+            classification (str, optional): If the user need to add it to classification
                                     provide here the name of the class.
                                     Defaults to "".
 
@@ -47,7 +49,9 @@ class LineageTreeManager:
                     name = other_tree.name
                     self.lineagetrees[name] = other_tree
                 except:
-                    self.lineagetrees[f"Lineagetree {self.get_next_tree()}"] = other_tree
+                    self.lineagetrees[
+                        f"Lineagetree {self.get_next_tree()}"
+                    ] = other_tree
         if classification in ("Wt", "Ptb"):
             self.classification[type] = {name: other_tree}
 
@@ -76,7 +80,7 @@ class LineageTreeManager:
         """Removes the embryo from the manager.
 
         Args:
-            key (_type_): The name of the lineagetree to be removed
+            key (str): The name of the lineagetree to be removed
 
         Raises:
             Exception: If there is not such a lineagetree
@@ -117,8 +121,8 @@ class LineageTreeManager:
         registration=None,
     ):
         """Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
-        by two nodes `n1` from lineagetree1 and `n2` lineagetree2. The topology of the trees 
-        are compared and the matching cost is given by the function delta (see edist doc for 
+        by two nodes `n1` from lineagetree1 and `n2` lineagetree2. The topology of the trees
+        are compared and the matching cost is given by the function delta (see edist doc for
         more information).The distance is normed by the function norm that takes the two list
         of nodes spawned by the trees `n1` and `n2`.
 
@@ -131,6 +135,7 @@ class LineageTreeManager:
             end_time2 (int): End time of second lineagetree
             registration (_type_, optional): _description_. Defaults to None.
         """
+
         def delta(x, y, corres1, corres2, times1, times2):
             if x is None and y is None:
                 return 0
