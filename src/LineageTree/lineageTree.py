@@ -2408,7 +2408,7 @@ class lineageTree:
         figure, axes = plt.subplots(
             nrows=2, ncols=int(np.round(len(graphs) / 2 + 1.0e-10))
         )
-        for i, ax in enumerate(axes.flatten()):
+        for i, ax in zip(range(len(graphs)),axes.flatten()):
             nx.draw_networkx(
                 graphs[i],
                 pos[i],
