@@ -2343,9 +2343,9 @@ class lineageTree:
             pos : list(dict(id:position))
         """
     
-        if not start_time:
-            start_time = 0
-        mothers = [root for root in self.roots if self.time[root] <= start_time]
+        mothers = list(self.time_nodes[0])
+        if  start_time:
+            mothers = [root for root in self.roots if self.time[root] <= start_time]
         all_nodes = {}
         all_edges = {}
         for mom in mothers:
