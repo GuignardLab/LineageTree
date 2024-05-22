@@ -557,9 +557,7 @@ class lineageTree:
                     for d in new_ids_daughters:
                         tmp.extend(self.successor.get(d, [d]))
                     new_ids_daughters = tmp
-                for (
-                    daugther
-                ) in (
+                for daugther in (
                     new_ids_daughters
                 ):  ## For each daughter in the list of daughters
                     id_to_tree[id_mother].add_subtree(
@@ -2329,23 +2327,25 @@ class lineageTree:
             times2=times2,
         )
         return uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / norm(n1, n2)
-    
+
     def export_simple_nx_graph(self, start_time: int = None):
         """
         Creates a networkx tree graph. This function is to be used for visualization,
         so only the start and the end of a branch are calculated, all cells in between are not taken into account.
         Args:
             start_time (int): From which timepoints are the graphs to be calculated.
-                                For example if start_time is 10, then all trees that begin 
+                                For example if start_time is 10, then all trees that begin
                                 on tp 10 or before are calculated.
         returns:
             G : list(networkx objects)
             pos : list(dict(id:position))
         """
-    
+
         mothers = list(self.time_nodes[0])
-        if  start_time:
-            mothers = [root for root in self.roots if self.time[root] <= start_time]
+        if start_time:
+            mothers = [
+                root for root in self.roots if self.time[root] <= start_time
+            ]
         all_nodes = {}
         all_edges = {}
         for mom in mothers:
@@ -2355,7 +2355,9 @@ class lineageTree:
             while cells != []:
                 tmp_cells = []
                 for cell in cells:
-                    new_cells = self.successor.get(self.get_cycle(cell)[-1], [])
+                    new_cells = self.successor.get(
+                        self.get_cycle(cell)[-1], []
+                    )
                     nodes.append(self.get_cycle(cell)[-1])
                     if cell != self.get_cycle(cell)[-1]:
                         edges.append((cell, self.get_cycle(cell)[-1]))
@@ -2372,7 +2374,7 @@ class lineageTree:
             G[i].add_nodes_from(all_nodes[mothers[i]])
             G[i].add_edges_from(all_edges[mothers[i]])
         return G
-    
+
     def _postions_of_nx(self, graphs):
         """Calculates the positions of the Lineagetree to be plotted.
 
@@ -2384,32 +2386,38 @@ class lineageTree:
         """
         pos = {}
         for i in range(len(graphs)):
-            pos[i] = hierarchy_pos(graphs[i], self, root =  [n for n,d in graphs[i].in_degree() if d==0][0])
+            pos[i] = hierarchy_pos(
+                graphs[i],
+                self,
+                root=[n for n, d in graphs[i].in_degree() if d == 0][0],
+            )
         return pos
-    def plot_all_lineages(self, starting_point:int = None):
+
+    def plot_all_lineages(self, starting_point: int = None):
         """Plots all lineages.
 
         Args:
             starting_point (int, optional): From which timepoints are the graphs to be calculated.
-                                For example if start_time is 10, then all trees that begin 
+                                For example if start_time is 10, then all trees that begin
                                 on tp 10 or before are calculated. Defaults to None.
         """
         import matplotlib.pyplot as plt
+
         graphs = self.export_simple_nx_graph(start_time=starting_point)
         pos = self._postions_of_nx(graphs)
-        figure, axes = plt.subplots(nrows = 2, ncols=int(np.round(len(graphs)/2+1.e-10)))
+        figure, axes = plt.subplots(
+            nrows=2, ncols=int(np.round(len(graphs) / 2 + 1.0e-10))
+        )
         for i, ax in enumerate(axes.flatten()):
             nx.draw_networkx(
-                        graphs[i],
-                        pos[i],
-                        with_labels=False,
-                        arrows=False,
-                        width=0.1,
-                        node_size=1,
-                        ax=ax,
-                    )
-        
-    
+                graphs[i],
+                pos[i],
+                with_labels=False,
+                arrows=False,
+                width=0.1,
+                node_size=1,
+                ax=ax,
+            )
 
     # def DTW(self, t1, t2, max_w=None, start_delay=None, end_delay=None,
     #         metric='euclidian', **kwargs):

@@ -4,7 +4,6 @@ import random
 from LineageTree import lineageTree
 
 
-
 def hierarchy_pos(
     G,
     a,
@@ -126,8 +125,13 @@ def hierarchy_pos(
         return pos
 
     return _hierarchy_pos(G, root, width, vert_gap, vert_loc, xcenter)
-def to_motile(lT: lineageTree, crop: int = None, max_dist=200, max_skip_frames=1):
+
+
+def to_motile(
+    lT: lineageTree, crop: int = None, max_dist=200, max_skip_frames=1
+):
     import motile
+
     fmt = nx.DiGraph()
     if not crop:
         crop = lT.t_e
@@ -138,23 +142,35 @@ def to_motile(lT: lineageTree, crop: int = None, max_dist=200, max_skip_frames=1
         for time_node in lT.time_nodes[time]:
             fmt.add_node(
                 time_node,
-                **{"t": lT.time[time_node], "pos": lT.pos[time_node], "score": 1},
+                **{
+                    "t": lT.time[time_node],
+                    "pos": lT.pos[time_node],
+                    "score": 1,
+                },
             )
             # for suc in lT.successor:
             #     fmt.add_edge(time_node, suc, **{"score":0})
-    
+
     motile.add_cand_edges(fmt, max_dist, max_skip_frames=max_skip_frames)
 
     return fmt
 
 
-def write_csv_from_lT_to_lineaja(lT, path_to, start: int = 0, finish: int = 300):
+def write_csv_from_lT_to_lineaja(
+    lT, path_to, start: int = 0, finish: int = 300
+):
     csv_dict = {}
     for time in range(start, finish):
         for node in lT.time_nodes[time]:
             csv_dict[node] = {"pos": lT.pos[node], "t": time}
     with open(path_to, "w", newline="\n") as file:
-        fieldnames = ["time", "positions_x", "positions_y", "positions_z", "id"]
+        fieldnames = [
+            "time",
+            "positions_x",
+            "positions_y",
+            "positions_z",
+            "id",
+        ]
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
         for node in csv_dict.keys():
@@ -167,8 +183,3 @@ def write_csv_from_lT_to_lineaja(lT, path_to, start: int = 0, finish: int = 300)
                     "id": node,
                 }
             )
-
-
-
-
-
