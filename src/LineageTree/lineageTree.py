@@ -2375,25 +2375,10 @@ class lineageTree:
             G[i].add_edges_from(all_edges[mothers[i]])
         return G
 
-    def _postions_of_nx(self, graphs):
-        """Calculates the positions of the Lineagetree to be plotted.
 
-        Args:
-            graphs (nx.Digraph): Graphs produced by export_nx_simple_graph
 
-        Returns:
-            pos (list): The positions of the nodes of the graphs for plotting
-        """
-        pos = {}
-        for i in range(len(graphs)):
-            pos[i] = hierarchy_pos(
-                graphs[i],
-                self,
-                root=[n for n, d in graphs[i].in_degree() if d == 0][0],
-            )
-        return pos
-
-    def plot_all_lineages(self, starting_point: int = None, nrows= 2):
+    def plot_all_lineages(self, starting_point: int = None, nrows= 2, figsize = (10,15)):
+        from .utils import postions_of_nx
         """Plots all lineages.
 
         Args:
@@ -2408,8 +2393,8 @@ class lineageTree:
             start_time=starting_point
         )
         ncols = int(len(graphs) // nrows ) + (len(graphs) // nrows != len(graphs) / nrows)
-        pos = self._postions_of_nx(graphs)
-        figure, axes = plt.subplots(
+        pos = postions_of_nx(self, graphs)
+        figure, axes = plt.subplots(figsize = figsize,
             nrows=nrows, ncols=ncols
         )
         for i, ax in zip(range(len(graphs)), axes.flatten()):
@@ -2422,6 +2407,10 @@ class lineageTree:
                 node_size=1,
                 ax=ax,
             )
+        [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
+
+        # plt.tick_params(axis='both', which='both', right=False, left=False, top=False, bottom=False, labelleft=False, labelbottom = False)
+
 
     # def DTW(self, t1, t2, max_w=None, start_delay=None, end_delay=None,
     #         metric='euclidian', **kwargs):

@@ -183,3 +183,21 @@ def write_csv_from_lT_to_lineaja(
                     "id": node,
                 }
             )
+
+def postions_of_nx(lt, graphs):
+    """Calculates the positions of the Lineagetree to be plotted.
+
+    Args:
+        graphs (nx.Digraph): Graphs produced by export_nx_simple_graph
+
+    Returns:
+        pos (list): The positions of the nodes of the graphs for plotting
+    """
+    pos = {}
+    for i in range(len(graphs)):
+        pos[i] = hierarchy_pos(
+            graphs[i],
+            lt,
+            root=[n for n, d in graphs[i].in_degree() if d == 0][0],
+        )
+    return pos
