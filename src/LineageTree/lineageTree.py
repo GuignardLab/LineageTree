@@ -2116,7 +2116,7 @@ class lineageTree:
         return out_dict, time
 
     def get_comp_tree(
-        self, r: int = 0, node_lengths=[1, 5, 11, 1], end_time: int = None
+        self, r: int = 0, node_lengths=[1, 5, 7], end_time: int = None
     ) -> tuple:
         """
         Get a "complicated" version of the tree spawned by the node `r`
@@ -2393,22 +2393,26 @@ class lineageTree:
             )
         return pos
 
-    def plot_all_lineages(self, starting_point: int = None):
+    def plot_all_lineages(self, starting_point: int = None, nrows= 2):
         """Plots all lineages.
 
         Args:
             starting_point (int, optional): From which timepoints are the graphs to be calculated.
                                 For example if start_time is 10, then all trees that begin
                                 on tp 10 or before are calculated. Defaults to None.
+            nrows (int):  How many rows of plots should be printed.
         """
         import matplotlib.pyplot as plt
 
-        graphs = self.export_simple_nx_graph(start_time=starting_point)
+        graphs = self.export_simple_nx_graph(
+            start_time=starting_point
+        )
+        ncols = int(len(graphs) // nrows ) + (len(graphs) // nrows != len(graphs) / nrows)
         pos = self._postions_of_nx(graphs)
         figure, axes = plt.subplots(
-            nrows=2, ncols=int(np.round(len(graphs) / 2 + 1.0e-10))
+            nrows=nrows, ncols=ncols
         )
-        for i, ax in zip(range(len(graphs)),axes.flatten()):
+        for i, ax in zip(range(len(graphs)), axes.flatten()):
             nx.draw_networkx(
                 graphs[i],
                 pos[i],
