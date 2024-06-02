@@ -52,15 +52,15 @@ class LineageTreeManager:
                     self.lineagetrees[
                         f"Lineagetree {self.get_next_tree()}"
                     ] = other_tree
-        if classification in ("Wt", "Ptb"):
-            self.classification[type] = {name: other_tree}
+        # if classification in ("Wt", "Ptb"):
+        #     self.classification[type] = {name: other_tree}
 
     def __add__(self, other):
         self.add(other)
 
-    def classify_existing(self, key, type: str):
-        if type in ("Wt", "Ptb"):
-            self.classification[type] = {key: self.lineagetrees[key]}
+    def classify_existing(self, key, classification: str):
+        if classification in ("Wt", "Ptb"):
+            self.classification[classification] = {key: self.lineagetrees[key]}
         else:
             return False
 

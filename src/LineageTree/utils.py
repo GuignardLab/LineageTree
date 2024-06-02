@@ -1,6 +1,8 @@
 import csv
-import networkx as nx
 import random
+
+import networkx as nx
+
 from LineageTree import lineageTree
 
 
@@ -142,11 +144,9 @@ def to_motile(
         for time_node in lT.time_nodes[time]:
             fmt.add_node(
                 time_node,
-                **{
-                    "t": lT.time[time_node],
-                    "pos": lT.pos[time_node],
-                    "score": 1,
-                },
+                t=lT.time[time_node],
+                pos=lT.pos[time_node],
+                score=1,
             )
             # for suc in lT.successor:
             #     fmt.add_edge(time_node, suc, **{"score":0})
@@ -173,7 +173,7 @@ def write_csv_from_lT_to_lineaja(
         ]
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
-        for node in csv_dict.keys():
+        for node in csv_dict:
             writer.writerow(
                 {
                     "time": csv_dict[node]["t"],
@@ -183,6 +183,7 @@ def write_csv_from_lT_to_lineaja(
                     "id": node,
                 }
             )
+
 
 def postions_of_nx(lt, graphs):
     """Calculates the positions of the Lineagetree to be plotted.

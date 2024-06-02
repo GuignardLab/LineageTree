@@ -7,14 +7,14 @@ import csv
 import os
 import pickle as pkl
 import struct
-import networkx as nx
 import xml.etree.ElementTree as ET
 from functools import partial
 from itertools import combinations
 from numbers import Number
 from pathlib import Path
 from typing import TextIO
-from .utils import hierarchy_pos
+
+import networkx as nx
 import numpy as np
 from edist.uted import uted
 from scipy.spatial import Delaunay
@@ -557,7 +557,9 @@ class lineageTree:
                     for d in new_ids_daughters:
                         tmp.extend(self.successor.get(d, [d]))
                     new_ids_daughters = tmp
-                for daugther in (
+                for (
+                    daugther
+                ) in (
                     new_ids_daughters
                 ):  ## For each daughter in the list of daughters
                     id_to_tree[id_mother].add_subtree(
@@ -2116,7 +2118,7 @@ class lineageTree:
         return out_dict, time
 
     def get_comp_tree(
-        self, r: int = 0, node_lengths=[1, 5, 7], end_time: int = None
+        self, r: int = 0, node_lengths=(1, 5, 7), end_time: int = None
     ) -> tuple:
         """
         Get a "complicated" version of the tree spawned by the node `r`
@@ -2375,10 +2377,9 @@ class lineageTree:
             G[i].add_edges_from(all_edges[mothers[i]])
         return G
 
-
-
-    def plot_all_lineages(self, starting_point: int = None, nrows= 2, figsize = (10,15)):
-        from .utils import postions_of_nx
+    def plot_all_lineages(
+        self, starting_point: int = None, nrows=2, figsize=(10, 15)
+    ):
         """Plots all lineages.
 
         Args:
@@ -2389,14 +2390,19 @@ class lineageTree:
         """
         import matplotlib.pyplot as plt
 
-        graphs = self.export_simple_nx_graph(
-            start_time=starting_point
+        from .utils import postions_of_nx
+
+        nrows = int(nrows)
+        if nrows < 1 or not nrows:
+            raise Warning("Number of rows  cannot be 0!")
+            nrows = 1
+
+        graphs = self.export_simple_nx_graph(start_time=starting_point)
+        ncols = int(len(graphs) // nrows) + (
+            len(graphs) // nrows != len(graphs) / nrows
         )
-        ncols = int(len(graphs) // nrows ) + (len(graphs) // nrows != len(graphs) / nrows)
         pos = postions_of_nx(self, graphs)
-        figure, axes = plt.subplots(figsize = figsize,
-            nrows=nrows, ncols=ncols
-        )
+        figure, axes = plt.subplots(figsize=figsize, nrows=nrows, ncols=ncols)
         for i, ax in zip(range(len(graphs)), axes.flatten()):
             nx.draw_networkx(
                 graphs[i],
@@ -2410,7 +2416,6 @@ class lineageTree:
         [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
 
         # plt.tick_params(axis='both', which='both', right=False, left=False, top=False, bottom=False, labelleft=False, labelbottom = False)
-
 
     # def DTW(self, t1, t2, max_w=None, start_delay=None, end_delay=None,
     #         metric='euclidian', **kwargs):
