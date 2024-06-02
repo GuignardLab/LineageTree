@@ -2138,10 +2138,7 @@ class lineageTree:
         """
         if not end_time:
             end_time = self.t_e
-        node_pos = [0] + [
-            sum(node_lengths[: i + 1]) for i in range(len(node_lengths))
-        ]  # [0,1,3,5]
-        # branches = [branch for branch in self.get_all_branches_of_node(r, end_time = end_time) if branch]
+        node_pos = np.insert(np.cumsum(node_lengths), 0, 0)
         out_dict = {}
         times = {}
         to_do = [r]
@@ -2152,14 +2149,14 @@ class lineageTree:
             cycle = cycle[cycle_times <= end_time]
             if cycle.size:
                 if len(cycle) > sum(node_lengths) * 2 + 1:
-                    for i in range(len(node_pos) - 1):
-                        out_dict[cycle[node_pos[i]]] = [cycle[node_pos[i + 1]]]
-                        times[cycle[node_pos[i]]] = node_lengths[i]
+                    # for i in range(len(node_pos) - 1):
+                    for i, pos in enumerate(node_pos[:-1]):
+                        next_pos = node_pos[i + 1]
+                        out_dict[cycle[pos]] = [cycle[next_pos]]
+                        times[cycle[pos]] = node_lengths[i]
 
-                        out_dict[cycle[-node_pos[i + 1] - 1]] = [
-                            cycle[-node_pos[i] - 1]
-                        ]
-                        times[cycle[-node_pos[i + 1] - 1]] = node_lengths[i]
+                        out_dict[cycle[-next_pos - 1]] = [cycle[-pos - 1]]
+                        times[cycle[-next_pos - 1]] = node_lengths[i]
 
                     out_dict[cycle[node_pos[-1]]] = [cycle[-node_pos[-1] - 1]]
                     times[cycle[node_pos[-1]]] = (
@@ -2255,6 +2252,7 @@ class lineageTree:
         get_tree_method: str = "comp",
     ) -> float:
         """
+        TODO: Add option for choosing which tree aproximation should be used (Full, simple, comp)
         Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
         by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
         cost is given by the function delta (see edist doc for more information).
@@ -2499,9 +2497,6 @@ class lineageTree:
         if not final_nodes:
             return list(r)
         return final_nodes
-
-    # def first_labelling(self):
-    #     self.labels = {i: "Enter_Label" for i in self.time_nodes[0]}
 
     def __init__(
         self,
