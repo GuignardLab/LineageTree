@@ -2419,7 +2419,40 @@ class lineageTree:
             )
         [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
 
-        # plt.tick_params(axis='both', which='both', right=False, left=False, top=False, bottom=False, labelleft=False, labelbottom = False)
+    def plot_node(self, node):
+        from .utils import hierarchy_pos
+
+        cells = [node]
+        nodes = []
+        edges = []
+        while cells:
+            tmp_cells = []
+            for cell in cells:
+                new_cells = self.successor.get(self.get_cycle(cell)[-1], [])
+                nodes.append(self.get_cycle(cell)[-1])
+                if cell != self.get_cycle(cell)[-1]:
+                    edges.append((cell, self.get_cycle(cell)[-1]))
+                for new_cell in new_cells:
+                    nodes.append(new_cell)
+                    edges.append((self.get_cycle(cell)[-1], new_cell))
+                    tmp_cells.append(new_cell)
+                cells = tmp_cells.copy()
+            nodes = nodes
+            edges = edges
+        graph = nx.DiGraph()
+        graph.add_nodes_from(nodes)
+        graph.add_edges_from(edges)
+        nx.draw_networkx(
+            graph,
+            hierarchy_pos(graph, self, node),
+            with_labels=False,
+            arrows=False,
+            width=0.1,
+            node_size=1,
+        )
+        return graph
+
+    # plt.tick_params(axis='both', which='both', right=False, left=False, top=False, bottom=False, labelleft=False, labelbottom = False)
 
     # def DTW(self, t1, t2, max_w=None, start_delay=None, end_delay=None,
     #         metric='euclidian', **kwargs):
