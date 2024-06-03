@@ -1838,6 +1838,8 @@ class lineageTree:
         Returns:
             [int, ]: list of ids, the last id is `x`
         """
+        if not end_time:
+            end_time = self.t_e
         cycle = [x]
         acc = 0
         while (
@@ -1850,7 +1852,11 @@ class lineageTree:
             cycle.insert(0, self.predecessor[cycle[0]][0])
             acc += 1
 
-        return cycle
+        return [
+            cell
+            for cell in cycle
+            if self.time[cell] <= end_time
+        ]
 
     def get_successors(
         self, x: int, depth: int = None, end_time: int = None
@@ -1873,7 +1879,11 @@ class lineageTree:
             cycle += self.successor[cycle[-1]]
             acc += 1
 
-        return cycle
+        return [
+            cell
+            for cell in cycle
+            if self.time[cell] <= end_time
+        ]
 
     def get_cycle(
         self,
@@ -1901,9 +1911,9 @@ class lineageTree:
             end_time = self.t_e
         if depth is not None:
             depth_pred = depth_succ = depth
-        return self.get_predecessors(x, depth_pred)[:-1] + self.get_successors(
-            x, depth_succ
-        )
+        return self.get_predecessors(x, depth_pred, end_time=end_time)[
+            :-1
+        ] + self.get_successors(x, depth_succ, end_time=end_time)
 
     @property
     def all_tracks(self):
@@ -1912,31 +1922,28 @@ class lineageTree:
         return self._all_tracks
 
     def get_all_branches_of_node(
-        self, node: int, end_time: int = None
+        self, node: int, single_nodes: bool = False
     ) -> list:
         """Computes all the tracks of the subtree of a given node.
         Similar to get_all_tracks().
 
         Args:
             node (int, optional): The node that we want to get its branches.
-
+            single_nodes (bool) : If True returns nodes that have no predecessors or successors. 
+                                  Defaults to False
         Returns:
             ([[int, ...], ...]): list of lists containing track cell ids
         """
-        if not end_time:
-            end_time = self.t_e
         branches = []
         to_do = set(self.get_sub_tree(node))
         while len(to_do) != 0:
             current = to_do.pop()
-            track = self.get_successors(current, end_time=end_time)
+            track = self.get_cycle(current)
             branches += [track]
             to_do -= set(track)
         return branches
 
-    def get_all_tracks(
-        self, force_recompute: bool = False, end_time: int = None
-    ) -> list:
+    def get_all_tracks(self, force_recompute: bool = False) -> list:
         """Computes all the tracks of a given lineage tree,
         stores it in `self.all_tracks` and returns it.
 
@@ -2138,7 +2145,7 @@ class lineageTree:
         """
         if not end_time:
             end_time = self.t_e
-        node_pos = np.insert(np.cumsum(node_lengths), 0, 0)
+        # node_pos = np.insert(np.cumsum(node_lengths), 0, 0)
         out_dict = {}
         times = {}
         to_do = [r]
@@ -2149,19 +2156,18 @@ class lineageTree:
             cycle = cycle[cycle_times <= end_time]
             if cycle.size:
                 if len(cycle) > sum(node_lengths) * 2 + 1:
-                    # for i in range(len(node_pos) - 1):
-                    for i, pos in enumerate(node_pos[:-1]):
-                        next_pos = node_pos[i + 1]
-                        out_dict[cycle[pos]] = [cycle[next_pos]]
-                        times[cycle[pos]] = node_lengths[i]
-
-                        out_dict[cycle[-next_pos - 1]] = [cycle[-pos - 1]]
-                        times[cycle[-next_pos - 1]] = node_lengths[i]
-
-                    out_dict[cycle[node_pos[-1]]] = [cycle[-node_pos[-1] - 1]]
-                    times[cycle[node_pos[-1]]] = (
-                        len(cycle[node_pos[-1] : -node_pos[-1]]) - 1
+                    length_middle_node = len(cycle) - sum(node_lengths) * 2
+                    times_tmp = (
+                        list(node_lengths)
+                        + [length_middle_node]
+                        + list(node_lengths[::-1])
                     )
+                    pos_all_nodes = np.concatenate(
+                        [[0], np.cumsum(times_tmp[:-1])]
+                    )
+                    track = cycle[pos_all_nodes]
+                    out_dict.update(dict(zip(track[:-1], track[1:])))
+                    times.update(dict(zip(track, times_tmp)))
                 else:
                     for i in range(len(cycle) - 1):
                         out_dict[cycle[i]] = [cycle[i + 1]]
