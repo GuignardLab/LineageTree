@@ -1852,11 +1852,7 @@ class lineageTree:
             cycle.insert(0, self.predecessor[cycle[0]][0])
             acc += 1
 
-        return [
-            cell
-            for cell in cycle
-            if self.time[cell] <= end_time
-        ]
+        return [cell for cell in cycle if self.time[cell] <= end_time]
 
     def get_successors(
         self, x: int, depth: int = None, end_time: int = None
@@ -1879,11 +1875,7 @@ class lineageTree:
             cycle += self.successor[cycle[-1]]
             acc += 1
 
-        return [
-            cell
-            for cell in cycle
-            if self.time[cell] <= end_time
-        ]
+        return [cell for cell in cycle if self.time[cell] <= end_time]
 
     def get_cycle(
         self,
@@ -1929,7 +1921,7 @@ class lineageTree:
 
         Args:
             node (int, optional): The node that we want to get its branches.
-            single_nodes (bool) : If True returns nodes that have no predecessors or successors. 
+            single_nodes (bool) : If True returns nodes that have no predecessors or successors.
                                   Defaults to False
         Returns:
             ([[int, ...], ...]): list of lists containing track cell ids
@@ -2125,7 +2117,7 @@ class lineageTree:
         return out_dict, time
 
     def get_comp_tree(
-        self, r: int = 0, node_lengths=(1, 5, 7), end_time: int = None
+        lT, r: int = 0, node_lengths=(1, 5, 7), end_time: int = None
     ) -> tuple:
         """
         Get a "complicated" version of the tree spawned by the node `r`
@@ -2144,23 +2136,30 @@ class lineageTree:
             (dict) {m (int): duration (float)}: life time duration of the cell `m`
         """
         if not end_time:
-            end_time = self.t_e
+            end_time = lT.t_e
         # node_pos = np.insert(np.cumsum(node_lengths), 0, 0)
         out_dict = {}
         times = {}
         to_do = [r]
         while to_do:
             current = to_do.pop()
-            cycle = np.array(self.get_successors(current))
-            cycle_times = np.array([self.time[c] for c in cycle])
+            cycle = np.array(lT.get_successors(current))
+            cycle_times = np.array([lT.time[c] for c in cycle])
             cycle = cycle[cycle_times <= end_time]
             if cycle.size:
-                if len(cycle) > sum(node_lengths) * 2 + 1:
-                    length_middle_node = len(cycle) - sum(node_lengths) * 2
+                cumul_sum_of_nodes = np.cumsum(node_lengths) * 2 + 1
+                max_number_fragments = len(
+                    cumul_sum_of_nodes[len(cycle) > cumul_sum_of_nodes]
+                )
+                if max_number_fragments > 1:
+                    length_middle_node = (
+                        len(cycle)
+                        - sum(node_lengths[:max_number_fragments]) * 2
+                    )
                     times_tmp = (
-                        list(node_lengths)
+                        list(node_lengths[:max_number_fragments])
                         + [length_middle_node]
-                        + list(node_lengths[::-1])
+                        + list(node_lengths[:max_number_fragments][::-1])
                     )
                     pos_all_nodes = np.concatenate(
                         [[0], np.cumsum(times_tmp[:-1])]
@@ -2168,17 +2167,18 @@ class lineageTree:
                     track = cycle[pos_all_nodes]
                     out_dict.update(dict(zip(track[:-1], track[1:])))
                     times.update(dict(zip(track, times_tmp)))
+                    print(node_lengths[:max_number_fragments])
                 else:
                     for i in range(len(cycle) - 1):
                         out_dict[cycle[i]] = [cycle[i + 1]]
                         times[cycle[i]] = 1
                 current = cycle[-1]
-                _next = self.successor.get(current, [])
-                if len(_next) > 1 and self.time[_next[0]] <= end_time:
+                _next = lT.successor.get(current, [])
+                if len(_next) > 1 and lT.time[_next[0]] <= end_time:
                     out_dict[current] = _next
                     times[current] = 1
                     to_do.extend(_next)
-                elif len(_next) == 1 and self.time[_next[0]] <= end_time:
+                elif len(_next) == 1 and lT.time[_next[0]] <= end_time:
                     out_dict[current] = _next
                     times[current] = 1
                 else:
