@@ -1883,7 +1883,7 @@ class lineageTree:
             self._all_tracks = self.get_all_tracks()
         return self._all_tracks
 
-    def get_all_tracks(self, force_recompute: bool = False) -> list:
+    def get_all_tracks(self, roots: list = None, force_recompute: bool = False) -> list:
         """Computes all the tracks of a given lineage tree,
         stores it in `self.all_tracks` and returns it.
 
@@ -1892,12 +1892,15 @@ class lineageTree:
         """
         if not hasattr(self, "_all_tracks"):
             self._all_tracks = []
-            to_do = set(self.nodes)
+            if roots is None:
+                to_do = self.roots.copy()
+            else:
+                to_do = roots.copy()
             while len(to_do) != 0:
                 current = to_do.pop()
                 track = self.get_cycle(current)
-                self._all_tracks += [track]
-                to_do -= set(track)
+                self._all_tracks.append(track)
+                to_do.expand(self[track[-1]])
         return self._all_tracks
 
     def get_sub_tree(self, x: int, preorder: bool = False) -> list:
