@@ -2,10 +2,6 @@
 # This file is subject to the terms and conditions defined in
 # file 'LICENCE', which is part of this source code package.
 # Author: Leo Guignard (leo.guignard...@AT@...gmail.com)
-from weakref import WeakKeyDictionary
-import matplotlib.pyplot as plt
-
-from .utils import postions_of_nx
 import csv
 import os
 import pickle as pkl
@@ -16,13 +12,16 @@ from itertools import combinations
 from numbers import Number
 from pathlib import Path
 from typing import TextIO
-from .utils import hierarchy_pos
 
+import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+
 # from edist.uted import uted
 from scipy.spatial import Delaunay
 from scipy.spatial import cKDTree as KDTree
+
+from .utils import hierarchy_pos, postions_of_nx
 
 
 class lineageTree:
@@ -1875,14 +1874,15 @@ class lineageTree:
             end_time = self.t_e
         cycle = [x]
         acc = 0
-        while (len(self.successor.get(cycle[-1], [])) == 1 
-                and acc != depth 
-                and self.time[cycle[-1]]<end_time
-                ):
+        while (
+            len(self.successor.get(cycle[-1], [])) == 1
+            and acc != depth
+            and self.time[cycle[-1]] < end_time
+        ):
             cycle += self.successor[cycle[-1]]
             acc += 1
 
-        return cycle #[cell for cell in cycle if self.time[cell] <= end_time]
+        return cycle  # [cell for cell in cycle if self.time[cell] <= end_time]
 
     def get_cycle(
         self,
@@ -2114,7 +2114,7 @@ class lineageTree:
             cycle = cycle[cycle_times <= end_time]
             if cycle.size:
                 _next = self.successor.get(cycle[-1], [])
-                if 1 < len(_next):
+                if len(_next) > 1:
                     out_dict[current] = _next
                     to_do.extend(_next)
                 else:
@@ -2149,7 +2149,7 @@ class lineageTree:
             node_lengths = list(node_lengths)
         while to_do:
             current = to_do.pop()
-            cycle = np.array(lT.get_successors(current, end_time = end_time))
+            cycle = np.array(lT.get_successors(current, end_time=end_time))
             if cycle.size:
                 cumul_sum_of_nodes = np.cumsum(node_lengths) * 2 + 1
                 max_number_fragments = len(
@@ -2169,7 +2169,9 @@ class lineageTree:
                         [[0], np.cumsum(times_tmp[:-1])]
                     )
                     track = cycle[pos_all_nodes]
-                    out_dict.update({k:[v] for k,v in zip(track[:-1], track[1:])})
+                    out_dict.update(
+                        {k: [v] for k, v in zip(track[:-1], track[1:])}
+                    )
                     times.update(dict(zip(track, times_tmp)))
                 else:
                     for i in range(len(cycle) - 1):
@@ -2177,10 +2179,12 @@ class lineageTree:
                         times[cycle[i]] = 1
                 current = cycle[-1]
                 _next = lT.successor.get(current, [])
-                out_dict[current] = _next
                 times[current] = 1
-                if _next and lT.time[_next[0]]<end_time:
+                if _next and lT.time[_next[0]] <= end_time:
                     to_do.extend(_next)
+                    out_dict[current] = _next
+                else:
+                    out_dict[current] = []
 
         return out_dict, times
 
@@ -2253,7 +2257,7 @@ class lineageTree:
         norm: callable = None,
         end_time: int = None,
         get_tree_method: str = "comp",
-        node_lengths: tuple = (1,5,7)
+        node_lengths: tuple = (1, 5, 7),
     ) -> float:
         """
         TODO: Add option for choosing which tree aproximation should be used (Full, simple, comp)
@@ -2313,8 +2317,12 @@ class lineageTree:
 
             def norm(x, y):
                 return max(
-                    sum(self.get_fragmented_tree(n1, end_time=end_time)[1].values()),
-                    sum(self.get_fragmented_tree(n2, end_time=end_time)[1].values()),
+                    sum(
+                        self.get_simple_tree(n1, end_time=end_time)[1].values()
+                    ),
+                    sum(
+                        self.get_simple_tree(n2, end_time=end_time)[1].values()
+                    ),
                 )
 
             # def norm(x,adj1,y,adj2,delta):
@@ -2334,9 +2342,11 @@ class lineageTree:
             times1=times1,
             times2=times2,
         )
-        return uted.uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / norm(n1, n2)
+        return uted.uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / norm(
+            n1, n2
+        )
 
-    def to_simple_networkx(self,node: int = None, start_time: int = None):
+    def to_simple_networkx(self, node: int = None, start_time: int = None):
         """
         Creates a simple networkx tree graph (every branch is a cell lifetime). This function is to be used for producing nx.graph objects(
         they can be used for visualization or other tasks),
@@ -2365,18 +2375,18 @@ class lineageTree:
             edges = set()
             nodes = set()
             for branch in self.get_all_branches_of_node(mom):
-                nodes.update((branch[0],branch[-1]))
-                if len(branch)>1:
-                    edges.add((branch[0],branch[-1]))
+                nodes.update((branch[0], branch[-1]))
+                if len(branch) > 1:
+                    edges.add((branch[0], branch[-1]))
                 succ = self.successor.get(branch[-1], [])
                 for suc in succ:
                     edges.add((branch[-1], suc))
             all_edges[mom] = edges
             all_nodes[mom] = nodes
-        for i,mother in enumerate(mothers):
-                graph[i] = nx.DiGraph()
-                graph[i].add_nodes_from(all_nodes[mother])
-                graph[i].add_edges_from(all_edges[mother])
+        for i, mother in enumerate(mothers):
+            graph[i] = nx.DiGraph()
+            graph[i].add_nodes_from(all_nodes[mother])
+            graph[i].add_edges_from(all_edges[mother])
 
         return graph
 
@@ -2392,7 +2402,6 @@ class lineageTree:
             nrows (int):  How many rows of plots should be printed.
         """
 
-
         nrows = int(nrows)
         if nrows < 1 or not nrows:
             nrows = 1
@@ -2401,7 +2410,7 @@ class lineageTree:
         graphs = self.to_simple_networkx(start_time=starting_point)
         ncols = int(len(graphs) // nrows) + (
             # len(graphs) // nrows != len(graphs) / nrows
-            + np.sign(len(graphs) % nrows)
+            +np.sign(len(graphs) % nrows)
         )
         pos = postions_of_nx(self, graphs)
         figure, axes = plt.subplots(figsize=figsize, nrows=nrows, ncols=ncols)
@@ -2428,7 +2437,7 @@ class lineageTree:
             nx.Digraph: The graph defined by the subtree spawn by the node specified.
         """
         graph = self.to_simple_networkx(node)
-        if len(graph)>1:
+        if len(graph) > 1:
             raise Warning("Please enter only one node")
         graph = graph[list(graph)[0]]
         nx.draw_networkx(
