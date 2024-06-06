@@ -1890,15 +1890,36 @@ class lineageTree:
         Returns:
             ([[int, ...], ...]): list of lists containing track cell ids
         """
-        if not hasattr(self, "_all_tracks"):
+        if not hasattr(self, "_all_tracks") or force_recompute:
             self._all_tracks = []
-            to_do = set(self.nodes)
+            to_do = list(self.roots)
             while len(to_do) != 0:
                 current = to_do.pop()
                 track = self.get_cycle(current)
-                self._all_tracks += [track]
-                to_do -= set(track)
+                self._all_tracks.append(track)
+                to_do.extend(self[track[-1]])
+
         return self._all_tracks
+
+    def get_tracks(self, roots: list = None) -> list:
+        """Computes the tracks given by the list of nodes `roots` and returns it.
+
+        Args:
+            roots (list): list of ids of the roots to be computed
+        Returns:
+            ([[int, ...], ...]): list of lists containing track cell ids
+        """
+        if roots is None:
+            return self.get_all_tracks(force_recompute=True)
+        else:
+            tracks = []
+            to_do = list(roots)
+            while len(to_do) != 0:
+                current = to_do.pop()
+                track = self.get_cycle(current)
+                tracks.append(track)
+                to_do.extend(self[track[-1]])
+            return tracks
 
     def get_sub_tree(self, x: int, preorder: bool = False) -> list:
         """Computes the list of cells from the subtree spawned by *x*
@@ -2089,7 +2110,7 @@ class lineageTree:
         delta: callable = None,
         norm: callable = None,
         recompute: bool = False,
-        end_time: int = None
+        end_time: int = None,
     ) -> dict:
         """
         Compute all the pairwise unordered tree edit distances from Zhang 996 between the trees spawned at time `t`
@@ -2121,7 +2142,12 @@ class lineageTree:
         return self.uted[t]
 
     def unordered_tree_edit_distance(
-        self, n1: int, n2: int, delta: callable = None, norm: callable = None, end_time: int = None
+        self,
+        n1: int,
+        n2: int,
+        delta: callable = None,
+        norm: callable = None,
+        end_time: int = None,
     ) -> float:
         """
         Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
@@ -2147,26 +2173,42 @@ class lineageTree:
         if delta is None or not callable(delta):
 
             def delta(x, y, corres1, corres2, times):
-                if x is None :
+                if x is None:
                     return times[corres2[y]]
                 if y is None:
                     return times[corres1[x]]
                 len_x = times[corres1[x]]
                 len_y = times[corres2[y]]
-                return np.abs(len_x - len_y) #/ (len_x + len_y)
+                return np.abs(len_x - len_y)  # / (len_x + len_y)
 
         if norm is None or not callable(norm):
 
             def norm(x, y):
-                return max(sum([v for v in self.get_simple_tree(n1, end_time=end_time)[1].values()]),
-                            sum([v for v in self.get_simple_tree(n2, end_time=end_time)[1].values()]))
+                return max(
+                    sum(
+                        [
+                            v
+                            for v in self.get_simple_tree(
+                                n1, end_time=end_time
+                            )[1].values()
+                        ]
+                    ),
+                    sum(
+                        [
+                            v
+                            for v in self.get_simple_tree(
+                                n2, end_time=end_time
+                            )[1].values()
+                        ]
+                    ),
+                )
 
         if norm is False:
 
             def norm(*args):
                 return 1
 
-        simple_tree_1, _ = self.get_simple_tree(n1,end_time=end_time)
+        simple_tree_1, _ = self.get_simple_tree(n1, end_time=end_time)
         simple_tree_2, _ = self.get_simple_tree(n2, end_time=end_time)
         nodes1, adj1, corres1 = self.__edist_format(simple_tree_1)
         nodes2, adj2, corres2 = self.__edist_format(simple_tree_2)
