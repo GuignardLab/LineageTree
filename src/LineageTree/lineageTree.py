@@ -1882,7 +1882,7 @@ class lineageTree:
             cycle += self.successor[cycle[-1]]
             acc += 1
 
-        return cycle #[cell for cell in cycle if self.time[cell] <= end_time]
+        return cycle  # [cell for cell in cycle if self.time[cell] <= end_time]
 
     def get_cycle(
         self,
@@ -1920,7 +1920,9 @@ class lineageTree:
             self._all_tracks = self.get_all_tracks()
         return self._all_tracks
 
-    def get_all_branches_of_node(self, node:int, end_time:int = None) -> list:
+    def get_all_branches_of_node(
+        self, node: int, end_time: int = None
+    ) -> list:
         """Computes all the tracks of the subtree of a given node.
         Similar to get_all_tracks().
 
@@ -1937,7 +1939,7 @@ class lineageTree:
         to_do -= set(self.get_successors(node))
         while to_do:
             current = to_do.pop()
-            track = self.get_cycle(current,end_time = end_time)
+            track = self.get_cycle(current, end_time=end_time)
             branches += [track]
             to_do -= set(track)
         return branches

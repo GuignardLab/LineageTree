@@ -30,7 +30,7 @@ class LineageTreeManager:
         Args:
             other_tree (lineageTree): Thelineagetree to be added.
             name (str, optional): Then name of. Defaults to "".
-           
+
 
         Returns:
             _type_: _description_
@@ -46,9 +46,7 @@ class LineageTreeManager:
                     name = other_tree.name
                     self.lineagetrees[name] = other_tree
                 else:
-                    self.lineagetrees[
-                        f"Lineagetree {next(self)}"
-                    ] = other_tree
+                    self.lineagetrees[f"Lineagetree {next(self)}"] = other_tree
                 # try:
                 #     name = other_tree.name
                 #     self.lineagetrees[name] = other_tree
@@ -89,8 +87,7 @@ class LineageTreeManager:
         Raises:
             Exception: If there is not such a lineagetree
         """
-        self.lineagetrees.pop(key,None)
-        
+        self.lineagetrees.pop(key, None)
 
     @classmethod
     def load(cls, fname: str):

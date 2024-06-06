@@ -71,9 +71,7 @@ class TestTreex(unittest.TestCase):
         def local_cost_normalized(t1, t2):
             if t1 is None and t2 is None:
                 return 0
-            elif t1 is None or t2 is None:
-                return 1
-            elif t2 is None:
+            elif t1 is None or t2 is None or t2 is None:
                 return 1
             return abs(t1_attributes[t1] - t2_attributes[t2]) / (
                 t1_attributes[t1] + t2_attributes[t2]
