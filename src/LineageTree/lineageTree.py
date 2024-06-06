@@ -1882,7 +1882,7 @@ class lineageTree:
             cycle += self.successor[cycle[-1]]
             acc += 1
 
-        return cycle  # [cell for cell in cycle if self.time[cell] <= end_time]
+        return cycle #[cell for cell in cycle if self.time[cell] <= end_time]
 
     def get_cycle(
         self,
@@ -1920,24 +1920,24 @@ class lineageTree:
             self._all_tracks = self.get_all_tracks()
         return self._all_tracks
 
-    def get_all_branches_of_node(
-        self, node: int, single_nodes: bool = False
-    ) -> list:
-        """Computes all the tracks of the subtree spawnd by a given node.
+    def get_all_branches_of_node(self, node:int, end_time:int = None) -> list:
+        """Computes all the tracks of the subtree of a given node.
         Similar to get_all_tracks().
 
         Args:
             node (int, optional): The node that we want to get its branches.
-            single_nodes (bool) : If True returns nodes that have no predecessors or successors.
-                                  Defaults to False
+
         Returns:
             ([[int, ...], ...]): list of lists containing track cell ids
         """
-        branches = []
+        if not end_time:
+            end_time = self.t_e
+        branches = [self.get_successors(node)]
         to_do = set(self.get_sub_tree(node))
-        while len(to_do) != 0:
+        to_do -= set(self.get_successors(node))
+        while to_do:
             current = to_do.pop()
-            track = self.get_cycle(current)
+            track = self.get_cycle(current,end_time = end_time)
             branches += [track]
             to_do -= set(track)
         return branches
@@ -1951,13 +1951,12 @@ class lineageTree:
         """
         if not hasattr(self, "_all_tracks") or force_recompute:
             self._all_tracks = []
-            to_do = list(self.roots)
+            to_do = set(self.nodes)
             while len(to_do) != 0:
                 current = to_do.pop()
                 track = self.get_cycle(current)
-                self._all_tracks.append(track)
-                to_do.extend(self[track[-1]])
-
+                self._all_tracks += [track]
+                to_do -= set(track)
         return self._all_tracks
 
     def get_tracks(self, roots: list = None) -> list:
@@ -2367,7 +2366,7 @@ class lineageTree:
             n1, n2
         )
 
-    def to_simple_networkx(self, node: int = None, start_time: int = None):
+    def to_simple_networkx(self, node: int = None, start_time: int = 0):
         """
         Creates a simple networkx tree graph (every branch is a cell lifetime). This function is to be used for producing nx.graph objects(
         they can be used for visualization or other tasks),
@@ -2382,14 +2381,14 @@ class lineageTree:
         """
 
         mothers = list(self.time_nodes[0])
-        if start_time and not node:
+        if node is None:
             mothers = [
                 root for root in self.roots if self.time[root] <= start_time
             ]
         else:
             mothers = [node]
         graph = {}
-        mothers = self.time_nodes[0]
+        # mothers = self.time_nodes[0]
         all_nodes = {}
         all_edges = {}
         for mom in mothers:

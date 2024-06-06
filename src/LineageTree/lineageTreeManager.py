@@ -11,11 +11,11 @@ from LineageTree import lineageTree
 class LineageTreeManager:
     def __init__(self):
         self.lineagetrees = {}
-        self.classification = {"Wt": {}, "Ptb": {}}
+        # self.classification = {"Wt": {}, "Ptb": {}}
         self.lineageTree_counter = 0
         self.registered = {}
 
-    def get_next_tree(self):
+    def __next__(self):
         self.lineageTree_counter += 1
         return self.lineageTree_counter - 1
 
@@ -25,15 +25,12 @@ class LineageTreeManager:
         """Function that adds a new lineagetree object to the class.
         Can be added either by .add or by using the + operator. If a name is
         specified it will also add it as this specific name, otherwise it will
-        use the already existing name of the lineagetree. Lastly, it adds it to
-        the classification dict.
+        use the already existing name of the lineagetree.
 
         Args:
             other_tree (lineageTree): Thelineagetree to be added.
             name (str, optional): Then name of. Defaults to "".
-            classification (str, optional): If the user need to add it to classification
-                                    provide here the name of the class.
-                                    Defaults to "".
+           
 
         Returns:
             _type_: _description_
@@ -45,24 +42,31 @@ class LineageTreeManager:
             if name:
                 self.lineagetrees[name] = other_tree
             else:
-                try:
+                if hasattr(other_tree, "name"):
                     name = other_tree.name
                     self.lineagetrees[name] = other_tree
-                except:
+                else:
                     self.lineagetrees[
-                        f"Lineagetree {self.get_next_tree()}"
+                        f"Lineagetree {next(self)}"
                     ] = other_tree
+                # try:
+                #     name = other_tree.name
+                #     self.lineagetrees[name] = other_tree
+                # except:
+                #     self.lineagetrees[
+                #         f"Lineagetree {next(self)}"
+                #     ] = other_tree
         # if classification in ("Wt", "Ptb"):
         #     self.classification[type] = {name: other_tree}
 
     def __add__(self, other):
         self.add(other)
 
-    def classify_existing(self, key, classification: str):
-        if classification in ("Wt", "Ptb"):
-            self.classification[classification] = {key: self.lineagetrees[key]}
-        else:
-            return False
+    # def classify_existing(self, key, classification: str):
+    #     if classification in ("Wt", "Ptb"):
+    #         self.classification[classification] = {key: self.lineagetrees[key]}
+    #     else:
+    #         return False
 
     def write(self, fname: str):
         """Saves the manager
@@ -85,14 +89,8 @@ class LineageTreeManager:
         Raises:
             Exception: If there is not such a lineagetree
         """
-        if key in self.lineagetrees:
-            del self.lineagetrees[key]
-            if key in self.classification["Wt"]:
-                del self.classification["Wt"][key]
-            if key in self.classification["Ptb"]:
-                del self.classification["Ptb"][key]
-        else:
-            raise Exception("No such lineage")
+        self.lineagetrees.pop(key,None)
+        
 
     @classmethod
     def load(cls, fname: str):
