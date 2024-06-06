@@ -2388,7 +2388,7 @@ class lineageTree:
                 root for root in self.roots if self.time[root] <= start_time
             ]
         else:
-            mothers = [node]
+            mothers = list(node)
         graph = {}
         # mothers = self.time_nodes[0]
         all_nodes = {}
