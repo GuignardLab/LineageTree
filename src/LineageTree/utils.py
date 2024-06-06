@@ -132,7 +132,10 @@ def hierarchy_pos(
 def to_motile(
     lT: lineageTree, crop: int = None, max_dist=200, max_skip_frames=1
 ):
-    import motile
+    try:
+        import motile
+    except:
+        raise Warning("Run 'pip install motile' to install it.")
 
     fmt = nx.DiGraph()
     if not crop:
