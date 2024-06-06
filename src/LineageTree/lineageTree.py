@@ -1883,25 +1883,44 @@ class lineageTree:
             self._all_tracks = self.get_all_tracks()
         return self._all_tracks
 
-    def get_all_tracks(self, roots: list = None, force_recompute: bool = False) -> list:
+    def get_all_tracks(self, force_recompute: bool = False) -> list:
         """Computes all the tracks of a given lineage tree,
         stores it in `self.all_tracks` and returns it.
 
         Returns:
             ([[int, ...], ...]): list of lists containing track cell ids
         """
-        if not hasattr(self, "_all_tracks"):
+        if not hasattr(self, "_all_tracks") or force_recompute:
             self._all_tracks = []
-            if roots is None:
-                to_do = self.roots.copy()
-            else:
-                to_do = roots.copy()
+            to_do = list(self.roots)
             while len(to_do) != 0:
                 current = to_do.pop()
                 track = self.get_cycle(current)
                 self._all_tracks.append(track)
-                to_do.expand(self[track[-1]])
+                to_do.extend(self[track[-1]])
+    
         return self._all_tracks
+    
+    def get_tracks(self, roots: list = None) -> list:
+        """Computes the tracks given by the list of nodes `roots` and returns it.
+        
+        Args:
+            roots (list): list of ids of the roots to be computed
+        Returns:
+            ([[int, ...], ...]): list of lists containing track cell ids
+        """
+        if roots is None:
+            return self.get_all_tracks(force_recompute=True)
+        else:
+            tracks = []
+            to_do = list(roots)
+            while len(to_do) != 0:
+                current = to_do.pop()
+                track = self.get_cycle(current)
+                tracks.append(track)
+                to_do.extend(self[track[-1]])
+            return tracks
+
 
     def get_sub_tree(self, x: int, preorder: bool = False) -> list:
         """Computes the list of cells from the subtree spawned by *x*
