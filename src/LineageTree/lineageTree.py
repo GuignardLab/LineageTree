@@ -2145,7 +2145,7 @@ class lineageTree:
         return out_dict, time
 
     def get_fragmented_tree(
-        lT, r: int = 0, node_lengths=(1, 5, 7), end_time: int = None
+        lT, r: int = 0, node_lengths=(1, 3, 5, 7), end_time: int = None
     ) -> tuple:
         """
         Get a "fragmented" version of the tree spawned by the node `r`
@@ -2177,15 +2177,16 @@ class lineageTree:
                 max_number_fragments = len(
                     cumul_sum_of_nodes[cumul_sum_of_nodes < len(cycle)]
                 )
-                if max_number_fragments > 1:
+                if max_number_fragments > 3:
+                    current_node_lengths = node_lengths[:max_number_fragments].copy()
                     length_middle_node = (
                         len(cycle)
-                        - sum(node_lengths[:max_number_fragments]) * 2
+                        - sum(current_node_lengths) * 2
                     )
                     times_tmp = (
-                        node_lengths[:max_number_fragments]
+                        current_node_lengths
                         + [length_middle_node]
-                        + node_lengths[:max_number_fragments][::-1]
+                        + current_node_lengths[::-1]
                     )
                     pos_all_nodes = np.concatenate(
                         [[0], np.cumsum(times_tmp[:-1])]
