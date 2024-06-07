@@ -1870,7 +1870,7 @@ class lineageTree:
         Returns:
             [int, ]: list of ids, the first id is `x`
         """
-        if not end_time:
+        if end_time is None:
             end_time = self.t_e
         cycle = [x]
         acc = 0
@@ -1882,7 +1882,7 @@ class lineageTree:
             cycle += self.successor[cycle[-1]]
             acc += 1
 
-        return cycle  # [cell for cell in cycle if self.time[cell] <= end_time]
+        return [cell for cell in cycle if self.time[cell] <= end_time]
 
     def get_cycle(
         self,
@@ -2162,7 +2162,7 @@ class lineageTree:
                 not the first time point).
             (dict) {m (int): duration (float)}: life time duration of the cell `m`
         """
-        if not end_time:
+        if end_time is None:
             end_time = lT.t_e
         out_dict = {}
         times = {}
@@ -2177,7 +2177,7 @@ class lineageTree:
                 max_number_fragments = len(
                     cumul_sum_of_nodes[cumul_sum_of_nodes < len(cycle)]
                 )
-                if max_number_fragments > 3:
+                if max_number_fragments > 0:
                     current_node_lengths = node_lengths[:max_number_fragments].copy()
                     length_middle_node = (
                         len(cycle)
