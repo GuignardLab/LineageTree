@@ -2389,7 +2389,7 @@ class lineageTree:
                 root for root in self.roots if self.time[root] <= start_time
             ]
         else:
-            mothers = list(node)
+            mothers = node if isinstance(node, list) else [node]
         graph = {}
         # mothers = self.time_nodes[0]
         all_nodes = {}
@@ -2414,7 +2414,7 @@ class lineageTree:
         return graph
 
     def plot_all_lineages(
-        self, starting_point: int = None, nrows=2, figsize=(10, 15)
+        self, starting_point: int = 0, nrows=2, figsize=(10, 15), dpi = 150, **kwargs
     ):
         """Plots all lineages.
 
@@ -2423,6 +2423,7 @@ class lineageTree:
                                 For example if start_time is 10, then all trees that begin
                                 on tp 10 or before are calculated. Defaults to None.
             nrows (int):  How many rows of plots should be printed.
+            kwargs: args accepted by networkx
         """
 
         nrows = int(nrows)
@@ -2432,11 +2433,10 @@ class lineageTree:
 
         graphs = self.to_simple_networkx(start_time=starting_point)
         ncols = int(len(graphs) // nrows) + (
-            # len(graphs) // nrows != len(graphs) / nrows
             +np.sign(len(graphs) % nrows)
         )
         pos = postions_of_nx(self, graphs)
-        figure, axes = plt.subplots(figsize=figsize, nrows=nrows, ncols=ncols)
+        figure, axes = plt.subplots(figsize=figsize, nrows=nrows, ncols=ncols, dpi = dpi)
         flat_axes = axes.flatten()
         for i, graph in enumerate(graphs.values()):
             nx.draw_networkx(
@@ -2444,34 +2444,30 @@ class lineageTree:
                 pos[i],
                 with_labels=False,
                 arrows=False,
-                width=0.1,
-                node_size=1,
+                **kwargs,
                 ax=flat_axes[i],
             )
         [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
 
-    def plot_node(self, node):
+    def plot_node(self, node, figsize=(100,100), dpi = 150, **kwargs):
         """Plots the subtree spawn by a node.
 
         Args:
             node (int): The id of the node that is going to be plotted.
-
-        Returns:
-            nx.Digraph: The graph defined by the subtree spawn by the node specified.
+            kwargs: args accepted by networkx
         """
         graph = self.to_simple_networkx(node)
         if len(graph) > 1:
             raise Warning("Please enter only one node")
         graph = graph[list(graph)[0]]
-        nx.draw_networkx(
+        plt.figure(1, figsize=figsize, dpi = dpi)
+        plotted_graph = nx.draw_networkx(
             graph,
             hierarchy_pos(graph, self, node),
             with_labels=False,
             arrows=False,
-            width=0.1,
-            node_size=1,
-        )
-        return graph
+            **kwargs)
+        return plotted_graph
 
     # plt.tick_params(axis='both', which='both', right=False, left=False, top=False, bottom=False, labelleft=False, labelbottom = False)
 
