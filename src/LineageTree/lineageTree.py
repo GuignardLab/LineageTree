@@ -488,7 +488,7 @@ class lineageTree:
                         stroke=svgwrite.rgb(0, 0, 0),
                     )
                 )
-                for si in self.successor.get(c_cycle[-1], []):
+                for si in self[c_cycle[-1]]:
                     x3, y3 = positions[si]
                     dwg.add(
                         dwg.line(
@@ -501,7 +501,7 @@ class lineageTree:
         else:
             for c in treated_cells:
                 x1, y1 = positions[c]
-                for si in self.successor.get(c, []):
+                for si in self[c]:
                     x2, y2 = positions[si]
                     if draw_edges:
                         dwg.add(
@@ -553,7 +553,7 @@ class lineageTree:
         start_time = times_to_consider[0]
         for t in times_to_consider:
             for id_mother in self.time_nodes[t]:
-                ids_daughters = self.successor.get(id_mother, [])
+                ids_daughters = self[id_mother]
                 new_ids_daughters = ids_daughters.copy()
                 for _ in range(sampling - 1):
                     tmp = []
@@ -1552,7 +1552,7 @@ class lineageTree:
                 curr_c = to_treat.pop()
                 number_sequence.append(curr_c)
                 pos_sequence += list(self.pos[curr_c])
-                if self.successor.get(curr_c, []) == []:
+                if self[curr_c] == []:
                     number_sequence.append(-1)
                 elif len(self.successor[curr_c]) == 1:
                     to_treat += self.successor[curr_c]
@@ -1829,7 +1829,7 @@ class lineageTree:
         return self.Gabriel_graph[t]
 
     def get_predecessors(
-        self, x: int, depth: int = None, end_time: int = None
+        self, x: int, depth: int = None, start_time: int = None, end_time=None
     ) -> list:
         """Computes the predecessors of the node `x` up to
         `depth` predecessors or the begining of the life of `x`.
@@ -1841,21 +1841,22 @@ class lineageTree:
         Returns:
             [int, ]: list of ids, the last id is `x`
         """
+        if not start_time:
+            start_time = self.t_b
         if not end_time:
             end_time = self.t_e
         cycle = [x]
         acc = 0
         while (
-            len(
-                self.successor.get(self.predecessor.get(cycle[0], [-1])[0], [])
-            )
-            == 1
+            len(self[self.predecessor.get(cycle[0], [-1])[0]]) == 1
+            and self.time[self.predecessor[cycle[0]][0]] > start_time
+            and self.time[self.predecessor[cycle[0]][0]] < end_time
             and acc != depth
         ):
             cycle.insert(0, self.predecessor[cycle[0]][0])
             acc += 1
 
-        return [cell for cell in cycle if self.time[cell] <= end_time]
+        return cycle
 
     def get_successors(
         self, x: int, depth: int = None, end_time: int = None
@@ -1875,14 +1876,14 @@ class lineageTree:
         cycle = [x]
         acc = 0
         while (
-            len(self.successor.get(cycle[-1], [])) == 1
+            len(self[cycle[-1]]) == 1
             and acc != depth
             and self.time[cycle[-1]] < end_time
         ):
             cycle += self.successor[cycle[-1]]
             acc += 1
 
-        return [cell for cell in cycle if self.time[cell] <= end_time]
+        return cycle
 
     def get_cycle(
         self,
@@ -1923,7 +1924,7 @@ class lineageTree:
     def get_all_branches_of_node(
         self, node: int, end_time: int = None
     ) -> list:
-        """Computes all the tracks of the subtree of a given node.
+        """Computes all the tracks of the subtree spawn by a given node.
         Similar to get_all_tracks().
 
         Args:
@@ -1935,13 +1936,12 @@ class lineageTree:
         if not end_time:
             end_time = self.t_e
         branches = [self.get_successors(node)]
-        to_do = set(self.get_sub_tree(node))
-        to_do -= set(self.get_successors(node))
+        to_do = self[branches[0][-1]].copy()
         while to_do:
             current = to_do.pop()
             track = self.get_cycle(current, end_time=end_time)
             branches += [track]
-            to_do -= set(track)
+            to_do.extend(self[track[-1]])
         return branches
 
     def get_all_tracks(self, force_recompute: bool = False) -> list:
@@ -1997,7 +1997,7 @@ class lineageTree:
         sub_tree = []
         while len(to_do) > 0:
             curr = to_do.pop(0)
-            succ = self.successor.get(curr, [])
+            succ = self[curr]
             if preorder:
                 to_do = succ + to_do
             else:
@@ -2124,8 +2124,6 @@ class lineageTree:
         """
         if end_time is None:
             end_time = self.t_e
-        if not hasattr(self, "cycle_time"):
-            self.cycle_time = {}
         out_dict = {}
         time = {}
         to_do = [r]
@@ -2135,7 +2133,7 @@ class lineageTree:
             cycle_times = np.array([self.time[c] for c in cycle])
             cycle = cycle[cycle_times <= end_time]
             if cycle.size:
-                _next = self.successor.get(cycle[-1], [])
+                _next = self[cycle[-1]]
                 if len(_next) > 1:
                     out_dict[current] = _next
                     to_do.extend(_next)
@@ -2145,7 +2143,7 @@ class lineageTree:
         return out_dict, time
 
     def get_fragmented_tree(
-        lT, r: int = 0, node_lengths=(1, 3, 5, 7), end_time: int = None
+        self, r: int = 0, node_lengths=(1, 3, 5, 7), end_time: int = None
     ) -> tuple:
         """
         Get a "fragmented" version of the tree spawned by the node `r`
@@ -2163,7 +2161,7 @@ class lineageTree:
             (dict) {m (int): duration (float)}: life time duration of the cell `m`
         """
         if end_time is None:
-            end_time = lT.t_e
+            end_time = self.t_e
         out_dict = {}
         times = {}
         to_do = [r]
@@ -2171,17 +2169,18 @@ class lineageTree:
             node_lengths = list(node_lengths)
         while to_do:
             current = to_do.pop()
-            cycle = np.array(lT.get_successors(current, end_time=end_time))
-            if cycle.size:
+            cycle = np.array(self.get_successors(current, end_time=end_time))
+            if 0 < cycle.size:
                 cumul_sum_of_nodes = np.cumsum(node_lengths) * 2 + 1
                 max_number_fragments = len(
                     cumul_sum_of_nodes[cumul_sum_of_nodes < len(cycle)]
                 )
                 if max_number_fragments > 0:
-                    current_node_lengths = node_lengths[:max_number_fragments].copy()
+                    current_node_lengths = node_lengths[
+                        :max_number_fragments
+                    ].copy()
                     length_middle_node = (
-                        len(cycle)
-                        - sum(current_node_lengths) * 2
+                        len(cycle) - sum(current_node_lengths) * 2
                     )
                     times_tmp = (
                         current_node_lengths
@@ -2195,15 +2194,15 @@ class lineageTree:
                     out_dict.update(
                         {k: [v] for k, v in zip(track[:-1], track[1:])}
                     )
-                    times.update(dict(zip(track, times_tmp)))
+                    times.update(zip(track, times_tmp))
                 else:
-                    for i in range(len(cycle) - 1):
-                        out_dict[cycle[i]] = [cycle[i + 1]]
-                        times[cycle[i]] = 1
+                    for i, cell in enumerate(cycle[:-1]):
+                        out_dict[cell] = [cycle[i + 1]]
+                        times[cell] = 1
                 current = cycle[-1]
-                _next = lT.successor.get(current, [])
+                _next = self[current]
                 times[current] = 1
-                if _next and lT.time[_next[0]] <= end_time:
+                if _next and self.time[_next[0]] <= end_time:
                     to_do.extend(_next)
                     out_dict[current] = _next
                 else:
@@ -2389,9 +2388,8 @@ class lineageTree:
                 root for root in self.roots if self.time[root] <= start_time
             ]
         else:
-            mothers = node if isinstance(node, list|set) else [node]
+            mothers = node if isinstance(node, (list, set)) else [node]
         graph = {}
-        # mothers = self.time_nodes[0]
         all_nodes = {}
         all_edges = {}
         for mom in mothers:
@@ -2401,8 +2399,7 @@ class lineageTree:
                 nodes.update((branch[0], branch[-1]))
                 if len(branch) > 1:
                     edges.add((branch[0], branch[-1]))
-                succ = self.successor.get(branch[-1], [])
-                for suc in succ:
+                for suc in self[branch[-1]]:
                     edges.add((branch[-1], suc))
             all_edges[mom] = edges
             all_nodes[mom] = nodes
@@ -2414,7 +2411,12 @@ class lineageTree:
         return graph
 
     def plot_all_lineages(
-        self, starting_point: int = 0, nrows=2, figsize=(10, 15), dpi = 150, **kwargs
+        self,
+        starting_point: int = 0,
+        nrows=2,
+        figsize=(10, 15),
+        dpi=150,
+        **kwargs,
     ):
         """Plots all lineages.
 
@@ -2429,14 +2431,14 @@ class lineageTree:
         nrows = int(nrows)
         if nrows < 1 or not nrows:
             nrows = 1
-            raise Warning("Number of rows cannot be 0")
+            raise Warning("Number of rows has to be at least 1")
 
         graphs = self.to_simple_networkx(start_time=starting_point)
-        ncols = int(len(graphs) // nrows) + (
-            +np.sign(len(graphs) % nrows)
-        )
+        ncols = int(len(graphs) // nrows) + (+np.sign(len(graphs) % nrows))
         pos = postions_of_nx(self, graphs)
-        figure, axes = plt.subplots(figsize=figsize, nrows=nrows, ncols=ncols, dpi = dpi)
+        figure, axes = plt.subplots(
+            figsize=figsize, nrows=nrows, ncols=ncols, dpi=dpi
+        )
         flat_axes = axes.flatten()
         for i, graph in enumerate(graphs.values()):
             nx.draw_networkx(
@@ -2449,7 +2451,7 @@ class lineageTree:
             )
         [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
 
-    def plot_node(self, node, figsize=(100,100), dpi = 150, **kwargs):
+    def plot_node(self, node, figsize=(100, 100), dpi=150, **kwargs):
         """Plots the subtree spawn by a node.
 
         Args:
@@ -2460,13 +2462,14 @@ class lineageTree:
         if len(graph) > 1:
             raise Warning("Please enter only one node")
         graph = graph[list(graph)[0]]
-        plt.figure(1, figsize=figsize, dpi = dpi)
+        plt.figure(1, figsize=figsize, dpi=dpi)
         plotted_graph = nx.draw_networkx(
             graph,
             hierarchy_pos(graph, self, node),
             with_labels=False,
             arrows=False,
-            **kwargs)
+            **kwargs,
+        )
         return plotted_graph
 
     # plt.tick_params(axis='both', which='both', right=False, left=False, top=False, bottom=False, labelleft=False, labelbottom = False)
