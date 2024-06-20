@@ -31,14 +31,11 @@ class LineageTreeManager:
             other_tree (lineageTree): Thelineagetree to be added.
             name (str, optional): Then name of. Defaults to "".
 
-
-        Returns:
-            _type_: _description_
         """
-        for tree in self.lineagetrees.values():
-            if tree == other_tree:
-                return False
         if isinstance(other_tree, lineageTree):
+            for tree in self.lineagetrees.values():
+                if tree == other_tree:
+                    return False
             if name:
                 self.lineagetrees[name] = other_tree
             else:
@@ -46,7 +43,9 @@ class LineageTreeManager:
                     name = other_tree.name
                     self.lineagetrees[name] = other_tree
                 else:
-                    self.lineagetrees[f"Lineagetree {next(self)}"] = other_tree
+                    name = f"Lineagetree {next(self)}"
+                    self.lineagetrees[name] = other_tree
+                    self.lineagetrees[name].name = name
                 # try:
                 #     name = other_tree.name
                 #     self.lineagetrees[name] = other_tree

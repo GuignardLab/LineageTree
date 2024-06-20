@@ -12,7 +12,11 @@ from itertools import combinations
 from numbers import Number
 from pathlib import Path
 from typing import TextIO
-
+import warnings
+try:
+    from edist import uted
+except ImportError:
+    warnings.warn("No edist installed therefore you will not be able to compute the tree edit distance.")
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -163,7 +167,7 @@ class lineageTree:
     @property
     def roots(self):
         if not hasattr(self, "_roots"):
-            self._roots = set(self.successor).difference(self.predecessor)
+            self._roots = set(self.nodes).difference(self.predecessor)
         return self._roots
 
     @property
@@ -1828,6 +1832,7 @@ class lineageTree:
 
         return self.Gabriel_graph[t]
 
+
     def get_predecessors(
         self, x: int, depth: int = None, start_time: int = None, end_time=None
     ) -> list:
@@ -1845,19 +1850,19 @@ class lineageTree:
             start_time = self.t_b
         if not end_time:
             end_time = self.t_e
-        cycle = [x]
+        unconstrained_cycle = [x]
+        cycle = [x] if self.time[x]<= end_time and start_time<=self.time[x] else []
         acc = 0
         while (
-            len(self[self.predecessor.get(cycle[0], [-1])[0]]) == 1
-            and self.time[self.predecessor[cycle[0]][0]] > start_time
-            and self.time[self.predecessor[cycle[0]][0]] < end_time
-            and acc != depth
+            len(self[self.predecessor.get(unconstrained_cycle[0], [-1])[0]]) == 1
+            and  acc != depth
         ):
-            cycle.insert(0, self.predecessor[cycle[0]][0])
+            unconstrained_cycle.insert(0, self.predecessor[unconstrained_cycle[0]][0])
             acc += 1
+            if start_time<= self.time[self.predecessor[unconstrained_cycle[0]][0]] and self.time[self.predecessor[unconstrained_cycle[0]][0]] <= end_time:
+                cycle.insert(0,unconstrained_cycle[0])
 
-        return cycle
-
+        return cycle 
     def get_successors(
         self, x: int, depth: int = None, end_time: int = None
     ) -> list:
@@ -1953,12 +1958,12 @@ class lineageTree:
         """
         if not hasattr(self, "_all_tracks") or force_recompute:
             self._all_tracks = []
-            to_do = set(self.nodes)
+            to_do = list(self.roots)
             while len(to_do) != 0:
                 current = to_do.pop()
                 track = self.get_cycle(current)
                 self._all_tracks += [track]
-                to_do -= set(track)
+                to_do.extend(self[track[-1]])
         return self._all_tracks
 
     def get_tracks(self, roots: list = None) -> list:
@@ -2300,14 +2305,6 @@ class lineageTree:
         Returns:
             (float) The normed unordered tree edit distance
         """
-        try:
-            from edist import uted
-        except ImportError:
-            raise Warning("No edist installed please install edist.")
-        # if get_tree_method is None or "comp":
-        #     get_tree_method = self.get_fragmented_tree
-        # else:
-        #     get_tree_method = self.get_simple_tree
 
         if delta is None or not callable(delta):
 

@@ -2,9 +2,12 @@ import csv
 import random
 
 import networkx as nx
-
+import warnings
 from LineageTree import lineageTree
-
+    try:
+        import motile
+    except ImportError:
+        warnings.warn"No m motile nstalled therefore you will not be able to produce links with motile.") 
 
 def hierarchy_pos(
     G,
@@ -132,10 +135,6 @@ def hierarchy_pos(
 def to_motile(
     lT: lineageTree, crop: int = None, max_dist=200, max_skip_frames=1
 ):
-    try:
-        import motile
-    except:
-        raise Warning("Run 'pip install motile' to install it.")
 
     fmt = nx.DiGraph()
     if not crop:
