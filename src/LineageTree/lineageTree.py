@@ -13,10 +13,13 @@ from numbers import Number
 from pathlib import Path
 from typing import TextIO
 import warnings
+
 try:
     from edist import uted
 except ImportError:
-    warnings.warn("No edist installed therefore you will not be able to compute the tree edit distance.")
+    warnings.warn(
+        "No edist installed therefore you will not be able to compute the tree edit distance."
+    )
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -1832,7 +1835,6 @@ class lineageTree:
 
         return self.Gabriel_graph[t]
 
-
     def get_predecessors(
         self, x: int, depth: int = None, start_time: int = None, end_time=None
     ) -> list:
@@ -1851,18 +1853,31 @@ class lineageTree:
         if not end_time:
             end_time = self.t_e
         unconstrained_cycle = [x]
-        cycle = [x] if self.time[x]<= end_time and start_time<=self.time[x] else []
+        cycle = (
+            [x]
+            if self.time[x] <= end_time and start_time <= self.time[x]
+            else []
+        )
         acc = 0
         while (
-            len(self[self.predecessor.get(unconstrained_cycle[0], [-1])[0]]) == 1
-            and  acc != depth
+            len(self[self.predecessor.get(unconstrained_cycle[0], [-1])[0]])
+            == 1
+            and acc != depth
         ):
-            unconstrained_cycle.insert(0, self.predecessor[unconstrained_cycle[0]][0])
+            unconstrained_cycle.insert(
+                0, self.predecessor[unconstrained_cycle[0]][0]
+            )
             acc += 1
-            if start_time<= self.time[self.predecessor[unconstrained_cycle[0]][0]] and self.time[self.predecessor[unconstrained_cycle[0]][0]] <= end_time:
-                cycle.insert(0,unconstrained_cycle[0])
+            if (
+                start_time
+                <= self.time[self.predecessor[unconstrained_cycle[0]][0]]
+                and self.time[self.predecessor[unconstrained_cycle[0]][0]]
+                <= end_time
+            ):
+                cycle.insert(0, unconstrained_cycle[0])
 
-        return cycle 
+        return cycle
+
     def get_successors(
         self, x: int, depth: int = None, end_time: int = None
     ) -> list:
