@@ -34,6 +34,21 @@ class abstract_trees(ABC):
 
     @abstractmethod
     def delta(self, x, y, corres1, corres2, times1, times2):
+        """The distance of two nodes inside a tree. Behaves like a staticmethod.
+            The corres1/2 and time1/2 should always be provided and will be handled accordingly by the specific
+            delta of each tree style.
+
+        Args:
+            x (int): The first node to compare, takes the names provided by the edist.
+            y (int): The second node to compare, takes the names provided by the edist
+            corres1 (dict): Correspondance between node1 and its name in the real tree.
+            corres2 (dict): Correspondance between node2 and its name in the real tree.
+            times1 (dict): The dictionary of the branch lengths of the tree that n1 is spawned from.
+            times2 (dict): The dictionary of the branch lengths of the tree that n2 is spawned from.
+
+        Returns:
+            (int|float): The diatance between these 2 nodes.
+        """
         if x is None and y is None:
             return 0
         if x is None:
@@ -49,11 +64,20 @@ class abstract_trees(ABC):
         """
         Returns the valid value for normalizing the edit distance.
         Returns:
-            (int|float): The number of nodes of each tree.
+            (int|float): The number of nodes of each tree according to each style.
         """
         pass
 
     def _edist_format(self, adj_dict: dict):
+        """Formating the custom tree style to the format needed by edist.
+        SHOULD NO BE CHANGED.
+
+        Args:
+            adj_dict (dict): _description_
+
+        Returns:
+            _type_: _description_
+        """
         inv_adj = {vi: k for k, v in adj_dict.items() for vi in v}
         roots = set(adj_dict).difference(inv_adj)
         nid2list = {}
@@ -95,6 +119,32 @@ class simple_tree(abstract_trees):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+    def get_tree(self):
+        if self.end_time is None:
+            self.end_time = self.lT.t_e
+        out_dict = {}
+        self.times = {}
+        to_do = [self.root]
+        while to_do:
+            current = to_do.pop()
+            cycle = np.array(self.lT.get_successors(current))
+            cycle_times = np.array([self.lT.time[c] for c in cycle])
+            cycle = cycle[cycle_times <= self.end_time]
+            if cycle.size:
+                _next = self.lT[cycle[-1]]
+                if len(_next) > 1:
+                    out_dict[current] = _next
+                    to_do.extend(_next)
+                else:
+                    out_dict[current] = []
+            self.times[current] = len(cycle)#* time_resolution will be fixed when working on registered trees.
+        return out_dict, self.times
+    
+    def delta(self, x, y, corres1, corres2, times1, times2):
+        return super().delta(x, y, corres1, corres2, times1, times2)
+    def get_norm(self):
+        return sum(self.times.values())
+
 
 class fragmented_tree(abstract_trees):
     def __init__(self, **kwargs):
@@ -102,7 +152,7 @@ class fragmented_tree(abstract_trees):
 
     def get_tree(self):
         if self.end_time is None:
-            end_time = self.lT.t_e
+            self.end_time = self.lT.t_e
         self.out_dict = {}
         self.times = {}
         to_do = [self.root]
@@ -111,7 +161,7 @@ class fragmented_tree(abstract_trees):
         while to_do:
             current = to_do.pop()
             cycle = np.array(
-                self.lT.get_successors(current, end_time=end_time)
+                self.lT.get_successors(current, end_time=self.end_time)
             )
             if 0 < cycle.size:
                 cumul_sum_of_nodes = np.cumsum(self.node_length) * 2 + 1
@@ -145,7 +195,7 @@ class fragmented_tree(abstract_trees):
                 current = cycle[-1]
                 _next = self.lT[current]
                 self.times[current] = 1
-                if _next and self.lT.time[_next[0]] <= end_time:
+                if _next and self.lT.time[_next[0]] <= self.end_time:
                     to_do.extend(_next)
                     self.out_dict[current] = _next
                 else:
@@ -155,10 +205,9 @@ class fragmented_tree(abstract_trees):
 
     def get_norm(self):
         return sum(self.times.values())
-
+    
     def delta(self, x, y, corres1, corres2, times1, times2):
         return super().delta(x, y, corres1, corres2, times1, times2)
-
 
 class full_tree(abstract_trees):
     def __init__(self, **kwargs):

@@ -13,13 +13,11 @@ from numbers import Number
 from pathlib import Path
 from typing import TextIO
 import warnings
-
+from .tree_styles import tree_style
 try:
     from edist import uted
 except ImportError:
-    warnings.warn(
-        "No edist installed therefore you will not be able to compute the tree edit distance."
-    )
+    warnings.warn("No edist installed therefore you will not be able to compute the tree edit distance.")
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -1835,6 +1833,7 @@ class lineageTree:
 
         return self.Gabriel_graph[t]
 
+
     def get_predecessors(
         self, x: int, depth: int = None, start_time: int = None, end_time=None
     ) -> list:
@@ -1853,31 +1852,18 @@ class lineageTree:
         if not end_time:
             end_time = self.t_e
         unconstrained_cycle = [x]
-        cycle = (
-            [x]
-            if self.time[x] <= end_time and start_time <= self.time[x]
-            else []
-        )
+        cycle = [x] if self.time[x]<= end_time and start_time<=self.time[x] else []
         acc = 0
         while (
-            len(self[self.predecessor.get(unconstrained_cycle[0], [-1])[0]])
-            == 1
-            and acc != depth
+            len(self[self.predecessor.get(unconstrained_cycle[0], [-1])[0]]) == 1
+            and  acc != depth
         ):
-            unconstrained_cycle.insert(
-                0, self.predecessor[unconstrained_cycle[0]][0]
-            )
+            unconstrained_cycle.insert(0, self.predecessor[unconstrained_cycle[0]][0])
             acc += 1
-            if (
-                start_time
-                <= self.time[self.predecessor[unconstrained_cycle[0]][0]]
-                and self.time[self.predecessor[unconstrained_cycle[0]][0]]
-                <= end_time
-            ):
-                cycle.insert(0, unconstrained_cycle[0])
+            if start_time<= self.time[self.predecessor[unconstrained_cycle[0]][0]] and self.time[self.predecessor[unconstrained_cycle[0]][0]] <= end_time:
+                cycle.insert(0,unconstrained_cycle[0])
 
-        return cycle
-
+        return cycle 
     def get_successors(
         self, x: int, depth: int = None, end_time: int = None
     ) -> list:
@@ -2295,12 +2281,11 @@ class lineageTree:
         self,
         n1: int,
         n2: int,
-        delta: callable = None,
-        norm: callable = None,
         end_time: int = None,
-        get_tree_method: str = "comp",
+        style = "fragmented",
         node_lengths: tuple = (1, 5, 7),
     ) -> float:
+
         """
         TODO: Add option for choosing which tree aproximation should be used (Full, simple, comp)
         Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
@@ -2321,52 +2306,15 @@ class lineageTree:
             (float) The normed unordered tree edit distance
         """
 
-        if delta is None or not callable(delta):
 
-            def delta(x, y, corres1, corres2, times1, times2):
-                if x is None and y is None:
-                    return 0
-                if x is None:
-                    return times2[corres2[y]]
-                if y is None:
-                    return times1[corres1[x]]
-                len_x = times1[corres1[x]]
-                len_y = times2[corres2[y]]
-                return np.abs(len_x - len_y)  # / (len_x + len_y)
-
-            # def delta(x,y,corres1,corres2,times):
-            #     if x is None:
-            #         return 1
-            #     if y is None:
-            #         return 1
-            #     len_x = times[corres1[x]]
-            #     len_y = times[corres2[y]]
-            #     return np.abs(len_x - len_y) / (len_x + len_y)
-        if norm is False:
-
-            def norm(*args):
-                return 1
-
-        if norm is None or not callable(norm):
-
-            def norm(x, y):
-                return max(
-                    sum(
-                        self.get_simple_tree(n1, end_time=end_time)[1].values()
-                    ),
-                    sum(
-                        self.get_simple_tree(n2, end_time=end_time)[1].values()
-                    ),
-                )
-
-            # def norm(x,adj1,y,adj2,delta):
-            #     return max(uted(x,adj1,[],[],delta = delta),
-            #                uted(y,adj2,[],[],delta = delta))
-
-        simple_tree_1, times1 = self.get_fragmented_tree(n1, end_time=end_time)
-        simple_tree_2, times2 = self.get_fragmented_tree(n2, end_time=end_time)
-        nodes1, adj1, corres1 = self._edist_format(simple_tree_1)
-        nodes2, adj2, corres2 = self._edist_format(simple_tree_2)
+        tree = getattr(tree_style, style).value
+        tree1 = tree(**{"lT" : self, "node_length" : node_lengths, "end_time": end_time, "root": n1})
+        tree2 = tree(**{"lT" : self, "node_length" : node_lengths, "end_time": end_time, "root": n2})
+        delta = tree1.delta
+        simple_tree_1, times1 = tree1.get_tree()
+        simple_tree_2, times2 = tree2.get_tree()
+        nodes1, adj1, corres1 = tree1._edist_format(simple_tree_1)
+        nodes2, adj2, corres2 = tree1._edist_format(simple_tree_2)
         if len(nodes1) == len(nodes2) == 0:
             return 0
         delta_tmp = partial(
@@ -2376,9 +2324,9 @@ class lineageTree:
             times1=times1,
             times2=times2,
         )
-        return uted.uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / norm(
-            n1, n2
-        )
+        print(delta_tmp)
+       
+        return uted.uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / max(tree1.get_norm(), tree2.get_norm())
 
     def to_simple_networkx(self, node: int = None, start_time: int = 0):
         """
@@ -2409,7 +2357,7 @@ class lineageTree:
             nodes = set()
             for branch in self.get_all_branches_of_node(mom):
                 nodes.update((branch[0], branch[-1]))
-                if len(branch) > 1:
+                if 1 < len(branch) :
                     edges.add((branch[0], branch[-1]))
                 for suc in self[branch[-1]]:
                     edges.add((branch[-1], suc))
@@ -2471,7 +2419,7 @@ class lineageTree:
             kwargs: args accepted by networkx
         """
         graph = self.to_simple_networkx(node)
-        if len(graph) > 1:
+        if 1 < len(graph) :
             raise Warning("Please enter only one node")
         graph = graph[list(graph)[0]]
         plt.figure(1, figsize=figsize, dpi=dpi)
@@ -2558,7 +2506,7 @@ class lineageTree:
             r = [r]
         to_do = list(r)
         final_nodes = []
-        while len(to_do) > 0:
+        while 0 < len(to_do):
             curr = to_do.pop()
             for _next in self[curr]:
                 if self.time[_next] < t:
