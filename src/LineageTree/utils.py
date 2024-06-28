@@ -1,8 +1,9 @@
 import csv
 import random
+import warnings
 
 import networkx as nx
-import warnings
+
 from LineageTree import lineageTree
 
 try:

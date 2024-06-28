@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from enum import Enum
+
 import numpy as np
+
 from LineageTree import lineageTree
 
 
@@ -30,7 +32,6 @@ class abstract_trees(ABC):
                 not the first time point).
             (dict) {m (int): duration (float)}: life time duration of the cell `m`
         """
-        pass
 
     @abstractmethod
     def delta(self, x, y, corres1, corres2, times1, times2):
@@ -66,7 +67,6 @@ class abstract_trees(ABC):
         Returns:
             (int|float): The number of nodes of each tree according to each style.
         """
-        pass
 
     def _edist_format(self, adj_dict: dict):
         """Formating the custom tree style to the format needed by edist.
@@ -166,7 +166,7 @@ class fragmented_tree(abstract_trees):
             cycle = np.array(
                 self.lT.get_successors(current, end_time=self.end_time)
             )
-            if 0 < cycle.size:
+            if cycle.size > 0:
                 cumul_sum_of_nodes = np.cumsum(self.node_length) * 2 + 1
                 max_number_fragments = len(
                     cumul_sum_of_nodes[cumul_sum_of_nodes < len(cycle)]

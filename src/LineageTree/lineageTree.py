@@ -6,13 +6,14 @@ import csv
 import os
 import pickle as pkl
 import struct
+import warnings
 import xml.etree.ElementTree as ET
 from functools import partial
 from itertools import combinations
 from numbers import Number
 from pathlib import Path
 from typing import TextIO
-import warnings
+
 from .tree_styles import tree_style
 
 try:
@@ -2191,7 +2192,7 @@ class lineageTree:
         while to_do:
             current = to_do.pop()
             cycle = np.array(self.get_successors(current, end_time=end_time))
-            if 0 < cycle.size:
+            if cycle.size > 0:
                 cumul_sum_of_nodes = np.cumsum(node_lengths) * 2 + 1
                 max_number_fragments = len(
                     cumul_sum_of_nodes[cumul_sum_of_nodes < len(cycle)]
@@ -2322,20 +2323,10 @@ class lineageTree:
 
         tree = getattr(tree_style, style).value
         tree1 = tree(
-            **{
-                "lT": self,
-                "node_length": node_lengths,
-                "end_time": end_time,
-                "root": n1,
-            }
+            lT=self, node_length=node_lengths, end_time=end_time, root=n1
         )
         tree2 = tree(
-            **{
-                "lT": self,
-                "node_length": node_lengths,
-                "end_time": end_time,
-                "root": n2,
-            }
+            lT=self, node_length=node_lengths, end_time=end_time, root=n2
         )
         delta = tree1.delta
         simple_tree_1, times1 = tree1.get_tree()
@@ -2386,7 +2377,7 @@ class lineageTree:
             nodes = set()
             for branch in self.get_all_branches_of_node(mom):
                 nodes.update((branch[0], branch[-1]))
-                if 1 < len(branch):
+                if len(branch) > 1:
                     edges.add((branch[0], branch[-1]))
                 for suc in self[branch[-1]]:
                     edges.add((branch[-1], suc))
@@ -2448,7 +2439,7 @@ class lineageTree:
             kwargs: args accepted by networkx
         """
         graph = self.to_simple_networkx(node)
-        if 1 < len(graph):
+        if len(graph) > 1:
             raise Warning("Please enter only one node")
         graph = graph[list(graph)[0]]
         plt.figure(1, figsize=figsize, dpi=dpi)
@@ -2535,7 +2526,7 @@ class lineageTree:
             r = [r]
         to_do = list(r)
         final_nodes = []
-        while 0 < len(to_do):
+        while len(to_do) > 0:
             curr = to_do.pop()
             for _next in self[curr]:
                 if self.time[_next] < t:
