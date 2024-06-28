@@ -10,7 +10,7 @@ try:
     import motile
 except ImportError:
     warnings.warn(
-        "No m motile nstalled therefore you will not be able to produce links with motile."
+        "No motile nstalled therefore you will not be able to produce links with motile."
     )
 
 

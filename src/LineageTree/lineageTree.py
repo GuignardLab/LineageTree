@@ -2312,10 +2312,8 @@ class lineageTree:
         Args:
             n1 (int): id of the first node to compare
             n2 (int): id of the second node to compare
-            delta (callable): comparison function (see edist doc for more information)
-            norm (callable): norming function that takes the number of nodes
-                of the tree spawned by `n1` and the number of nodes
-                of the tree spawned by `n2` as arguments.
+            tree_style ("mini","simple","fragmented","full"): Which tree approximation is going to be used for the comparisons.
+                                                              Defaults to "fragmented".
 
         Returns:
             (float) The normed unordered tree edit distance
@@ -2342,7 +2340,6 @@ class lineageTree:
             times1=times1,
             times2=times2,
         )
-        print(delta_tmp)
 
         return uted.uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / max(
             tree1.get_norm(), tree2.get_norm()

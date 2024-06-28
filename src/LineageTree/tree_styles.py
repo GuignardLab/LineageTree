@@ -106,13 +106,40 @@ class mini_tree(abstract_trees):
         super().__init__(**kwargs)
 
     def get_tree(self):
-        return self
+        if self.end_time is None:
+            self.end_time = self.lT.t_e
+        out_dict = {}
+        self.times = {}
+        to_do = [self.root]
+        while to_do:
+            current = to_do.pop()
+            cycle = np.array(self.lT.get_successors(current))
+            cycle_times = np.array([self.lT.time[c] for c in cycle])
+            cycle = cycle[cycle_times <= self.end_time]
+            if cycle.size:
+                _next = self.lT[cycle[-1]]
+                if len(_next) > 1:
+                    out_dict[current] = _next
+                    to_do.extend(_next)
+                else:
+                    out_dict[current] = []
+        self.length = len(out_dict)
+        return out_dict, None
 
     def get_norm(self):
-        return super().get_norm()
+        return self.length
 
     def _edist_format(self, adj_dict: dict):
         return super()._edist_format(adj_dict)
+
+    def delta(self, x, y, corres1, corres2, times1, times2):
+        if x is None and y is None:
+            return 0
+        if x is None:
+            return 1
+        if y is None:
+            return 1
+        return 0
 
 
 class simple_tree(abstract_trees):
@@ -223,3 +250,7 @@ class tree_style(Enum):
     simple = simple_tree
     fragmented = fragmented_tree
     full = full_tree
+
+    @classmethod
+    def list_names(self):
+        return [style.name for style in self]
