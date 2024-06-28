@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 import numpy as np
-from  LineageTree import lineageTree
+from LineageTree import lineageTree
 
 
 class abstract_trees(ABC):
@@ -137,11 +137,14 @@ class simple_tree(abstract_trees):
                     to_do.extend(_next)
                 else:
                     out_dict[current] = []
-            self.times[current] = len(cycle)#* time_resolution will be fixed when working on registered trees.
+            self.times[current] = len(
+                cycle
+            )  # * time_resolution will be fixed when working on registered trees.
         return out_dict, self.times
-    
+
     def delta(self, x, y, corres1, corres2, times1, times2):
         return super().delta(x, y, corres1, corres2, times1, times2)
+
     def get_norm(self):
         return sum(self.times.values())
 
@@ -205,9 +208,10 @@ class fragmented_tree(abstract_trees):
 
     def get_norm(self):
         return sum(self.times.values())
-    
+
     def delta(self, x, y, corres1, corres2, times1, times2):
         return super().delta(x, y, corres1, corres2, times1, times2)
+
 
 class full_tree(abstract_trees):
     def __init__(self, **kwargs):
