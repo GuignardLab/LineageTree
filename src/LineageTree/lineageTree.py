@@ -1383,6 +1383,43 @@ class lineageTree:
         self.t_b = min(self.time_nodes.keys())
         self.t_e = max(self.time_nodes.keys())
 
+    def read_from_vec2track(self, vec2track):
+        """
+        TODO: write doc
+        """
+        self.node_name = {}
+
+        self.t_b = min(vec2track.mapping)
+        self.t_e = max(vec2track.mapping)
+
+        id_mapping = {}
+        id_ = 0
+        for t in range(self.t_b + 1, self.t_e + 1):
+            mapping = vec2track.mapping[t]
+            for c_t1, c_t0 in mapping:
+                id_mapping[c_t1] = id_
+                id_ += 1
+                new_id_t1 = id_mapping[c_t1]
+                if not c_t0 in id_mapping[c_t0]:
+                    id_mapping[c_t0] = id_
+                    self.nodes.add(id_)
+                    self.time_nodes.setdefault(t - 1, []).append(id_)
+                    self.time[id_] = t - 1
+                    id_ += 1
+                new_id_t0 = id_mapping[c_t0]
+                self.nodes.add(new_id_t1)
+                self.time_nodes.setdefault(t, []).append(new_id_t1)
+                self.time[new_id_t1] = t
+                self.predecessor.setdefault(new_id_t1, []).append(new_id_t0)
+                self.successor.setdefault(new_id_t0, []).append(new_id_t1)
+                self.edges.add((new_id_t0, new_id_t1))
+                self.time_edges.setdefault(t - 1, []).append((new_id_t0, new_id_t1))
+        inv_id_mapping = {v: k for k, v in id_mapping.items()}
+
+        for c in self.nodes:
+            self.pos[c] = vec2track.positions[self.time[c]][inv_id_mapping[c]]
+
+
     def read_from_mastodon_csv(self, path: str):
         """
         TODO: Write doc
