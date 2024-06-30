@@ -2430,4 +2430,5 @@ class lineageTree:
                 f.close()
             self.__dict__.update(tmp.__dict__)
         elif file_format is not None:
-            self.read_from_binary(file_format)
+            self.read_from_vec2track(file_format)
+            # self.read_from_binary(file_format)
