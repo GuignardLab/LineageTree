@@ -659,12 +659,17 @@ class lineageTree:
                         edges_to_use += list(s_edges)
             else:
                 edges_to_use = []
+                nodes_to_use = set(nodes_to_use)
                 if temporal:
-                    edges_to_use += [
-                        e
-                        for e in self.edges
-                        if e[0] in nodes_to_use and e[1] in nodes_to_use
-                    ]
+                    for n in nodes_to_use:
+                        for d in self.successor.get(n, []):
+                            if d in nodes_to_use:
+                                edges_to_use.append((n, d))
+                    # edges_to_use += [
+                    #     e
+                    #     for e in self.edges
+                    #     if e[0] in nodes_to_use and e[1] in nodes_to_use
+                    # ]
                 if spatial:
                     edges_to_use += [
                         e for e in s_edges if t_min < self.time[e[0]] < t_max
@@ -1862,6 +1867,7 @@ class lineageTree:
         If the value `depth` is provided and not None,
         `depth_pred` and `depth_succ` are overwriten by `depth`.
         The ordered list of ids is returned.
+        If all `depth` are None, the full cycle is returned.
 
         Args:
             x (int): id of the node to compute
@@ -2051,7 +2057,7 @@ class lineageTree:
             cycle = np.array(self.get_successors(current))
             cycle_times = np.array([self.time[c] for c in cycle])
             cycle = cycle[cycle_times < end_time]
-            if cycle:
+            if cycle.size:
                 _next = self.successor.get(cycle[-1], [])
                 if 1 < len(_next):
                     out_dict[current] = _next
