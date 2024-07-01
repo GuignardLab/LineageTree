@@ -1,5 +1,6 @@
-from lineageTree import lineageTree
 import csv
+
+from lineageTree import lineageTree
 
 """Writes a lineage tree into a series of csv files.
 
