@@ -1,11 +1,11 @@
 import unittest
+
 import edist.uted as uted
 
 
 # the purpose of this test is to reproduce results mentioned in Guignard et al. (2020) with the tools used
 # for the results in the publication
 class TestTreex(unittest.TestCase):
-
     # simple test case to test the implementation of the Zhang edit distance
     def test_edist_zhang_edit_distance_tree1_tree2(self):
         tree1_nodes = ["a", "b", "c"]
@@ -71,9 +71,7 @@ class TestTreex(unittest.TestCase):
         def local_cost_normalized(t1, t2):
             if t1 is None and t2 is None:
                 return 0
-            elif t1 is None:
-                return 1
-            elif t2 is None:
+            elif t1 is None or t2 is None or t2 is None:
                 return 1
             return abs(t1_attributes[t1] - t2_attributes[t2]) / (
                 t1_attributes[t1] + t2_attributes[t2]
@@ -202,9 +200,7 @@ class TestTreex(unittest.TestCase):
         def local_cost_normalized(t1, t2):
             if t1 is None and t2 is None:
                 return 0
-            elif t1 is None:
-                return 1
-            elif t2 is None:
+            elif t1 is None or t2 is None:
                 return 1
             return abs(t_a80007_attributes[t1] - t_a80008_attributes[t2]) / (
                 t_a80007_attributes[t1] + t_a80008_attributes[t2]
