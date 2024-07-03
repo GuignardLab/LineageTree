@@ -1855,27 +1855,22 @@ class lineageTree:
         if not end_time:
             end_time = self.t_e
         unconstrained_cycle = [x]
-        cycle = (
-            [x]
-            if self.time[x] <= end_time and start_time <= self.time[x]
-            else []
-        )
+        cycle = [x] if start_time <= self.time[x] <= end_time else []
         acc = 0
         while (
             len(self[self.predecessor.get(unconstrained_cycle[0], [-1])[0]])
             == 1
             and acc != depth
+            and start_time
+            <= self.time.get(
+                self.predecessor.get(unconstrained_cycle[0], [-1])[0], -1
+            )
         ):
             unconstrained_cycle.insert(
                 0, self.predecessor[unconstrained_cycle[0]][0]
             )
             acc += 1
-            if (
-                start_time
-                <= self.time[self.predecessor[unconstrained_cycle[0]][0]]
-                and self.time[self.predecessor[unconstrained_cycle[0]][0]]
-                <= end_time
-            ):
+            if start_time <= self.time[unconstrained_cycle[0]] <= end_time:
                 cycle.insert(0, unconstrained_cycle[0])
 
         return cycle
@@ -2121,7 +2116,6 @@ class lineageTree:
             ancestor = self.predecessor.get(ancestor, [-1])[0]
         return ancestor
 
-
     def unordered_tree_edit_distances_at_time_t(
         self,
         t: int,
@@ -2185,7 +2179,7 @@ class lineageTree:
             (float) The normed unordered tree edit distance
         """
 
-        tree = getattr(tree_style, style).value
+        tree = tree_style[style].value
         tree1 = tree(
             lT=self, node_length=node_lengths, end_time=end_time, root=n1
         )

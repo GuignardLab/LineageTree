@@ -2,10 +2,11 @@ import os
 import pickle as pkl
 from functools import partial
 
-import numpy as np
 from edist.uted import uted
 
 from LineageTree import lineageTree
+
+from .tree_styles import tree_style
 
 
 class LineageTreeManager:
@@ -107,11 +108,13 @@ class LineageTreeManager:
     def cross_lineage_edit_distance(
         self,
         n1: int,
-        embryo_1: str,
+        embryo_1,
         end_time1: int,
         n2: int,
-        embryo_2: str,
+        embryo_2,
         end_time2: int,
+        style="fragmented",
+        node_lengths: tuple = (1, 5, 7),
         registration=None,
     ):
         """Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
@@ -130,32 +133,24 @@ class LineageTreeManager:
             registration (_type_, optional): _description_. Defaults to None.
         """
 
-        def delta(x, y, corres1, corres2, times1, times2):
-            if x is None and y is None:
-                return 0
-            if x is None:
-                return times2[corres2[y]]
-            if y is None:
-                return times1[corres1[x]]
-            len_x = times1[corres1[x]]
-            len_y = times2[corres2[y]]
-            return np.abs(len_x - len_y)
-
-        def norm(times1, times2):
-            return max(sum(times1.values()), sum(times2.values()))
-
-        simple_tree_1, times1 = self.lineagetrees[embryo_1].get_comp_tree(
-            n1, end_time=end_time1
+        tree = getattr(tree_style, style).value
+        tree1 = tree(
+            lT=self.lineagetrees[embryo_1],
+            node_length=node_lengths,
+            end_time=end_time1,
+            root=n1,
         )
-        simple_tree_2, times2 = self.lineagetrees[embryo_2].get_comp_tree(
-            n2, end_time=end_time2
+        tree2 = tree(
+            lT=self.lineagetrees[embryo_2],
+            node_length=node_lengths,
+            end_time=end_time2,
+            root=n2,
         )
-        nodes1, adj1, corres1 = self.lineagetrees[embryo_1]._edist_format(
-            simple_tree_1
-        )
-        nodes2, adj2, corres2 = self.lineagetrees[embryo_2]._edist_format(
-            simple_tree_2
-        )
+        delta = tree1.delta
+        simple_tree_1, times1 = tree1.get_tree()
+        simple_tree_2, times2 = tree2.get_tree()
+        nodes1, adj1, corres1 = tree1._edist_format(simple_tree_1)
+        nodes2, adj2, corres2 = tree2._edist_format(simple_tree_2)
         if len(nodes1) == len(nodes2) == 0:
             return 0
 
@@ -166,6 +161,6 @@ class LineageTreeManager:
             corres2=corres2,
             times2=times2,
         )
-        return uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / norm(
-            times1, times2
+        return uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / max(
+            tree1.get_norm(), tree2.get_norm()
         )
