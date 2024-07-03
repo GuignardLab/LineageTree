@@ -32,8 +32,6 @@ from scipy.spatial import cKDTree as KDTree
 
 from .utils import hierarchy_pos, postions_of_nx
 from sklearn.metrics.pairwise import euclidean_distances
-from scipy.interpolate import InterpolatedUnivariateSpline
-import matplotlib.pyplot as plt
 
 
 class lineageTree:
@@ -98,7 +96,9 @@ class lineageTree:
         self.nodes.difference_update(track)
         times = {self.time[n] for n in track}
         for t in times:
-            self.time_nodes[t] = list(set(self.time_nodes[t]).difference(track))
+            self.time_nodes[t] = list(
+                set(self.time_nodes[t]).difference(track)
+            )
         for i, c in enumerate(track):
             self.pos.pop(c)
             if i != 0:
@@ -280,13 +280,21 @@ class lineageTree:
                 for C in self.to_take_time[t]:
                     f.write(
                         "%d\n"
-                        % (int(manual_labels.get(C, default_label) != default_label))
+                        % (
+                            int(
+                                manual_labels.get(C, default_label)
+                                != default_label
+                            )
+                        )
                     )
                     f.write("%d\n" % (0))
 
                 f.write("@7\n")
                 for C in self.to_take_time[t]:
-                    f.write("%f\n" % (np.linalg.norm(points_v[C][0] - points_v[C][-1])))
+                    f.write(
+                        "%f\n"
+                        % (np.linalg.norm(points_v[C][0] - points_v[C][-1]))
+                    )
 
                 f.write("@8\n")
                 for _ in self.to_take_time[t]:
@@ -307,7 +315,9 @@ class lineageTree:
         if c in done:
             return done[c][0]
         else:
-            P = np.mean([self._get_height(di, done) for di in self.successor[c]])
+            P = np.mean(
+                [self._get_height(di, done) for di in self.successor[c]]
+            )
             done[c] = [P, self.vert_space_factor * self.time[c]]
             return P
 
@@ -562,7 +572,9 @@ class lineageTree:
                     new_ids_daughters = tmp
                 for (
                     daugther
-                ) in new_ids_daughters:  ## For each daughter in the list of daughters
+                ) in (
+                    new_ids_daughters
+                ):  ## For each daughter in the list of daughters
                     id_to_tree[id_mother].add_subtree(
                         id_to_tree[daugther]
                     )  ## Add the Treex daughter as a subtree of the Treex mother
@@ -656,11 +668,15 @@ class lineageTree:
                     edges_to_use = []
                     if temporal:
                         edges_to_use += [
-                            e for e in self.edges if t_min < self.time[e[0]] < t_max
+                            e
+                            for e in self.edges
+                            if t_min < self.time[e[0]] < t_max
                         ]
                     if spatial:
                         edges_to_use += [
-                            e for e in s_edges if t_min < self.time[e[0]] < t_max
+                            e
+                            for e in s_edges
+                            if t_min < self.time[e[0]] < t_max
                         ]
                 else:
                     nodes_to_use = list(self.nodes)
@@ -701,7 +717,11 @@ class lineageTree:
                 tmp_names = {}
                 for k, v in node_properties[Names][0].items():
                     if (
-                        len(self.successor.get(self.predecessor.get(k, [-1])[0], []))
+                        len(
+                            self.successor.get(
+                                self.predecessor.get(k, [-1])[0], []
+                            )
+                        )
                         != 1
                         or self.time[k] == t_min + 1
                     ):
@@ -719,12 +739,22 @@ class lineageTree:
             nodes_to_use.update(order_on_nodes)
 
             for i, e in enumerate(edges_to_use):
-                f.write("(edge " + str(i) + " " + str(e[0]) + " " + str(e[1]) + ")\n")
+                f.write(
+                    "(edge "
+                    + str(i)
+                    + " "
+                    + str(e[0])
+                    + " "
+                    + str(e[1])
+                    + ")\n"
+                )
 
             f.write('(property 0 int "time"\n')
             f.write('\t(default "0" "0")\n')
             for n in nodes_to_use:
-                f.write("\t(node " + str(n) + ' "' + str(self.time[n]) + '")\n')
+                f.write(
+                    "\t(node " + str(n) + ' "' + str(self.time[n]) + '")\n'
+                )
             f.write(")\n")
 
             if write_layout:
@@ -732,7 +762,11 @@ class lineageTree:
                 f.write('\t(default "(0, 0, 0)" "()")\n')
                 for n in nodes_to_use:
                     f.write(
-                        "\t(node " + str(n) + ' "' + str(tuple(self.pos[n])) + '")\n'
+                        "\t(node "
+                        + str(n)
+                        + ' "'
+                        + str(tuple(self.pos[n]))
+                        + '")\n'
                     )
                 f.write(")\n")
                 f.write('(property 0 double "distance"\n')
@@ -740,7 +774,9 @@ class lineageTree:
                 for i, e in enumerate(edges_to_use):
                     d_tmp = np.linalg.norm(self.pos[e[0]] - self.pos[e[1]])
                     f.write("\t(edge " + str(i) + ' "' + str(d_tmp) + '")\n')
-                    f.write("\t(node " + str(e[0]) + ' "' + str(d_tmp) + '")\n')
+                    f.write(
+                        "\t(node " + str(e[0]) + ' "' + str(d_tmp) + '")\n'
+                    )
                 f.write(")\n")
 
             if node_properties:
@@ -797,7 +833,9 @@ class lineageTree:
         lines_to_int = []
         corres = {}
         for line in lines:
-            lines_to_int += [[convert_for_csv(v.strip()) for v in line.split(delim)]]
+            lines_to_int += [
+                [convert_for_csv(v.strip()) for v in line.split(delim)]
+            ]
         lines_to_int = np.array(lines_to_int)
         if link == 2:
             lines_to_int = lines_to_int[np.argsort(lines_to_int[:, 0])]
@@ -957,7 +995,9 @@ class lineageTree:
             if "cell_fate" in tmp_data:
                 self.fates[unique_id] = tmp_data["cell_fate"].get(n, "")
             if "cell_barycenter" in tmp_data:
-                self.pos[unique_id] = tmp_data["cell_barycenter"].get(n, np.zeros(3))
+                self.pos[unique_id] = tmp_data["cell_barycenter"].get(
+                    n, np.zeros(3)
+                )
 
             unique_id += 1
         if do_surf:
@@ -976,7 +1016,9 @@ class lineageTree:
                 self.successor[new_id] = [
                     self.pkl2lT[ni] for ni in lt[n] if ni in self.pkl2lT
                 ]
-                self.edges.update([(new_id, ni) for ni in self.successor[new_id]])
+                self.edges.update(
+                    [(new_id, ni) for ni in self.successor[new_id]]
+                )
                 for ni in self.successor[new_id]:
                     self.time_edges.setdefault(t - 1, set()).add((new_id, ni))
 
@@ -1001,14 +1043,16 @@ class lineageTree:
             if not (prop_name in discard or hasattr(self, prop_name)):
                 if isinstance(prop_values, dict):
                     dictionary = {
-                        self.pkl2lT.get(k, -1): v for k, v in prop_values.items()
+                        self.pkl2lT.get(k, -1): v
+                        for k, v in prop_values.items()
                     }
                     # is it a regular dictionary or a dictionary with dictionaries inside?
                     for key, value in dictionary.items():
                         if isinstance(value, dict):
                             # rename all ids from old to new
                             dictionary[key] = {
-                                self.pkl2lT.get(k, -1): v for k, v in value.items()
+                                self.pkl2lT.get(k, -1): v
+                                for k, v in value.items()
                             }
                     self.__dict__[prop_name] = dictionary
                     self.specific_properties.append(prop_name)
@@ -1125,7 +1169,9 @@ class lineageTree:
                     elif implicit_l_t.get(self.name[c]) in name_to_id:
                         p = name_to_id[implicit_l_t.get(self.name[c])]
                     else:
-                        print("error, cell %s has no predecessors" % self.name[c])
+                        print(
+                            "error, cell %s has no predecessors" % self.name[c]
+                        )
                         p = None
                     self.predecessor.setdefault(c, []).append(p)
                     self.successor.setdefault(p, []).append(c)
@@ -1211,7 +1257,9 @@ class lineageTree:
                     elif implicit_l_t.get(self.name[c]) in name_to_id:
                         p = name_to_id[implicit_l_t.get(self.name[c])]
                     else:
-                        print("error, cell %s has no predecessors" % self.name[c])
+                        print(
+                            "error, cell %s has no predecessors" % self.name[c]
+                        )
                         p = None
                     self.predecessor.setdefault(c, []).append(p)
                     self.successor.setdefault(p, []).append(c)
@@ -1219,7 +1267,9 @@ class lineageTree:
                     self.time_edges.setdefault(t - 1, set()).add((p, c))
             self.max_id = unique_id
 
-    def read_tgmm_xml(self, file_format: str, tb: int, te: int, z_mult: float = 1.0):
+    def read_tgmm_xml(
+        self, file_format: str, tb: int, te: int, z_mult: float = 1.0
+    ):
         """Reads a lineage tree from TGMM xml output.
 
         Args:
@@ -1260,18 +1310,33 @@ class lineageTree:
             self.time_nodes[t] = set()
             self.time_edges[t] = set()
             for it in root:
-                if "-1.#IND" not in it.attrib["m"] and "nan" not in it.attrib["m"]:
+                if (
+                    "-1.#IND" not in it.attrib["m"]
+                    and "nan" not in it.attrib["m"]
+                ):
                     M_id, pos, cell_id, svIdx, lin_id = (
                         int(it.attrib["parent"]),
-                        [float(v) for v in it.attrib["m"].split(" ") if v != ""],
+                        [
+                            float(v)
+                            for v in it.attrib["m"].split(" ")
+                            if v != ""
+                        ],
                         int(it.attrib["id"]),
-                        [int(v) for v in it.attrib["svIdx"].split(" ") if v != ""],
+                        [
+                            int(v)
+                            for v in it.attrib["svIdx"].split(" ")
+                            if v != ""
+                        ],
                         int(it.attrib["lineage"]),
                     )
                     try:
                         alpha, W, nu, alphaPrior = (
                             float(it.attrib["alpha"]),
-                            [float(v) for v in it.attrib["W"].split(" ") if v != ""],
+                            [
+                                float(v)
+                                for v in it.attrib["W"].split(" ")
+                                if v != ""
+                            ],
                             float(it.attrib["nu"]),
                             float(it.attrib["alphaPrior"]),
                         )
@@ -1298,7 +1363,9 @@ class lineageTree:
                         self.intensity[C] = max(alpha - alphaPrior, 0)
                         tmp = list(np.array(W) * nu)
                         self.W[C] = np.array(W).reshape(3, 3)
-                        self.coeffs[C] = tmp[:3] + tmp[4:6] + tmp[8:9] + list(pos)
+                        self.coeffs[C] = (
+                            tmp[:3] + tmp[4:6] + tmp[8:9] + list(pos)
+                        )
                         unique_id += 1
                     except Exception:
                         pass
@@ -1337,7 +1404,9 @@ class lineageTree:
             self.predecessor.setdefault(target, []).append(source)
             self.successor.setdefault(source, []).append(target)
             self.edges.add((source, target))
-            self.time_edges.setdefault(self.time[source], set()).add((source, target))
+            self.time_edges.setdefault(self.time[source], set()).add(
+                (source, target)
+            )
         self.t_b = min(self.time_nodes.keys())
         self.t_e = max(self.time_nodes.keys())
 
@@ -1377,7 +1446,9 @@ class lineageTree:
             self.predecessor.setdefault(target, []).append(source)
             self.successor.setdefault(source, []).append(target)
             self.edges.add((source, target))
-            self.time_edges.setdefault(self.time[source], set()).add((source, target))
+            self.time_edges.setdefault(self.time[source], set()).add(
+                (source, target)
+            )
         self.t_b = min(self.time_nodes.keys())
         self.t_e = max(self.time_nodes.keys())
 
@@ -1568,7 +1639,9 @@ class lineageTree:
                 time = dict(list(zip(tmp, time_sequence)))
                 for c, t in time.items():
                     time_nodes.setdefault(t, set()).add(c)
-                pos = dict(list(zip(tmp, np.reshape(pos_sequence, (len_time, 3)))))
+                pos = dict(
+                    list(zip(tmp, np.reshape(pos_sequence, (len_time, 3))))
+                )
                 is_root = {c: True for c in tmp}
                 nodes = tmp
                 done = True
@@ -1607,7 +1680,9 @@ class lineageTree:
             elif number_sequence[i + 1] >= 0:
                 successor[c] = [number_sequence[i + 1]]
                 edges.append((c, number_sequence[i + 1]))
-                time_edges.setdefault(t, set()).add((c, number_sequence[i + 1]))
+                time_edges.setdefault(t, set()).add(
+                    (c, number_sequence[i + 1])
+                )
                 is_root[number_sequence[i + 1]] = False
                 pos[c] = pos_sequence[:3]
                 pos_sequence = pos_sequence[3:]
@@ -1752,7 +1827,9 @@ class lineageTree:
                     if not any(
                         np.linalg.norm((data[ni] + data[e1]) / 2 - data[i])
                         < np.linalg.norm(data[ni] - data[e1]) / 2
-                        for i in delaunay_graph[e1].intersection(delaunay_graph[ni])
+                        for i in delaunay_graph[e1].intersection(
+                            delaunay_graph[ni]
+                        )
                     ):
                         Gabriel_graph.setdefault(data_corres[e1], set()).add(
                             data_corres[ni]
@@ -1970,7 +2047,10 @@ class lineageTree:
         time_range = set(range(t_b, t_e + 1)).intersection(self.time_nodes)
         for t in time_range:
             idx3d, nodes = self.get_idx3d(t)
-            nb_ni = [(len(ni) - 1) / s_vol for ni in idx3d.query_ball_tree(idx3d, th)]
+            nb_ni = [
+                (len(ni) - 1) / s_vol
+                for ni in idx3d.query_ball_tree(idx3d, th)
+            ]
             self.spatial_density.update(dict(zip(nodes, nb_ni)))
         return self.spatial_density
 
@@ -2011,7 +2091,9 @@ class lineageTree:
             idx3d, nodes = self.get_idx3d(t)
             neighbs = idx3d.query_ball_tree(idx3d, th)
             out = dict(zip(nodes, [set(nodes[ni]) for ni in neighbs]))
-            self.th_edges.update({k: v.difference([k]) for k, v in out.items()})
+            self.th_edges.update(
+                {k: v.difference([k]) for k, v in out.items()}
+            )
         return self.th_edges
 
     def main_axes(self, time: int = None):
@@ -2359,7 +2441,9 @@ class lineageTree:
         elif np.issubdtype(type(item), np.integer):
             return self.successor.get(item, [])
         else:
-            raise KeyError("Only integer or string are valid key for lineageTree")
+            raise KeyError(
+                "Only integer or string are valid key for lineageTree"
+            )
 
     def get_cells_at_t_from_root(self, r: [int, list], t: int = None) -> list:
         """
@@ -2388,7 +2472,8 @@ class lineageTree:
             return list(r)
         return final_nodes
 
-    def dp(self, dist_mat, start_d=0, back_d=0):
+    @staticmethod
+    def __dp(dist_mat, start_d=0, back_d=0):
         """
         Find DTW minimum cost between two series using dynamic programming.
 
@@ -2432,7 +2517,10 @@ class lineageTree:
         min_index1 = np.argmin(cost_mat[N - back_d :, M])
         min_index2 = np.argmin(cost_mat[N, M - back_d :])
 
-        if cost_mat[N - back_d + min_index1, M] > cost_mat[N, M - back_d + min_index2]:
+        if (
+            cost_mat[N - back_d + min_index1, M]
+            > cost_mat[N, M - back_d + min_index2]
+        ):
             i = N - 1
             j = M - back_d + min_index2 - 1
         else:
@@ -2458,7 +2546,8 @@ class lineageTree:
         cost_mat = cost_mat[1:, 1:]
         return path[::-1], cost_mat
 
-    def calculate_diag_line(self, dist_mat):
+    @staticmethod
+    def __calculate_diag_line(dist_mat):
         """
         Calculate the line that centers the band w.
 
@@ -2478,7 +2567,8 @@ class lineageTree:
         intercept = y1 - slope * x1
         return slope, intercept
 
-    def fast_dp(self, dist_mat, w, start_d=0, back_d=0):
+    @staticmethod
+    def __fast_dp(self, dist_mat, w, start_d=0, back_d=0):
         """
         Find DTW minimum cost between two series using dynamic programming.
         Fast algorithm using a centered Sakoe-Chiba band width w
@@ -2494,7 +2584,7 @@ class lineageTree:
                 (matrix) Cost matrix
         """
         N, M = dist_mat.shape
-        slope, intercept = self.calculate_diag_line(dist_mat)
+        slope, intercept = self.__calculate_diag_line(dist_mat)
 
         # Initialize the cost matrix
         cost_mat = np.full((N + 1, M + 1), np.inf)
@@ -2513,8 +2603,8 @@ class lineageTree:
 
         square_root = np.sqrt((slope**2) + ((-1) ** 2))
 
-        for i in range(0, N):
-            for j in range(0, M):
+        for i in range(N):
+            for j in range(M):
                 if (
                     abs(slope * i - j + intercept) / square_root <= w_limit
                 ):  # Only consider elements within the Sakoe-Chiba band - a[i][n-1-i]
@@ -2524,13 +2614,18 @@ class lineageTree:
                         cost_mat[i + 1, j],
                     ]  # deletion (2)
                     i_penalty = np.argmin(penalty)
-                    cost_mat[i + 1, j + 1] = dist_mat[i, j] + penalty[i_penalty]
+                    cost_mat[i + 1, j + 1] = (
+                        dist_mat[i, j] + penalty[i_penalty]
+                    )
                     traceback_mat[i, j] = i_penalty
 
         min_index1 = np.argmin(cost_mat[N - back_d :, M])
         min_index2 = np.argmin(cost_mat[N, M - back_d :])
 
-        if cost_mat[N - back_d + min_index1, M] > cost_mat[N, M - back_d + min_index2]:
+        if (
+            cost_mat[N - back_d + min_index1, M]
+            > cost_mat[N, M - back_d + min_index2]
+        ):
             i = N - 1
             j = M - back_d + min_index2 - 1
         else:
@@ -2557,7 +2652,8 @@ class lineageTree:
         cost_mat = cost_mat[1:, 1:]
         return (path[::-1], cost_mat)
 
-    def fast_dp_abs(self, dist_mat, w, start_d=0, back_d=0):
+    @staticmethod
+    def __fast_dp_abs(dist_mat, w, start_d=0, back_d=0):
         """
         Find DTW minimum cost between two series using dynamic programming.
         Fast algorithm using a uncentered Sakoe-Chiba band width w
@@ -2588,8 +2684,8 @@ class lineageTree:
         cost_mat[N - back_d :, M] = 0
         cost_mat[N, M - back_d :] = 0
 
-        for i in range(0, N):
-            for j in range(0, M):
+        for i in range(N):
+            for j in range(M):
                 if (
                     abs(i - j) <= w_limit
                 ):  # Only consider elements within the Sakoe-Chiba band - a[i][n-1-i]
@@ -2599,13 +2695,18 @@ class lineageTree:
                         cost_mat[i + 1, j],
                     ]  # deletion (2)
                     i_penalty = np.argmin(penalty)
-                    cost_mat[i + 1, j + 1] = dist_mat[i, j] + penalty[i_penalty]
+                    cost_mat[i + 1, j + 1] = (
+                        dist_mat[i, j] + penalty[i_penalty]
+                    )
                     traceback_mat[i, j] = i_penalty
 
         min_index1 = np.argmin(cost_mat[N - back_d :, M])
         min_index2 = np.argmin(cost_mat[N, M - back_d :])
 
-        if cost_mat[N - back_d + min_index1, M] > cost_mat[N, M - back_d + min_index2]:
+        if (
+            cost_mat[N - back_d + min_index1, M]
+            > cost_mat[N, M - back_d + min_index2]
+        ):
             i = N - 1
             j = M - back_d + min_index2 - 1
         else:
@@ -2632,16 +2733,21 @@ class lineageTree:
         cost_mat = cost_mat[1:, 1:]
         return (path[::-1], cost_mat)
 
-    def rigid_transform_3D(self, A, B):
+    @staticmethod
+    def __rigid_transform_3D(A, B):
         assert A.shape == B.shape
 
         num_rows, num_cols = A.shape
         if num_rows != 3:
-            raise Exception(f"matrix A is not 3xN, it is {num_rows}x{num_cols}")
+            raise Exception(
+                f"matrix A is not 3xN, it is {num_rows}x{num_cols}"
+            )
 
         num_rows, num_cols = B.shape
         if num_rows != 3:
-            raise Exception(f"matrix B is not 3xN, it is {num_rows}x{num_cols}")
+            raise Exception(
+                f"matrix B is not 3xN, it is {num_rows}x{num_cols}"
+            )
 
         # find mean column wise
         centroid_A = np.mean(A, axis=1)
@@ -2671,7 +2777,7 @@ class lineageTree:
 
         return R, t
 
-    def interpolate(self, track1, track2, threshold):
+    def __interpolate(self, track1, track2, threshold):
         """
         Interpolate two series that have different lengths
 
@@ -2695,13 +2801,11 @@ class lineageTree:
         ):
             return track1_pos, track2_pos
         # Both tracks have the same length but one or more sizes are above the threshold
-        elif len(track1) == len(track2) and (
-            len(track1) > threshold or len(track2) > threshold
-        ):
-            sampling = threshold
-        # Tracks have different lengths and one or more sizes are above the threshold
-        elif len(track1) != len(track2) and (
-            len(track1) > threshold or len(track2) > threshold
+        elif (
+            len(track1) == len(track2)
+            and (len(track1) > threshold or len(track2) > threshold)
+            or len(track1) != len(track2)
+            and (len(track1) > threshold or len(track2) > threshold)
         ):
             sampling = threshold
         # Tracks have different lengths and the sizes are below the threshold
@@ -2710,12 +2814,16 @@ class lineageTree:
 
         for pos in range(3):
             track1_interp = InterpolatedUnivariateSpline(
-                np.linspace(0, 1, len(track1_pos[:, pos])), track1_pos[:, pos], k=1
+                np.linspace(0, 1, len(track1_pos[:, pos])),
+                track1_pos[:, pos],
+                k=1,
             )
             inter1_pos.append(track1_interp(np.linspace(0, 1, sampling)))
 
             track2_interp = InterpolatedUnivariateSpline(
-                np.linspace(0, 1, len(track2_pos[:, pos])), track2_pos[:, pos], k=1
+                np.linspace(0, 1, len(track2_pos[:, pos])),
+                track2_pos[:, pos],
+                k=1,
             )
             inter2_pos.append(track2_interp(np.linspace(0, 1, sampling)))
 
@@ -2725,13 +2833,14 @@ class lineageTree:
         self,
         nodes1,
         nodes2,
-        threshold,
+        threshold=1000,
         regist=True,
         start_d=0,
         back_d=0,
         fast=False,
         w=0,
         centered_band=True,
+        cost_mat_p=False,
     ):
         """
         Calculate DTW distance between two cell cycles
@@ -2745,6 +2854,7 @@ class lineageTree:
                 fast (boolean): True if the user wants to run the fast algorithm with window restrains
                 w (int): window size
                 centered_band (boolean): if running the fast algorithm, True if the windown is centered
+                cost_mat_p (boolean): True if print the not normalized cost matrix
 
             Returns:
                 (float) DTW distance
@@ -2755,7 +2865,7 @@ class lineageTree:
         nodes1_cycle = self.get_cycle(nodes1)
         nodes2_cycle = self.get_cycle(nodes2)
 
-        interp_cycle1, interp_cycle2 = self.interpolate(
+        interp_cycle1, interp_cycle2 = self.__interpolate(
             nodes1_cycle, nodes2_cycle, threshold
         )
 
@@ -2763,7 +2873,7 @@ class lineageTree:
         pos_cycle2 = np.array([self.pos[c_id] for c_id in nodes2_cycle])
 
         if regist:
-            R, t = self.rigid_transform_3D(
+            R, t = self.__rigid_transform_3D(
                 np.transpose(interp_cycle1), np.transpose(interp_cycle2)
             )
             pos_cycle1 = np.transpose(np.dot(R, pos_cycle1.T) + t)
@@ -2773,23 +2883,28 @@ class lineageTree:
 
         dist_mat = euclidean_distances(pos_cycle1, pos_cycle2)
 
-        if fast == True:
+        if fast:
             if centered_band:
-                path, cost_mat = self.fast_dp(dist_mat, w, start_d, back_d)
+                path, cost_mat = self.__fast_dp(dist_mat, w, start_d, back_d)
             else:
-                path, cost_mat = self.fast_dp_abs(dist_mat, w, start_d, back_d)
+                path, cost_mat = self.__fast_dp_abs(
+                    dist_mat, w, start_d, back_d
+                )
         else:
-            path, cost_mat = self.dp(dist_mat, start_d, back_d)
+            path, cost_mat = self.__dp(dist_mat, start_d, back_d)
 
         cost = cost_mat[N - back_d - 1, M - back_d - 1] / len(path)
 
-        return cost, path, cost_mat, pos_cycle1, pos_cycle2
+        if cost_mat_p:
+            return cost, path, cost_mat, pos_cycle1, pos_cycle2
+        else:
+            return cost, path, pos_cycle1, pos_cycle2
 
     def plot_dtw_heatmap(
         self,
         nodes1,
         nodes2,
-        threshold,
+        threshold=1000,
         regist=True,
         start_d=0,
         back_d=0,
@@ -2822,6 +2937,7 @@ class lineageTree:
             fast,
             w,
             centered_band,
+            cost_mat_p=True,
         )
 
         fig = plt.figure(figsize=(8, 6))
@@ -2842,7 +2958,7 @@ class lineageTree:
         self,
         nodes1,
         nodes2,
-        threshold,
+        threshold=1000,
         regist=True,
         start_d=0,
         back_d=0,
@@ -2871,8 +2987,17 @@ class lineageTree:
                 (float) DTW distance
                 (figue) Trajectories Plot
         """
-        distance, alignment, cost_mat, pos_cycle1, pos_cycle2 = self.calculate_dtw(
-            nodes1, nodes2, threshold, regist, start_d, back_d, fast, w, centered_band
+        distance, alignment, pos_cycle1, pos_cycle2 = self.calculate_dtw(
+            nodes1,
+            nodes2,
+            threshold,
+            regist,
+            start_d,
+            back_d,
+            fast,
+            w,
+            centered_band,
+            cost_mat_p=False,
         )
 
         fig = plt.figure(figsize=(10, 6))
@@ -2897,8 +3022,18 @@ class lineageTree:
                 label=f"root = {nodes2}",
             )
         else:
-            ax.plot(pos_cycle1[:, 0], pos_cycle1[:, 1], "-", label=f"root = {nodes1}")
-            ax.plot(pos_cycle2[:, 0], pos_cycle2[:, 1], "-", label=f"root = {nodes2}")
+            ax.plot(
+                pos_cycle1[:, 0],
+                pos_cycle1[:, 1],
+                "-",
+                label=f"root = {nodes1}",
+            )
+            ax.plot(
+                pos_cycle2[:, 0],
+                pos_cycle2[:, 1],
+                "-",
+                label=f"root = {nodes2}",
+            )
 
         connections = [[pos_cycle1[i], pos_cycle2[j]] for i, j in alignment]
 
