@@ -30,8 +30,7 @@ import numpy as np
 from scipy.spatial import Delaunay, distance
 from scipy.spatial import cKDTree as KDTree
 from scipy.spatial import distance
-from scipy.interpolate import InterpolatedUnivariateSpline
-import matplotlib.pyplot as plt
+
 from .utils import hierarchy_pos, postions_of_nx
 from sklearn.metrics.pairwise import euclidean_distances
 from scipy.interpolate import InterpolatedUnivariateSpline
@@ -2475,7 +2474,30 @@ class lineageTree:
             return list(r)
         return final_nodes
 
-    def dp(self, dist_mat, start_d=0, back_d=0):
+    @staticmethod
+    def __calculate_diag_line(dist_mat: np.ndarray) -> (float, float):
+        """
+        Calculate the line that centers the band w.
+
+            Args:
+                dist_mat (matrix): distance matrix obtained by the function calculate_dtw
+
+            Returns:
+                (float) Slope
+                (float) intercept of the line
+        """
+        i, j = dist_mat.shape
+        x1 = max(0, i - j) / 2
+        x2 = (i + min(i, j)) / 2
+        y1 = max(0, j - i) / 2
+        y2 = (j + min(i, j)) / 2
+        slope = (y1 - y2) / (x1 - x2)
+        intercept = y1 - slope * x1
+        return slope, intercept
+    
+    @staticmethod
+    # Reference: https://github.com/kamperh/lecture_dtw_notebook/blob/main/dtw.ipynb
+    def __dp(dist_mat: np.ndarry, start_d: int=0, back_d: int=0, w: int=0, slope=None, intercept=None, use_absolute: bool=False) -> (((int, int), ...), np.ndarry):
         """
         Find DTW minimum cost between two series using dynamic programming.
 
@@ -2489,6 +2511,8 @@ class lineageTree:
                 (matrix) Cost matrix 
         """
         N, M = dist_mat.shape
+        square_root = np.sqrt((slope**2) + 1) if slope is not None else None
+        w_limit = max(w, abs(N - M))  # Calculate the Sakoe-Chiba band width
 
         # Initialize the cost matrix
         cost_mat = np.zeros((N + 1, M + 1))
@@ -2506,20 +2530,38 @@ class lineageTree:
         cost_mat[N, M - back_d :] = 0
 
         for i in range(N):
-            for j in range(M):
+        for j in range(M):
+            if use_absolute:
+                condition = abs(i - j) <= w_limit
+            else:
+                condition = slope is None or abs(slope * i - j + intercept) / square_root <= w_limit
+            
+            if condition:
                 penalty = [
                     cost_mat[i, j],  # match (0)
                     cost_mat[i, j + 1],  # insertion (1)
-                    cost_mat[i + 1, j],
-                ]  # deletion (2)
+                    cost_mat[i + 1, j], # deletion (2)
+                ]
                 i_penalty = np.argmin(penalty)
                 cost_mat[i + 1, j + 1] = dist_mat[i, j] + penalty[i_penalty]
                 traceback_mat[i, j] = i_penalty
+        # for i in range(N):
+        #     for j in range(M):
+        #         penalty = [
+        #             cost_mat[i, j],  # match (0)
+        #             cost_mat[i, j + 1],  # insertion (1)
+        #             cost_mat[i + 1, j], # deletion (2)
+        #         ]  
+        #         i_penalty = np.argmin(penalty)
+        #         cost_mat[i + 1, j + 1] = dist_mat[i, j] + penalty[i_penalty]
+        #         traceback_mat[i, j] = i_penalty
 
         min_index1 = np.argmin(cost_mat[N - back_d :, M])
         min_index2 = np.argmin(cost_mat[N, M - back_d :])
 
-        if cost_mat[N - back_d + min_index1, M] > cost_mat[N, M - back_d + min_index2]:
+        if (
+            cost_mat[N, M - back_d + min_index2] < cost_mat[N - back_d + min_index1, M]
+        ):
             i = N - 1
             j = M - back_d + min_index2 - 1
         else:
@@ -2527,7 +2569,7 @@ class lineageTree:
             j = M - 1
 
         path = [(i, j)]
-        while (i > start_d and j > 0) or (i > 0 and j > start_d):
+        while (start_d < i and 0 < j) or (0 < i and start_d < j):
             tb_type = traceback_mat[i, j]
             if tb_type == 0:
                 # Match
@@ -2544,184 +2586,175 @@ class lineageTree:
         # Strip infinity edges from cost_mat before returning
         cost_mat = cost_mat[1:, 1:]
         return path[::-1], cost_mat
-    
-    def calculate_diag_line(self, dist_mat):
-        """
-        Calculate the line that centers the band w.
 
-            Args:
-                dist_mat (matrix): distance matrix obtained by the function calculate_dtw
-        
-            Returns:
-                (float) Slope 
-                (float) intercept of the line
-        """
-        i, j = dist_mat.shape
-        x1 = max(0, i - j) / 2
-        x2 = (i + min(i, j)) / 2
-        y1 = max(0, j - i) / 2
-        y2 = (j + min(i, j)) / 2
-        slope = (y1 - y2) / (x1 - x2)
-        intercept = y1 - slope * x1
-        return slope, intercept
-    
-    def fast_dp(self, dist_mat, w, start_d=0, back_d=0):
-        """
-        Find DTW minimum cost between two series using dynamic programming.
-        Fast algorithm using a centered Sakoe-Chiba band width w
+    # @staticmethod
+    # def __fast_dp(self, dist_mat: np.ndarray, w: int, start_d: int=0, back_d: int=0) -> (((int, int), ...), np.ndarray):
+    #     """
+    #     Find DTW minimum cost between two series using dynamic programming.
+    #     Fast algorithm using a centered Sakoe-Chiba band width w
 
-            Args:
-                dist_mat (matrix): distance matrix obtained by the function calculate_dtw
-                w (int): window size
-                start_d (int): start delay
-                back_d (int): end delay
-            
-            Returns:
-                (tuple of tuples) Aligment path
-                (matrix) Cost matrix 
-        """
-        N, M = dist_mat.shape
-        slope, intercept = self.calculate_diag_line(dist_mat)
+    #         Args:
+    #             dist_mat (matrix): distance matrix obtained by the function calculate_dtw
+    #             w (int): window size
+    #             start_d (int): start delay
+    #             back_d (int): end delay
 
-        # Initialize the cost matrix
-        cost_mat = np.full((N + 1, M + 1), np.inf)
+    #         Returns:
+    #             (tuple of tuples) Aligment path
+    #             (matrix) Cost matrix
+    #     """
+    #     N, M = dist_mat.shape
+    #     slope, intercept = self.__calculate_diag_line(dist_mat)
 
-        w_limit = max(w, abs(N - M))  # Calculate the Sakoe-Chiba band width
-        # back_d = min(back_d, w_limit//2)
+    #     # Initialize the cost matrix
+    #     cost_mat = np.full((N + 1, M + 1), np.inf)
 
-        # Fill the cost matrix while keeping traceback information
-        traceback_mat = np.zeros((N, M))
+    #     w_limit = max(w, abs(N - M))  # Calculate the Sakoe-Chiba band width
 
-        cost_mat[: start_d + 1, 0] = 0
-        cost_mat[0, : start_d + 1] = 0
+    #     # Fill the cost matrix while keeping traceback information
+    #     traceback_mat = np.zeros((N, M))
 
-        cost_mat[N - back_d :, M] = 0
-        cost_mat[N, M - back_d :] = 0
+    #     cost_mat[: start_d + 1, 0] = 0
+    #     cost_mat[0, : start_d + 1] = 0
 
-        square_root = np.sqrt((slope**2) + ((-1) ** 2))
+    #     cost_mat[N - back_d :, M] = 0
+    #     cost_mat[N, M - back_d :] = 0
 
-        for i in range(0, N):
-            for j in range(0, M):
-                if (
-                    abs(slope * i - j + intercept) / square_root <= w_limit
-                ):  # Only consider elements within the Sakoe-Chiba band - a[i][n-1-i]
-                    penalty = [
-                        cost_mat[i, j],  # match (0)
-                        cost_mat[i, j + 1],  # insertion (1)
-                        cost_mat[i + 1, j],
-                    ]  # deletion (2)
-                    i_penalty = np.argmin(penalty)
-                    cost_mat[i + 1, j + 1] = dist_mat[i, j] + penalty[i_penalty]
-                    traceback_mat[i, j] = i_penalty
+    #     square_root = np.sqrt((slope**2) + 1)
 
-        min_index1 = np.argmin(cost_mat[N - back_d :, M])
-        min_index2 = np.argmin(cost_mat[N, M - back_d :])
+    #     for i in range(N):
+    #         for j in range(M):
+    #             if (
+    #                 abs(slope * i - j + intercept) / square_root <= w_limit
+    #             ):  # Only consider elements within the Sakoe-Chiba band - a[i][n-1-i]
+    #                 penalty = [
+    #                     cost_mat[i, j],  # match (0)
+    #                     cost_mat[i, j + 1],  # insertion (1)
+    #                     cost_mat[i + 1, j],
+    #                 ]  # deletion (2)
+    #                 i_penalty = np.argmin(penalty)
+    #                 cost_mat[i + 1, j + 1] = (
+    #                     dist_mat[i, j] + penalty[i_penalty]
+    #                 )
+    #                 traceback_mat[i, j] = i_penalty
 
-        if cost_mat[N - back_d + min_index1, M] > cost_mat[N, M - back_d + min_index2]:
-            i = N - 1
-            j = M - back_d + min_index2 - 1
-        else:
-            i = N - back_d + min_index1 - 1
-            j = M - 1
+    #     min_index1 = np.argmin(cost_mat[N - back_d :, M])
+    #     min_index2 = np.argmin(cost_mat[N, M - back_d :])
 
-        path = [(i, j)]
-        while (i > start_d and j > 0) or (i > 0 and j > start_d):
-            # while i > start_d or j > 0:
-            tb_type = traceback_mat[i, j]
-            if tb_type == 0:
-                # Match
-                i -= 1
-                j -= 1
-            elif tb_type == 1:
-                # Insertion
-                i -= 1
-            elif tb_type == 2:
-                # Deletion
-                j -= 1
-            path.append((i, j))
+    #     if (
+    #         cost_mat[N - back_d + min_index1, M]
+    #         > cost_mat[N, M - back_d + min_index2]
+    #     ):
+    #         i = N - 1
+    #         j = M - back_d + min_index2 - 1
+    #     else:
+    #         i = N - back_d + min_index1 - 1
+    #         j = M - 1
 
-        # Strip infinity edges from cost_mat before returning
-        cost_mat = cost_mat[1:, 1:]
-        return (path[::-1], cost_mat)
+    #     path = [(i, j)]
+    #     while (i > start_d and j > 0) or (i > 0 and j > start_d):
+    #         # while i > start_d or j > 0:
+    #         tb_type = traceback_mat[i, j]
+    #         if tb_type == 0:
+    #             # Match
+    #             i -= 1
+    #             j -= 1
+    #         elif tb_type == 1:
+    #             # Insertion
+    #             i -= 1
+    #         elif tb_type == 2:
+    #             # Deletion
+    #             j -= 1
+    #         path.append((i, j))
 
+    #     # Strip infinity edges from cost_mat before returning
+    #     cost_mat = cost_mat[1:, 1:]
+    #     return (path[::-1], cost_mat)
 
-    def fast_dp_abs(self, dist_mat, w, start_d=0, back_d=0):
-        """
-        Find DTW minimum cost between two series using dynamic programming.
-        Fast algorithm using a uncentered Sakoe-Chiba band width w
+    # @staticmethod
+    # def __fast_dp_abs(dist_mat: np.ndarray, w: int, start_d: int=0, back_d: int=0) -> (((int, int), ...), np.ndarray):
+    #     """
+    #     Find DTW minimum cost between two series using dynamic programming.
+    #     Fast algorithm using a uncentered Sakoe-Chiba band width w
 
-            Args:
-                dist_mat (matrix): distance matrix obtained by the function calculate_dtw
-                w (int): window size
-                start_d (int): start delay
-                back_d (int): end delay
-            
-            Returns:
-                (tuple of tuples) Aligment path
-                (matrix) Cost matrix 
-        """
-        N, M = dist_mat.shape
+    #         Args:
+    #             dist_mat (matrix): distance matrix obtained by the function calculate_dtw
+    #             w (int): window size
+    #             start_d (int): start delay
+    #             back_d (int): end delay
 
-        # Initialize the cost matrix
-        cost_mat = np.full((N + 1, M + 1), np.inf)
+    #         Returns:
+    #             (tuple of tuples) Aligment path
+    #             (matrix) Cost matrix
+    #     """
+    #     N, M = dist_mat.shape
 
-        w_limit = max(w, abs(N - M))  # Calculate the Sakoe-Chiba band width
+    #     # Initialize the cost matrix
+    #     cost_mat = np.full((N + 1, M + 1), np.inf)
 
-        # Fill the cost matrix while keeping traceback information
-        traceback_mat = np.zeros((N, M))
+    #     w_limit = max(w, abs(N - M))  # Calculate the Sakoe-Chiba band width
 
-        cost_mat[: start_d + 1, 0] = 0
-        cost_mat[0, : start_d + 1] = 0
+    #     # Fill the cost matrix while keeping traceback information
+    #     traceback_mat = np.zeros((N, M))
 
-        cost_mat[N - back_d :, M] = 0
-        cost_mat[N, M - back_d :] = 0
+    #     cost_mat[: start_d + 1, 0] = 0
+    #     cost_mat[0, : start_d + 1] = 0
 
-        for i in range(0, N):
-            for j in range(0, M):
-                if (
-                    abs(i - j) <= w_limit
-                ):  # Only consider elements within the Sakoe-Chiba band - a[i][n-1-i]
-                    penalty = [
-                        cost_mat[i, j],  # match (0)
-                        cost_mat[i, j + 1],  # insertion (1)
-                        cost_mat[i + 1, j],
-                    ]  # deletion (2)
-                    i_penalty = np.argmin(penalty)
-                    cost_mat[i + 1, j + 1] = dist_mat[i, j] + penalty[i_penalty]
-                    traceback_mat[i, j] = i_penalty
+    #     cost_mat[N - back_d :, M] = 0
+    #     cost_mat[N, M - back_d :] = 0
 
-        min_index1 = np.argmin(cost_mat[N - back_d :, M])
-        min_index2 = np.argmin(cost_mat[N, M - back_d :])
+    #     for i in range(N):
+    #         for j in range(M):
+    #             if (
+    #                 abs(i - j) <= w_limit
+    #             ):  # Only consider elements within the Sakoe-Chiba band - a[i][n-1-i]
+    #                 penalty = [
+    #                     cost_mat[i, j],  # match (0)
+    #                     cost_mat[i, j + 1],  # insertion (1)
+    #                     cost_mat[i + 1, j],
+    #                 ]  # deletion (2)
+    #                 i_penalty = np.argmin(penalty)
+    #                 cost_mat[i + 1, j + 1] = (
+    #                     dist_mat[i, j] + penalty[i_penalty]
+    #                 )
+    #                 traceback_mat[i, j] = i_penalty
 
-        if cost_mat[N - back_d + min_index1, M] > cost_mat[N, M - back_d + min_index2]:
-            i = N - 1
-            j = M - back_d + min_index2 - 1
-        else:
-            i = N - back_d + min_index1 - 1
-            j = M - 1
+    #     min_index1 = np.argmin(cost_mat[N - back_d :, M])
+    #     min_index2 = np.argmin(cost_mat[N, M - back_d :])
 
-        path = [(i, j)]
-        while (i > start_d and j > 0) or (i > 0 and j > start_d):
-            # while i > start_d or j > 0:
-            tb_type = traceback_mat[i, j]
-            if tb_type == 0:
-                # Match
-                i -= 1
-                j -= 1
-            elif tb_type == 1:
-                # Insertion
-                i -= 1
-            elif tb_type == 2:
-                # Deletion
-                j -= 1
-            path.append((i, j))
+    #     if (
+    #         cost_mat[N - back_d + min_index1, M]
+    #         > cost_mat[N, M - back_d + min_index2]
+    #     ):
+    #         i = N - 1
+    #         j = M - back_d + min_index2 - 1
+    #     else:
+    #         i = N - back_d + min_index1 - 1
+    #         j = M - 1
 
-        # Strip infinity edges from cost_mat before returning
-        cost_mat = cost_mat[1:, 1:]
-        return (path[::-1], cost_mat)
+    #     path = [(i, j)]
+    #     while (i > start_d and j > 0) or (i > 0 and j > start_d):
+    #         # while i > start_d or j > 0:
+    #         tb_type = traceback_mat[i, j]
+    #         if tb_type == 0:
+    #             # Match
+    #             i -= 1
+    #             j -= 1
+    #         elif tb_type == 1:
+    #             # Insertion
+    #             i -= 1
+    #         elif tb_type == 2:
+    #             # Deletion
+    #             j -= 1
+    #         path.append((i, j))
 
+    #     # Strip infinity edges from cost_mat before returning
+    #     cost_mat = cost_mat[1:, 1:]
+    #     return (path[::-1], cost_mat)
 
-    def rigid_transform_3D(self, A, B):
+    @staticmethod
+    # Reference: https://github.com/nghiaho12/rigid_transform_3D
+    def __rigid_transform_3D(A, B):
         assert A.shape == B.shape
 
         num_rows, num_cols = A.shape
@@ -2759,13 +2792,14 @@ class lineageTree:
         t = -R @ centroid_A + centroid_B
 
         return R, t
-    
-    def interpolate(self, track1, track2, threshold):
+
+    def __interpolate(self, track1: list, track2: list, threshold: int) -> (np.ndarray, np.ndarray):
         """
         Interpolate two series that have different lengths
 
             Args:
-                track1 (list) and track2 (list): list of nodes in cell cycle
+                track1 (list): list of nodes of the first cell cycle to compare  
+                track2 (list): list of nodes of the second cell cycle to compare  
                 threshold (int): set a maximum number of points a track can have
             
             Returns:
@@ -2811,22 +2845,24 @@ class lineageTree:
         return np.column_stack(inter1_pos), np.column_stack(inter2_pos)
     
     def calculate_dtw(
-    self,
-    nodes1,
-    nodes2,
-    threshold,
-    regist=True,
-    start_d=0,
-    back_d=0,
-    fast=False,
-    w=0,
-    centered_band=True,
-):
+        self,
+        nodes1: int,
+        nodes2: int,
+        threshold: int=1000,
+        regist: bool=True,
+        start_d: int=0,
+        back_d: int=0,
+        fast: bool=False,
+        w: int=0,
+        centered_band: bool=True,
+        cost_mat_p: bool=False,
+    ) -> (float, tuple, np.ndarray, np.ndarray, np.ndarray):
         """
         Calculate DTW distance between two cell cycles
 
             Args:
-                nodes1 & nodes2 (int): node to compare distance
+                nodes1 (int): node to compare distance
+                nodes2 (int): node to compare distance
                 threshold: set a maximum number of points a track can have
                 regist (boolean): Rotate and translate trajectories
                 start_d (int): start delay
@@ -2839,7 +2875,8 @@ class lineageTree:
                 (float) DTW distance 
                 (tuple of tuples) Aligment path 
                 (matrix) Cost matrix
-                (list) pos_cycle1 & pos_cycle2: rotated and translated trajectories positions
+                (list of lists) pos_cycle1: rotated and translated trajectories positions
+                (list of lists) pos_cycle2: rotated and translated trajectories positions
         """
         nodes1_cycle = self.get_cycle(nodes1)
         nodes2_cycle = self.get_cycle(nodes2)
@@ -2856,13 +2893,14 @@ class lineageTree:
         N = len(nodes1_cycle)
         M = len(nodes2_cycle)
 
-        dist_mat = euclidean_distances(pos_cycle1, pos_cycle2)
+        dist_mat = distance.euclidean(pos_cycle1, pos_cycle2)
 
         if fast == True:
             if centered_band:
-                path, cost_mat = self.fast_dp(dist_mat, w, start_d, back_d)
+                slope, intercept = self.__calculate_diag_line(dist_mat)
+                path, cost_mat = self.__dp(dist_mat, start_d, back_d, w, slope, intercept, use_absolute=False)
             else:
-                path, cost_mat = self.fast_dp_abs(dist_mat, w, start_d, back_d)
+                path, cost_mat = self.__dp(dist_mat, start_d, back_d, w, use_absolute=True)
         else:
             path, cost_mat = self.dp(dist_mat, start_d, back_d)
 
@@ -2871,22 +2909,23 @@ class lineageTree:
         return cost, path, cost_mat, pos_cycle1, pos_cycle2
 
     def plot_dtw_heatmap(
-    self,
-    nodes1,
-    nodes2,
-    threshold,
-    regist=True,
-    start_d=0,
-    back_d=0,
-    fast=False,
-    w=0,
-    centered_band=True,
-):
+        self,
+        nodes1: int,
+        nodes2: int,
+        threshold: int=1000,
+        regist: bool=True,
+        start_d: int=0,
+        back_d: int=0,
+        fast: bool=False,
+        w: int=0,
+        centered_band: bool=True,
+    ) -> (float, plt.figure):
         """
         Plot DTW cost matrix between two cell cycles in heatmap format
 
             Args:
-                nodes1 & nodes2 (int): node to compare distance
+                nodes1 (int): node to compare distance
+                nodes2 (int): node to compare distance
                 start_d (int): start delay
                 back_d (int): end delay
                 fast (boolean): True if the user wants to run the fast algorithm with window restrains
@@ -2922,24 +2961,25 @@ class lineageTree:
         return cost, fig
     
     def compare_dtw_norm(
-    self,
-    nodes1,
-    nodes2,
-    threshold,
-    regist=True,
-    start_d=0,
-    back_d=0,
-    fast=False,
-    w=0,
-    centered_band=True,
-    three_dim=True,
-    alig=False,
-):
+        self,
+        nodes1: int,
+        nodes2: int,
+        threshold: int=1000,
+        regist: bool=True,
+        start_d: int=0,
+        back_d: int=0,
+        fast: bool=False,
+        w: int=0,
+        centered_band: bool=True,
+        three_dim: bool=True,
+        alig: bool=False,
+    ) -> (float, plt.figure):
         """
         Plots DTW trajectories aligment between two cell cycles in 2D or 3D
 
             Args:
-                nodes1 & nodes2 (int): node to compare distance
+                nodes1 (int): node to compare distance
+                nodes2 (int): node to compare distance
                 threshold (int): set a maximum number of points a track can have
                 regist (boolean): Rotate and translate trajectories
                 start_d (int): start delay
