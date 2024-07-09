@@ -2730,7 +2730,7 @@ class lineageTree:
 
         return cost, fig
 
-    def compare_dtw_norm(
+    def plot_dtw_trajectory(
         self,
         nodes1: int,
         nodes2: int,
