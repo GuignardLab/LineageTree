@@ -1383,7 +1383,6 @@ class lineageTree:
 
         mr = MastodonReader(path)
         spots, links = mr.read_tables()
-        mr.read_tags(spots, links)
 
         self.node_name = {}
 
