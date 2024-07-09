@@ -2485,28 +2485,32 @@ class lineageTree:
         ):
             i = N - 1
             j = M - back_d + min_index2 - 1
+            final_cost = cost_mat[N, M - back_d + min_index2]
         else:
             i = N - back_d + min_index1 - 1
             j = M - 1
+            final_cost = cost_mat[N - back_d + min_index1, M]
 
         path = [(i, j)]
-        while (start_d < i and 0 < j) or (0 < i and start_d < j):
+        
+        while (start_d != 0 and ((start_d < i and 0 < j) or (0 < i and start_d < j))) or (start_d == 0 and (i > 0 or j > 0)):
             tb_type = traceback_mat[i, j]
             if tb_type == 0:
                 # Match
-                i = i - 1
-                j = j - 1
+                i -= 1
+                j -= 1
             elif tb_type == 1:
                 # Insertion
-                i = i - 1
+                i -= 1
             elif tb_type == 2:
                 # Deletion
-                j = j - 1
+                j -= 1
+
             path.append((i, j))
 
         # Strip infinity edges from cost_mat before returning
         cost_mat = cost_mat[1:, 1:]
-        return path[::-1], cost_mat
+        return path[::-1], cost_mat, final_cost
 
     # Reference: https://github.com/nghiaho12/rigid_transform_3D
     @staticmethod
@@ -2662,13 +2666,13 @@ class lineageTree:
         if fast:
             if centered_band:
                 slope, intercept = self.__calculate_diag_line(dist_mat)
-                path, cost_mat = self.__dp(dist_mat, start_d, back_d, w, slope, intercept, use_absolute=False)
+                path, cost_mat, final_cost = self.__dp(dist_mat, start_d, back_d, w, slope, intercept, use_absolute=False)
             else:
-                path, cost_mat = self.__dp(dist_mat, start_d, back_d, w, use_absolute=True)
+                path, cost_mat, final_cost = self.__dp(dist_mat, start_d, back_d, w, use_absolute=True)
         else:
-            path, cost_mat = self.__dp(dist_mat, start_d, back_d)
+            path, cost_mat, final_cost = self.__dp(dist_mat, start_d, back_d)
 
-        cost = cost_mat[N - back_d - 1, M - back_d - 1] / len(path)
+        cost = final_cost / len(path)
 
         if cost_mat_p:
             return cost, path, cost_mat, pos_cycle1, pos_cycle2
