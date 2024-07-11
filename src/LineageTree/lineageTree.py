@@ -2206,9 +2206,9 @@ class lineageTree:
             times2=times2,
         )
 
-        return uted.uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp)# / max(
-        #     tree1.get_norm(), tree2.get_norm()
-        # )
+        return uted.uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / max(
+            tree1.get_norm(), tree2.get_norm()
+        )
 
     def to_simple_networkx(self, node: int = None, start_time: int = 0):
         """
