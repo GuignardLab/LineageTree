@@ -2857,7 +2857,6 @@ class lineageTree:
         fast: bool = False,
         w: int = 0,
         centered_band: bool = True,
-        three_dim: bool = True,
         projection: str = None,
         alig: bool = False,
     ) -> (float, plt.figure):
@@ -2874,8 +2873,8 @@ class lineageTree:
                 w (int): window size
                 fast (boolean): True if the user wants to run the fast algorithm with window restrains
                 centered_band (boolean): if running the fast algorithm, True if the windown is centered
-                three_dim (boolean): True if plot is 3D, else 2D
                 projection (string): specify which 2D to plot ->
+                    '3d' : for the 3d visualization
                     'xy' or None (default) : 2D projection of axis x and y
                     'xz' : 2D projection of axis x and z
                     'yz' : 2D projection of axis y and z
@@ -2903,12 +2902,12 @@ class lineageTree:
 
         fig = plt.figure(figsize=(10, 6))
 
-        if three_dim:
+        if projection == "3d":
             ax = fig.add_subplot(1, 1, 1, projection="3d")
         else:
             ax = fig.add_subplot(1, 1, 1)
 
-        if three_dim:
+        if projection == "3d":
             ax.plot(
                 pos_cycle1[:, 0],
                 pos_cycle1[:, 1],
@@ -2964,7 +2963,12 @@ class lineageTree:
                     "z position",
                 )
             elif projection == "pca":
-                from sklearn.decomposition import PCA
+                try:
+                    from sklearn.decomposition import PCA
+                except ImportError:
+                    Warning(
+                        "scikit-learn is not installed, the PCA orientation cannot be used. You can install scikit-learn with pip install"
+                    )
 
                 # Apply PCA
                 pca = PCA(n_components=2)
@@ -3000,8 +3004,9 @@ class lineageTree:
                 ax.set_xlabel(f"{x_percent:.0f}% of {x_label} position")
                 ax.set_ylabel(f"{y_percent:.0f}% of {y_label} position")
             else:
-                print(
-                    """Error: 2D projections are:
+                raise ValueError(
+                    """Error: available projections are:
+                        '3d' : for the 3d visualization
                         'xy' or None (default) : 2D projection of axis x and y
                         'xz' : 2D projection of axis x and z
                         'yz' : 2D projection of axis y and z
@@ -3018,7 +3023,7 @@ class lineageTree:
             z_pos = [xyz1[2], xyz2[2]]
 
             if alig and projection != "pca":
-                if three_dim:
+                if projection == "3d":
                     ax.plot(x_pos, y_pos, z_pos, "k--", color="grey")
                 else:
                     ax.plot(x_pos, y_pos, "k--", color="grey")
@@ -3028,7 +3033,10 @@ class lineageTree:
         fig.tight_layout()
 
         if alig and projection == "pca":
-            print("Error: not possible to show alignment in PCA projection !")
+            warnings.warn(
+                "Error: not possible to show alignment in PCA projection !",
+                UserWarning,
+            )
 
         return distance, fig
 
