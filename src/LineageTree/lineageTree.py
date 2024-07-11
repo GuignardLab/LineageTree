@@ -2192,10 +2192,10 @@ class lineageTree:
             lT=self, node_length=node_lengths, end_time=end_time, root=n2
         )
         delta = tree1.delta
-        simple_tree_1, times1 = tree1.get_tree()
-        simple_tree_2, times2 = tree2.get_tree()
-        nodes1, adj1, corres1 = tree1._edist_format(simple_tree_1)
-        nodes2, adj2, corres2 = tree1._edist_format(simple_tree_2)
+        _, times1 = tree1.tree
+        _, times2 = tree2.tree
+        nodes1, adj1, corres1 = tree1.edist #tree1._edist_format(simple_tree_1)
+        nodes2, adj2, corres2 = tree2.edist #tree2._edist_format(simple_tree_2)
         if len(nodes1) == len(nodes2) == 0:
             return 0
         delta_tmp = partial(

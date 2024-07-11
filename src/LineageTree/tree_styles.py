@@ -14,6 +14,8 @@ class abstract_trees(ABC):
         self.root = root
         self.node_length = node_length
         self.end_time = end_time
+        self.tree = self.get_tree()
+        self.edist = self._edist_format(self.tree[0])
 
     @abstractmethod
     def get_tree(self):
