@@ -133,7 +133,7 @@ class LineageTreeManager:
             registration (_type_, optional): _description_. Defaults to None.
         """
 
-        tree = getattr(tree_style, style).value
+        tree = tree_style[style].value
         tree1 = tree(
             lT=self.lineagetrees[embryo_1],
             node_length=node_lengths,
