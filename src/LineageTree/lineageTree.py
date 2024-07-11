@@ -28,8 +28,8 @@ import numpy as np
 
 # from edist.uted import uted
 from scipy.spatial import Delaunay, distance
+from scipy.spatial import Delaunay, distance
 from scipy.spatial import cKDTree as KDTree
-from scipy.spatial import distance
 
 from .utils import hierarchy_pos, postions_of_nx
 from sklearn.metrics.pairwise import euclidean_distances
@@ -2494,12 +2494,20 @@ class lineageTree:
         slope = (y1 - y2) / (x1 - x2)
         intercept = y1 - slope * x1
         return slope, intercept
-    
-    @staticmethod
+
     # Reference: https://github.com/kamperh/lecture_dtw_notebook/blob/main/dtw.ipynb
-    def __dp(dist_mat: np.ndarry, start_d: int=0, back_d: int=0, w: int=0, slope=None, intercept=None, use_absolute: bool=False) -> (((int, int), ...), np.ndarry):
+    def __dp(
+        self,
+        dist_mat: np.ndarray,
+        start_d: int = 0,
+        back_d: int = 0,
+        fast: bool = False,
+        w: int = 0,
+        centered_band: bool = True,
+    ) -> (((int, int), ...), np.ndarray):
         """
         Find DTW minimum cost between two series using dynamic programming.
+
 
             Args:
                 dist_mat (matrix): distance matrix obtained by the function calculate_dtw
@@ -2511,8 +2519,11 @@ class lineageTree:
                 (matrix) Cost matrix 
         """
         N, M = dist_mat.shape
-        square_root = np.sqrt((slope**2) + 1) if slope is not None else None
         w_limit = max(w, abs(N - M))  # Calculate the Sakoe-Chiba band width
+
+        if centered_band:
+            slope, intercept = self.__calculate_diag_line(dist_mat)
+            square_root = np.sqrt((slope**2) + 1)
 
         # Initialize the cost matrix
         cost_mat = np.zeros((N + 1, M + 1))
@@ -2530,46 +2541,49 @@ class lineageTree:
         cost_mat[N, M - back_d :] = 0
 
         for i in range(N):
-        for j in range(M):
-            if use_absolute:
-                condition = abs(i - j) <= w_limit
-            else:
-                condition = slope is None or abs(slope * i - j + intercept) / square_root <= w_limit
-            
-            if condition:
-                penalty = [
-                    cost_mat[i, j],  # match (0)
-                    cost_mat[i, j + 1],  # insertion (1)
-                    cost_mat[i + 1, j], # deletion (2)
-                ]
-                i_penalty = np.argmin(penalty)
-                cost_mat[i + 1, j + 1] = dist_mat[i, j] + penalty[i_penalty]
-                traceback_mat[i, j] = i_penalty
-        # for i in range(N):
-        #     for j in range(M):
-        #         penalty = [
-        #             cost_mat[i, j],  # match (0)
-        #             cost_mat[i, j + 1],  # insertion (1)
-        #             cost_mat[i + 1, j], # deletion (2)
-        #         ]  
-        #         i_penalty = np.argmin(penalty)
-        #         cost_mat[i + 1, j + 1] = dist_mat[i, j] + penalty[i_penalty]
-        #         traceback_mat[i, j] = i_penalty
+            for j in range(M):
+                if fast and not centered_band:
+                    condition = abs(i - j) <= w_limit
+                elif fast:
+                    condition = (
+                        abs(slope * i - j + intercept) / square_root <= w_limit
+                    )
+                else:
+                    condition = True
+
+                if condition:
+                    penalty = [
+                        cost_mat[i, j],  # match (0)
+                        cost_mat[i, j + 1],  # insertion (1)
+                        cost_mat[i + 1, j],  # deletion (2)
+                    ]
+                    i_penalty = np.argmin(penalty)
+                    cost_mat[i + 1, j + 1] = (
+                        dist_mat[i, j] + penalty[i_penalty]
+                    )
+                    traceback_mat[i, j] = i_penalty
 
         min_index1 = np.argmin(cost_mat[N - back_d :, M])
         min_index2 = np.argmin(cost_mat[N, M - back_d :])
 
         if (
-            cost_mat[N, M - back_d + min_index2] < cost_mat[N - back_d + min_index1, M]
+            cost_mat[N, M - back_d + min_index2]
+            < cost_mat[N - back_d + min_index1, M]
         ):
             i = N - 1
             j = M - back_d + min_index2 - 1
+            final_cost = cost_mat[i + 1, j + 1]
         else:
             i = N - back_d + min_index1 - 1
             j = M - 1
+            final_cost = cost_mat[i + 1, j + 1]
 
         path = [(i, j)]
-        while (start_d < i and 0 < j) or (0 < i and start_d < j):
+
+        while (
+            start_d != 0
+            and ((start_d < i and j > 0) or (i > 0 and start_d < j))
+        ) or (start_d == 0 and (i > 0 or j > 0)):
             tb_type = traceback_mat[i, j]
             if tb_type == 0:
                 # Match
@@ -2793,13 +2807,15 @@ class lineageTree:
 
         return R, t
 
-    def __interpolate(self, track1: list, track2: list, threshold: int) -> (np.ndarray, np.ndarray):
+    def __interpolate(
+        self, track1: list, track2: list, threshold: int
+    ) -> (np.ndarray, np.ndarray):
         """
         Interpolate two series that have different lengths
 
             Args:
-                track1 (list): list of nodes of the first cell cycle to compare  
-                track2 (list): list of nodes of the second cell cycle to compare  
+                track1 (list): list of nodes of the first cell cycle to compare
+                track2 (list): list of nodes of the second cell cycle to compare
                 threshold (int): set a maximum number of points a track can have
             
             Returns:
@@ -2818,14 +2834,7 @@ class lineageTree:
         ):
             return track1_pos, track2_pos
         # Both tracks have the same length but one or more sizes are above the threshold
-        elif len(track1) == len(track2) and (
-            len(track1) > threshold or len(track2) > threshold
-        ):
-            sampling = threshold
-        # Tracks have different lengths and one or more sizes are above the threshold
-        elif len(track1) != len(track2) and (
-            len(track1) > threshold or len(track2) > threshold
-        ):
+        elif len(track1) > threshold or len(track2) > threshold:
             sampling = threshold
         # Tracks have different lengths and the sizes are below the threshold
         else:
@@ -2848,14 +2857,14 @@ class lineageTree:
         self,
         nodes1: int,
         nodes2: int,
-        threshold: int=1000,
-        regist: bool=True,
-        start_d: int=0,
-        back_d: int=0,
-        fast: bool=False,
-        w: int=0,
-        centered_band: bool=True,
-        cost_mat_p: bool=False,
+        threshold: int = 1000,
+        regist: bool = True,
+        start_d: int = 0,
+        back_d: int = 0,
+        fast: bool = False,
+        w: int = 0,
+        centered_band: bool = True,
+        cost_mat_p: bool = False,
     ) -> (float, tuple, np.ndarray, np.ndarray, np.ndarray):
         """
         Calculate DTW distance between two cell cycles
@@ -2890,21 +2899,17 @@ class lineageTree:
             R, t = self.rigid_transform_3D(np.transpose(interp_cycle1), np.transpose(interp_cycle2))
             pos_cycle1 = np.transpose(np.dot(R, pos_cycle1.T) + t)
 
-        N = len(nodes1_cycle)
-        M = len(nodes2_cycle)
+        dist_mat = distance.cdist(pos_cycle1, pos_cycle2, "euclidean")
 
-        dist_mat = distance.euclidean(pos_cycle1, pos_cycle2)
-
-        if fast == True:
-            if centered_band:
-                slope, intercept = self.__calculate_diag_line(dist_mat)
-                path, cost_mat = self.__dp(dist_mat, start_d, back_d, w, slope, intercept, use_absolute=False)
-            else:
-                path, cost_mat = self.__dp(dist_mat, start_d, back_d, w, use_absolute=True)
-        else:
-            path, cost_mat = self.dp(dist_mat, start_d, back_d)
-
-        cost = cost_mat[N - back_d - 1, M - back_d - 1] / len(path)
+        path, cost_mat, final_cost = self.__dp(
+            dist_mat,
+            start_d,
+            back_d,
+            w=w,
+            fast=fast,
+            centered_band=centered_band,
+        )
+        cost = final_cost / len(path)
 
         return cost, path, cost_mat, pos_cycle1, pos_cycle2
 
@@ -2912,13 +2917,13 @@ class lineageTree:
         self,
         nodes1: int,
         nodes2: int,
-        threshold: int=1000,
-        regist: bool=True,
-        start_d: int=0,
-        back_d: int=0,
-        fast: bool=False,
-        w: int=0,
-        centered_band: bool=True,
+        threshold: int = 1000,
+        regist: bool = True,
+        start_d: int = 0,
+        back_d: int = 0,
+        fast: bool = False,
+        w: int = 0,
+        centered_band: bool = True,
     ) -> (float, plt.figure):
         """
         Plot DTW cost matrix between two cell cycles in heatmap format
@@ -2959,20 +2964,48 @@ class lineageTree:
         ax.plot(y_path, x_path, color="black")
 
         return cost, fig
-    
-    def compare_dtw_norm(
+
+    @staticmethod
+    def __plot_2d(
+        pos_cycle1,
+        pos_cycle2,
+        nodes1,
+        nodes2,
+        ax,
+        x_idx,
+        y_idx,
+        x_label,
+        y_label,
+    ):
+        ax.plot(
+            pos_cycle1[:, x_idx],
+            pos_cycle1[:, y_idx],
+            "-",
+            label=f"root = {nodes1}",
+        )
+        ax.plot(
+            pos_cycle2[:, x_idx],
+            pos_cycle2[:, y_idx],
+            "-",
+            label=f"root = {nodes2}",
+        )
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+
+    def plot_dtw_trajectory(
         self,
         nodes1: int,
         nodes2: int,
-        threshold: int=1000,
-        regist: bool=True,
-        start_d: int=0,
-        back_d: int=0,
-        fast: bool=False,
-        w: int=0,
-        centered_band: bool=True,
-        three_dim: bool=True,
-        alig: bool=False,
+        threshold: int = 1000,
+        regist: bool = True,
+        start_d: int = 0,
+        back_d: int = 0,
+        fast: bool = False,
+        w: int = 0,
+        centered_band: bool = True,
+        three_dim: bool = True,
+        projection: str = None,
+        alig: bool = False,
     ) -> (float, plt.figure):
         """
         Plots DTW trajectories aligment between two cell cycles in 2D or 3D
@@ -2988,17 +3021,34 @@ class lineageTree:
                 fast (boolean): True if the user wants to run the fast algorithm with window restrains
                 centered_band (boolean): if running the fast algorithm, True if the windown is centered
                 three_dim (boolean): True if plot is 3D, else 2D
+                projection (string): specify which 2D to plot ->
+                    'xy' or None (default) : 2D projection of axis x and y
+                    'xz' : 2D projection of axis x and z
+                    'yz' : 2D projection of axis y and z
+                    'pca' : PCA projection
                 alig (boolean): True to show alignment on plot
             
             Returns:
                 (float) DTW distance 
                 (figue) Trajectories Plot
         """
-        distance, alignment, cost_mat, pos_cycle1, pos_cycle2 = self.calculate_dtw(
-            nodes1, nodes2, threshold, regist, start_d, back_d, fast, w, centered_band
+        distance, alignment, cost_mat, pos_cycle1, pos_cycle2 = (
+            self.calculate_dtw(
+                nodes1,
+                nodes2,
+                threshold,
+                regist,
+                start_d,
+                back_d,
+                fast,
+                w,
+                centered_band,
+                cost_mat_p=True,
+            )
         )
 
         fig = plt.figure(figsize=(10, 6))
+
         if three_dim:
             ax = fig.add_subplot(1, 1, 1, projection="3d")
         else:
@@ -3012,9 +3062,90 @@ class lineageTree:
             ax.plot(
                 pos_cycle2[:, 0], pos_cycle2[:, 1], pos_cycle2[:, 2], "-", label=f"root = {nodes2}"
             )
+            ax.set_ylabel("y position")
+            ax.set_xlabel("x position")
+            ax.set_zlabel("z position")
         else:
-            ax.plot(pos_cycle1[:, 0], pos_cycle1[:, 1], "-", label=f"root = {nodes1}")
-            ax.plot(pos_cycle2[:, 0], pos_cycle2[:, 1], "-", label=f"root = {nodes2}")
+            if projection == "xy" or projection == "yx" or projection is None:
+                self.__plot_2d(
+                    pos_cycle1,
+                    pos_cycle2,
+                    nodes1,
+                    nodes2,
+                    ax,
+                    0,
+                    1,
+                    "x position",
+                    "y position",
+                )
+            elif projection == "xz" or projection == "zx":
+                self.__plot_2d(
+                    pos_cycle1,
+                    pos_cycle2,
+                    nodes1,
+                    nodes2,
+                    ax,
+                    0,
+                    2,
+                    "x position",
+                    "z position",
+                )
+            elif projection == "yz" or projection == "zy":
+                self.__plot_2d(
+                    pos_cycle1,
+                    pos_cycle2,
+                    nodes1,
+                    nodes2,
+                    ax,
+                    1,
+                    2,
+                    "y position",
+                    "z position",
+                )
+            elif projection == "pca":
+                from sklearn.decomposition import PCA
+
+                # Apply PCA
+                pca = PCA(n_components=2)
+                pca.fit(np.vstack([pos_cycle1, pos_cycle2]))
+                pos_cycle1_2d = pca.transform(pos_cycle1)
+                pos_cycle2_2d = pca.transform(pos_cycle2)
+
+                ax.plot(
+                    pos_cycle1_2d[:, 0],
+                    pos_cycle1_2d[:, 1],
+                    "-",
+                    label=f"root = {nodes1}",
+                )
+                ax.plot(
+                    pos_cycle2_2d[:, 0],
+                    pos_cycle2_2d[:, 1],
+                    "-",
+                    label=f"root = {nodes2}",
+                )
+
+                # Set axis labels
+                axes = ["x", "y", "z"]
+                x_label = axes[np.argmax(np.abs(pca.components_[0]))]
+                y_label = axes[np.argmax(np.abs(pca.components_[1]))]
+                x_percent = 100 * (
+                    np.max(np.abs(pca.components_[0]))
+                    / np.sum(np.abs(pca.components_[0]))
+                )
+                y_percent = 100 * (
+                    np.max(np.abs(pca.components_[1]))
+                    / np.sum(np.abs(pca.components_[1]))
+                )
+                ax.set_xlabel(f"{x_percent:.0f}% of {x_label} position")
+                ax.set_ylabel(f"{y_percent:.0f}% of {y_label} position")
+            else:
+                print(
+                    """Error: 2D projections are:
+                        'xy' or None (default) : 2D projection of axis x and y
+                        'xz' : 2D projection of axis x and z
+                        'yz' : 2D projection of axis y and z
+                        'pca' : PCA projection"""
+                )
 
         connections = [[pos_cycle1[i], pos_cycle2[j]] for i, j in alignment]
 
@@ -3025,17 +3156,18 @@ class lineageTree:
             y_pos = [xyz1[1], xyz2[1]]
             z_pos = [xyz1[2], xyz2[2]]
 
-            if alig:
+            if alig and projection != "pca":
                 if three_dim:
                     ax.plot(x_pos, y_pos, z_pos, "k--", color="grey")
                 else:
                     ax.plot(x_pos, y_pos, "k--", color="grey")
 
         ax.set_aspect("equal")
-        ax.set_xlabel("x position")
         ax.legend()
-        ax.set_ylabel("y position")
         fig.tight_layout()
+
+        if alig and projection == "pca":
+            print("Error: not possible to show alignment in PCA projection !")
 
         return distance, fig
     
