@@ -18,10 +18,10 @@ def hierarchy_pos(
     G,
     a,
     root=None,
-    width=2.0,
+    width=20.0,
     vert_gap=0.5,
     vert_loc=0,
-    xcenter=0.5,
+    xcenter=0,
 ):
     """
     From Joel's answer at https://stackoverflow.com/a/29597209/2966723.
