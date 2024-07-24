@@ -2095,6 +2095,61 @@ class lineageTree:
             )
         return self.th_edges
 
+    def main_axes(self, time: int = None):
+        """Finds the main axes for a timepoint.
+
+        Args:
+            time (int, optional): The timepoint to find the main axes. If None will find the timepoint with the largest nume rof cells.
+
+        Returns:
+            list: A list that contains the array of eigenvalues and eigenvectors.
+        """
+        if time is None:
+            time = np.argmax([len(self.time_nodes[t]) for t in range(int(self.t_e))])
+        pos = np.array([self.pos[node] for times in range(time-10, time) for node in self.time_nodes[time]])
+        pos = pos - np.mean(pos)
+        cov = np.cov(np.array(pos).T)
+        eig, eigv = np.linalg.eig(cov)
+        srt = np.argsort(eig)[::-1]
+        self.eig, self.eigv = eig[srt], eigv[srt]
+        return eig[srt], eigv[srt]
+
+    def scale_embryo(self, scale = 1000):
+        """Scale the embryo using their eigenvalues.
+
+        Args:
+            scale (int, optional): The resulting scale you want to achieve. Defaults to 1000.
+
+        Returns:
+            float: The scale factor.
+        """
+        eig = self.main_axes()[0]
+        return scale/(np.sqrt(eig[0]))
+
+    @staticmethod
+    def provide_rodrigues_rotation_matrix(vector1, vector2 = (0,1,0)):
+        """Calculates the rodrigues matrix of a dataset. It should use vectors from the find_main_axes(eigenvectors) function of LineagTree.
+        Uses the Rodrigues rotation formula.
+
+        Args:
+            vector1 (list|np.array): The vector that should be rotated to be aligned to the second vector
+            vector2 (list|np.array, optional): The second vector. Defaults to [1,0,0].
+
+        Returns:
+            np.array: The rotation matrix.
+        """
+        vector1 = vector1/np.linalg.norm(vector1)
+        vector2 = vector2/np.linalg.norm(vector2)
+        if vector1@vector2 == 1:
+            return np.eye(3)
+        angle = np.arccos(vector1 @ vector2)
+        axis = np.cross(vector1 , vector2)
+        axis = axis/np.linalg.norm(axis)
+        K = np.array([[0, -axis[2], axis[1]],
+                    [axis[2], 0, -axis[0]],
+                    [-axis[1], axis[0],0]])
+        return np.eye(3)+ np.sin(angle)*K + (1-np.cos(angle))*K@K
+
     def get_ancestor_at_t(self, n: int, time: int = None):
         """
         Find the id of the ancestor of a give node `n`
