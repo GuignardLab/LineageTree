@@ -2096,7 +2096,8 @@ class lineageTree:
         return self.th_edges
 
     def main_axes(self, time: int = None):
-        """Finds the main axes for a timepoint.
+        """Finds the main axes for a timepoint. 
+        If none will select the timepoint with the highest amound of cells.
 
         Args:
             time (int, optional): The timepoint to find the main axes. If None will find the timepoint with the largest nume rof cells.
@@ -2106,12 +2107,12 @@ class lineageTree:
         """
         if time is None:
             time = np.argmax([len(self.time_nodes[t]) for t in range(int(self.t_e))])
-        pos = np.array([self.pos[node] for times in range(time-10, time) for node in self.time_nodes[time]])
+        pos = np.array([self.pos[node] for t in range(time-10,time) for node in self.time_nodes[t]])
         pos = pos - np.mean(pos)
         cov = np.cov(np.array(pos).T)
         eig, eigv = np.linalg.eig(cov)
         srt = np.argsort(eig)[::-1]
-        self.eig, self.eigv = eig[srt], eigv[srt]
+        self.eig, self.eigv = eig[srt], eigv[srt,:]
         return eig[srt], eigv[srt]
 
     def scale_embryo(self, scale = 1000):
