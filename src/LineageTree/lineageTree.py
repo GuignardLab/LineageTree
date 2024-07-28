@@ -2210,7 +2210,7 @@ class lineageTree:
         for n1, n2 in combinations(roots, 2):
             key = tuple(sorted((n1, n2)))
             self.uted[t][key] = self.unordered_tree_edit_distance(
-                n1, n2, delta=delta, norm=norm, end_time=end_time
+                n1, n2, end_time=end_time
             )
         return self.uted[t]
 
