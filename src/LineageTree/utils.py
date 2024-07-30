@@ -18,7 +18,7 @@ def hierarchy_pos(
     G,
     a,
     root=None,
-    width=20.0,
+    width=200.0,
     vert_gap=0.5,
     vert_loc=0,
     xcenter=0,
