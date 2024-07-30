@@ -2136,7 +2136,7 @@ class lineageTree:
         return scale / (np.sqrt(eig[0]))
 
     @staticmethod
-    def provide_rodrigues_rotation_matrix(vector1, vector2=(0, 1, 0)):
+    def __rodrigues_rotation_matrix(vector1, vector2=(0, 1, 0)):
         """Calculates the rodrigues matrix of a dataset. It should use vectors from the find_main_axes(eigenvectors) function of LineagTree.
         Uses the Rodrigues rotation formula.
 
