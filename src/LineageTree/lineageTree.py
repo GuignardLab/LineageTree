@@ -32,6 +32,7 @@ from scipy.spatial import Delaunay, distance
 from scipy.spatial import cKDTree as KDTree
 
 from .utils import hierarchy_pos, postions_of_nx
+from sklearn.metrics.pairwise import euclidean_distances
 
 
 class lineageTree:
@@ -2101,7 +2102,9 @@ class lineageTree:
         If none will select the timepoint with the highest amound of cells.
 
         Args:
-            time (int, optional): The timepoint to find the main axes. If None will find the timepoint with the largest nume rof cells.
+            time (int, optional): The timepoint to find the main axes.
+                                  If None will find the timepoint
+                                  with the largest number of cells.
 
         Returns:
             list: A list that contains the array of eigenvalues and eigenvectors.
@@ -2110,19 +2113,13 @@ class lineageTree:
             time = np.argmax(
                 [len(self.time_nodes[t]) for t in range(int(self.t_e))]
             )
-        pos = np.array(
-            [
-                self.pos[node]
-                for t in range(time - 10, time)
-                for node in self.time_nodes[t]
-            ]
-        )
-        pos = pos - np.mean(pos)
+        pos = np.array([self.pos[node] for node in self.time_nodes[time]])
+        pos = pos - np.mean(pos, axis=0)
         cov = np.cov(np.array(pos).T)
-        eig, eigv = np.linalg.eig(cov)
-        srt = np.argsort(eig)[::-1]
-        self.eig, self.eigv = eig[srt], eigv[srt, :]
-        return eig[srt], eigv[srt]
+        eig_val, eig_vec = np.linalg.eig(cov)
+        srt = np.argsort(eig_val)[::-1]
+        self.eig_val, self.eig_vec = eig_val[srt], eig_vec[:, srt]
+        return eig_val[srt], eig_vec[:, srt]
 
     def scale_embryo(self, scale=1000):
         """Scale the embryo using their eigenvalues.
