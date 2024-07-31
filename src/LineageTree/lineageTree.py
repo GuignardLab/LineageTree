@@ -3055,7 +3055,6 @@ class lineageTree:
             ax = fig.add_subplot(1, 1, 1)
 
         if three_dim:
-        if three_dim:
             ax.plot(
                 pos_cycle1[:, 0], pos_cycle1[:, 1], pos_cycle1[:, 2], "-", label=f"root = {nodes1}"
             )
