@@ -48,11 +48,73 @@ class lineageTree:
         Returns:
             int: next authorized id
         """
+        if self.max_id == -1 and self.nodes:
+            self.max_id = sorted(self.nodes)[-1]
         if self.next_id == []:
             self.max_id += 1
             return self.max_id
         else:
             return self.next_id.pop()
+
+    ###TODO pos can be callable and stay motionless (copy the position of the succ node, use something like optical flow)
+    def add_branch(self, succ: int, length: int, move_timepoints:bool = True, pos: [callable, None] = None, reverse:bool = False):
+        """Adds a branch of specific length to a node either as a successor or as a predecessor. 
+        If it is placed on top of a tree all the nodes will move timepoints #length down.
+
+        Args:
+            succ (int): Id of the successor (predecessor if reverse is False)
+            length (int): The length of the new branch.
+            pos (np.ndarray, optional): The new position of the branch. Defaults to None.
+            reverese (bool): If reverse will add a successor branch instead of a predecessor branch
+        """
+        if length == 0:
+            return succ
+        if self.predecessor.get(succ,None) and not reverse:
+            raise Warning("Cannot add 2 predecessors to a node")
+        time = self.time[succ]
+        original = succ
+        if move_timepoints:
+            nodes_to_move = set(self.get_sub_tree(succ))
+            new_times = {node: self.time[node]+length for node in nodes_to_move}
+            for node in nodes_to_move:
+                old_time = self.time[node]
+                self.time_nodes[old_time].remove(node)
+                self.time_nodes.setdefault(old_time+length, set()).add(node)
+            self.time.update(new_times)
+        for t in range(length-1,-1,-1):
+            _next = self.add_node(time+t, succ = succ ,pos = self.pos[original], reverse = True)
+            succ = _next
+        if original in self.roots:
+            self.roots.add(_next)
+            self.roots.remove(original)
+        self.t_e = max(self.time_nodes)
+        return _next
+
+    def fuse_lineage_tree(self, l1_root:int, l2_root:int, length_l1:int=0, length_l2:int=0, length:int=1):
+        """Fuses 2 lineages from the lineagetree object. The 2 lineages that are to be fused can have a longer
+        first node and the node of the resulting lineage can also be longer
+
+        Args:
+            l1_root (int): Id of the first root
+            l2_root (int): Id of the second root
+            length_l1 (int, optional): The length of the branch that will be added on top of the first lineage. Defaults to 1.
+            length_l2 (int, optional): The length of the branch that will be added on top of the second lineage. Defaults to 1.
+            length (int, optional): The length of the branch that will be added on top of the resulting lineage. Defaults to 1.
+
+        Raises:
+            Warning: _description_
+
+        Returns:
+            int: The id of the root of the new lineage.
+        """
+        if self.predecessor.get(l1_root) or self.predecessor.get(l2_root):
+            raise Warning("Please select 2 roots.")
+        if self.time[l1_root] != self.time[l2_root]:
+            warnings.warn("Using lineagetrees that do not exist in the same timepoint. The operation will continue")
+        new_root1 = self.add_branch(l1_root,length_l1)
+        new_root2 = self.add_branch(l2_root,length_l2)
+        self.fuse_nodes(new_root1, new_root2)
+        return self.add_branch(new_root1, length)
 
     def add_node(
         self,
@@ -78,7 +140,7 @@ class lineageTree:
             int: id of the new node.
         """
         C_next = self.get_next_id() if nid is None else nid
-        self.time_nodes.setdefault(t, []).append(C_next)
+        self.time_nodes.setdefault(t, set()).add(C_next)
         if succ is not None and not reverse:
             self.successor.setdefault(succ, []).append(C_next)
             self.predecessor.setdefault(C_next, []).append(succ)
@@ -136,7 +198,7 @@ class lineageTree:
         self.time.pop(c, 0)
         self.spatial_density.pop(c, 0)
 
-        self.next_id.append(c)
+        # self.next_id.append(c)
         return e_to_remove, succ, s_to_remove, pred, p_to_remove, pos
 
     def fuse_nodes(self, c1: int, c2: int):
@@ -157,7 +219,7 @@ class lineageTree:
         ) = self.remove_node(c2)
         for e in e_to_remove:
             new_e = [c1] + [other_c for other_c in e if e != c2]
-            self.edges.add(new_e)
+            self.edges.add(tuple(new_e))
 
         self.successor.setdefault(c1, []).extend(succ)
         self.predecessor.setdefault(c1, []).extend(pred)
@@ -169,7 +231,7 @@ class lineageTree:
             self.predecessor[p].append(c1)
 
         self.pos[c1] = np.mean([self.pos[c1], c2_pos], axis=0)
-        self.progeny[c1] += 1
+        # self.progeny[c1] += 1
 
     @property
     def roots(self):
