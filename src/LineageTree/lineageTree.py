@@ -2248,6 +2248,25 @@ class lineageTree:
         while time < self.time.get(ancestor, -1):
             ancestor = self.predecessor.get(ancestor, [-1])[0]
         return ancestor
+    
+    def get_labelled_ancestor(self, node: int):
+        """Finds the first labelled ancestor and returns its ID otherwise returns None
+
+        Args:
+            node (int): The id of the node 
+
+        Returns:
+            [None,int]: Returns the first ancestor found that has a label otherwise 
+            None.
+    """
+        if node not in self.nodes:
+            return
+        ancestor = node
+        while self.time[ancestor]>=self.t_b and ancestor != -1:
+            if self.labels.get(ancestor,None):
+                return ancestor
+            ancestor = self.predecessor.get(ancestor, [-1])[0]
+        return 
 
     def unordered_tree_edit_distances_at_time_t(
         self,
