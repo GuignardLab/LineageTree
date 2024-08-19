@@ -81,14 +81,42 @@ class lineageTree:
                 self.time_nodes[old_time].remove(node)
                 self.time_nodes.setdefault(old_time+length, set()).add(node)
             self.time.update(new_times)
-        for t in range(length-1,-1,-1):
-            _next = self.add_node(time+t, succ = succ ,pos = self.pos[original], reverse = True)
-            succ = _next
+            for t in range(length-1,-1,-1):
+                _next = self.add_node(time+t, succ = succ ,pos = self.pos[original], reverse = True)
+                succ = _next
+        else:
+            for t in range(length):
+                _next = self.add_node(time-t, succ = succ ,pos = self.pos[original], reverse = True)
+                succ = _next
+        if self.time[succ]==0:
+            self.roots.add(succ)
+            self.labels[succ] = "Added branch"
         if original in self.roots:
-            self.roots.add(_next)
+            self.roots.add(succ)
+            self.labels[succ] = "Added branch"
             self.roots.remove(original)
+            self.labels.pop(original)
         self.t_e = max(self.time_nodes)
-        return _next
+        return succ
+
+    def cut_tree(self, root):
+        """Cuts a lineage with at least a division into 2 lineages.
+
+        Args:
+            root (int): The id of the node, which will be cut. 
+            Does not need to be exactly a node that has 2 descendants
+
+        Returns:
+            int: The id of the new tree
+        """
+        cycle = self.get_successors(root)
+        last_cell = cycle[-1]
+        if len(list(self.successor.get(last_cell, 0)))>1:
+            new_lT = self.successor[last_cell].pop()
+            self.predecessor[new_lT].pop()
+            return self.add_branch(new_lT, len(cycle)+1, move_timepoints= False)
+        else:
+            raise Warning("No division of the branch")
 
     def fuse_lineage_tree(self, l1_root:int, l2_root:int, length_l1:int=0, length_l2:int=0, length:int=1):
         """Fuses 2 lineages from the lineagetree object. The 2 lineages that are to be fused can have a longer
@@ -115,6 +143,32 @@ class lineageTree:
         new_root2 = self.add_branch(l2_root,length_l2)
         self.fuse_nodes(new_root1, new_root2)
         return self.add_branch(new_root1, length)
+
+    def copy_lineage(self, root):
+        """Copies a subtree and assigns it to new nodes. 
+            Warning does not take into account the predecessor of the root node.
+
+        Args:
+            root (int): The root of the tree to be copied
+
+        Returns:
+            int: The root of the new tree.
+        """
+        new_nodes = {old_node: self.get_next_id() for old_node in self.get_sub_tree(root)}
+        self.nodes.update(new_nodes.values())
+        for old_node, new_node in new_nodes.items():
+            self.time[new_node] = self.time[old_node]
+            self.successor[new_node] =[new_nodes[n] for n in self.successor.get(old_node,[]) if n]
+            self.predecessor[new_node] =[new_nodes[n] for n in self.predecessor.get(old_node,[]) if n]
+            self.pos[new_node] = self.pos[old_node]+0.5
+            self.time_nodes[self.time[old_node]].add(new_nodes[old_node])
+        self.edges.update((new_nodes[root], self.successor[new_nodes[root]][0]))
+        new_root = new_nodes.pop(root)
+        self.edges.update((self.predecessor[new_nodes[node]][0], new_nodes[node]) for node in new_nodes if self.predecessor[node])
+        self.labels[new_root] = f"Copy of {root}"
+        if self.time[new_root] == 0:
+            self.roots.add(new_root)
+        return new_root
 
     def add_node(
         self,
@@ -156,6 +210,7 @@ class lineageTree:
         return C_next
 
     def remove_track(self, track: list):
+
         self.nodes.difference_update(track)
         times = {self.time[n] for n in track}
         for t in times:
@@ -169,6 +224,21 @@ class lineageTree:
             if i < len(track) - 1:
                 self.successor.pop(c)
             self.time.pop(c)
+                
+    def remove_nodes(self, group):
+        self.nodes.difference_update(group)
+        times = {self.time[n] for n in group}
+        for t in times:
+            self.time_nodes[t] = list(
+                set(self.time_nodes[t]).difference(group)
+            )
+        for node in group:
+            self.pos.pop(node)
+            if self.predecessor.get(node):
+                self.predecessor.pop(node)
+            if self.successor.get(node):
+                self.successor.pop(node)
+            self.time.pop(node)
 
     def remove_node(self, c: int) -> tuple:
         """Removes a node and update the lineageTree accordingly
@@ -2413,6 +2483,8 @@ class lineageTree:
         nrows=2,
         figsize=(10, 15),
         dpi=150,
+        figure= None, 
+        axes = None,
         **kwargs,
     ):
         """Plots all lineages.
@@ -2434,9 +2506,10 @@ class lineageTree:
         ncols = int(len(graphs) // nrows) + (+np.sign(len(graphs) % nrows))
         pos = postions_of_nx(self, graphs)
         figure, axes = plt.subplots(
-            figsize=figsize, nrows=nrows, ncols=ncols, dpi=dpi
-        )
+                figsize=figsize, nrows=nrows, ncols=ncols, dpi=dpi
+            )
         flat_axes = axes.flatten()
+        ax2root = {}
         for i, graph in enumerate(graphs.values()):
             nx.draw_networkx(
                 graph,
@@ -2446,7 +2519,16 @@ class lineageTree:
                 **kwargs,
                 ax=flat_axes[i],
             )
+            root = [n for n, d in graph.in_degree() if d == 0][0]
+            label = self.labels.get(root, "Unlabeled")
+            xlim = flat_axes[i].get_xlim()
+            ylim = flat_axes[i].get_ylim()
+            x_pos = (xlim[1]) / 2 #- len(label)  # Center horizontally
+            y_pos = ylim[0] + 15
+            flat_axes[i].text(x_pos, y_pos, label, fontsize=7, color='black', ha='center', va='center')
+            ax2root[flat_axes[i]] = root
         [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
+        return figure, axes, ax2root
 
     def plot_node(self, node, figsize=(100, 100), dpi=150, **kwargs):
         """Plots the subtree spawn by a node.
@@ -2459,15 +2541,17 @@ class lineageTree:
         if len(graph) > 1:
             raise Warning("Please enter only one node")
         graph = graph[list(graph)[0]]
-        plt.figure(1, figsize=figsize, dpi=dpi)
-        plotted_graph = nx.draw_networkx(
+        # plt.figure(1, figsize=figsize, dpi=dpi)
+        figure, ax = plt.subplots(nrows=1 , ncols=1)
+        nx.draw_networkx(
             graph,
             hierarchy_pos(graph, self, node),
             with_labels=False,
             arrows=False,
+            ax=ax,
             **kwargs,
         )
-        return plotted_graph
+        return figure, ax
 
     # plt.tick_params(axis='both', which='both', right=False, left=False, top=False, bottom=False, labelleft=False, labelbottom = False)
 
