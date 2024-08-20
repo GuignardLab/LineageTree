@@ -224,14 +224,12 @@ class lineageTree:
             if i < len(track) - 1:
                 self.successor.pop(c)
             self.time.pop(c)
-                
+
     def remove_nodes(self, group):
         self.nodes.difference_update(group)
         times = {self.time[n] for n in group}
         for t in times:
-            self.time_nodes[t] = list(
-                set(self.time_nodes[t]).difference(group)
-            )
+            self.time_nodes[t] =set(self.time_nodes[t]).difference(group)
         for node in group:
             self.pos.pop(node)
             if self.predecessor.get(node):
@@ -240,6 +238,34 @@ class lineageTree:
                 self.successor.pop(node)
             self.time.pop(node)
 
+    def modify_branch(self,node,new_length):
+        cycle = self.get_cycle(node)
+        length = len(cycle)
+        successors = self.successor.get(cycle[-1])
+        if length>new_length:
+            to_remove = length-new_length
+            last_cell = cycle[new_length-1]
+            subtree =self.get_sub_tree(cycle[-1])[1:]
+            self.remove_nodes(cycle[new_length:])
+            self.successor[last_cell] = successors
+            if successors:
+                for succ in successors:
+                    self.predecessor[succ] = [last_cell]
+            for node in subtree:
+                if node not in cycle[new_length-1:]:
+                    old_time = self.time.get(node)
+                    self.time[node] = old_time - to_remove
+                    self.time_nodes[old_time].remove(node)
+                    self.time_nodes.setdefault(old_time-to_remove, set()).add(node)
+        elif length<new_length:
+            to_add = new_length-length
+            last_cell = cycle[-1]
+            self.successor[cycle[-2]] = []
+            self.predecessor[last_cell] = []
+            succ = self.add_branch(last_cell, length = to_add, move_timepoints=True, reverse= False)
+            self.predecessor[succ] = [cycle[-2]]
+            self.successor[cycle[-2]] = [succ]
+            
     def remove_node(self, c: int) -> tuple:
         """Removes a node and update the lineageTree accordingly
 
@@ -316,7 +342,7 @@ class lineageTree:
     @property
     def labels(self):
         if not hasattr(self, "_labels"):
-            self._labels = {i: "Enter_Label" for i in self.time_nodes[0]}
+            self._labels = {i: "Unlabeled" for i in self.time_nodes[0]}
         return self._labels
 
     def _write_header_am(self, f: TextIO, nb_points: int, length: int):
@@ -2523,9 +2549,9 @@ class lineageTree:
             label = self.labels.get(root, "Unlabeled")
             xlim = flat_axes[i].get_xlim()
             ylim = flat_axes[i].get_ylim()
-            x_pos = (xlim[1]) / 2 #- len(label)  # Center horizontally
+            x_pos = (xlim[1]) /2 #- len(label)  # Center horizontally
             y_pos = ylim[0] + 15
-            flat_axes[i].text(x_pos, y_pos, label, fontsize=7, color='black', ha='center', va='center')
+            flat_axes[i].text(x_pos, y_pos, label, fontsize=7, color='black', ha='center', va='center',bbox={"facecolor": 'white', "edgecolor": 'green', "boxstyle": 'round'})
             ax2root[flat_axes[i]] = root
         [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
         return figure, axes, ax2root
@@ -3207,7 +3233,7 @@ class lineageTree:
         return distance, fig
 
     def first_labelling(self):
-        self.labels = {i: "Enter_Label" for i in self.time_nodes[0]}
+        self.labels = {i: "Unlabeled" for i in self.time_nodes[0]}
 
     def __init__(
         self,
