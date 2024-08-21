@@ -141,8 +141,12 @@ class lineageTree:
             warnings.warn("Using lineagetrees that do not exist in the same timepoint. The operation will continue")
         new_root1 = self.add_branch(l1_root,length_l1)
         new_root2 = self.add_branch(l2_root,length_l2)
-        self.fuse_nodes(new_root1, new_root2)
-        return self.add_branch(new_root1, length)
+        next_root1 = self[new_root1][0]
+        self.remove_nodes(new_root1)
+        self.successor[new_root2].append(next_root1)
+        self.predecessor[next_root1] = [new_root2]
+        print(new_root1, new_root2, next_root1)
+        return self.add_branch(new_root2, length)
 
     def copy_lineage(self, root):
         """Copies a subtree and assigns it to new nodes. 
@@ -224,6 +228,8 @@ class lineageTree:
             self.time.pop(c)
 
     def remove_nodes(self, group):
+        if isinstance(group, int):
+            group = {group}
         self.nodes.difference_update(group)
         times = {self.time.pop(n) for n in group}
         for t in times:
@@ -235,6 +241,10 @@ class lineageTree:
                 self.predecessor.pop(node)
             if self.successor.get(node):
                 self.successor.pop(node)
+            self.labels.pop(node,0)
+            if node in self.roots:
+                self.roots.remove(node)
+        
 
     def modify_branch(self,node,new_length):
         cycle = self.get_cycle(node)
@@ -276,25 +286,22 @@ class lineageTree:
         """
         self.nodes.remove(c)
         self.time_nodes[self.time[c]].remove(c)
-        # self.time_nodes.pop(c, 0)
         pos = self.pos.pop(c, 0)
         if c in self.roots:
             self.roots.remove(c)
         succ = self.successor.pop(c, [])
         s_to_remove = [s for s, ci in self.successor.items() if c in ci]
         for s in s_to_remove:
-            self.successor[s].remove(c)
-
+            self.predecessor[s].remove(c)
         pred = self.predecessor.pop(c, [])
         p_to_remove = [s for s, ci in self.predecessor.items() if ci == c]
         for s in p_to_remove:
-            self.predecessor[s].remove(c)
+            self.successor[s].remove(c)
 
-        self.time.pop(c, 0)
-        self.spatial_density.pop(c, 0)
+        self.time.pop(c)
+        self.spatial_density.pop(c,0)
 
-        # self.next_id.append(c)
-        return e_to_remove, succ, s_to_remove, pred, p_to_remove, pos
+        return succ, s_to_remove, pred, p_to_remove, pos
 
     def fuse_nodes(self, c1: int, c2: int):
         """Fuses together two nodes that belong to the same time point
@@ -305,15 +312,13 @@ class lineageTree:
             c2 (int): id of the second node to fuse
         """
         (
-            e_to_remove,
+            
             succ,
             s_to_remove,
             pred,
             p_to_remove,
             c2_pos,
         ) = self.remove_node(c2)
-        for e in e_to_remove:
-            new_e = [c1] + [other_c for other_c in e if e != c2]
 
         self.successor.setdefault(c1, []).extend(succ)
         self.predecessor.setdefault(c1, []).extend(pred)
@@ -335,7 +340,6 @@ class lineageTree:
     @property
     def edges(self):
         return {(k,vi) for k,v in self.successor.items() for vi in v}
-    
     @property
     def leaves(self):
         return set(self.predecessor).difference(self.successor)
