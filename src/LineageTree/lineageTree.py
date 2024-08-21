@@ -155,14 +155,18 @@ class lineageTree:
             int: The root of the new tree.
         """
         new_nodes = {old_node: self.get_next_id() for old_node in self.get_sub_tree(root)}
-        self.nodes.update(new_nodes.values())
+        self.nodes.update(set(new_nodes.values()))
         for old_node, new_node in new_nodes.items():
             self.time[new_node] = self.time[old_node]
-            self.successor[new_node] =[new_nodes[n] for n in self.successor.get(old_node,[]) if n]
-            self.predecessor[new_node] =[new_nodes[n] for n in self.predecessor.get(old_node,[]) if n]
+            succ = self.successor.get(old_node,[])
+            if succ:
+                self.successor[new_node] = [new_nodes[n] for n in succ]
+            pred = self.predecessor.get(old_node,[])
+            if pred:
+                self.predecessor[new_node] = [new_nodes[n] for n in pred]
             self.pos[new_node] = self.pos[old_node]+0.5
             self.time_nodes[self.time[old_node]].add(new_nodes[old_node])
-        new_root = new_nodes.pop(root)
+        new_root = new_nodes[root]
         self.labels[new_root] = f"Copy of {root}"
         if self.time[new_root] == 0:
             self.roots.add(new_root)
