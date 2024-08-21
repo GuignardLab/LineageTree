@@ -95,7 +95,7 @@ class lineageTree:
             self.roots.add(succ)
             self.labels[succ] = "Added branch"
             self.roots.remove(original)
-            self.labels.pop(original)
+            self.labels.pop(original,-1)
         self.t_e = max(self.time_nodes)
         return succ
 
@@ -162,9 +162,7 @@ class lineageTree:
             self.predecessor[new_node] =[new_nodes[n] for n in self.predecessor.get(old_node,[]) if n]
             self.pos[new_node] = self.pos[old_node]+0.5
             self.time_nodes[self.time[old_node]].add(new_nodes[old_node])
-        self.edges.update((new_nodes[root], self.successor[new_nodes[root]][0]))
         new_root = new_nodes.pop(root)
-        self.edges.update((self.predecessor[new_nodes[node]][0], new_nodes[node]) for node in new_nodes if self.predecessor[node])
         self.labels[new_root] = f"Copy of {root}"
         if self.time[new_root] == 0:
             self.roots.add(new_root)
@@ -198,11 +196,9 @@ class lineageTree:
         if succ is not None and not reverse:
             self.successor.setdefault(succ, []).append(C_next)
             self.predecessor.setdefault(C_next, []).append(succ)
-            self.edges.add((succ, C_next))
         elif succ is not None:
             self.predecessor.setdefault(succ, []).append(C_next)
             self.successor.setdefault(C_next, []).append(succ)
-            self.edges.add((C_next, succ))
         self.nodes.add(C_next)
         self.pos[C_next] = pos
         self.progeny[C_next] = 0
@@ -214,9 +210,7 @@ class lineageTree:
         self.nodes.difference_update(track)
         times = {self.time[n] for n in track}
         for t in times:
-            self.time_nodes[t] = list(
-                set(self.time_nodes[t]).difference(track)
-            )
+            self.time_nodes[t] = set(self.time_nodes[t]).difference(track)
         for i, c in enumerate(track):
             self.pos.pop(c)
             if i != 0:
@@ -227,22 +221,24 @@ class lineageTree:
 
     def remove_nodes(self, group):
         self.nodes.difference_update(group)
-        times = {self.time[n] for n in group}
+        times = {self.time.pop(n) for n in group}
         for t in times:
-            self.time_nodes[t] =set(self.time_nodes[t]).difference(group)
+            self.time_nodes[t] = set(self.time_nodes[t]).difference(group)
         for node in group:
             self.pos.pop(node)
             if self.predecessor.get(node):
+                self.successor.pop(self.predecessor.get(node)[0],-1)
                 self.predecessor.pop(node)
             if self.successor.get(node):
                 self.successor.pop(node)
-            self.time.pop(node)
 
     def modify_branch(self,node,new_length):
         cycle = self.get_cycle(node)
         length = len(cycle)
         successors = self.successor.get(cycle[-1])
-        if length>new_length:
+        if length==1 and new_length!=1:
+            self.add_branch(node, length=new_length, move_timepoints=True, reverse = False)
+        elif length>new_length:
             to_remove = length-new_length
             last_cell = cycle[new_length-1]
             subtree =self.get_sub_tree(cycle[-1])[1:]
@@ -265,7 +261,9 @@ class lineageTree:
             succ = self.add_branch(last_cell, length = to_add, move_timepoints=True, reverse= False)
             self.predecessor[succ] = [cycle[-2]]
             self.successor[cycle[-2]] = [succ]
-            
+        else:
+            return
+
     def remove_node(self, c: int) -> tuple:
         """Removes a node and update the lineageTree accordingly
 
@@ -276,9 +274,6 @@ class lineageTree:
         self.time_nodes[self.time[c]].remove(c)
         # self.time_nodes.pop(c, 0)
         pos = self.pos.pop(c, 0)
-        e_to_remove = [e for e in self.edges if c in e]
-        for e in e_to_remove:
-            self.edges.remove(e)
         if c in self.roots:
             self.roots.remove(c)
         succ = self.successor.pop(c, [])
@@ -315,7 +310,6 @@ class lineageTree:
         ) = self.remove_node(c2)
         for e in e_to_remove:
             new_e = [c1] + [other_c for other_c in e if e != c2]
-            self.edges.add(tuple(new_e))
 
         self.successor.setdefault(c1, []).extend(succ)
         self.predecessor.setdefault(c1, []).extend(pred)
@@ -334,7 +328,10 @@ class lineageTree:
         if not hasattr(self, "_roots"):
             self._roots = set(self.nodes).difference(self.predecessor)
         return self._roots
-
+    @property
+    def edges(self):
+        return {(k,vi) for k,v in self.successor.items() for vi in v}
+    
     @property
     def leaves(self):
         return set(self.predecessor).difference(self.successor)
@@ -852,11 +849,6 @@ class lineageTree:
                         for d in self.successor.get(n, []):
                             if d in nodes_to_use:
                                 edges_to_use.append((n, d))
-                    # edges_to_use += [
-                    #     e
-                    #     for e in self.edges
-                    #     if e[0] in nodes_to_use and e[1] in nodes_to_use
-                    # ]
                 if spatial:
                     edges_to_use += [
                         e for e in s_edges if t_min < self.time[e[0]] < t_max
@@ -979,7 +971,6 @@ class lineageTree:
         self.time_edges = {}
         unique_id = 0
         self.nodes = set()
-        self.edges = set()
         self.successor = {}
         self.predecessor = {}
         self.pos = {}
@@ -1018,7 +1009,6 @@ class lineageTree:
                 M = corres[pred]
                 self.predecessor[C] = [M]
                 self.successor.setdefault(M, []).append(C)
-                self.edges.add((M, C))
                 self.time_edges.setdefault(t, set()).add((M, C))
                 self.lin.setdefault(lin_id, []).append(C)
                 self.C_lin[C] = lin_id
@@ -1175,9 +1165,7 @@ class lineageTree:
                 self.successor[new_id] = [
                     self.pkl2lT[ni] for ni in lt[n] if ni in self.pkl2lT
                 ]
-                self.edges.update(
-                    [(new_id, ni) for ni in self.successor[new_id]]
-                )
+               
                 for ni in self.successor[new_id]:
                     self.time_edges.setdefault(t - 1, set()).add((new_id, ni))
 
@@ -1334,7 +1322,6 @@ class lineageTree:
                         p = None
                     self.predecessor.setdefault(c, []).append(p)
                     self.successor.setdefault(p, []).append(c)
-                    self.edges.add((p, c))
                     self.time_edges.setdefault(t - 1, set()).add((p, c))
             self.max_id = unique_id
 
@@ -1422,7 +1409,6 @@ class lineageTree:
                         p = None
                     self.predecessor.setdefault(c, []).append(p)
                     self.successor.setdefault(p, []).append(c)
-                    self.edges.add((p, c))
                     self.time_edges.setdefault(t - 1, set()).add((p, c))
             self.max_id = unique_id
 
@@ -1446,7 +1432,6 @@ class lineageTree:
         self.time_edges = {}
         unique_id = 0
         self.nodes = set()
-        self.edges = set()
         self.successor = {}
         self.predecessor = {}
         self.pos = {}
@@ -1506,7 +1491,6 @@ class lineageTree:
                             M = self.time_id[(t - 1, M_id)]
                             self.successor.setdefault(M, []).append(C)
                             self.predecessor.setdefault(C, []).append(M)
-                            self.edges.add((M, C))
                             self.time_edges[t].add((M, C))
                         else:
                             if M_id != -1:
@@ -1562,7 +1546,6 @@ class lineageTree:
             target = e.target_idx
             self.predecessor.setdefault(target, []).append(source)
             self.successor.setdefault(source, []).append(target)
-            self.edges.add((source, target))
             self.time_edges.setdefault(self.time[source], set()).add(
                 (source, target)
             )
@@ -1604,7 +1587,6 @@ class lineageTree:
             target = int(float(link[5]))
             self.predecessor.setdefault(target, []).append(source)
             self.successor.setdefault(source, []).append(target)
-            self.edges.add((source, target))
             self.time_edges.setdefault(self.time[source], set()).add(
                 (source, target)
             )
@@ -1659,7 +1641,6 @@ class lineageTree:
                     if attr in self.xml_attributes:
                         self.__dict__[attr][cell_id] = eval(cell.attrib[attr])
 
-        self.edges = set()
         tracks = {}
         self.successor = {}
         self.predecessor = {}
@@ -1687,7 +1668,6 @@ class lineageTree:
                     self.track_name[s] = t_name
                     self.track_name[t] = t_name
                     tracks[t_id].append((s, t))
-                    self.edges.add((s, t))
         self.t_b = min(self.time_nodes.keys())
         self.t_e = max(self.time_nodes.keys())
 
@@ -1887,7 +1867,6 @@ class lineageTree:
         self.time_edges = time_edges
         self.pos = pos
         self.nodes = set(nodes)
-        self.edges = set(edges)
         self.t_b = min(time_nodes.keys())
         self.t_e = max(time_nodes.keys())
         self.is_root = is_root
@@ -3272,7 +3251,6 @@ class lineageTree:
         self.max_id = -1
         self.next_id = []
         self.nodes = set()
-        self.edges = set()
         self.successor = {}
         self.predecessor = {}
         self.pos = {}
