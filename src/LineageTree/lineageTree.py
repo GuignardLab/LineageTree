@@ -26,13 +26,11 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline
-
-# from edist.uted import uted
 from scipy.spatial import Delaunay, distance
 from scipy.spatial import cKDTree as KDTree
+from sklearn.metrics.pairwise import euclidean_distances
 
 from .utils import hierarchy_pos, postions_of_nx
-from sklearn.metrics.pairwise import euclidean_distances
 
 
 class lineageTree:
@@ -56,6 +54,17 @@ class lineageTree:
         else:
             return self.next_id.pop()
 
+    def complete_lineage(self, nodes: int= None):
+        if nodes is None:
+            nodes = set(self.roots)
+        elif isinstance(nodes, int):
+            nodes = {nodes}
+        for node in nodes:
+            sub = set(self.get_sub_tree(node))
+            specific_leaves = sub.intersection(self.leaves)
+            for leaf in specific_leaves:
+                self.add_branch(leaf, self.t_e-self.time[leaf],reverse=True)
+
     ###TODO pos can be callable and stay motionless (copy the position of the succ node, use something like optical flow)
     def add_branch(self, succ: int, length: int, move_timepoints:bool = True, pos: [callable, None] = None, reverse:bool = False):
         """Adds a branch of specific length to a node either as a successor or as a predecessor. 
@@ -65,6 +74,7 @@ class lineageTree:
             succ (int): Id of the successor (predecessor if reverse is False)
             length (int): The length of the new branch.
             pos (np.ndarray, optional): The new position of the branch. Defaults to None.
+            move_timepoints (bool): Important only if reverse= True
             reverese (bool): If reverse will add a successor branch instead of a predecessor branch
         """
         if length == 0:
@@ -73,27 +83,33 @@ class lineageTree:
             raise Warning("Cannot add 2 predecessors to a node")
         time = self.time[succ]
         original = succ
-        if move_timepoints:
-            nodes_to_move = set(self.get_sub_tree(succ))
-            new_times = {node: self.time[node]+length for node in nodes_to_move}
-            for node in nodes_to_move:
-                old_time = self.time[node]
-                self.time_nodes[old_time].remove(node)
-                self.time_nodes.setdefault(old_time+length, set()).add(node)
-            self.time.update(new_times)
-            for t in range(length-1,-1,-1):
-                _next = self.add_node(time+t, succ = succ ,pos = self.pos[original], reverse = True)
-                succ = _next
+        if not reverse:
+            if move_timepoints:
+                nodes_to_move = set(self.get_sub_tree(succ))
+                new_times = {node: self.time[node]+length for node in nodes_to_move}
+                for node in nodes_to_move:
+                    old_time = self.time[node]
+                    self.time_nodes[old_time].remove(node)
+                    self.time_nodes.setdefault(old_time+length, set()).add(node)
+                self.time.update(new_times)
+                for t in range(length-1,-1,-1):
+                    _next = self.add_node(time+t, succ = succ ,pos = self.pos[original], reverse = True)
+                    succ = _next
+            else:
+                for t in range(length):
+                    _next = self.add_node(time-t, succ = succ ,pos = self.pos[original], reverse = True)
+                    succ = _next
         else:
             for t in range(length):
-                _next = self.add_node(time-t, succ = succ ,pos = self.pos[original], reverse = True)
+                _next = self.add_node(time+t, succ = succ ,pos = self.pos[original], reverse = False)
                 succ = _next
+            self.labels[succ] = "New branch"
         if self.time[succ]==0:
             self.roots.add(succ)
-            self.labels[succ] = "Added branch"
+            self.labels[succ] = "New branch"
         if original in self.roots:
             self.roots.add(succ)
-            self.labels[succ] = "Added branch"
+            self.labels[succ] = "New branch"
             self.roots.remove(original)
             self.labels.pop(original,-1)
         self.t_e = max(self.time_nodes)
@@ -114,7 +130,10 @@ class lineageTree:
         if len(list(self.successor.get(last_cell, 0)))>1:
             new_lT = self.successor[last_cell].pop()
             self.predecessor[new_lT].pop()
-            return self.add_branch(new_lT, len(cycle)+1, move_timepoints= False)
+            self.labels[cycle[0]] = f"Splitted from {cycle[0]}"
+            new_tr = self.add_branch(new_lT, len(cycle)+1, move_timepoints= False)
+            self.labels[new_tr] = f"Splitted from {cycle[0]}"
+            return new_tr
         else:
             raise Warning("No division of the branch")
 
@@ -136,7 +155,7 @@ class lineageTree:
             int: The id of the root of the new lineage.
         """
         if self.predecessor.get(l1_root) or self.predecessor.get(l2_root):
-            raise Warning("Please select 2 roots.")
+            raise ValueError("Please select 2 roots.")
         if self.time[l1_root] != self.time[l2_root]:
             warnings.warn("Using lineagetrees that do not exist in the same timepoint. The operation will continue")
         new_root1 = self.add_branch(l1_root,length_l1)
@@ -145,8 +164,9 @@ class lineageTree:
         self.remove_nodes(new_root1)
         self.successor[new_root2].append(next_root1)
         self.predecessor[next_root1] = [new_root2]
-        print(new_root1, new_root2, next_root1)
-        return self.add_branch(new_root2, length)
+        new_branch = self.add_branch(new_root2, length)
+        self.labels[new_branch] = f"Fusion of {new_root1} and {new_root2}"
+        return new_branch
 
     def copy_lineage(self, root):
         """Copies a subtree and assigns it to new nodes. 
@@ -209,23 +229,22 @@ class lineageTree:
             self.successor.setdefault(C_next, []).append(succ)
         self.nodes.add(C_next)
         self.pos[C_next] = pos
-        self.progeny[C_next] = 0
         self.time[C_next] = t
         return C_next
 
-    def remove_track(self, track: list):
+    # def remove_track(self, track: list):
 
-        self.nodes.difference_update(track)
-        times = {self.time[n] for n in track}
-        for t in times:
-            self.time_nodes[t] = set(self.time_nodes[t]).difference(track)
-        for i, c in enumerate(track):
-            self.pos.pop(c)
-            if i != 0:
-                self.predecessor.pop(c)
-            if i < len(track) - 1:
-                self.successor.pop(c)
-            self.time.pop(c)
+    #     self.nodes.difference_update(track)
+    #     times = {self.time[n] for n in track}
+    #     for t in times:
+    #         self.time_nodes[t] = set(self.time_nodes[t]).difference(track)
+    #     for i, c in enumerate(track):
+    #         self.pos.pop(c)
+    #         if i != 0:
+    #             self.predecessor.pop(c)
+    #         if i < len(track) - 1:
+    #             self.successor.pop(c)
+    #         self.time.pop(c)
 
     def remove_nodes(self, group):
         if isinstance(group, int):
@@ -237,14 +256,20 @@ class lineageTree:
         for node in group:
             self.pos.pop(node)
             if self.predecessor.get(node):
-                self.successor.pop(self.predecessor.get(node)[0],-1)
+                pred = self.predecessor[node][0]
+                siblings = self.successor.pop(pred, [])
+                siblings = [] if siblings==None else siblings
+                if len(siblings)==2:
+                    siblings.remove(node)
+                    self.successor[pred] = siblings
                 self.predecessor.pop(node)
             if self.successor.get(node):
+                for succ in self.successor[node]:
+                    self.predecessor.pop(succ)
                 self.successor.pop(node)
             self.labels.pop(node,0)
             if node in self.roots:
                 self.roots.remove(node)
-        
 
     def modify_branch(self,node,new_length):
         cycle = self.get_cycle(node)
@@ -263,7 +288,7 @@ class lineageTree:
                     self.predecessor[succ] = [last_cell]
             for node in subtree:
                 if node not in cycle[new_length-1:]:
-                    old_time = self.time.get(node)
+                    old_time = self.time[node]
                     self.time[node] = old_time - to_remove
                     self.time_nodes[old_time].remove(node)
                     self.time_nodes.setdefault(old_time-to_remove, set()).add(node)
@@ -278,59 +303,57 @@ class lineageTree:
         else:
             return
 
-    def remove_node(self, c: int) -> tuple:
-        """Removes a node and update the lineageTree accordingly
+    # def remove_node(self, c: int) -> tuple:
+    #     """Removes a node and update the lineageTree accordingly
 
-        Args:
-            c (int): id of the node to remove
-        """
-        self.nodes.remove(c)
-        self.time_nodes[self.time[c]].remove(c)
-        pos = self.pos.pop(c, 0)
-        if c in self.roots:
-            self.roots.remove(c)
-        succ = self.successor.pop(c, [])
-        s_to_remove = [s for s, ci in self.successor.items() if c in ci]
-        for s in s_to_remove:
-            self.predecessor[s].remove(c)
-        pred = self.predecessor.pop(c, [])
-        p_to_remove = [s for s, ci in self.predecessor.items() if ci == c]
-        for s in p_to_remove:
-            self.successor[s].remove(c)
+    #     Args:
+    #         c (int): id of the node to remove
+    #     """
+    #     self.nodes.remove(c)
+    #     self.time_nodes[self.time[c]].remove(c)
+    #     pos = self.pos.pop(c, 0)
+    #     if c in self.roots:
+    #         self.roots.remove(c)
+    #     succ = self.successor.pop(c, [])
+    #     s_to_remove = [s for s, ci in self.successor.items() if c in ci]
+    #     for s in s_to_remove:
+    #         self.predecessor[s].remove(c)
+    #     pred = self.predecessor.pop(c, [])
+    #     p_to_remove = [s for s, ci in self.predecessor.items() if ci == c]
+    #     for s in p_to_remove:
+    #         self.successor[s].remove(c)
 
-        self.time.pop(c)
-        self.spatial_density.pop(c,0)
+    #     self.time.pop(c)
+    #     self.spatial_density.pop(c,0)
 
-        return succ, s_to_remove, pred, p_to_remove, pos
+    #     return succ, s_to_remove, pred, p_to_remove, pos
 
-    def fuse_nodes(self, c1: int, c2: int):
-        """Fuses together two nodes that belong to the same time point
-        and update the lineageTree accordingly.
+    # def fuse_nodes(self, c1: int, c2: int):
+    #     """Fuses together two nodes that belong to the same time point
+    #     and update the lineageTree accordingly.
 
-        Args:
-            c1 (int): id of the first node to fuse
-            c2 (int): id of the second node to fuse
-        """
-        (
-            
-            succ,
-            s_to_remove,
-            pred,
-            p_to_remove,
-            c2_pos,
-        ) = self.remove_node(c2)
+    #     Args:
+    #         c1 (int): id of the first node to fuse
+    #         c2 (int): id of the second node to fuse
+    #     """
+    #     (
+    #         succ,
+    #         s_to_remove,
+    #         pred,
+    #         p_to_remove,
+    #         c2_pos,
+    #     ) = self.remove_node(c2)
 
-        self.successor.setdefault(c1, []).extend(succ)
-        self.predecessor.setdefault(c1, []).extend(pred)
+    #     self.successor.setdefault(c1, []).extend(succ)
+    #     self.predecessor.setdefault(c1, []).extend(pred)
 
-        for s in s_to_remove:
-            self.successor[s].append(c1)
+    #     for s in s_to_remove:
+    #         self.successor[s].append(c1)
 
-        for p in p_to_remove:
-            self.predecessor[p].append(c1)
+    #     for p in p_to_remove:
+    #         self.predecessor[p].append(c1)
 
-        self.pos[c1] = np.mean([self.pos[c1], c2_pos], axis=0)
-        # self.progeny[c1] += 1
+    #     self.pos[c1] = np.mean([self.pos[c1], c2_pos], axis=0)
 
     @property
     def roots(self):
@@ -343,7 +366,6 @@ class lineageTree:
     @property
     def leaves(self):
         return set(self.predecessor).difference(self.successor)
-
     @property
     def labels(self):
         if not hasattr(self, "_labels"):
@@ -2519,7 +2541,7 @@ class lineageTree:
         ncols = int(len(graphs) // nrows) + (+np.sign(len(graphs) % nrows))
         pos = postions_of_nx(self, graphs)
         figure, axes = plt.subplots(
-                figsize=figsize, nrows=nrows, ncols=ncols, dpi=dpi
+                figsize=figsize, nrows=nrows, ncols=ncols, dpi=dpi, sharey= True
             )
         flat_axes = axes.flatten()
         ax2root = {}
@@ -3266,7 +3288,6 @@ class lineageTree:
         self.time = {}
         self.kdtrees = {}
         self.spatial_density = {}
-        self.progeny = {}
         # self.labels = {}
         if xml_attributes is None:
             self.xml_attributes = []
