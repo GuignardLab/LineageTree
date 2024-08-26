@@ -304,7 +304,7 @@ class lineageTree:
             if self.predecessor.get(node):
                 pred = self.predecessor[node][0]
                 siblings = self.successor.pop(pred, [])
-                siblings = [] if siblings == None else siblings
+                siblings = [] if siblings is None else siblings
                 if len(siblings) == 2:
                     siblings.remove(node)
                     self.successor[pred] = siblings
