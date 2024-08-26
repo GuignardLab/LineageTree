@@ -109,12 +109,12 @@ def hierarchy_pos(
         if pos is None:
             pos = {root: (xcenter, vert_loc)}
         elif not a.predecessor.get(a.get_predecessors(root)[0]):
-            vert_loc = vert_loc-len(a.get_predecessors(root))
+            vert_loc = vert_loc - len(a.get_predecessors(root))
             pos[root] = (xcenter, vert_loc)
         else:
             pos[root] = (xcenter, vert_loc)
         children = list(G.neighbors(root))
-            
+
         if not isinstance(G, nx.DiGraph) and parent is not None:
             children.remove(parent)
         if len(children) != 0:
@@ -135,7 +135,7 @@ def hierarchy_pos(
                 )
         return pos
 
-    return _hierarchy_pos(G, root, width,a, vert_gap, vert_loc, xcenter)
+    return _hierarchy_pos(G, root, width, a, vert_gap, vert_loc, xcenter)
 
 
 def to_motile(

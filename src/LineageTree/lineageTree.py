@@ -28,7 +28,6 @@ import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.spatial import Delaunay, distance
 from scipy.spatial import cKDTree as KDTree
-from sklearn.metrics.pairwise import euclidean_distances
 
 from .utils import hierarchy_pos, postions_of_nx
 
@@ -54,8 +53,8 @@ class lineageTree:
         else:
             return self.next_id.pop()
 
-    def complete_lineage(self, nodes: [int,set]= None):
-        """ If there are leaves on the tree that exist on earlier timepoints than the last
+    def complete_lineage(self, nodes: [int, set] = None):
+        """If there are leaves on the tree that exist on earlier timepoints than the last
         defined by (self.t_e) will modify the branch to finish on the last timepoint.
 
         Args:
@@ -69,11 +68,18 @@ class lineageTree:
             sub = set(self.get_sub_tree(node))
             specific_leaves = sub.intersection(self.leaves)
             for leaf in specific_leaves:
-                self.add_branch(leaf, self.t_e-self.time[leaf],reverse=True)
+                self.add_branch(leaf, self.t_e - self.time[leaf], reverse=True)
 
     ###TODO pos can be callable and stay motionless (copy the position of the succ node, use something like optical flow)
-    def add_branch(self, succ: int, length: int, move_timepoints:bool = True, pos: [callable, None] = None, reverse:bool = False):
-        """Adds a branch of specific length to a node either as a successor or as a predecessor. 
+    def add_branch(
+        self,
+        succ: int,
+        length: int,
+        move_timepoints: bool = True,
+        pos: [callable, None] = None,
+        reverse: bool = False,
+    ):
+        """Adds a branch of specific length to a node either as a successor or as a predecessor.
         If it is placed on top of a tree all the nodes will move timepoints #length down.
 
         Args:
@@ -87,39 +93,55 @@ class lineageTree:
         """
         if length == 0:
             return succ
-        if self.predecessor.get(succ,None) and not reverse:
+        if self.predecessor.get(succ, None) and not reverse:
             raise Warning("Cannot add 2 predecessors to a node")
         time = self.time[succ]
         original = succ
         if not reverse:
             if move_timepoints:
                 nodes_to_move = set(self.get_sub_tree(succ))
-                new_times = {node: self.time[node]+length for node in nodes_to_move}
+                new_times = {
+                    node: self.time[node] + length for node in nodes_to_move
+                }
                 for node in nodes_to_move:
                     old_time = self.time[node]
                     self.time_nodes[old_time].remove(node)
-                    self.time_nodes.setdefault(old_time+length, set()).add(node)
+                    self.time_nodes.setdefault(old_time + length, set()).add(
+                        node
+                    )
                 self.time.update(new_times)
-                for t in range(length-1,-1,-1):
-                    _next = self.add_node(time+t, succ = succ ,pos = self.pos[original], reverse = True)
+                for t in range(length - 1, -1, -1):
+                    _next = self.add_node(
+                        time + t,
+                        succ=succ,
+                        pos=self.pos[original],
+                        reverse=True,
+                    )
                     succ = _next
             else:
                 for t in range(length):
-                    _next = self.add_node(time-t, succ = succ ,pos = self.pos[original], reverse = True)
+                    _next = self.add_node(
+                        time - t,
+                        succ=succ,
+                        pos=self.pos[original],
+                        reverse=True,
+                    )
                     succ = _next
         else:
             for t in range(length):
-                _next = self.add_node(time+t, succ = succ ,pos = self.pos[original], reverse = False)
+                _next = self.add_node(
+                    time + t, succ=succ, pos=self.pos[original], reverse=False
+                )
                 succ = _next
             self.labels[succ] = "New branch"
-        if self.time[succ]==0:
+        if self.time[succ] == 0:
             self.roots.add(succ)
             self.labels[succ] = "New branch"
         if original in self.roots:
             self.roots.add(succ)
             self.labels[succ] = "New branch"
             self.roots.remove(original)
-            self.labels.pop(original,-1)
+            self.labels.pop(original, -1)
         self.t_e = max(self.time_nodes)
         return succ
 
@@ -127,7 +149,7 @@ class lineageTree:
         """Cuts a lineage with at least a division into 2 lineages.
 
         Args:
-            root (int): The id of the node, which will be cut. 
+            root (int): The id of the node, which will be cut.
             Does not need to be exactly a node that has 2 descendants
 
         Returns:
@@ -135,17 +157,26 @@ class lineageTree:
         """
         cycle = self.get_successors(root)
         last_cell = cycle[-1]
-        if len(list(self.successor.get(last_cell, 0)))>1:
+        if len(list(self.successor.get(last_cell, 0))) > 1:
             new_lT = self.successor[last_cell].pop()
             self.predecessor[new_lT].pop()
             self.labels[cycle[0]] = f"Splitted from {cycle[0]}"
-            new_tr = self.add_branch(new_lT, len(cycle)+1, move_timepoints= False)
+            new_tr = self.add_branch(
+                new_lT, len(cycle) + 1, move_timepoints=False
+            )
             self.labels[new_tr] = f"Splitted from {cycle[0]}"
             return new_tr
         else:
             raise Warning("No division of the branch")
 
-    def fuse_lineage_tree(self, l1_root:int, l2_root:int, length_l1:int=0, length_l2:int=0, length:int=1):
+    def fuse_lineage_tree(
+        self,
+        l1_root: int,
+        l2_root: int,
+        length_l1: int = 0,
+        length_l2: int = 0,
+        length: int = 1,
+    ):
         """Fuses 2 lineages from the lineagetree object. The 2 lineages that are to be fused can have a longer
         first node and the node of the resulting lineage can also be longer.
 
@@ -162,9 +193,11 @@ class lineageTree:
         if self.predecessor.get(l1_root) or self.predecessor.get(l2_root):
             raise ValueError("Please select 2 roots.")
         if self.time[l1_root] != self.time[l2_root]:
-            warnings.warn("Using lineagetrees that do not exist in the same timepoint. The operation will continue")
-        new_root1 = self.add_branch(l1_root,length_l1)
-        new_root2 = self.add_branch(l2_root,length_l2)
+            warnings.warn(
+                "Using lineagetrees that do not exist in the same timepoint. The operation will continue"
+            )
+        new_root1 = self.add_branch(l1_root, length_l1)
+        new_root2 = self.add_branch(l2_root, length_l2)
         next_root1 = self[new_root1][0]
         self.remove_nodes(new_root1)
         self.successor[new_root2].append(next_root1)
@@ -174,7 +207,7 @@ class lineageTree:
         return new_branch
 
     def copy_lineage(self, root):
-        """Copies a subtree and assigns it to new nodes. 
+        """Copies a subtree and assigns it to new nodes.
             Warning does not take into account the predecessor of the root node.
 
         Args:
@@ -183,17 +216,20 @@ class lineageTree:
         Returns:
             int: The root of the new tree.
         """
-        new_nodes = {old_node: self.get_next_id() for old_node in self.get_sub_tree(root)}
+        new_nodes = {
+            old_node: self.get_next_id()
+            for old_node in self.get_sub_tree(root)
+        }
         self.nodes.update(set(new_nodes.values()))
         for old_node, new_node in new_nodes.items():
             self.time[new_node] = self.time[old_node]
-            succ = self.successor.get(old_node,[])
+            succ = self.successor.get(old_node, [])
             if succ:
                 self.successor[new_node] = [new_nodes[n] for n in succ]
-            pred = self.predecessor.get(old_node,[])
+            pred = self.predecessor.get(old_node, [])
             if pred:
                 self.predecessor[new_node] = [new_nodes[n] for n in pred]
-            self.pos[new_node] = self.pos[old_node]+0.5
+            self.pos[new_node] = self.pos[old_node] + 0.5
             self.time_nodes[self.time[old_node]].add(new_nodes[old_node])
         new_root = new_nodes[root]
         self.labels[new_root] = f"Copy of {root}"
@@ -268,8 +304,8 @@ class lineageTree:
             if self.predecessor.get(node):
                 pred = self.predecessor[node][0]
                 siblings = self.successor.pop(pred, [])
-                siblings = [] if siblings==None else siblings
-                if len(siblings)==2:
+                siblings = [] if siblings == None else siblings
+                if len(siblings) == 2:
                     siblings.remove(node)
                     self.successor[pred] = siblings
                 self.predecessor.pop(node)
@@ -277,12 +313,12 @@ class lineageTree:
                 for succ in self.successor[node]:
                     self.predecessor.pop(succ)
                 self.successor.pop(node)
-            self.labels.pop(node,0)
+            self.labels.pop(node, 0)
             if node in self.roots:
                 self.roots.remove(node)
 
-    def modify_branch(self,node,new_length):
-        """Changes the length of a branch, so it adds or removes node 
+    def modify_branch(self, node, new_length):
+        """Changes the length of a branch, so it adds or removes node
         to make the correct length of the cycle.
 
         Args:
@@ -292,29 +328,35 @@ class lineageTree:
         cycle = self.get_cycle(node)
         length = len(cycle)
         successors = self.successor.get(cycle[-1])
-        if length==1 and new_length!=1:
-            self.add_branch(node, length=new_length, move_timepoints=True, reverse = False)
-        elif length>new_length:
-            to_remove = length-new_length
-            last_cell = cycle[new_length-1]
-            subtree =self.get_sub_tree(cycle[-1])[1:]
+        if length == 1 and new_length != 1:
+            self.add_branch(
+                node, length=new_length, move_timepoints=True, reverse=False
+            )
+        elif length > new_length:
+            to_remove = length - new_length
+            last_cell = cycle[new_length - 1]
+            subtree = self.get_sub_tree(cycle[-1])[1:]
             self.remove_nodes(cycle[new_length:])
             self.successor[last_cell] = successors
             if successors:
                 for succ in successors:
                     self.predecessor[succ] = [last_cell]
             for node in subtree:
-                if node not in cycle[new_length-1:]:
+                if node not in cycle[new_length - 1 :]:
                     old_time = self.time[node]
                     self.time[node] = old_time - to_remove
                     self.time_nodes[old_time].remove(node)
-                    self.time_nodes.setdefault(old_time-to_remove, set()).add(node)
-        elif length<new_length:
-            to_add = new_length-length
+                    self.time_nodes.setdefault(
+                        old_time - to_remove, set()
+                    ).add(node)
+        elif length < new_length:
+            to_add = new_length - length
             last_cell = cycle[-1]
             self.successor[cycle[-2]] = []
             self.predecessor[last_cell] = []
-            succ = self.add_branch(last_cell, length = to_add, move_timepoints=True, reverse= False)
+            succ = self.add_branch(
+                last_cell, length=to_add, move_timepoints=True, reverse=False
+            )
             self.predecessor[succ] = [cycle[-2]]
             self.successor[cycle[-2]] = [succ]
         else:
@@ -377,12 +419,15 @@ class lineageTree:
         if not hasattr(self, "_roots"):
             self._roots = set(self.nodes).difference(self.predecessor)
         return self._roots
+
     @property
     def edges(self):
-        return {(k,vi) for k,v in self.successor.items() for vi in v}
+        return {(k, vi) for k, v in self.successor.items() for vi in v}
+
     @property
     def leaves(self):
         return set(self.predecessor).difference(self.successor)
+
     @property
     def labels(self):
         if not hasattr(self, "_labels"):
@@ -1212,7 +1257,7 @@ class lineageTree:
                 self.successor[new_id] = [
                     self.pkl2lT[ni] for ni in lt[n] if ni in self.pkl2lT
                 ]
-               
+
                 for ni in self.successor[new_id]:
                     self.time_edges.setdefault(t - 1, set()).add((new_id, ni))
 
@@ -2370,25 +2415,25 @@ class lineageTree:
         while time < self.time.get(ancestor, -1):
             ancestor = self.predecessor.get(ancestor, [-1])[0]
         return ancestor
-    
+
     def get_labelled_ancestor(self, node: int):
         """Finds the first labelled ancestor and returns its ID otherwise returns None
 
         Args:
-            node (int): The id of the node 
+            node (int): The id of the node
 
         Returns:
-            [None,int]: Returns the first ancestor found that has a label otherwise 
+            [None,int]: Returns the first ancestor found that has a label otherwise
             None.
-    """
+        """
         if node not in self.nodes:
             return
         ancestor = node
-        while self.time[ancestor]>=self.t_b and ancestor != -1:
-            if self.labels.get(ancestor,None):
+        while self.time[ancestor] >= self.t_b and ancestor != -1:
+            if self.labels.get(ancestor, None):
                 return ancestor
             ancestor = self.predecessor.get(ancestor, [-1])[0]
-        return 
+        return
 
     def unordered_tree_edit_distances_at_time_t(
         self,
@@ -2535,8 +2580,8 @@ class lineageTree:
         nrows=2,
         figsize=(10, 15),
         dpi=150,
-        figure= None, 
-        axes = None,
+        figure=None,
+        axes=None,
         **kwargs,
     ):
         """Plots all lineages.
@@ -2558,8 +2603,8 @@ class lineageTree:
         ncols = int(len(graphs) // nrows) + (+np.sign(len(graphs) % nrows))
         pos = postions_of_nx(self, graphs)
         figure, axes = plt.subplots(
-                figsize=figsize, nrows=nrows, ncols=ncols, dpi=dpi, sharey= True
-            )
+            figsize=figsize, nrows=nrows, ncols=ncols, dpi=dpi, sharey=True
+        )
         flat_axes = axes.flatten()
         ax2root = {}
         for i, graph in enumerate(graphs.values()):
@@ -2575,9 +2620,22 @@ class lineageTree:
             label = self.labels.get(root, "Unlabeled")
             xlim = flat_axes[i].get_xlim()
             ylim = flat_axes[i].get_ylim()
-            x_pos = (xlim[1]) /2 #- len(label)  # Center horizontally
+            x_pos = (xlim[1]) / 2  # - len(label)  # Center horizontally
             y_pos = ylim[0] + 15
-            flat_axes[i].text(x_pos, y_pos, label, fontsize=7, color='black', ha='center', va='center',bbox={"facecolor": 'white', "edgecolor": 'green', "boxstyle": 'round'})
+            flat_axes[i].text(
+                x_pos,
+                y_pos,
+                label,
+                fontsize=7,
+                color="black",
+                ha="center",
+                va="center",
+                bbox={
+                    "facecolor": "white",
+                    "edgecolor": "green",
+                    "boxstyle": "round",
+                },
+            )
             ax2root[flat_axes[i]] = root
         [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
         return figure, axes, ax2root
@@ -2594,7 +2652,7 @@ class lineageTree:
             raise Warning("Please enter only one node")
         graph = graph[list(graph)[0]]
         # plt.figure(1, figsize=figsize, dpi=dpi)
-        figure, ax = plt.subplots(nrows=1 , ncols=1)
+        figure, ax = plt.subplots(nrows=1, ncols=1)
         nx.draw_networkx(
             graph,
             hierarchy_pos(graph, self, node),
@@ -3103,19 +3161,23 @@ class lineageTree:
                 (float) DTW distance
                 (figue) Trajectories Plot
         """
-        distance, alignment, cost_mat, pos_cycle1, pos_cycle2 = (
-            self.calculate_dtw(
-                nodes1,
-                nodes2,
-                threshold,
-                regist,
-                start_d,
-                back_d,
-                fast,
-                w,
-                centered_band,
-                cost_mat_p=True,
-            )
+        (
+            distance,
+            alignment,
+            cost_mat,
+            pos_cycle1,
+            pos_cycle2,
+        ) = self.calculate_dtw(
+            nodes1,
+            nodes2,
+            threshold,
+            regist,
+            start_d,
+            back_d,
+            fast,
+            w,
+            centered_band,
+            cost_mat_p=True,
         )
 
         fig = plt.figure(figsize=(10, 6))
