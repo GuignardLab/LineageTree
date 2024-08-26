@@ -54,7 +54,13 @@ class lineageTree:
         else:
             return self.next_id.pop()
 
-    def complete_lineage(self, nodes: int= None):
+    def complete_lineage(self, nodes: [int,set]= None):
+        """ If there are leaves on the tree that exist on earlier timepoints than the last
+        defined by (self.t_e) will modify the branch to finish on the last timepoint.
+
+        Args:
+            nodes (int,set], optional): _description_. Defaults to None.
+        """
         if nodes is None:
             nodes = set(self.roots)
         elif isinstance(nodes, int):
@@ -76,6 +82,8 @@ class lineageTree:
             pos (np.ndarray, optional): The new position of the branch. Defaults to None.
             move_timepoints (bool): Important only if reverse= True
             reverese (bool): If reverse will add a successor branch instead of a predecessor branch
+        Returns:
+            (int): Id of the first node of the sublineage.
         """
         if length == 0:
             return succ
@@ -139,7 +147,7 @@ class lineageTree:
 
     def fuse_lineage_tree(self, l1_root:int, l2_root:int, length_l1:int=0, length_l2:int=0, length:int=1):
         """Fuses 2 lineages from the lineagetree object. The 2 lineages that are to be fused can have a longer
-        first node and the node of the resulting lineage can also be longer
+        first node and the node of the resulting lineage can also be longer.
 
         Args:
             l1_root (int): Id of the first root
@@ -147,9 +155,6 @@ class lineageTree:
             length_l1 (int, optional): The length of the branch that will be added on top of the first lineage. Defaults to 1.
             length_l2 (int, optional): The length of the branch that will be added on top of the second lineage. Defaults to 1.
             length (int, optional): The length of the branch that will be added on top of the resulting lineage. Defaults to 1.
-
-        Raises:
-            Warning: _description_
 
         Returns:
             int: The id of the root of the new lineage.
@@ -247,6 +252,11 @@ class lineageTree:
     #         self.time.pop(c)
 
     def remove_nodes(self, group):
+        """Removes a group of nodes from the LineageTree
+
+        Args:
+            group (set|int): One or more nodes that are to be removed.
+        """
         if isinstance(group, int):
             group = {group}
         self.nodes.difference_update(group)
@@ -272,6 +282,13 @@ class lineageTree:
                 self.roots.remove(node)
 
     def modify_branch(self,node,new_length):
+        """Changes the length of a branch, so it adds or removes node 
+        to make the correct length of the cycle.
+
+        Args:
+            node (int): Any node of the branch to be modified/
+            new_length (int): The new length of the tree.
+        """
         cycle = self.get_cycle(node)
         length = len(cycle)
         successors = self.successor.get(cycle[-1])
