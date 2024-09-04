@@ -2,9 +2,9 @@
 # This file is subject to the terms and conditions defined in
 # file 'LICENCE', which is part of this source code package.
 # Author: Leo Guignard (leo.guignard...@AT@...gmail.com)
+import _pickle as pkl
 import csv
 import os
-import _pickle as pkl
 import struct
 import warnings
 import xml.etree.ElementTree as ET
@@ -303,7 +303,7 @@ class lineageTree:
 
     def modify_branch(self, node, new_length):
         """Changes the length of a branch, so it adds or removes node
-        to make the correct length of the cycle.
+        to make the correct length of the cycle. 
 
         Args:
             node (int): Any node of the branch to be modified/
@@ -344,59 +344,7 @@ class lineageTree:
             self.predecessor[succ] = [cycle[-2]]
             self.successor[cycle[-2]] = [succ]
         else:
-            return
-
-    # def remove_node(self, c: int) -> tuple:
-    #     """Removes a node and update the lineageTree accordingly
-
-    #     Args:
-    #         c (int): id of the node to remove
-    #     """
-    #     self.nodes.remove(c)
-    #     self.time_nodes[self.time[c]].remove(c)
-    #     pos = self.pos.pop(c, 0)
-    #     if c in self.roots:
-    #         self.roots.remove(c)
-    #     succ = self.successor.pop(c, [])
-    #     s_to_remove = [s for s, ci in self.successor.items() if c in ci]
-    #     for s in s_to_remove:
-    #         self.predecessor[s].remove(c)
-    #     pred = self.predecessor.pop(c, [])
-    #     p_to_remove = [s for s, ci in self.predecessor.items() if ci == c]
-    #     for s in p_to_remove:
-    #         self.successor[s].remove(c)
-
-    #     self.time.pop(c)
-    #     self.spatial_density.pop(c,0)
-
-    #     return succ, s_to_remove, pred, p_to_remove, pos
-
-    # def fuse_nodes(self, c1: int, c2: int):
-    #     """Fuses together two nodes that belong to the same time point
-    #     and update the lineageTree accordingly.
-
-    #     Args:
-    #         c1 (int): id of the first node to fuse
-    #         c2 (int): id of the second node to fuse
-    #     """
-    #     (
-    #         succ,
-    #         s_to_remove,
-    #         pred,
-    #         p_to_remove,
-    #         c2_pos,
-    #     ) = self.remove_node(c2)
-
-    #     self.successor.setdefault(c1, []).extend(succ)
-    #     self.predecessor.setdefault(c1, []).extend(pred)
-
-    #     for s in s_to_remove:
-    #         self.successor[s].append(c1)
-
-    #     for p in p_to_remove:
-    #         self.predecessor[p].append(c1)
-
-    #     self.pos[c1] = np.mean([self.pos[c1], c2_pos], axis=0)
+            return None
 
     @property
     def roots(self):
@@ -3361,43 +3309,44 @@ class lineageTree:
         self.time = {}
         self.kdtrees = {}
         self.spatial_density = {}
-        if xml_attributes is None:
-            self.xml_attributes = []
-        else:
-            self.xml_attributes = xml_attributes
-        file_type = file_type.lower()
-        if file_type == "tgmm":
-            self.read_tgmm_xml(file_format, tb, te, z_mult)
-            self.t_b = tb
-            self.t_e = te
-        elif file_type == "mamut" or file_type == "trackmate":
-            self.read_from_mamut_xml(file_format)
-        elif file_type == "celegans":
-            self.read_from_txt_for_celegans(file_format)
-        elif file_type == "celegans_cao":
-            self.read_from_txt_for_celegans_CAO(
-                file_format, reorder=reorder, shape=shape, raw_size=raw_size
-            )
-        elif file_type == "mastodon":
-            if isinstance(file_format, list) and len(file_format) == 2:
-                self.read_from_mastodon_csv(file_format)
+        if file_type and file_format:
+            if xml_attributes is None:
+                self.xml_attributes = []
             else:
-                if isinstance(file_format, list):
-                    file_format = file_format[0]
-                self.read_from_mastodon(file_format, name)
-        elif file_type == "astec":
-            self.read_from_ASTEC(file_format, eigen)
-        elif file_type == "csv":
-            self.read_from_csv(file_format, z_mult, link=1, delim=delim)
-        elif file_format and file_format.endswith(".lT"):
-            with open(file_format, "br") as f:
-                tmp = pkl.load(f)
-                f.close()
-            self.__dict__.update(tmp.__dict__)
-        elif file_format is not None:
-            self.read_from_binary(file_format)
-        if self.name is None:
-            try:
-                self.name = Path(file_format).stem
-            except:
-                self.name = Path(file_format[0]).stem
+                self.xml_attributes = xml_attributes
+            file_type = file_type.lower()
+            if file_type == "tgmm":
+                self.read_tgmm_xml(file_format, tb, te, z_mult)
+                self.t_b = tb
+                self.t_e = te
+            elif file_type == "mamut" or file_type == "trackmate":
+                self.read_from_mamut_xml(file_format)
+            elif file_type == "celegans":
+                self.read_from_txt_for_celegans(file_format)
+            elif file_type == "celegans_cao":
+                self.read_from_txt_for_celegans_CAO(
+                    file_format, reorder=reorder, shape=shape, raw_size=raw_size
+                )
+            elif file_type == "mastodon":
+                if isinstance(file_format, list) and len(file_format) == 2:
+                    self.read_from_mastodon_csv(file_format)
+                else:
+                    if isinstance(file_format, list):
+                        file_format = file_format[0]
+                    self.read_from_mastodon(file_format, name)
+            elif file_type == "astec":
+                self.read_from_ASTEC(file_format, eigen)
+            elif file_type == "csv":
+                self.read_from_csv(file_format, z_mult, link=1, delim=delim)
+            elif file_format and file_format.endswith(".lT"):
+                with open(file_format, "br") as f:
+                    tmp = pkl.load(f)
+                    f.close()
+                self.__dict__.update(tmp.__dict__)
+            elif file_format is not None:
+                self.read_from_binary(file_format)
+            if self.name is None:
+                try:
+                    self.name = Path(file_format).stem
+                except:
+                    self.name = Path(file_format[0]).stem
