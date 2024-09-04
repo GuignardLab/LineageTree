@@ -51,57 +51,63 @@ class lineageTree:
             return self.max_id
         else:
             return self.next_id.pop()
-    
-    def extract_lineage(self, root:int):
-            old_nodes = self.get_sub_tree(root)
-            new_lT = lineageTree()
-            pred_root = self.predecessor.get(root,[])
-            if pred_root:
-                if len(self.successor.get(pred_root[0],[]))==2:
-                    self.successor[pred_root[0]].remove(root)
-                    print(self.successor[pred_root[0]])
-                    new_lT.previous = pred_root[0]
-                    new_lT.next = root
-                elif self.successor.get(pred_root[0]):
-                    self.successor.pop(pred_root[0])
-                    new_lT.previous = pred_root[0]
-                    new_lT.next = root
-            else:
-                new_lT.previous = None
-                new_lT.next = None
-            for new_node in old_nodes:
-                succ = self.successor.pop(new_node,None)
-                if succ:
-                    new_lT.successor[new_node] = succ
-                pred = self.predecessor.pop(new_node,None)
-                if pred:
-                    new_lT.predecessor[new_node] = pred
-                new_lT.pos[new_node] = self.pos.pop(new_node,None)
-                new_lT.time_nodes.setdefault(self.time[new_node],set()).add(new_node)
-                self.time_nodes[self.time[new_node]].remove(new_node)
-                if self.labels.get(new_node):
-                    new_lT.labels[new_node] = self.labels.get(new_node)
-                new_lT.time[new_node] = self.time.pop(new_node, None)
-            if new_lT.time[root] == 0:
-                self.roots.remove(root)
-                new_lT.roots.add(root)
-            self.nodes.symmetric_difference_update(set(old_nodes))
-            new_lT.nodes = set(old_nodes)
-            new_lT.t_e, new_lT.t_b = self.t_e, self.t_b
-            return new_lT
+
+    def extract_lineage(self, root: int):
+        old_nodes = self.get_sub_tree(root)
+        new_lT = lineageTree()
+        pred_root = self.predecessor.get(root, [])
+        if pred_root:
+            if len(self.successor.get(pred_root[0], [])) == 2:
+                self.successor[pred_root[0]].remove(root)
+                print(self.successor[pred_root[0]])
+                new_lT.previous = pred_root[0]
+                new_lT.next = root
+            elif self.successor.get(pred_root[0]):
+                self.successor.pop(pred_root[0])
+                new_lT.previous = pred_root[0]
+                new_lT.next = root
+        else:
+            new_lT.previous = None
+            new_lT.next = None
+        for new_node in old_nodes:
+            succ = self.successor.pop(new_node, None)
+            if succ:
+                new_lT.successor[new_node] = succ
+            pred = self.predecessor.pop(new_node, None)
+            if pred:
+                new_lT.predecessor[new_node] = pred
+            new_lT.pos[new_node] = self.pos.pop(new_node, None)
+            new_lT.time_nodes.setdefault(self.time[new_node], set()).add(
+                new_node
+            )
+            self.time_nodes[self.time[new_node]].remove(new_node)
+            if self.labels.get(new_node):
+                new_lT.labels[new_node] = self.labels.get(new_node)
+            new_lT.time[new_node] = self.time.pop(new_node, None)
+        if new_lT.time[root] == 0:
+            self.roots.remove(root)
+            new_lT.roots.add(root)
+        self.nodes.symmetric_difference_update(set(old_nodes))
+        new_lT.nodes = set(old_nodes)
+        new_lT.t_e, new_lT.t_b = self.t_e, self.t_b
+        return new_lT
 
     def inject_lineage(self, lT):
         self.nodes.update(lT.nodes)
         self.predecessor.update(lT.predecessor)
         if lT.previous:
-            self.successor.setdefault(lT.previous,[]).append(lT.next)
+            self.successor.setdefault(lT.previous, []).append(lT.next)
         self.successor.update(lT.successor)
         self.pos.update(lT.pos)
         self.time.update(lT.time)
         self.roots.update(lT.roots)
         self.labels.update(lT.labels)
-        for t in range(int(min(lT.t_b, self.t_b)),int((max(lT.t_e, self.t_e)))):
-            self.time_nodes.setdefault(t,set).update(lT.time_nodes.get(t,set()))
+        for t in range(
+            int(min(lT.t_b, self.t_b)), int(max(lT.t_e, self.t_e))
+        ):
+            self.time_nodes.setdefault(t, set).update(
+                lT.time_nodes.get(t, set())
+            )
 
     def complete_lineage(self, nodes: Union[int, set] = None):
         """If there are leaves on the tree that exist on earlier timepoints than the last
@@ -207,7 +213,7 @@ class lineageTree:
         """
         cycle = self.get_successors(root)
         last_cell = cycle[-1]
-        if 1 < len(self.successor.get(last_cell, [])):
+        if len(self.successor.get(last_cell, [])) > 1:
             new_lT = self.successor.pop(last_cell)
             self.predecessor.pop(new_lT)
             self.labels[cycle[0]] = f"L-Split {cycle[0]}"
@@ -354,7 +360,7 @@ class lineageTree:
 
     def modify_branch(self, node, new_length):
         """Changes the length of a branch, so it adds or removes node
-        to make the correct length of the cycle. 
+        to make the correct length of the cycle.
 
         Args:
             node (int): Any node of the branch to be modified/
@@ -416,7 +422,7 @@ class lineageTree:
         if not hasattr(self, "_labels"):
             self._labels = {i: "Unlabeled" for i in self.roots}
         return self._labels
-    
+
     # @labels.setter
     # def labels(self, update:dict|list|tuple):
     #     if isinstance(update, list|tuple):
@@ -2657,7 +2663,6 @@ class lineageTree:
         )
         return figure, ax
 
-
     # def DTW(self, t1, t2, max_w=None, start_delay=None, end_delay=None,
     #         metric='euclidian', **kwargs):
     #     """ Computes the dynamic time warping distance between the tracks t1 and t2
@@ -3376,7 +3381,10 @@ class lineageTree:
                 self.read_from_txt_for_celegans(file_format)
             elif file_type == "celegans_cao":
                 self.read_from_txt_for_celegans_CAO(
-                    file_format, reorder=reorder, shape=shape, raw_size=raw_size
+                    file_format,
+                    reorder=reorder,
+                    shape=shape,
+                    raw_size=raw_size,
                 )
             elif file_type == "mastodon":
                 if isinstance(file_format, list) and len(file_format) == 2:
