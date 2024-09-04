@@ -52,33 +52,49 @@ class lineageTree:
         else:
             return self.next_id.pop()
     
-    def extract_lineage(self, root):
-        old_nodes = self.get_sub_tree(self.get_ancestor_at_t(root))
-        new_lT = lineageTree()
-        for new_node in old_nodes:
-            succ = self.successor.pop(new_node,None)
-            if succ:
-                new_lT.successor[new_node] = succ
-            pred = self.predecessor.pop(new_node,None)
-            if pred:
-                new_lT.predecessor[new_node] = pred
-            new_lT.pos[new_node] = self.pos.pop(new_node,None)
-            new_lT.time_nodes.setdefault(self.time[new_node],set()).add(new_node)
-            self.time_nodes[self.time[new_node]].remove(new_node)
-            if self.labels.get(new_node):
-                new_lT.labels[new_node] = self.labels[new_node]
-            new_lT.time[new_node] = self.time.pop(new_node, None)
-        if new_lT.time[root] == 0:
-            self.roots.remove(root)
-            new_lT.roots.add(root)
-        self.nodes.symmetric_difference_update(set(old_nodes))
-        new_lT.nodes = set(old_nodes)
-        new_lT.t_e, new_lT.t_b = self.t_e, self.t_b
-        return new_lT
+    def extract_lineage(self, root:int):
+            old_nodes = self.get_sub_tree(root)
+            new_lT = lineageTree()
+            pred_root = self.predecessor.get(root,[])
+            if pred_root:
+                if len(self.successor.get(pred_root[0],[]))==2:
+                    self.successor[pred_root[0]].remove(root)
+                    print(self.successor[pred_root[0]])
+                    new_lT.previous = pred_root[0]
+                    new_lT.next = root
+                elif self.successor.get(pred_root[0]):
+                    self.successor.pop(pred_root[0])
+                    new_lT.previous = pred_root[0]
+                    new_lT.next = root
+            else:
+                new_lT.previous = None
+                new_lT.next = None
+            for new_node in old_nodes:
+                succ = self.successor.pop(new_node,None)
+                if succ:
+                    new_lT.successor[new_node] = succ
+                pred = self.predecessor.pop(new_node,None)
+                if pred:
+                    new_lT.predecessor[new_node] = pred
+                new_lT.pos[new_node] = self.pos.pop(new_node,None)
+                new_lT.time_nodes.setdefault(self.time[new_node],set()).add(new_node)
+                self.time_nodes[self.time[new_node]].remove(new_node)
+                if self.labels.get(new_node):
+                    new_lT.labels[new_node] = self.labels.get(new_node)
+                new_lT.time[new_node] = self.time.pop(new_node, None)
+            if new_lT.time[root] == 0:
+                self.roots.remove(root)
+                new_lT.roots.add(root)
+            self.nodes.symmetric_difference_update(set(old_nodes))
+            new_lT.nodes = set(old_nodes)
+            new_lT.t_e, new_lT.t_b = self.t_e, self.t_b
+            return new_lT
 
     def inject_lineage(self, lT):
         self.nodes.update(lT.nodes)
         self.predecessor.update(lT.predecessor)
+        if lT.previous:
+            self.successor.setdefault(lT.previous,[]).append(lT.next)
         self.successor.update(lT.successor)
         self.pos.update(lT.pos)
         self.time.update(lT.time)
