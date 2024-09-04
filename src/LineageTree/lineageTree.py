@@ -51,6 +51,41 @@ class lineageTree:
             return self.max_id
         else:
             return self.next_id.pop()
+    
+    def extract_lineage(self, root):
+        old_nodes = self.get_sub_tree(self.get_ancestor_at_t(root))
+        new_lT = lineageTree()
+        for new_node in old_nodes:
+            succ = self.successor.pop(new_node,None)
+            if succ:
+                new_lT.successor[new_node] = succ
+            pred = self.predecessor.pop(new_node,None)
+            if pred:
+                new_lT.predecessor[new_node] = pred
+            new_lT.pos[new_node] = self.pos.pop(new_node,None)
+            new_lT.time_nodes.setdefault(self.time[new_node],set()).add(new_node)
+            self.time_nodes[self.time[new_node]].remove(new_node)
+            if self.labels.get(new_node):
+                new_lT.labels[new_node] = self.labels[new_node]
+            new_lT.time[new_node] = self.time.pop(new_node, None)
+        if new_lT.time[root] == 0:
+            self.roots.remove(root)
+            new_lT.roots.add(root)
+        self.nodes.symmetric_difference_update(set(old_nodes))
+        new_lT.nodes = set(old_nodes)
+        new_lT.t_e, new_lT.t_b = self.t_e, self.t_b
+        return new_lT
+
+    def inject_lineage(self, lT):
+        self.nodes.update(lT.nodes)
+        self.predecessor.update(lT.predecessor)
+        self.successor.update(lT.successor)
+        self.pos.update(lT.pos)
+        self.time.update(lT.time)
+        self.roots.update(lT.roots)
+        self.labels.update(lT.labels)
+        for t in range(int(min(lT.t_b, self.t_b)),int((max(lT.t_e, self.t_e)))):
+            self.time_nodes.setdefault(t,set).update(lT.time_nodes.get(t,set()))
 
     def complete_lineage(self, nodes: Union[int, set] = None):
         """If there are leaves on the tree that exist on earlier timepoints than the last
@@ -363,19 +398,19 @@ class lineageTree:
     @property
     def labels(self):
         if not hasattr(self, "_labels"):
-            self._labels = {i: "Unlabeled" for i in self.time_nodes[0]}
+            self._labels = {i: "Unlabeled" for i in self.roots}
         return self._labels
     
-    @labels.setter
-    def labels(self, update:dict|list|tuple):
-        if isinstance(update, list|tuple):
-            self._labels[update[0]] = update[1]
-        for key, value in update.items():
-            if key in self._labels:
-                print(f"Setting {key} to {value}")
-                self._labels[key] = value
-            else:
-                raise KeyError(f"{key} is not a valid label key")
+    # @labels.setter
+    # def labels(self, update:dict|list|tuple):
+    #     if isinstance(update, list|tuple):
+    #         self._labels[update[0]] = update[1]
+    #     for key, value in update.items():
+    #         if key in self._labels:
+    #             print(f"Setting {key} to {value}")
+    #             self._labels[key] = value
+    #         else:
+    #             raise KeyError(f"{key} is not a valid label key")
 
     def _write_header_am(self, f: TextIO, nb_points: int, length: int):
         """Header for Amira .am files"""
