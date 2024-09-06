@@ -2,9 +2,9 @@
 # This file is subject to the terms and conditions defined in
 # file 'LICENCE', which is part of this source code package.
 # Author: Leo Guignard (leo.guignard...@AT@...gmail.com)
-import _pickle as pkl
 import csv
 import os
+import pickle as pkl
 import struct
 import warnings
 import xml.etree.ElementTree as ET
@@ -214,7 +214,7 @@ class lineageTree:
         cycle = self.get_successors(root)
         last_cell = cycle[-1]
         if len(self.successor.get(last_cell, [])) > 1:
-            new_lT = self.successor.pop(last_cell)
+            new_lT = self.successor[last_cell].pop()
             self.predecessor.pop(new_lT)
             self.labels[cycle[0]] = f"L-Split {cycle[0]}"
             new_tr = self.add_branch(
@@ -370,9 +370,13 @@ class lineageTree:
         length = len(cycle)
         successors = self.successor.get(cycle[-1])
         if length == 1 and new_length != 1:
-            self.add_branch(
+            pred = self.predecessor.pop(node,None)
+            new_node = self.add_branch(
                 node, length=new_length, move_timepoints=True, reverse=False
             )
+            if pred:
+                self.successor[pred[0]].remove(node)
+                self.successor[pred[0]].append(new_node)
         elif length > new_length:
             to_remove = length - new_length
             last_cell = cycle[new_length - 1]
@@ -422,17 +426,6 @@ class lineageTree:
         if not hasattr(self, "_labels"):
             self._labels = {i: "Unlabeled" for i in self.roots}
         return self._labels
-
-    # @labels.setter
-    # def labels(self, update:dict|list|tuple):
-    #     if isinstance(update, list|tuple):
-    #         self._labels[update[0]] = update[1]
-    #     for key, value in update.items():
-    #         if key in self._labels:
-    #             print(f"Setting {key} to {value}")
-    #             self._labels[key] = value
-    #         else:
-    #             raise KeyError(f"{key} is not a valid label key")
 
     def _write_header_am(self, f: TextIO, nb_points: int, length: int):
         """Header for Amira .am files"""
