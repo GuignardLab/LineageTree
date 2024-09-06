@@ -52,62 +52,45 @@ class lineageTree:
         else:
             return self.next_id.pop()
 
-    def extract_lineage(self, root: int):
-        old_nodes = self.get_sub_tree(root)
+    def extract_lineage(self, roots):
         new_lT = lineageTree()
-        pred_root = self.predecessor.get(root, [])
-        if pred_root:
-            if len(self.successor.get(pred_root[0], [])) == 2:
-                self.successor[pred_root[0]].remove(root)
-                print(self.successor[pred_root[0]])
-                new_lT.previous = pred_root[0]
-                new_lT.next = root
-            elif self.successor.get(pred_root[0]):
-                self.successor.pop(pred_root[0])
-                new_lT.previous = pred_root[0]
-                new_lT.next = root
-        else:
-            new_lT.previous = None
-            new_lT.next = None
-        for new_node in old_nodes:
-            succ = self.successor.pop(new_node, None)
-            if succ:
-                new_lT.successor[new_node] = succ
-            pred = self.predecessor.pop(new_node, None)
-            if pred:
-                new_lT.predecessor[new_node] = pred
-            new_lT.pos[new_node] = self.pos.pop(new_node, None)
-            new_lT.time_nodes.setdefault(self.time[new_node], set()).add(
-                new_node
-            )
-            self.time_nodes[self.time[new_node]].remove(new_node)
-            if self.labels.get(new_node):
-                new_lT.labels[new_node] = self.labels.get(new_node)
-            new_lT.time[new_node] = self.time.pop(new_node, None)
-        if new_lT.time[root] == 0:
-            self.roots.remove(root)
-            new_lT.roots.add(root)
-        self.nodes.symmetric_difference_update(set(old_nodes))
-        new_lT.nodes = set(old_nodes)
-        new_lT.t_e, new_lT.t_b = self.t_e, self.t_b
+        if isinstance(roots, int):
+             roots = [roots]
+        for r in roots:
+            pred_root = self.predecessor.get(r,[])
+            if pred_root:
+                new_lT.successor[pred_root[0]] = self.successor[pred_root[0]]
+
+            old_nodes = self.get_sub_tree(r)
+            new_lT.nodes.update(old_nodes)
+            for new_node in old_nodes:
+                new_lT.time[new_node] = self.time[new_node]
+                succ = self.successor.get(new_node)
+                if succ:
+                    new_lT.successor[new_node] = succ
+                pred = self.predecessor.get(new_node)
+                if pred:
+                    new_lT.predecessor[new_node] = pred
+                new_lT.pos[new_node] = self.pos[new_node] + 0.5
+                new_lT.time_nodes.setdefault(new_lT.time[new_node],set()).add(new_node)#[new_lT.time[new_node]].add(new_node)
+                if self.labels.get(new_node):
+                    new_lT.labels[new_node] = self.labels[new_node]
+            new_root = r
+            if new_lT.time[new_root] == 0:
+                new_lT.roots.add(new_root)
+            new_lT.t_e, new_lT.t_b = self.t_e, self.t_b
         return new_lT
 
     def inject_lineage(self, lT):
         self.nodes.update(lT.nodes)
         self.predecessor.update(lT.predecessor)
-        if lT.previous:
-            self.successor.setdefault(lT.previous, []).append(lT.next)
         self.successor.update(lT.successor)
         self.pos.update(lT.pos)
         self.time.update(lT.time)
         self.roots.update(lT.roots)
         self.labels.update(lT.labels)
-        for t in range(
-            int(min(lT.t_b, self.t_b)), int(max(lT.t_e, self.t_e))
-        ):
-            self.time_nodes.setdefault(t, set).update(
-                lT.time_nodes.get(t, set())
-            )
+        for t in range(int(min(lT.t_b, self.t_b)),int(max(lT.t_e, self.t_e))):
+            self.time_nodes.setdefault(t,set).update(lT.time_nodes.get(t,set()))
 
     def complete_lineage(self, nodes: Union[int, set] = None):
         """If there are leaves on the tree that exist on earlier timepoints than the last
@@ -213,7 +196,7 @@ class lineageTree:
         """
         cycle = self.get_successors(root)
         last_cell = cycle[-1]
-        if len(self.successor.get(last_cell, [])) > 1:
+        if 1 < len(self.successor.get(last_cell, [])):
             new_lT = self.successor[last_cell].pop()
             self.predecessor.pop(new_lT)
             self.labels[cycle[0]] = f"L-Split {cycle[0]}"
@@ -377,7 +360,7 @@ class lineageTree:
             if pred:
                 self.successor[pred[0]].remove(node)
                 self.successor[pred[0]].append(new_node)
-        elif length > new_length:
+        elif new_length < length :
             to_remove = length - new_length
             last_cell = cycle[new_length - 1]
             subtree = self.get_sub_tree(cycle[-1])[1:]
@@ -727,7 +710,7 @@ class lineageTree:
         )
         if draw_edges and not draw_nodes and not coloring_edges:
             to_do = set(treated_cells)
-            while len(to_do) > 0:
+            while 0 < len(to_do):
                 curr = to_do.pop()
                 c_cycle = self.get_cycle(curr)
                 x1, y1 = positions[c_cycle[0]]
@@ -2241,7 +2224,7 @@ class lineageTree:
         """
         to_do = [x]
         sub_tree = []
-        while len(to_do) > 0:
+        while 0 < len(to_do):
             curr = to_do.pop(0)
             succ = self[curr]
             if preorder:
@@ -2422,7 +2405,7 @@ class lineageTree:
         if node not in self.nodes:
             return None
         ancestor = node
-        while self.time[ancestor] >= self.t_b and ancestor != -1:
+        while self.t_b <=self.time[ancestor] and ancestor != -1:
             if ancestor in self.labels:
                 return ancestor
             ancestor = self.predecessor.get(ancestor, [-1])[0]
@@ -2505,12 +2488,12 @@ class lineageTree:
             nodes1,
             adj1,
             corres1,
-        ) = tree1.edist  # tree1._edist_format(simple_tree_1)
+        ) = tree1.edist  
         (
             nodes2,
             adj2,
             corres2,
-        ) = tree2.edist  # tree2._edist_format(simple_tree_2)
+        ) = tree2.edist 
         if len(nodes1) == len(nodes2) == 0:
             return 0
         delta_tmp = partial(
@@ -2554,7 +2537,7 @@ class lineageTree:
             nodes = set()
             for branch in self.get_all_branches_of_node(mom):
                 nodes.update((branch[0], branch[-1]))
-                if len(branch) > 1:
+                if 1 < len(branch):
                     edges.add((branch[0], branch[-1]))
                 for suc in self[branch[-1]]:
                     edges.add((branch[-1], suc))
@@ -2613,7 +2596,7 @@ class lineageTree:
             label = self.labels.get(root, "Unlabeled")
             xlim = flat_axes[i].get_xlim()
             ylim = flat_axes[i].get_ylim()
-            x_pos = (xlim[1]) / 2  # - len(label)  # Center horizontally
+            x_pos = (xlim[1]) / 2
             y_pos = ylim[0] + 15
             flat_axes[i].text(
                 x_pos,
@@ -2641,10 +2624,9 @@ class lineageTree:
             kwargs: args accepted by networkx
         """
         graph = self.to_simple_networkx(node)
-        if len(graph) > 1:
+        if 1 < len(graph):
             raise Warning("Please enter only one node")
         graph = graph[list(graph)[0]]
-        # plt.figure(1, figsize=figsize, dpi=dpi)
         figure, ax = plt.subplots(nrows=1, ncols=1)
         nx.draw_networkx(
             graph,
@@ -2728,7 +2710,7 @@ class lineageTree:
             r = [r]
         to_do = list(r)
         final_nodes = []
-        while len(to_do) > 0:
+        while 0 < len(to_do):
             curr = to_do.pop()
             for _next in self[curr]:
                 if self.time[_next] < t:
