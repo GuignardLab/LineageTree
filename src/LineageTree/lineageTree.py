@@ -4,7 +4,7 @@
 # Author: Leo Guignard (leo.guignard...@AT@...gmail.com)
 import csv
 import os
-import _pickle as pkl
+import pickle as pkl
 import struct
 import warnings
 import xml.etree.ElementTree as ET
@@ -52,6 +52,46 @@ class lineageTree:
         else:
             return self.next_id.pop()
 
+    def extract_lineage(self, roots):
+        new_lT = lineageTree()
+        if isinstance(roots, int):
+             roots = [roots]
+        for r in roots:
+            pred_root = self.predecessor.get(r)
+            if pred_root:
+                new_lT.successor[pred_root[0]] = self.successor[pred_root[0]]
+
+            old_nodes = self.get_sub_tree(r)
+            new_lT.nodes.update(old_nodes)
+            for new_node in old_nodes:
+                new_lT.time[new_node] = self.time[new_node]
+                succ = self.successor.get(new_node)
+                if succ:
+                    new_lT.successor[new_node] = succ
+                pred = self.predecessor.get(new_node)
+                if pred:
+                    new_lT.predecessor[new_node] = pred
+                new_lT.pos[new_node] = self.pos[new_node] + 0.5
+                new_lT.time_nodes.setdefault(new_lT.time[new_node],set()).add(new_node)#[new_lT.time[new_node]].add(new_node)
+                if self.labels.get(new_node):
+                    new_lT.labels[new_node] = self.labels[new_node]
+            new_root = r
+            if new_lT.time[new_root] == 0:
+                new_lT.roots.add(new_root)
+            new_lT.t_e, new_lT.t_b = self.t_e, self.t_b
+        return new_lT
+
+    def inject_lineage(self, lT):
+        self.nodes.update(lT.nodes)
+        self.predecessor.update(lT.predecessor)
+        self.successor.update(lT.successor)
+        self.pos.update(lT.pos)
+        self.time.update(lT.time)
+        self.roots.update(lT.roots)
+        self.labels.update(lT.labels)
+        for t in range(int(min(lT.t_b, self.t_b)),int(max(lT.t_e, self.t_e))):
+            self.time_nodes.setdefault(t,set).update(lT.time_nodes.get(t,set()))
+
     def complete_lineage(self, nodes: Union[int, set] = None):
         """If there are leaves on the tree that exist on earlier timepoints than the last
         defined by (self.t_e) will modify the branch to finish on the last timepoint.
@@ -92,7 +132,7 @@ class lineageTree:
         """
         if length == 0:
             return pred
-        if self.predecessor.get(pred, None) and not reverse:
+        if self.predecessor.get(pred) and not reverse:
             raise Warning("Cannot add 2 predecessors to a node")
         time = self.time[pred]
         original = pred
@@ -156,8 +196,8 @@ class lineageTree:
         """
         cycle = self.get_successors(root)
         last_cell = cycle[-1]
-        if 1 < len(self.successor.get(last_cell, [])):
-            new_lT = self.successor.pop(last_cell)
+        if 1 < len(self.successor.get(last_cell)):
+            new_lT = self.successor[last_cell].pop()
             self.predecessor.pop(new_lT)
             self.labels[cycle[0]] = f"L-Split {cycle[0]}"
             new_tr = self.add_branch(
@@ -313,10 +353,14 @@ class lineageTree:
         length = len(cycle)
         successors = self.successor.get(cycle[-1])
         if length == 1 and new_length != 1:
-            self.add_branch(
+            pred = self.predecessor.pop(node,None)
+            new_node = self.add_branch(
                 node, length=new_length, move_timepoints=True, reverse=False
             )
-        elif length > new_length:
+            if pred:
+                self.successor[pred[0]].remove(node)
+                self.successor[pred[0]].append(new_node)
+        elif new_length < length :
             to_remove = length - new_length
             last_cell = cycle[new_length - 1]
             subtree = self.get_sub_tree(cycle[-1])[1:]
@@ -344,59 +388,7 @@ class lineageTree:
             self.predecessor[succ] = [cycle[-2]]
             self.successor[cycle[-2]] = [succ]
         else:
-            return
-
-    # def remove_node(self, c: int) -> tuple:
-    #     """Removes a node and update the lineageTree accordingly
-
-    #     Args:
-    #         c (int): id of the node to remove
-    #     """
-    #     self.nodes.remove(c)
-    #     self.time_nodes[self.time[c]].remove(c)
-    #     pos = self.pos.pop(c, 0)
-    #     if c in self.roots:
-    #         self.roots.remove(c)
-    #     succ = self.successor.pop(c, [])
-    #     s_to_remove = [s for s, ci in self.successor.items() if c in ci]
-    #     for s in s_to_remove:
-    #         self.predecessor[s].remove(c)
-    #     pred = self.predecessor.pop(c, [])
-    #     p_to_remove = [s for s, ci in self.predecessor.items() if ci == c]
-    #     for s in p_to_remove:
-    #         self.successor[s].remove(c)
-
-    #     self.time.pop(c)
-    #     self.spatial_density.pop(c,0)
-
-    #     return succ, s_to_remove, pred, p_to_remove, pos
-
-    # def fuse_nodes(self, c1: int, c2: int):
-    #     """Fuses together two nodes that belong to the same time point
-    #     and update the lineageTree accordingly.
-
-    #     Args:
-    #         c1 (int): id of the first node to fuse
-    #         c2 (int): id of the second node to fuse
-    #     """
-    #     (
-    #         succ,
-    #         s_to_remove,
-    #         pred,
-    #         p_to_remove,
-    #         c2_pos,
-    #     ) = self.remove_node(c2)
-
-    #     self.successor.setdefault(c1, []).extend(succ)
-    #     self.predecessor.setdefault(c1, []).extend(pred)
-
-    #     for s in s_to_remove:
-    #         self.successor[s].append(c1)
-
-    #     for p in p_to_remove:
-    #         self.predecessor[p].append(c1)
-
-    #     self.pos[c1] = np.mean([self.pos[c1], c2_pos], axis=0)
+            return None
 
     @property
     def roots(self):
@@ -415,19 +407,8 @@ class lineageTree:
     @property
     def labels(self):
         if not hasattr(self, "_labels"):
-            self._labels = {i: "Unlabeled" for i in self.time_nodes[0]}
+            self._labels = {i: "Unlabeled" for i in self.roots}
         return self._labels
-    
-    @labels.setter
-    def labels(self, update:dict|list|tuple):
-        if isinstance(update, list|tuple):
-            self._labels[update[0]] = update[1]
-        for key, value in update.items():
-            if key in self._labels:
-                print(f"Setting {key} to {value}")
-                self._labels[key] = value
-            else:
-                raise KeyError(f"{key} is not a valid label key")
 
     def _write_header_am(self, f: TextIO, nb_points: int, length: int):
         """Header for Amira .am files"""
@@ -729,7 +710,7 @@ class lineageTree:
         )
         if draw_edges and not draw_nodes and not coloring_edges:
             to_do = set(treated_cells)
-            while len(to_do) > 0:
+            while 0 < len(to_do):
                 curr = to_do.pop()
                 c_cycle = self.get_cycle(curr)
                 x1, y1 = positions[c_cycle[0]]
@@ -2243,7 +2224,7 @@ class lineageTree:
         """
         to_do = [x]
         sub_tree = []
-        while len(to_do) > 0:
+        while 0 < len(to_do):
             curr = to_do.pop(0)
             succ = self[curr]
             if preorder:
@@ -2424,7 +2405,7 @@ class lineageTree:
         if node not in self.nodes:
             return None
         ancestor = node
-        while self.time[ancestor] >= self.t_b and ancestor != -1:
+        while self.t_b <=self.time[ancestor] and ancestor != -1:
             if ancestor in self.labels:
                 return ancestor
             ancestor = self.predecessor.get(ancestor, [-1])[0]
@@ -2507,12 +2488,12 @@ class lineageTree:
             nodes1,
             adj1,
             corres1,
-        ) = tree1.edist  # tree1._edist_format(simple_tree_1)
+        ) = tree1.edist  
         (
             nodes2,
             adj2,
             corres2,
-        ) = tree2.edist  # tree2._edist_format(simple_tree_2)
+        ) = tree2.edist 
         if len(nodes1) == len(nodes2) == 0:
             return 0
         delta_tmp = partial(
@@ -2556,7 +2537,7 @@ class lineageTree:
             nodes = set()
             for branch in self.get_all_branches_of_node(mom):
                 nodes.update((branch[0], branch[-1]))
-                if len(branch) > 1:
+                if 1 < len(branch):
                     edges.add((branch[0], branch[-1]))
                 for suc in self[branch[-1]]:
                     edges.add((branch[-1], suc))
@@ -2615,7 +2596,7 @@ class lineageTree:
             label = self.labels.get(root, "Unlabeled")
             xlim = flat_axes[i].get_xlim()
             ylim = flat_axes[i].get_ylim()
-            x_pos = (xlim[1]) / 2  # - len(label)  # Center horizontally
+            x_pos = (xlim[1]) / 2
             y_pos = ylim[0] + 15
             flat_axes[i].text(
                 x_pos,
@@ -2643,10 +2624,9 @@ class lineageTree:
             kwargs: args accepted by networkx
         """
         graph = self.to_simple_networkx(node)
-        if len(graph) > 1:
+        if 1 < len(graph):
             raise Warning("Please enter only one node")
         graph = graph[list(graph)[0]]
-        # plt.figure(1, figsize=figsize, dpi=dpi)
         figure, ax = plt.subplots(nrows=1, ncols=1)
         nx.draw_networkx(
             graph,
@@ -2657,7 +2637,6 @@ class lineageTree:
             **kwargs,
         )
         return figure, ax
-
 
     # def DTW(self, t1, t2, max_w=None, start_delay=None, end_delay=None,
     #         metric='euclidian', **kwargs):
@@ -2731,7 +2710,7 @@ class lineageTree:
             r = [r]
         to_do = list(r)
         final_nodes = []
-        while len(to_do) > 0:
+        while 0 < len(to_do):
             curr = to_do.pop()
             for _next in self[curr]:
                 if self.time[_next] < t:
@@ -3361,43 +3340,47 @@ class lineageTree:
         self.time = {}
         self.kdtrees = {}
         self.spatial_density = {}
-        if xml_attributes is None:
-            self.xml_attributes = []
-        else:
-            self.xml_attributes = xml_attributes
-        file_type = file_type.lower()
-        if file_type == "tgmm":
-            self.read_tgmm_xml(file_format, tb, te, z_mult)
-            self.t_b = tb
-            self.t_e = te
-        elif file_type == "mamut" or file_type == "trackmate":
-            self.read_from_mamut_xml(file_format)
-        elif file_type == "celegans":
-            self.read_from_txt_for_celegans(file_format)
-        elif file_type == "celegans_cao":
-            self.read_from_txt_for_celegans_CAO(
-                file_format, reorder=reorder, shape=shape, raw_size=raw_size
-            )
-        elif file_type == "mastodon":
-            if isinstance(file_format, list) and len(file_format) == 2:
-                self.read_from_mastodon_csv(file_format)
+        if file_type and file_format:
+            if xml_attributes is None:
+                self.xml_attributes = []
             else:
-                if isinstance(file_format, list):
-                    file_format = file_format[0]
-                self.read_from_mastodon(file_format, name)
-        elif file_type == "astec":
-            self.read_from_ASTEC(file_format, eigen)
-        elif file_type == "csv":
-            self.read_from_csv(file_format, z_mult, link=1, delim=delim)
-        elif file_format and file_format.endswith(".lT"):
-            with open(file_format, "br") as f:
-                tmp = pkl.load(f)
-                f.close()
-            self.__dict__.update(tmp.__dict__)
-        elif file_format is not None:
-            self.read_from_binary(file_format)
-        if self.name is None:
-            try:
-                self.name = Path(file_format).stem
-            except:
-                self.name = Path(file_format[0]).stem
+                self.xml_attributes = xml_attributes
+            file_type = file_type.lower()
+            if file_type == "tgmm":
+                self.read_tgmm_xml(file_format, tb, te, z_mult)
+                self.t_b = tb
+                self.t_e = te
+            elif file_type == "mamut" or file_type == "trackmate":
+                self.read_from_mamut_xml(file_format)
+            elif file_type == "celegans":
+                self.read_from_txt_for_celegans(file_format)
+            elif file_type == "celegans_cao":
+                self.read_from_txt_for_celegans_CAO(
+                    file_format,
+                    reorder=reorder,
+                    shape=shape,
+                    raw_size=raw_size,
+                )
+            elif file_type == "mastodon":
+                if isinstance(file_format, list) and len(file_format) == 2:
+                    self.read_from_mastodon_csv(file_format)
+                else:
+                    if isinstance(file_format, list):
+                        file_format = file_format[0]
+                    self.read_from_mastodon(file_format, name)
+            elif file_type == "astec":
+                self.read_from_ASTEC(file_format, eigen)
+            elif file_type == "csv":
+                self.read_from_csv(file_format, z_mult, link=1, delim=delim)
+            elif file_format and file_format.endswith(".lT"):
+                with open(file_format, "br") as f:
+                    tmp = pkl.load(f)
+                    f.close()
+                self.__dict__.update(tmp.__dict__)
+            elif file_format is not None:
+                self.read_from_binary(file_format)
+            if self.name is None:
+                try:
+                    self.name = Path(file_format).stem
+                except:
+                    self.name = Path(file_format[0]).stem
