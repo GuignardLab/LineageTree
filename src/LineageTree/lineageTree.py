@@ -57,7 +57,7 @@ class lineageTree:
         if isinstance(roots, int):
              roots = [roots]
         for r in roots:
-            pred_root = self.predecessor.get(r,[])
+            pred_root = self.predecessor.get(r)
             if pred_root:
                 new_lT.successor[pred_root[0]] = self.successor[pred_root[0]]
 
@@ -132,7 +132,7 @@ class lineageTree:
         """
         if length == 0:
             return pred
-        if self.predecessor.get(pred, None) and not reverse:
+        if self.predecessor.get(pred) and not reverse:
             raise Warning("Cannot add 2 predecessors to a node")
         time = self.time[pred]
         original = pred
@@ -196,7 +196,7 @@ class lineageTree:
         """
         cycle = self.get_successors(root)
         last_cell = cycle[-1]
-        if 1 < len(self.successor.get(last_cell, [])):
+        if 1 < len(self.successor.get(last_cell)):
             new_lT = self.successor[last_cell].pop()
             self.predecessor.pop(new_lT)
             self.labels[cycle[0]] = f"L-Split {cycle[0]}"
