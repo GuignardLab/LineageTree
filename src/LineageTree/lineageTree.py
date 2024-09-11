@@ -8,6 +8,8 @@ import pickle as pkl
 import struct
 import warnings
 import xml.etree.ElementTree as ET
+from collections.abc import Iterable
+from copy import copy
 from functools import partial
 from itertools import combinations
 from numbers import Number
@@ -52,33 +54,36 @@ class lineageTree:
         else:
             return self.next_id.pop()
 
-    def extract_lineage(self, roots):
+    def extract_lineage(self, roots: Union[int, list, set]):
         new_lT = lineageTree()
-        if isinstance(roots, int):
-             roots = [roots]
+        if not isinstance(roots, Iterable):
+            roots = [roots]
         for r in roots:
             pred_root = self.predecessor.get(r)
             if pred_root:
-                new_lT.successor[pred_root[0]] = self.successor[pred_root[0]]
-
+                new_lT.successor[pred_root[0]] = copy(
+                    self.successor[pred_root[0]]
+                )
             old_nodes = self.get_sub_tree(r)
             new_lT.nodes.update(old_nodes)
             for new_node in old_nodes:
-                new_lT.time[new_node] = self.time[new_node]
+                new_lT.time[new_node] = copy(self.time[new_node])
                 succ = self.successor.get(new_node)
                 if succ:
-                    new_lT.successor[new_node] = succ
+                    new_lT.successor[new_node] = copy(succ)
                 pred = self.predecessor.get(new_node)
                 if pred:
-                    new_lT.predecessor[new_node] = pred
-                new_lT.pos[new_node] = self.pos[new_node] + 0.5
-                new_lT.time_nodes.setdefault(new_lT.time[new_node],set()).add(new_node)#[new_lT.time[new_node]].add(new_node)
+                    new_lT.predecessor[new_node] = copy(pred)
+                new_lT.pos[new_node] = self.pos[new_node]
+                new_lT.time_nodes.setdefault(new_lT.time[new_node], set()).add(
+                    copy(new_node)
+                )
                 if self.labels.get(new_node):
-                    new_lT.labels[new_node] = self.labels[new_node]
+                    new_lT.labels[new_node] = copy(self.labels[new_node])
             new_root = r
-            if new_lT.time[new_root] == 0:
+            if r in self.roots:
                 new_lT.roots.add(new_root)
-            new_lT.t_e, new_lT.t_b = self.t_e, self.t_b
+            new_lT.t_e, new_lT.t_b = copy(self.t_e), copy(self.t_b)
         return new_lT
 
     def inject_lineage(self, lT):
@@ -89,8 +94,10 @@ class lineageTree:
         self.time.update(lT.time)
         self.roots.update(lT.roots)
         self.labels.update(lT.labels)
-        for t in range(int(min(lT.t_b, self.t_b)),int(max(lT.t_e, self.t_e))):
-            self.time_nodes.setdefault(t,set).update(lT.time_nodes.get(t,set()))
+        for t in range(int(min(lT.t_b, self.t_b)), int(max(lT.t_e, self.t_e))):
+            self.time_nodes.setdefault(t, set).update(
+                lT.time_nodes.get(t, set())
+            )
 
     def complete_lineage(self, nodes: Union[int, set] = None):
         """If there are leaves on the tree that exist on earlier timepoints than the last
@@ -196,7 +203,7 @@ class lineageTree:
         """
         cycle = self.get_successors(root)
         last_cell = cycle[-1]
-        if 1 < len(self.successor.get(last_cell)):
+        if len(self.successor.get(last_cell)) > 1:
             new_lT = self.successor[last_cell].pop()
             self.predecessor.pop(new_lT)
             self.labels[cycle[0]] = f"L-Split {cycle[0]}"
@@ -325,18 +332,18 @@ class lineageTree:
         for t in times:
             self.time_nodes[t] = set(self.time_nodes[t]).difference(group)
         for node in group:
-            self.pos.pop(node)
+            self.pos.pop(node, [])
             if self.predecessor.get(node):
                 pred = self.predecessor[node][0]
                 siblings = self.successor.pop(pred, [])
                 if len(siblings) == 2:
                     siblings.remove(node)
                     self.successor[pred] = siblings
-                self.predecessor.pop(node)
+                self.predecessor.pop(node, [])
             if self.successor.get(node):
                 for succ in self.successor[node]:
-                    self.predecessor.pop(succ)
-                self.successor.pop(node)
+                    self.predecessor.pop(succ, [])
+            self.successor.pop(node, [])
             self.labels.pop(node, 0)
             if node in self.roots:
                 self.roots.remove(node)
@@ -349,18 +356,21 @@ class lineageTree:
             node (int): Any node of the branch to be modified/
             new_length (int): The new length of the tree.
         """
+        if new_length <= 1:
+            warnings.warn("New length should be more than 1")
+            return None
         cycle = self.get_cycle(node)
         length = len(cycle)
         successors = self.successor.get(cycle[-1])
         if length == 1 and new_length != 1:
-            pred = self.predecessor.pop(node,None)
+            pred = self.predecessor.pop(node, None)
             new_node = self.add_branch(
                 node, length=new_length, move_timepoints=True, reverse=False
             )
             if pred:
                 self.successor[pred[0]].remove(node)
                 self.successor[pred[0]].append(new_node)
-        elif new_length < length :
+        elif new_length < length:
             to_remove = length - new_length
             last_cell = cycle[new_length - 1]
             subtree = self.get_sub_tree(cycle[-1])[1:]
@@ -710,7 +720,7 @@ class lineageTree:
         )
         if draw_edges and not draw_nodes and not coloring_edges:
             to_do = set(treated_cells)
-            while 0 < len(to_do):
+            while len(to_do) > 0:
                 curr = to_do.pop()
                 c_cycle = self.get_cycle(curr)
                 x1, y1 = positions[c_cycle[0]]
@@ -2224,7 +2234,7 @@ class lineageTree:
         """
         to_do = [x]
         sub_tree = []
-        while 0 < len(to_do):
+        while len(to_do) > 0:
             curr = to_do.pop(0)
             succ = self[curr]
             if preorder:
@@ -2405,7 +2415,10 @@ class lineageTree:
         if node not in self.nodes:
             return None
         ancestor = node
-        while self.t_b <=self.time[ancestor] and ancestor != -1:
+        while (
+            self.t_b <= self.time.get(ancestor, self.t_b - 1)
+            and ancestor != -1
+        ):
             if ancestor in self.labels:
                 return ancestor
             ancestor = self.predecessor.get(ancestor, [-1])[0]
@@ -2488,12 +2501,12 @@ class lineageTree:
             nodes1,
             adj1,
             corres1,
-        ) = tree1.edist  
+        ) = tree1.edist
         (
             nodes2,
             adj2,
             corres2,
-        ) = tree2.edist 
+        ) = tree2.edist
         if len(nodes1) == len(nodes2) == 0:
             return 0
         delta_tmp = partial(
@@ -2537,7 +2550,7 @@ class lineageTree:
             nodes = set()
             for branch in self.get_all_branches_of_node(mom):
                 nodes.update((branch[0], branch[-1]))
-                if 1 < len(branch):
+                if len(branch) > 1:
                     edges.add((branch[0], branch[-1]))
                 for suc in self[branch[-1]]:
                     edges.add((branch[-1], suc))
@@ -2556,6 +2569,7 @@ class lineageTree:
         nrows=2,
         figsize=(10, 15),
         dpi=150,
+        fontsize=22,
         figure=None,
         axes=None,
         **kwargs,
@@ -2596,13 +2610,14 @@ class lineageTree:
             label = self.labels.get(root, "Unlabeled")
             xlim = flat_axes[i].get_xlim()
             ylim = flat_axes[i].get_ylim()
-            x_pos = (xlim[1]) / 2
+            x_pos = (xlim[1]) / 10
             y_pos = ylim[0] + 15
+            ax2root[flat_axes[i]] = root
             flat_axes[i].text(
                 x_pos,
                 y_pos,
                 label,
-                fontsize=7,
+                fontsize=fontsize,
                 color="black",
                 ha="center",
                 va="center",
@@ -2612,11 +2627,10 @@ class lineageTree:
                     "boxstyle": "round",
                 },
             )
-            ax2root[flat_axes[i]] = root
         [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
         return figure, axes, ax2root
 
-    def plot_node(self, node, figsize=(100, 100), dpi=150, **kwargs):
+    def plot_node(self, node, figsize=(4, 7), dpi=150, **kwargs):
         """Plots the subtree spawn by a node.
 
         Args:
@@ -2624,7 +2638,7 @@ class lineageTree:
             kwargs: args accepted by networkx
         """
         graph = self.to_simple_networkx(node)
-        if 1 < len(graph):
+        if len(graph) > 1:
             raise Warning("Please enter only one node")
         graph = graph[list(graph)[0]]
         figure, ax = plt.subplots(nrows=1, ncols=1)
@@ -2710,7 +2724,7 @@ class lineageTree:
             r = [r]
         to_do = list(r)
         final_nodes = []
-        while 0 < len(to_do):
+        while len(to_do) > 0:
             curr = to_do.pop()
             for _next in self[curr]:
                 if self.time[_next] < t:
