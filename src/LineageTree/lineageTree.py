@@ -272,14 +272,15 @@ class lineageTree:
         self.time[C_next] = t
         return C_next
 
-    def remove_nodes(self, group):
+    def remove_nodes(self, group:Union[int,set,list]):
         """Removes a group of nodes from the LineageTree
 
         Args:
-            group (set|int): One or more nodes that are to be removed.
+            group (set|list|int): One or more nodes that are to be removed.
         """
         if isinstance(group, int):
             group = {group}
+        group = group.intersection(self.nodes)
         self.nodes.difference_update(group)
         times = {self.time.pop(n) for n in group}
         for t in times:
