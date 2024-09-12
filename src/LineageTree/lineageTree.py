@@ -8,8 +8,6 @@ import pickle as pkl
 import struct
 import warnings
 import xml.etree.ElementTree as ET
-from collections.abc import Iterable
-from copy import copy
 from functools import partial
 from itertools import combinations
 from numbers import Number
@@ -55,7 +53,7 @@ class lineageTree:
             return self.next_id.pop()
 
     def complete_lineage(self, nodes: Union[int, set] = None):
-        """ Makes all leaf ranches longer so that they reach the last timepoint( self.t_e), useful
+        """Makes all leaf ranches longer so that they reach the last timepoint( self.t_e), useful
         for tree edit distance algorithms.
 
         Args:
