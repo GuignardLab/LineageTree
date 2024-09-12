@@ -54,57 +54,12 @@ class lineageTree:
         else:
             return self.next_id.pop()
 
-    def extract_lineage(self, roots: Union[int, list, set]):
-        new_lT = lineageTree()
-        if not isinstance(roots, Iterable):
-            roots = [roots]
-        for r in roots:
-            pred_root = self.predecessor.get(r)
-            if pred_root:
-                new_lT.successor[pred_root[0]] = copy(
-                    self.successor[pred_root[0]]
-                )
-            old_nodes = self.get_sub_tree(r)
-            new_lT.nodes.update(old_nodes)
-            for new_node in old_nodes:
-                new_lT.time[new_node] = copy(self.time[new_node])
-                succ = self.successor.get(new_node)
-                if succ:
-                    new_lT.successor[new_node] = copy(succ)
-                pred = self.predecessor.get(new_node)
-                if pred:
-                    new_lT.predecessor[new_node] = copy(pred)
-                new_lT.pos[new_node] = self.pos[new_node]
-                new_lT.time_nodes.setdefault(new_lT.time[new_node], set()).add(
-                    copy(new_node)
-                )
-                if self.labels.get(new_node):
-                    new_lT.labels[new_node] = copy(self.labels[new_node])
-            new_root = r
-            if r in self.roots:
-                new_lT.roots.add(new_root)
-            new_lT.t_e, new_lT.t_b = copy(self.t_e), copy(self.t_b)
-        return new_lT
-
-    def inject_lineage(self, lT):
-        self.nodes.update(lT.nodes)
-        self.predecessor.update(lT.predecessor)
-        self.successor.update(lT.successor)
-        self.pos.update(lT.pos)
-        self.time.update(lT.time)
-        self.roots.update(lT.roots)
-        self.labels.update(lT.labels)
-        for t in range(int(min(lT.t_b, self.t_b)), int(max(lT.t_e, self.t_e))):
-            self.time_nodes.setdefault(t, set).update(
-                lT.time_nodes.get(t, set())
-            )
-
     def complete_lineage(self, nodes: Union[int, set] = None):
-        """If there are leaves on the tree that exist on earlier timepoints than the last
-        defined by (self.t_e) will modify the branch to finish on the last timepoint.
+        """ Makes all leaf ranches longer so that they reach the last timepoint( self.t_e), useful
+        for tree edit distance algorithms.
 
         Args:
-            nodes (int,set), optional): _description_. Defaults to None.
+            nodes (int,set), optional): Which trees should be "completed", if None it will complete the whole dataset. Defaults to None.
         """
         if nodes is None:
             nodes = set(self.roots)
@@ -192,11 +147,10 @@ class lineageTree:
         return pred
 
     def cut_tree(self, root):
-        """Cuts a lineage with at least a division into 2 lineages.
+        """Splits/Prunes a lineage with at least a division into 2 lineages.
 
         Args:
             root (int): The id of the node, which will be cut.
-            Does not need to be exactly a node that has 2 descendants
 
         Returns:
             int: The id of the new tree
@@ -253,8 +207,9 @@ class lineageTree:
         return new_branch
 
     def copy_lineage(self, root):
-        """Copies a subtree and assigns it to new nodes.
-            Warning does not take into account the predecessor of the root node.
+        """
+        Copies the structure of a tree and makes a new with new nodes.
+        Warning does not take into account the predecessor of the root node.
 
         Args:
             root (int): The root of the tree to be copied
@@ -349,7 +304,7 @@ class lineageTree:
                 self.roots.remove(node)
 
     def modify_branch(self, node, new_length):
-        """Changes the length of a branch, so it adds or removes node
+        """Changes the length of a branch, so it adds or removes nodes
         to make the correct length of the cycle.
 
         Args:
