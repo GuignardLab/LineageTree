@@ -12,7 +12,6 @@ dist
 build
 test.tlp
 *.mastodon
-*.ipynb*
 *.lT
 bak_*
 .tox
