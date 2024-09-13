@@ -2,8 +2,12 @@ import os
 import pickle as pkl
 from functools import partial
 
-from edist.uted import uted
-
+try:
+    from edist import uted
+except ImportError:
+    warnings.warn(
+        "No edist installed therefore you will not be able to compute the tree edit distance."
+    )
 from LineageTree import lineageTree
 
 from .tree_styles import tree_style
