@@ -175,7 +175,7 @@ class simple_tree(abstract_trees):
         return super().delta(x, y, corres1, corres2, times1, times2)
 
     def get_norm(self):
-        return sum(self.times.values())
+        return len(self.lT.get_sub_tree(self.root)) #sum(self.times.values())
 
 
 class fragmented_tree(abstract_trees):
@@ -236,7 +236,7 @@ class fragmented_tree(abstract_trees):
         return self.out_dict, self.times
 
     def get_norm(self):
-        return sum(self.times.values())
+        return len(self.lT.get_sub_tree(self.root))#sum(self.times.values())
 
     def delta(self, x, y, corres1, corres2, times1, times2):
         return super().delta(x, y, corres1, corres2, times1, times2)
@@ -251,7 +251,7 @@ class tree_style(Enum):
     mini = mini_tree
     simple = simple_tree
     fragmented = fragmented_tree
-    full = full_tree
+    # full = full_tree
 
     @classmethod
     def list_names(self):

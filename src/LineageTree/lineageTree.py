@@ -280,6 +280,8 @@ class lineageTree:
         """
         if isinstance(group, int):
             group = {group}
+        if isinstance(group, list):
+            group = set(group)
         group = group.intersection(self.nodes)
         self.nodes.difference_update(group)
         times = {self.time.pop(n) for n in group}
@@ -2522,7 +2524,7 @@ class lineageTree:
         starting_point: int = 0,
         nrows=2,
         figsize=(10, 15),
-        dpi=150,
+        dpi=70,
         fontsize=22,
         figure=None,
         axes=None,
