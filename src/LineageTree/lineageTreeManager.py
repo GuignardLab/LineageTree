@@ -9,7 +9,7 @@ from LineageTree import lineageTree
 from .tree_styles import tree_style
 
 
-class LineageTreeManager:
+class lineageTreeManager:
     def __init__(self):
         self.lineagetrees = {}
         # self.classification = {"Wt": {}, "Ptb": {}}
