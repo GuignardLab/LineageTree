@@ -245,13 +245,36 @@ class fragmented_tree(abstract_trees):
 class full_tree(abstract_trees):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+    
+    def get_tree(self) -> dict:
 
+        self.out_dict = {}
+        self.times = {}
+        to_do = [self.root]
+        while to_do:
+            current = to_do.pop()
+            _next = self.lT.successor.get(current,[])
+            if _next and self.lT.time[_next[0]]<=self.end_time:
+                    self.out_dict[current] = _next
+                    to_do.extend(_next)
+            else: 
+                self.out_dict[current] = []
+            self.times[current] = 1
+
+        return self.out_dict, self.times
+
+    def get_norm(self):
+        return len(self.lT.get_sub_tree(self.root, end_time= self.end_time))
+
+    def delta(self, x, y, corres1, corres2, times1, times2):
+        return super().delta(x, y, corres1, corres2, times1, times2)
+    
 
 class tree_style(Enum):
     mini = mini_tree
     simple = simple_tree
     fragmented = fragmented_tree
-    # full = full_tree
+    full = full_tree
 
     @classmethod
     def list_names(self):

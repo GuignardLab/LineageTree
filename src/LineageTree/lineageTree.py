@@ -1939,6 +1939,8 @@ class lineageTree:
             for succ in successors:
                 if lT[succ]==[]:
                     lT.successor.pop(succ)
+        lT.t_e = max(lT.time_nodes)
+        lT.t_b = min(lT.time_nodes)
         return lT
 
     def get_idx3d(self, t: int) -> tuple:
@@ -3378,3 +3380,5 @@ class lineageTree:
             for succ in predecessors:
                 if self[succ]==[]:
                     self.predecessor.pop(succ)
+        self.t_e = max(self.time_nodes)
+        self.t_b = min(self.time_nodes)
