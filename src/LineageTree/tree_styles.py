@@ -129,7 +129,7 @@ class mini_tree(abstract_trees):
         return out_dict, None
 
     def get_norm(self):
-        return self.length
+        return len(self.lT.get_all_branches_of_node(self.root,end_time=self.end_time))
 
     def _edist_format(self, adj_dict: dict):
         return super()._edist_format(adj_dict)
@@ -175,7 +175,7 @@ class simple_tree(abstract_trees):
         return super().delta(x, y, corres1, corres2, times1, times2)
 
     def get_norm(self):
-        return len(self.lT.get_sub_tree(self.root)) #sum(self.times.values())
+        return len(self.lT.get_sub_tree(self.root, end_time=self.end_time)) #sum(self.times.values())
 
 
 class fragmented_tree(abstract_trees):
@@ -236,7 +236,7 @@ class fragmented_tree(abstract_trees):
         return self.out_dict, self.times
 
     def get_norm(self):
-        return len(self.lT.get_sub_tree(self.root))#sum(self.times.values())
+        return len(self.lT.get_sub_tree(self.root, end_time=self.end_time))#sum(self.times.values())
 
     def delta(self, x, y, corres1, corres2, times1, times2):
         return super().delta(x, y, corres1, corres2, times1, times2)

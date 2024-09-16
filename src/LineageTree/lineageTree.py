@@ -13,6 +13,7 @@ from itertools import combinations
 from numbers import Number
 from pathlib import Path
 from typing import TextIO, Union
+from collections.abc import Iterable
 
 from .tree_styles import tree_style
 
@@ -2176,7 +2177,7 @@ class lineageTree:
                 to_do.extend(self[track[-1]])
             return tracks
 
-    def get_sub_tree(self, x: int, preorder: bool = False) -> list:
+    def get_sub_tree(self, x: Union[int,Iterable], end_time:Union[int,None] = None,  preorder: bool = False) -> list:
         """Computes the list of cells from the subtree spawned by *x*
         The default output order is breadth first traversal.
         Unless preorder is `True` in that case the order is
@@ -2188,16 +2189,24 @@ class lineageTree:
         Returns:
             ([int, ...]): the ordered list of node ids
         """
-        to_do = [x]
+        if not end_time:
+            end_time = self.t_e
+        if not isinstance(x, Iterable):
+           to_do = [x]
+        elif isinstance(x, Iterable):
+            to_do = list(x)
         sub_tree = []
-        while len(to_do) > 0:
-            curr = to_do.pop(0)
-            succ = self[curr]
+        while to_do:
+            curr = to_do.pop()
+            succ = self.successor.get(curr,[-1])
+            if succ and end_time < self.time.get(succ[0], end_time+1):
+                succ = []
+                continue
             if preorder:
                 to_do = succ + to_do
             else:
-                to_do += succ
-            sub_tree += [curr]
+                to_do+=succ
+                sub_tree+=[curr]
         return sub_tree
 
     def compute_spatial_density(
