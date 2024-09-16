@@ -1934,6 +1934,11 @@ class lineageTree:
         with open(fname, "br") as f:
             lT = pkl.load(f)
             f.close()
+        if [] in lT.successor.values():
+            successors = list(lT.successor.keys())
+            for succ in successors:
+                if lT[succ]==[]:
+                    lT.successor.pop(succ)
         return lT
 
     def get_idx3d(self, t: int) -> tuple:
@@ -3363,3 +3368,13 @@ class lineageTree:
                     self.name = Path(file_format).stem
                 except:
                     self.name = Path(file_format[0]).stem
+        if [] in self.successor.values():
+            successors = list(self.successor.keys())
+            for succ in successors:
+                if self[succ]==[]:
+                    self.successor.pop(succ)
+        if [] in self.predecessor.values():
+            predecessors = list(self.predecessor.keys())
+            for succ in predecessors:
+                if self[succ]==[]:
+                    self.predecessor.pop(succ)
