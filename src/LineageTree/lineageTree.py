@@ -156,14 +156,16 @@ class lineageTree:
         """
         cycle = self.get_successors(root)
         last_cell = cycle[-1]
-        if len(self.successor.get(last_cell)) > 1:
+        if self.successor.get(last_cell):
             new_lT = self.successor[last_cell].pop()
             self.predecessor.pop(new_lT)
-            self.labels[cycle[0]] = f"L-Split {cycle[0]}"
+            label_of_root = self.labels.get(cycle[0],cycle[0])
+            self.labels[cycle[0]] = f"L-Split {label_of_root}" 
             new_tr = self.add_branch(
                 new_lT, len(cycle) + 1, move_timepoints=False
             )
-            self.labels[new_tr] = f"R-Split {cycle[0]}"
+            self.roots.add(new_tr)
+            self.labels[new_tr] = f"R-Split {label_of_root}"
             return new_tr
         else:
             raise Warning("No division of the branch")
@@ -2205,8 +2207,8 @@ class lineageTree:
         sub_tree = []
         while to_do:
             curr = to_do.pop()
-            succ = self.successor.get(curr,[-1])
-            if succ and end_time < self.time.get(succ[0], end_time+1):
+            succ = self.successor.get(curr,[])
+            if succ and end_time < self.time.get(curr, end_time):
                 succ = []
                 continue
             if preorder:
@@ -2493,7 +2495,7 @@ class lineageTree:
             tree1.get_norm(), tree2.get_norm()
         )
 
-    def to_simple_networkx(self, node: int = None, start_time: int = 0):
+    def to_simple_networkx(self, node: Union[int,list,set,tuple] = None, start_time: int = 0):
         """
         Creates a simple networkx tree graph (every branch is a cell lifetime). This function is to be used for producing nx.graph objects(
         they can be used for visualization or other tasks),
@@ -2507,7 +2509,7 @@ class lineageTree:
             pos : list(dict(id:position))
         """
 
-        mothers = list(self.time_nodes[0])
+        # mothers = list(self.time_nodes[0])
         if node is None:
             mothers = [
                 root for root in self.roots if self.time[root] <= start_time
@@ -3380,5 +3382,3 @@ class lineageTree:
             for succ in predecessors:
                 if self[succ]==[]:
                     self.predecessor.pop(succ)
-        self.t_e = max(self.time_nodes)
-        self.t_b = min(self.time_nodes)
