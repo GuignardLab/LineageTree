@@ -105,8 +105,9 @@ class abstract_trees(ABC):
 
 class mini_tree(abstract_trees):
     """Each branch is converted to a node of length 1, it is useful for comparing synchronous developing cells, extremely fast.
-        Mainly used for testing.
+    Mainly used for testing.
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -132,7 +133,9 @@ class mini_tree(abstract_trees):
         return out_dict, None
 
     def get_norm(self):
-        return len(self.lT.get_all_branches_of_node(self.root,end_time=self.end_time))
+        return len(
+            self.lT.get_all_branches_of_node(self.root, end_time=self.end_time)
+        )
 
     def _edist_format(self, adj_dict: dict):
         return super()._edist_format(adj_dict)
@@ -148,10 +151,11 @@ class mini_tree(abstract_trees):
 
 
 class simple_tree(abstract_trees):
-    """ Each branch is converted to one node with length the same as the life cycle of the cell.
-        This method is fast, but imprecise, especialy for small trees (recommended height of the trees should be 100 at least).
-        Use with CAUTION.
+    """Each branch is converted to one node with length the same as the life cycle of the cell.
+    This method is fast, but imprecise, especialy for small trees (recommended height of the trees should be 100 at least).
+    Use with CAUTION.
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -182,18 +186,21 @@ class simple_tree(abstract_trees):
         return super().delta(x, y, corres1, corres2, times1, times2)
 
     def get_norm(self):
-        return len(self.lT.get_sub_tree(self.root, end_time=self.end_time)) #sum(self.times.values())
+        return len(
+            self.lT.get_sub_tree(self.root, end_time=self.end_time)
+        )  # sum(self.times.values())
 
 
 class fragmented_tree(abstract_trees):
-    """Similar idea to simple tree, but tries to correct its flaws. 
+    """Similar idea to simple tree, but tries to correct its flaws.
         ead of having branches with length == life cycle of cell,nodes of specific length are added on the
-        edges of the branch, providing both accuratr results and speed. 
+        edges of the branch, providing both accuratr results and speed.
         It's the recommended method for calculating edit distances on developing embryos.
 
     Args:
         abstract_trees (_type_): _description_
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -251,7 +258,9 @@ class fragmented_tree(abstract_trees):
         return self.out_dict, self.times
 
     def get_norm(self):
-        return len(self.lT.get_sub_tree(self.root, end_time=self.end_time))#sum(self.times.values())
+        return len(
+            self.lT.get_sub_tree(self.root, end_time=self.end_time)
+        )  # sum(self.times.values())
 
     def delta(self, x, y, corres1, corres2, times1, times2):
         return super().delta(x, y, corres1, corres2, times1, times2)
@@ -259,33 +268,34 @@ class fragmented_tree(abstract_trees):
 
 class full_tree(abstract_trees):
     """No approximations the whole tree is used here. Perfect accuracy, but heavy on ram and speed.
-            Not recommended to use on napari.
+    Not recommended to use on napari.
 
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-    
+
     def get_tree(self) -> dict:
         self.out_dict = {}
         self.times = {}
         to_do = [self.root]
         while to_do:
             current = to_do.pop()
-            _next = self.lT.successor.get(current,[])
-            if _next and self.lT.time[_next[0]]<=self.end_time:
-                    self.out_dict[current] = _next
-                    to_do.extend(_next)
-            else: 
+            _next = self.lT.successor.get(current, [])
+            if _next and self.lT.time[_next[0]] <= self.end_time:
+                self.out_dict[current] = _next
+                to_do.extend(_next)
+            else:
                 self.out_dict[current] = []
             self.times[current] = 1
         return self.out_dict, self.times
 
     def get_norm(self):
-        return len(self.lT.get_sub_tree(self.root, end_time= self.end_time))
+        return len(self.lT.get_sub_tree(self.root, end_time=self.end_time))
 
     def delta(self, x, y, corres1, corres2, times1, times2):
         return super().delta(x, y, corres1, corres2, times1, times2)
-    
+
 
 class tree_style(Enum):
     mini = mini_tree

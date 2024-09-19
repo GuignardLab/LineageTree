@@ -8,12 +8,12 @@ import pickle as pkl
 import struct
 import warnings
 import xml.etree.ElementTree as ET
+from collections.abc import Iterable
 from functools import partial
 from itertools import combinations
 from numbers import Number
 from pathlib import Path
 from typing import TextIO, Union
-from collections.abc import Iterable
 
 from .tree_styles import tree_style
 
@@ -54,7 +54,7 @@ class lineageTree:
             return self.next_id.pop()
 
     def complete_lineage(self, nodes: Union[int, set] = None):
-        """Makes all leaf ranches longer so that they reach the last timepoint( self.t_e), useful
+        """Makes all leaf branches longer so that they reach the last timepoint( self.t_e), useful
         for tree edit distance algorithms.
 
         Args:
@@ -146,7 +146,8 @@ class lineageTree:
         return pred
 
     def cut_tree(self, root):
-        """Splits/Prunes a lineage with at least a division into 2 lineages.
+        """It transforms a lineage that has at least 2 divisions into 2 independent lineages,
+        that spawn from the time point of the first node. (splits a tree into 2)
 
         Args:
             root (int): The id of the node, which will be cut.
@@ -156,11 +157,11 @@ class lineageTree:
         """
         cycle = self.get_successors(root)
         last_cell = cycle[-1]
-        if self.successor.get(last_cell):
+        if last_cell in self.successor:
             new_lT = self.successor[last_cell].pop()
             self.predecessor.pop(new_lT)
-            label_of_root = self.labels.get(cycle[0],cycle[0])
-            self.labels[cycle[0]] = f"L-Split {label_of_root}" 
+            label_of_root = self.labels.get(cycle[0], cycle[0])
+            self.labels[cycle[0]] = f"L-Split {label_of_root}"
             new_tr = self.add_branch(
                 new_lT, len(cycle) + 1, move_timepoints=False
             )
@@ -275,7 +276,7 @@ class lineageTree:
         self.time[C_next] = t
         return C_next
 
-    def remove_nodes(self, group:Union[int,set,list]):
+    def remove_nodes(self, group: Union[int, set, list]):
         """Removes a group of nodes from the LineageTree
 
         Args:
@@ -291,7 +292,7 @@ class lineageTree:
         for t in times:
             self.time_nodes[t] = set(self.time_nodes[t]).difference(group)
         for node in group:
-            self.pos.pop(node, [])
+            self.pos.pop(node)
             if self.predecessor.get(node):
                 pred = self.predecessor[node][0]
                 siblings = self.successor.pop(pred, [])
@@ -299,9 +300,8 @@ class lineageTree:
                     siblings.remove(node)
                     self.successor[pred] = siblings
                 self.predecessor.pop(node, [])
-            if self.successor.get(node):
-                for succ in self.successor[node]:
-                    self.predecessor.pop(succ, [])
+            for succ in self.successor.get(node, []):
+                self.predecessor.pop(succ, [])
             self.successor.pop(node, [])
             self.labels.pop(node, 0)
             if node in self.roots:
@@ -1923,7 +1923,7 @@ class lineageTree:
             f.close()
 
     @classmethod
-    def load(clf, fname: str):
+    def load(clf, fname: str, rm_empty_lists=True):
         """
         Loading a lineage tree from a ".lT" file.
 
@@ -1936,13 +1936,18 @@ class lineageTree:
         with open(fname, "br") as f:
             lT = pkl.load(f)
             f.close()
-        if [] in lT.successor.values():
-            successors = list(lT.successor.keys())
-            for succ in successors:
-                if lT[succ]==[]:
-                    lT.successor.pop(succ)
-        lT.t_e = max(lT.time_nodes)
-        lT.t_b = min(lT.time_nodes)
+        if rm_empty_lists:
+            if [] in lT.successor.values():
+                for node, succ in lT.successor.items():
+                    if succ == []:
+                        lT.successor.pop(node)
+            if [] in lT.predecessor.values():
+                for node, succ in lT.predecessor.items():
+                    if succ == []:
+                        lT.predecessor.pop(node)
+            lT.t_e = max(lT.time_nodes)
+            lT.t_b = min(lT.time_nodes)
+            warnings.warn("Empty lists have been removed")
         return lT
 
     def get_idx3d(self, t: int) -> tuple:
@@ -2186,7 +2191,12 @@ class lineageTree:
                 to_do.extend(self[track[-1]])
             return tracks
 
-    def get_sub_tree(self, x: Union[int,Iterable], end_time:Union[int,None] = None,  preorder: bool = False) -> list:
+    def get_sub_tree(
+        self,
+        x: Union[int, Iterable],
+        end_time: Union[int, None] = None,
+        preorder: bool = False,
+    ) -> list:
         """Computes the list of cells from the subtree spawned by *x*
         The default output order is breadth first traversal.
         Unless preorder is `True` in that case the order is
@@ -2201,21 +2211,21 @@ class lineageTree:
         if not end_time:
             end_time = self.t_e
         if not isinstance(x, Iterable):
-           to_do = [x]
+            to_do = [x]
         elif isinstance(x, Iterable):
             to_do = list(x)
         sub_tree = []
         while to_do:
             curr = to_do.pop()
-            succ = self.successor.get(curr,[])
+            succ = self.successor.get(curr, [])
             if succ and end_time < self.time.get(curr, end_time):
                 succ = []
                 continue
             if preorder:
                 to_do = succ + to_do
             else:
-                to_do+=succ
-                sub_tree+=[curr]
+                to_do += succ
+                sub_tree += [curr]
         return sub_tree
 
     def compute_spatial_density(
@@ -2495,7 +2505,9 @@ class lineageTree:
             tree1.get_norm(), tree2.get_norm()
         )
 
-    def to_simple_networkx(self, node: Union[int,list,set,tuple] = None, start_time: int = 0):
+    def to_simple_networkx(
+        self, node: Union[int, list, set, tuple] = None, start_time: int = 0
+    ):
         """
         Creates a simple networkx tree graph (every branch is a cell lifetime). This function is to be used for producing nx.graph objects(
         they can be used for visualization or other tasks),
@@ -2509,7 +2521,6 @@ class lineageTree:
             pos : list(dict(id:position))
         """
 
-        # mothers = list(self.time_nodes[0])
         if node is None:
             mothers = [
                 root for root in self.roots if self.time[root] <= start_time
@@ -3375,10 +3386,10 @@ class lineageTree:
         if [] in self.successor.values():
             successors = list(self.successor.keys())
             for succ in successors:
-                if self[succ]==[]:
+                if self[succ] == []:
                     self.successor.pop(succ)
         if [] in self.predecessor.values():
             predecessors = list(self.predecessor.keys())
             for succ in predecessors:
-                if self[succ]==[]:
+                if self[succ] == []:
                     self.predecessor.pop(succ)
