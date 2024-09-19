@@ -13,6 +13,7 @@ from itertools import combinations
 from numbers import Number
 from pathlib import Path
 from typing import TextIO, Union
+from collections.abc import Iterable
 
 from .tree_styles import tree_style
 
@@ -155,14 +156,16 @@ class lineageTree:
         """
         cycle = self.get_successors(root)
         last_cell = cycle[-1]
-        if len(self.successor.get(last_cell)) > 1:
+        if self.successor.get(last_cell):
             new_lT = self.successor[last_cell].pop()
             self.predecessor.pop(new_lT)
-            self.labels[cycle[0]] = f"L-Split {cycle[0]}"
+            label_of_root = self.labels.get(cycle[0],cycle[0])
+            self.labels[cycle[0]] = f"L-Split {label_of_root}" 
             new_tr = self.add_branch(
                 new_lT, len(cycle) + 1, move_timepoints=False
             )
-            self.labels[new_tr] = f"R-Split {cycle[0]}"
+            self.roots.add(new_tr)
+            self.labels[new_tr] = f"R-Split {label_of_root}"
             return new_tr
         else:
             raise Warning("No division of the branch")
@@ -280,6 +283,8 @@ class lineageTree:
         """
         if isinstance(group, int):
             group = {group}
+        if isinstance(group, list):
+            group = set(group)
         group = group.intersection(self.nodes)
         self.nodes.difference_update(group)
         times = {self.time.pop(n) for n in group}
@@ -1931,6 +1936,13 @@ class lineageTree:
         with open(fname, "br") as f:
             lT = pkl.load(f)
             f.close()
+        if [] in lT.successor.values():
+            successors = list(lT.successor.keys())
+            for succ in successors:
+                if lT[succ]==[]:
+                    lT.successor.pop(succ)
+        lT.t_e = max(lT.time_nodes)
+        lT.t_b = min(lT.time_nodes)
         return lT
 
     def get_idx3d(self, t: int) -> tuple:
@@ -2174,7 +2186,7 @@ class lineageTree:
                 to_do.extend(self[track[-1]])
             return tracks
 
-    def get_sub_tree(self, x: int, preorder: bool = False) -> list:
+    def get_sub_tree(self, x: Union[int,Iterable], end_time:Union[int,None] = None,  preorder: bool = False) -> list:
         """Computes the list of cells from the subtree spawned by *x*
         The default output order is breadth first traversal.
         Unless preorder is `True` in that case the order is
@@ -2186,16 +2198,24 @@ class lineageTree:
         Returns:
             ([int, ...]): the ordered list of node ids
         """
-        to_do = [x]
+        if not end_time:
+            end_time = self.t_e
+        if not isinstance(x, Iterable):
+           to_do = [x]
+        elif isinstance(x, Iterable):
+            to_do = list(x)
         sub_tree = []
-        while len(to_do) > 0:
-            curr = to_do.pop(0)
-            succ = self[curr]
+        while to_do:
+            curr = to_do.pop()
+            succ = self.successor.get(curr,[])
+            if succ and end_time < self.time.get(curr, end_time):
+                succ = []
+                continue
             if preorder:
                 to_do = succ + to_do
             else:
-                to_do += succ
-            sub_tree += [curr]
+                to_do+=succ
+                sub_tree+=[curr]
         return sub_tree
 
     def compute_spatial_density(
@@ -2475,7 +2495,7 @@ class lineageTree:
             tree1.get_norm(), tree2.get_norm()
         )
 
-    def to_simple_networkx(self, node: int = None, start_time: int = 0):
+    def to_simple_networkx(self, node: Union[int,list,set,tuple] = None, start_time: int = 0):
         """
         Creates a simple networkx tree graph (every branch is a cell lifetime). This function is to be used for producing nx.graph objects(
         they can be used for visualization or other tasks),
@@ -2489,7 +2509,7 @@ class lineageTree:
             pos : list(dict(id:position))
         """
 
-        mothers = list(self.time_nodes[0])
+        # mothers = list(self.time_nodes[0])
         if node is None:
             mothers = [
                 root for root in self.roots if self.time[root] <= start_time
@@ -2522,7 +2542,7 @@ class lineageTree:
         starting_point: int = 0,
         nrows=2,
         figsize=(10, 15),
-        dpi=150,
+        dpi=70,
         fontsize=22,
         figure=None,
         axes=None,
@@ -3352,3 +3372,13 @@ class lineageTree:
                     self.name = Path(file_format).stem
                 except:
                     self.name = Path(file_format[0]).stem
+        if [] in self.successor.values():
+            successors = list(self.successor.keys())
+            for succ in successors:
+                if self[succ]==[]:
+                    self.successor.pop(succ)
+        if [] in self.predecessor.values():
+            predecessors = list(self.predecessor.keys())
+            for succ in predecessors:
+                if self[succ]==[]:
+                    self.predecessor.pop(succ)
