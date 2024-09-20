@@ -12,6 +12,5 @@ dist
 build
 test.tlp
 *.mastodon
-*.lT
 bak_*
 .tox

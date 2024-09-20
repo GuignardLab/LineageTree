@@ -329,6 +329,8 @@ class lineageTree:
             if pred:
                 self.successor[pred[0]].remove(node)
                 self.successor[pred[0]].append(new_node)
+        elif self.leaves.intersection(cycle) and new_length < length:
+            self.remove_nodes(cycle[new_length:])
         elif new_length < length:
             to_remove = length - new_length
             last_cell = cycle[new_length - 1]
@@ -349,13 +351,16 @@ class lineageTree:
         elif length < new_length:
             to_add = new_length - length
             last_cell = cycle[-1]
-            self.successor[cycle[-2]] = []
-            self.predecessor[last_cell] = []
+            self.successor.pop(cycle[-2])
+            self.predecessor.pop(last_cell)
             succ = self.add_branch(
                 last_cell, length=to_add, move_timepoints=True, reverse=False
             )
             self.predecessor[succ] = [cycle[-2]]
             self.successor[cycle[-2]] = [succ]
+            self.time[last_cell] = (
+                self.time[self.predecessor[last_cell][0]] + 1
+            )
         else:
             return None
 
