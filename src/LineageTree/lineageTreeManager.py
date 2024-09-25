@@ -2,14 +2,18 @@ import os
 import pickle as pkl
 from functools import partial
 
-from edist.uted import uted
-
+try:
+    from edist import uted
+except ImportError:
+    warnings.warn(
+        "No edist installed therefore you will not be able to compute the tree edit distance."
+    )
 from LineageTree import lineageTree
 
 from .tree_styles import tree_style
 
 
-class LineageTreeManager:
+class lineageTreeManager:
     def __init__(self):
         self.lineagetrees = {}
         # self.classification = {"Wt": {}, "Ptb": {}}
@@ -161,6 +165,6 @@ class LineageTreeManager:
             corres2=corres2,
             times2=times2,
         )
-        return uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / max(
+        return uted.uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / max(
             tree1.get_norm(), tree2.get_norm()
         )

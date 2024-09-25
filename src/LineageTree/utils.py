@@ -18,7 +18,7 @@ def hierarchy_pos(
     G,
     a,
     root=None,
-    width=200.0,
+    width=2000.0,
     vert_gap=0.5,
     vert_loc=0,
     xcenter=0,
@@ -86,7 +86,7 @@ def hierarchy_pos(
                 )
             return len(a.get_successors(cell))
         else:
-            return 0.5
+            return 0.7
 
     def _hierarchy_pos(
         G,
@@ -106,14 +106,15 @@ def hierarchy_pos(
         parent: parent of this branch. - only affects it if non-directed
 
         """
-        # if root in old_pos.keys() :
-        #     return old_pos[root]
-
         if pos is None:
             pos = {root: (xcenter, vert_loc)}
+        elif not a.predecessor.get(a.get_predecessors(root)[0]):
+            vert_loc = vert_loc - len(a.get_predecessors(root))
+            pos[root] = (xcenter, vert_loc)
         else:
             pos[root] = (xcenter, vert_loc)
         children = list(G.neighbors(root))
+
         if not isinstance(G, nx.DiGraph) and parent is not None:
             children.remove(parent)
         if len(children) != 0:
@@ -134,7 +135,7 @@ def hierarchy_pos(
                 )
         return pos
 
-    return _hierarchy_pos(G, root, width, vert_gap, vert_loc, xcenter)
+    return _hierarchy_pos(G, root, width, a, vert_gap, vert_loc, xcenter)
 
 
 def to_motile(

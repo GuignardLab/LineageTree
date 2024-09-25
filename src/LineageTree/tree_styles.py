@@ -104,6 +104,10 @@ class abstract_trees(ABC):
 
 
 class mini_tree(abstract_trees):
+    """Each branch is converted to a node of length 1, it is useful for comparing synchronous developing cells, extremely fast.
+    Mainly used for testing.
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -129,7 +133,9 @@ class mini_tree(abstract_trees):
         return out_dict, None
 
     def get_norm(self):
-        return self.length
+        return len(
+            self.lT.get_all_branches_of_node(self.root, end_time=self.end_time)
+        )
 
     def _edist_format(self, adj_dict: dict):
         return super()._edist_format(adj_dict)
@@ -145,6 +151,11 @@ class mini_tree(abstract_trees):
 
 
 class simple_tree(abstract_trees):
+    """Each branch is converted to one node with length the same as the life cycle of the cell.
+    This method is fast, but imprecise, especialy for small trees (recommended height of the trees should be 100 at least).
+    Use with CAUTION.
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -161,7 +172,7 @@ class simple_tree(abstract_trees):
             cycle = cycle[cycle_times <= self.end_time]
             if cycle.size:
                 _next = self.lT[cycle[-1]]
-                if len(_next) > 1:
+                if 1 < len(_next) and self.lT.time[cycle[-1]] < self.end_time:
                     out_dict[current] = _next
                     to_do.extend(_next)
                 else:
@@ -175,10 +186,18 @@ class simple_tree(abstract_trees):
         return super().delta(x, y, corres1, corres2, times1, times2)
 
     def get_norm(self):
-        return sum(self.times.values())
+        return len(
+            self.lT.get_sub_tree(self.root, end_time=self.end_time)
+        )
 
 
 class fragmented_tree(abstract_trees):
+    """Similar idea to simple tree, but tries to correct its flaws.
+        Instead of having branches with length == life cycle of cell,nodes of specific length are added on the
+        edges of the branch, providing both accuratr results and speed.
+        It's the recommended method for calculating edit distances on developing embryos.
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -236,15 +255,43 @@ class fragmented_tree(abstract_trees):
         return self.out_dict, self.times
 
     def get_norm(self):
-        return sum(self.times.values())
+        return len(
+            self.lT.get_sub_tree(self.root, end_time=self.end_time)
+        )
 
     def delta(self, x, y, corres1, corres2, times1, times2):
         return super().delta(x, y, corres1, corres2, times1, times2)
 
 
 class full_tree(abstract_trees):
+    """No approximations the whole tree is used here. Perfect accuracy, but heavy on ram and speed.
+    Not recommended to use on napari.
+
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+    def get_tree(self) -> dict:
+        self.out_dict = {}
+        self.times = {}
+        to_do = [self.root]
+        while to_do:
+            current = to_do.pop()
+            _next = self.lT.successor.get(current, [])
+            if _next and self.lT.time[_next[0]] <= self.end_time:
+                self.out_dict[current] = _next
+                to_do.extend(_next)
+            else:
+                self.out_dict[current] = []
+            self.times[current] = 1
+        return self.out_dict, self.times
+
+    def get_norm(self):
+        return len(self.lT.get_sub_tree(self.root, end_time=self.end_time))
+
+    def delta(self, x, y, corres1, corres2, times1, times2):
+        return super().delta(x, y, corres1, corres2, times1, times2)
 
 
 class tree_style(Enum):
@@ -256,141 +303,3 @@ class tree_style(Enum):
     @classmethod
     def list_names(self):
         return [style.name for style in self]
-
-
-#   #####################################
-#       def get_simple_tree(
-#       self, r: int, end_time: int = None, time_resolution: int = 1
-#   ) -> tuple:
-#       """
-#       Get a "simple" version of the tree spawned by the node `r`
-#       This simple version is just one node per cell (as opposed to
-#       one node per cell per time-point). The life time duration of
-#       a cell `c` is stored in `self.cycle_time` and return by this
-#       function
-#
-#       Args:
-#           r (int): root of the tree to spawn
-#           end_time (int): the last time point to consider
-#           time_resolution (float): the time between two consecutive time points
-#
-#       Returns:
-#           (dict) {m (int): [d1 (int), d2 (int)]}: a adjacency dictionnary
-#               where the ids are the ids of the cells in the original tree
-#               at their first time point (except for the cell `r` if it was
-#               not the first time point).
-#           (dict) {m (int): duration (float)}: life time duration of the cell `m`
-#           (dict) {m (int): duration (float)}: life time duration of the cell `m`
-#       """
-#       if end_time is None:
-#           end_time = self.t_e
-#       out_dict = {}
-#       time = {}
-#       to_do = [r]
-#       while to_do:
-#           current = to_do.pop()
-#           cycle = np.array(self.get_successors(current))
-#           cycle_times = np.array([self.time[c] for c in cycle])
-#           cycle = cycle[cycle_times <= end_time]
-#           if cycle.size:
-#               _next = self[cycle[-1]]
-#               if len(_next) > 1:
-#                   out_dict[current] = _next
-#                   to_do.extend(_next)
-#               else:
-#                   out_dict[current] = []
-#           time[current] = len(cycle) * time_resolution
-#       return out_dict, time
-#
-#   def get_fragmented_tree(
-#       self, r: int = 0, node_lengths=(1, 3, 5, 7), end_time: int = None
-#   ) -> tuple:
-#       """
-#       Get a "fragmented" version of the tree spawned by the node `r`
-#       The deafult version is 7 nodes per cell lifetime. The length of each node depends on the node_lengths parameter.
-#       Args:
-#           r (int): root of the tree to spawn
-#           end_time (int): the last time point to consider
-#           time_resolution (float): the time between two consecutive time points
-#
-#       Returns:
-#           (dict) {m (int): [d1 (int), d2 (int)]}: a adjacency dictionnary
-#               where the ids are the ids of the cells in the original tree
-#               at their first time point (except for the cell `r` if it was
-#               not the first time point).
-#           (dict) {m (int): duration (float)}: life time duration of the cell `m`
-#       """
-#       if end_time is None:
-#           end_time = self.t_e
-#       out_dict = {}
-#       times = {}
-#       to_do = [r]
-#       if not isinstance(node_lengths, list):
-#           node_lengths = list(node_lengths)
-#       while to_do:
-#           current = to_do.pop()
-#           cycle = np.array(self.get_successors(current, end_time=end_time))
-#           if cycle.size > 0:
-#               cumul_sum_of_nodes = np.cumsum(node_lengths) * 2 + 1
-#               max_number_fragments = len(
-#                   cumul_sum_of_nodes[cumul_sum_of_nodes < len(cycle)]
-#               )
-#               if max_number_fragments > 0:
-#                   current_node_lengths = node_lengths[
-#                       :max_number_fragments
-#                   ].copy()
-#                   length_middle_node = (
-#                       len(cycle) - sum(current_node_lengths) * 2
-#                   )
-#                   times_tmp = (
-#                       current_node_lengths
-#                       + [length_middle_node]
-#                       + current_node_lengths[::-1]
-#                   )
-#                   pos_all_nodes = np.concatenate(
-#                       [[0], np.cumsum(times_tmp[:-1])]
-#                   )
-#                   track = cycle[pos_all_nodes]
-#                   out_dict.update(
-#                       {k: [v] for k, v in zip(track[:-1], track[1:])}
-#                   )
-#                   times.update(zip(track, times_tmp))
-#               else:
-#                   for i, cell in enumerate(cycle[:-1]):
-#                       out_dict[cell] = [cycle[i + 1]]
-#                       times[cell] = 1
-#               current = cycle[-1]
-#               _next = self[current]
-#               times[current] = 1
-#               if _next and self.time[_next[0]] <= end_time:
-#                   to_do.extend(_next)
-#                   out_dict[current] = _next
-#               else:
-#                   out_dict[current] = []
-#
-#       return out_dict, times
-#
-#   @staticmethod
-#   def _edist_format(adj_dict: dict):
-#       inv_adj = {vi: k for k, v in adj_dict.items() for vi in v}
-#       roots = set(adj_dict).difference(inv_adj)
-#       nid2list = {}
-#       list2nid = {}
-#       nodes = []
-#       adj_list = []
-#       curr_id = 0
-#       for r in roots:
-#           to_do = [r]
-#           while to_do:
-#               curr = to_do.pop(0)
-#               nid2list[curr] = curr_id
-#               list2nid[curr_id] = curr
-#               nodes.append(curr_id)
-#               to_do = adj_dict.get(curr, []) + to_do
-#               curr_id += 1
-#           adj_list = [
-#               [nid2list[d] for d in adj_dict.get(list2nid[_id], [])]
-#               for _id in nodes
-#           ]
-#       return nodes, adj_list, list2nid
-#
