@@ -209,3 +209,77 @@ def postions_of_nx(lt, graphs):
             root=[n for n, d in graphs[i].in_degree() if d == 0][0],
         )
     return pos
+
+
+def create_links_and_cycles(lT: lineageTree, roots=None):
+    """Generates a dictionary containing the links and the lengths of each branch.
+    Similar to simple tree, mainly used for tree manip app.
+
+    Args:
+        roots (Union[list,set,int]): The roots from which the tree will be generated.
+
+    Returns:
+        dict: A dictionary with keys "links" and "times" which contains the connections all cells and their branch
+        length.
+    """
+    if roots is None:
+        to_do = set(lT.roots)
+    elif isinstance(roots, list):
+        to_do = set(roots)
+    else:
+        to_do = set([int(roots)])
+    times = {}
+    links = {}
+    while to_do:
+        curr = to_do.pop()
+        cyc = lT.get_successors(curr)
+        last = cyc[-1]
+        times[curr] = len(cyc)
+        if last != curr:
+            links[curr] = [cyc[-1]]
+        else:
+            links[curr] = []
+        succ = lT.successor.get(last)
+        if succ:
+            times[cyc[-1]] = 0
+            to_do.update(succ)
+            links[last] = succ
+    return {"links": links, "times": times, "root": roots}
+
+
+def hierarchical_pos(lnks_tms, root, width=1000, vert_gap=2, xcenter=0):
+
+    to_do = list([root])
+    if root not in lnks_tms["times"]:
+        return None
+    pos_root = {root: [xcenter, 0]}
+    prev_width = {root: width / 2}
+    while to_do:
+        curr = to_do.pop()
+        succ = lnks_tms["links"].get(curr, [])
+        if len(succ) == 0:
+            continue
+        elif len(succ) == 1:
+            pos_root[succ[0]] = [
+                pos_root[curr][0],
+                pos_root[curr][1] - lnks_tms["times"].get(curr, 0),
+            ]
+            to_do.extend(succ)
+            prev_width[succ[0]] = prev_width[curr]
+        elif len(succ) == 2:
+            pos_root[succ[0]] = [
+                pos_root[curr][0] - prev_width[curr] / 2,
+                pos_root[curr][1] - vert_gap,
+            ]
+            pos_root[succ[1]] = [
+                pos_root[curr][0] + prev_width[curr] / 2,
+                pos_root[curr][1] - vert_gap,
+            ]
+            to_do.extend(succ)
+            prev_width[succ[0]], prev_width[succ[1]] = (
+                prev_width[curr] / 2,
+                prev_width[curr] / 2,
+            )
+        else:
+            continue
+    return pos_root

@@ -2,12 +2,10 @@
 # This file is subject to the terms and conditions defined in
 # file 'LICENCE', which is part of this source code package.
 # Author: Leo Guignard (leo.guignard...@AT@...gmail.com)
-import csv
 import os
 import pickle as pkl
 import struct
 import warnings
-import xml.etree.ElementTree as ET
 from collections.abc import Iterable
 from functools import partial
 from itertools import combinations
@@ -15,8 +13,8 @@ from numbers import Number
 from pathlib import Path
 from typing import TextIO, Union
 
-from .tree_styles import tree_style
 from .loaders import lineageTreeLoaders
+from .tree_styles import tree_style
 
 try:
     from edist import uted
@@ -31,7 +29,12 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.spatial import Delaunay, distance
 from scipy.spatial import cKDTree as KDTree
 
-from .utils import hierarchy_pos, postions_of_nx
+from .utils import (
+    create_links_and_cycles,
+    hierarchy_pos,
+    postions_of_nx,
+    hierarchical_pos,
+)
 
 
 class lineageTree(lineageTreeLoaders):
@@ -1814,56 +1817,71 @@ class lineageTree(lineageTreeLoaders):
             tree1.get_norm(), tree2.get_norm()
         )
 
-    def to_simple_networkx(
-        self, node: Union[int, list, set, tuple] = None, start_time: int = 0
+    def draw_deadworkx(
+        self,
+        hier,
+        lnks_tms,
+        selected_cells=None,
+        color="magenta",
+        ax=None,
     ):
-        """
-        Creates a simple networkx tree graph (every branch is a cell lifetime). This function is to be used for producing nx.graph objects(
-        they can be used for visualization or other tasks),
-        so only the start and the end of a branch are calculated, all cells in between are not taken into account.
-        Args:
-            start_time (int): From which timepoints are the graphs to be calculated.
-                                For example if start_time is 10, then all trees that begin
-                                on tp 10 or before are calculated.
-        returns:
-            G : list(nx.Digraph(),...)
-            pos : list(dict(id:position))
-        """
+        if selected_cells is None:
+            selected_cells = []
+        if ax is None:
+            fig, ax = plt.subplots()
 
+        selected_cells = set(selected_cells)
+        hier_unselected = {
+            k: v for k, v in hier.items() if k not in selected_cells
+        }
+        hier_selected = {k: v for k, v in hier.items() if k in selected_cells}
+        unselected = np.array(tuple(hier_unselected.values()))
+        x = []
+        y = []
+        for pred, succs in lnks_tms["links"].items():
+            if pred not in selected_cells:
+                for succ in succs:
+                    x.extend((hier[succ][0], hier[pred][0], None))
+                    y.extend((hier[succ][1], hier[pred][1], None))
+        ax.plot(x, y, c="black", linewidth=0.3, zorder=0.5)
+        ax.scatter(
+            unselected.T[0], unselected.T[1], s=0.1, c="black", zorder=1
+        )
+        if selected_cells:
+            selected = np.array(tuple(hier_selected.values()))
+            x = []
+            y = []
+            for pred, succs in lnks_tms["links"].items():
+                if pred in selected_cells:
+                    for succ in succs:
+                        x.extend((hier[succ][0], hier[pred][0], None))
+                        y.extend((hier[succ][1], hier[pred][1], None))
+            ax.plot(x, y, c=color, linewidth=0.3, zorder=0.4)
+            ax.scatter(
+                selected.T[0], selected.T[1], s=0.1, c=color, zorder=0.9
+            )
+        ax.axis("off")
+        return ax
+
+    def to_simple_graph(self, node=None, start_time: int = 0):
         if node is None:
             mothers = [
                 root for root in self.roots if self.time[root] <= start_time
             ]
         else:
             mothers = node if isinstance(node, (list, set)) else [node]
-        graph = {}
-        all_nodes = {}
-        all_edges = {}
-        for mom in mothers:
-            edges = set()
-            nodes = set()
-            for branch in self.get_all_branches_of_node(mom):
-                nodes.update((branch[0], branch[-1]))
-                if len(branch) > 1:
-                    edges.add((branch[0], branch[-1]))
-                for suc in self[branch[-1]]:
-                    edges.add((branch[-1], suc))
-            all_edges[mom] = edges
-            all_nodes[mom] = nodes
-        for i, mother in enumerate(mothers):
-            graph[i] = nx.DiGraph()
-            graph[i].add_nodes_from(all_nodes[mother])
-            graph[i].add_edges_from(all_edges[mother])
-
-        return graph
+        return {
+            i: create_links_and_cycles(self, mother)
+            for i, mother in enumerate(mothers)
+        }
 
     def plot_all_lineages(
         self,
         starting_point: int = 0,
         nrows=2,
         figsize=(10, 15),
-        dpi=70,
-        fontsize=22,
+        dpi=100,
+        fontsize=15,
         figure=None,
         axes=None,
         **kwargs,
@@ -1883,30 +1901,25 @@ class lineageTree(lineageTreeLoaders):
             nrows = 1
             raise Warning("Number of rows has to be at least 1")
 
-        graphs = self.to_simple_networkx(start_time=starting_point)
+        graphs = self.to_simple_graph(start_time=starting_point)
+        pos = {i: hierarchical_pos(g, g["root"]) for i, g in graphs.items()}
         ncols = int(len(graphs) // nrows) + (+np.sign(len(graphs) % nrows))
-        pos = postions_of_nx(self, graphs)
         figure, axes = plt.subplots(
             figsize=figsize, nrows=nrows, ncols=ncols, dpi=dpi, sharey=True
         )
         flat_axes = axes.flatten()
         ax2root = {}
-        for i, graph in enumerate(graphs.values()):
-            nx.draw_networkx(
-                graph,
-                pos[i],
-                with_labels=False,
-                arrows=False,
-                **kwargs,
-                ax=flat_axes[i],
+        for i, graph in graphs.items():
+            self.draw_deadworkx(
+                hier=pos[i], lnks_tms=graph, ax=flat_axes[i], **kwargs
             )
-            root = [n for n, d in graph.in_degree() if d == 0][0]
+            root = graph["root"]
+            ax2root[flat_axes[i]] = root
             label = self.labels.get(root, "Unlabeled")
             xlim = flat_axes[i].get_xlim()
             ylim = flat_axes[i].get_ylim()
-            x_pos = (xlim[1]) / 10
-            y_pos = ylim[0] + 15
-            ax2root[flat_axes[i]] = root
+            x_pos = (xlim[0]) / 10
+            y_pos = ylim[1] + 0
             flat_axes[i].text(
                 x_pos,
                 y_pos,
@@ -1915,11 +1928,6 @@ class lineageTree(lineageTreeLoaders):
                 color="black",
                 ha="center",
                 va="center",
-                bbox={
-                    "facecolor": "white",
-                    "edgecolor": "green",
-                    "boxstyle": "round",
-                },
             )
         [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
         return figure, axes, ax2root
@@ -1931,16 +1939,14 @@ class lineageTree(lineageTreeLoaders):
             node (int): The id of the node that is going to be plotted.
             kwargs: args accepted by networkx
         """
-        graph = self.to_simple_networkx(node)
+        graph = self.to_simple_graph(node)
         if len(graph) > 1:
             raise Warning("Please enter only one node")
-        graph = graph[list(graph)[0]]
+        graph = graph[0]
         figure, ax = plt.subplots(nrows=1, ncols=1)
-        nx.draw_networkx(
-            graph,
-            hierarchy_pos(graph, self, node),
-            with_labels=False,
-            arrows=False,
+        self.draw_deadworkx(
+            hier=hierarchical_pos(graph, graph["root"]),
+            lnks_tms=graph,
             ax=ax,
             **kwargs,
         )
