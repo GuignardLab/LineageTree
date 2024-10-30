@@ -1953,7 +1953,6 @@ class lineageTree(lineageTreeLoaders):
             ),
             lnks_tms=graph,
             ax=ax,
-            **kwargs,
         )
         return figure, ax
 
