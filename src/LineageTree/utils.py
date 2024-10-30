@@ -247,12 +247,26 @@ def create_links_and_cycles(lT: lineageTree, roots=None):
     return {"links": links, "times": times, "root": roots}
 
 
-def hierarchical_pos(lnks_tms, root, width=1000, vert_gap=2, xcenter=0):
+def hierarchical_pos(
+    lnks_tms: dict, root, width=1000, vert_gap=2, xcenter=0, ycenter=0
+):
+    """Calculates the position of each node on te tree graph.
 
-    to_do = list([root])
+    Args:
+        lnks_tms (dict): a dictionary created by create_links_and_cycles.
+        root (_type_): The id of the node, usually it exists inside lnks_tms dictionary, however you may use your own root.
+        width (int, optional): Max width, will not change the graph but the interacting with the graph takes this distance into account. Defaults to 1000.
+        vert_gap (int, optional): How far downwards each timepoint will go. Defaults to 2.
+        xcenter (int, optional): Where the root will be placed on the x axis. Defaults to 0.
+        ycenter (int, optional): Where the root will be placed on the y axis. Defaults to 0.
+
+    Returns:
+        _type_: _description_
+    """
+    to_do = [root]
     if root not in lnks_tms["times"]:
         return None
-    pos_root = {root: [xcenter, 0]}
+    pos_root = {root: [xcenter, ycenter]}
     prev_width = {root: width / 2}
     while to_do:
         curr = to_do.pop()
