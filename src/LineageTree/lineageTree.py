@@ -31,9 +31,9 @@ from scipy.spatial import cKDTree as KDTree
 
 from .utils import (
     create_links_and_cycles,
+    hierarchical_pos,
     hierarchy_pos,
     postions_of_nx,
-    hierarchical_pos,
 )
 
 
