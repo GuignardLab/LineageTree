@@ -1902,7 +1902,12 @@ class lineageTree(lineageTreeLoaders):
             raise Warning("Number of rows has to be at least 1")
 
         graphs = self.to_simple_graph(start_time=starting_point)
-        pos = {i: hierarchical_pos(g, g["root"]) for i, g in graphs.items()}
+        pos = {
+            i: hierarchical_pos(
+                g, g["root"], ycenter=-int(self.time[g["root"]])
+            )
+            for i, g in graphs.items()
+        }
         ncols = int(len(graphs) // nrows) + (+np.sign(len(graphs) % nrows))
         figure, axes = plt.subplots(
             figsize=figsize, nrows=nrows, ncols=ncols, dpi=dpi, sharey=True
@@ -1943,9 +1948,14 @@ class lineageTree(lineageTreeLoaders):
         if len(graph) > 1:
             raise Warning("Please enter only one node")
         graph = graph[0]
-        figure, ax = plt.subplots(nrows=1, ncols=1, figsize=(4, 7), dpi=150)
+        figure, ax = plt.subplots(nrows=1, ncols=1, figsize=figsize, dpi=dpi)
         self.draw_deadworkx(
-            hier=hierarchical_pos(graph, graph["root"], vert_gap=vert_gap),
+            hier=hierarchical_pos(
+                graph,
+                graph["root"],
+                vert_gap=vert_gap,
+                ycenter=-int(self.time[node]),
+            ),
             lnks_tms=graph,
             ax=ax,
         )
