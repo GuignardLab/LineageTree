@@ -32,8 +32,6 @@ from scipy.spatial import cKDTree as KDTree
 from .utils import (
     create_links_and_cycles,
     hierarchical_pos,
-    hierarchy_pos,
-    postions_of_nx,
 )
 
 
@@ -385,7 +383,11 @@ class lineageTree(lineageTreeLoaders):
     @property
     def labels(self):
         if not hasattr(self, "_labels"):
-            self._labels = {i: "Unlabeled" for i in self.time_nodes[0]}
+            self._labels = {
+                i: "Unlabeled"
+                for i in self.roots
+                if len(self.get_sub_tree(i)) >= len(self.nodes) / 50
+            }
         return self._labels
 
     def _write_header_am(self, f: TextIO, nb_points: int, length: int):
@@ -1829,7 +1831,7 @@ class lineageTree(lineageTreeLoaders):
         if selected_cells is None:
             selected_cells = []
         if ax is None:
-            fig, ax = plt.subplots()
+            _, ax = plt.subplots()
         else:
             ax.clear()
 
