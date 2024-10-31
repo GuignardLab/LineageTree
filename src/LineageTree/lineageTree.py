@@ -386,7 +386,9 @@ class lineageTree(lineageTreeLoaders):
             self._labels = {
                 i: "Unlabeled"
                 for i in self.roots
-                if len(self.get_sub_tree(i)) >= len(self.nodes) / 50
+                for l in self.find_leaves(i)
+                if abs(self.time[l] - self.time[i])
+                >= abs(self.t_e - self.t_b) / 4
             }
         return self._labels
 
@@ -1623,9 +1625,9 @@ class lineageTree(lineageTreeLoaders):
             list: A list that contains the array of eigenvalues and eigenvectors.
         """
         if time is None:
-            time = np.argmax(
-                [len(self.time_nodes[t]) for t in range(int(self.t_e))]
-            )
+            time = max(
+                [(len(nodes), time) for time, nodes in self.time_nodes.items()]
+            )[1]
         pos = np.array([self.pos[node] for node in self.time_nodes[time]])
         pos = pos - np.mean(pos, axis=0)
         cov = np.cov(np.array(pos).T)
@@ -1894,7 +1896,8 @@ class lineageTree(lineageTreeLoaders):
 
     def plot_all_lineages(
         self,
-        starting_point: int = 0,
+        nodes,
+        last_time_point_to_consider: int = 0,
         nrows=2,
         figsize=(10, 15),
         dpi=100,
@@ -1906,9 +1909,9 @@ class lineageTree(lineageTreeLoaders):
         """Plots all lineages.
 
         Args:
-            starting_point (int, optional): Which timepoints and upwards are the graphs to be calculated.
-                                For example if start_time is 10, then all trees that begin
-                                on tp 10 or before are calculated. Defaults to None.
+            last_time_point_to_consider (int, optional): Which timepoints and upwards are the graphs to be calculated.
+                                                        For example if start_time is 10, then all trees that begin
+                                                        on tp 10 or before are calculated. Defaults to None.
             nrows (int):  How many rows of plots should be printed.
             kwargs: args accepted by networkx
         """
@@ -1917,8 +1920,11 @@ class lineageTree(lineageTreeLoaders):
         if nrows < 1 or not nrows:
             nrows = 1
             raise Warning("Number of rows has to be at least 1")
-
-        graphs = self.to_simple_graph(start_time=starting_point)
+        if nodes:
+            graphs = {
+                i: self.to_simple_graph(node) for i, node in enumerate(nodes)
+            }
+        graphs = self.to_simple_graph(start_time=last_time_point_to_consider)
         pos = {
             i: hierarchical_pos(
                 g, g["root"], ycenter=-int(self.time[g["root"]])
@@ -1941,7 +1947,7 @@ class lineageTree(lineageTreeLoaders):
             xlim = flat_axes[i].get_xlim()
             ylim = flat_axes[i].get_ylim()
             x_pos = (xlim[0]) / 10
-            y_pos = ylim[1] + 0
+            y_pos = ylim[1]
             flat_axes[i].text(
                 x_pos,
                 y_pos,
