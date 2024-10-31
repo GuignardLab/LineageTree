@@ -1824,11 +1824,14 @@ class lineageTree(lineageTreeLoaders):
         selected_cells=None,
         color="magenta",
         ax=None,
+        **kwargs,
     ):
         if selected_cells is None:
             selected_cells = []
         if ax is None:
             fig, ax = plt.subplots()
+        else:
+            ax.clear()
 
         selected_cells = set(selected_cells)
         hier_unselected = {
@@ -1838,15 +1841,21 @@ class lineageTree(lineageTreeLoaders):
         unselected = np.array(tuple(hier_unselected.values()))
         x = []
         y = []
-        for pred, succs in lnks_tms["links"].items():
-            if pred not in selected_cells:
-                for succ in succs:
-                    x.extend((hier[succ][0], hier[pred][0], None))
-                    y.extend((hier[succ][1], hier[pred][1], None))
-        ax.plot(x, y, c="black", linewidth=0.3, zorder=0.5)
-        ax.scatter(
-            unselected.T[0], unselected.T[1], s=0.1, c="black", zorder=1
-        )
+        if hier_unselected:
+            for pred, succs in lnks_tms["links"].items():
+                if pred not in selected_cells:
+                    for succ in succs:
+                        x.extend((hier[succ][0], hier[pred][0], None))
+                        y.extend((hier[succ][1], hier[pred][1], None))
+            ax.plot(x, y, c="black", linewidth=0.3, zorder=0.5, **kwargs)
+            ax.scatter(
+                unselected.T[0],
+                unselected.T[1],
+                s=0.1,
+                c="black",
+                zorder=1,
+                **kwargs,
+            )
         if selected_cells:
             selected = np.array(tuple(hier_selected.values()))
             x = []
@@ -1856,11 +1865,17 @@ class lineageTree(lineageTreeLoaders):
                     for succ in succs:
                         x.extend((hier[succ][0], hier[pred][0], None))
                         y.extend((hier[succ][1], hier[pred][1], None))
-            ax.plot(x, y, c=color, linewidth=0.3, zorder=0.4)
+            ax.plot(x, y, c=color, linewidth=0.3, zorder=0.4, **kwargs)
             ax.scatter(
-                selected.T[0], selected.T[1], s=0.1, c=color, zorder=0.9
+                selected.T[0],
+                selected.T[1],
+                s=0.1,
+                c=color,
+                zorder=0.9,
+                **kwargs,
             )
-        ax.axis("off")
+        ax.get_yaxis().set_visible(False)
+        ax.get_xaxis().set_visible(False)
         return ax
 
     def to_simple_graph(self, node=None, start_time: int = 0):
