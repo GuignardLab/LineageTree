@@ -2213,7 +2213,7 @@ class lineageTree:
         while to_do:
             curr = to_do.pop()
             succ = self.successor.get(curr)
-            if not succ:
+            if succ is not None:
                 leaves.add(curr)
             else:
                 to_do += succ
