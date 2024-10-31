@@ -2196,6 +2196,29 @@ class lineageTree:
                 to_do.extend(self[track[-1]])
             return tracks
 
+    def find_leaves(self, roots: Union[int, set, list, tuple]):
+        """Finds the leaves of a tree spawned by one or more nodes.
+
+        Args:
+            roots (Union[int,set,list,tuple]): The roots of the trees.
+
+        Returns:
+            set: The leaves of one or more trees.
+        """
+        if not isinstance(roots, Iterable):
+            to_do = [roots]
+        elif isinstance(roots, Iterable):
+            to_do = list(roots)
+        leaves = set()
+        while to_do:
+            curr = to_do.pop()
+            succ = self.successor.get(curr)
+            if succ is not None:
+                leaves.add(curr)
+            else:
+                to_do += succ
+        return leaves
+
     def get_sub_tree(
         self,
         x: Union[int, Iterable],

@@ -172,7 +172,7 @@ class simple_tree(abstract_trees):
             cycle = cycle[cycle_times <= self.end_time]
             if cycle.size:
                 _next = self.lT[cycle[-1]]
-                if 1 < len(_next) and self.lT.time[cycle[-1]] < self.end_time:
+                if len(_next) > 1 and self.lT.time[cycle[-1]] < self.end_time:
                     out_dict[current] = _next
                     to_do.extend(_next)
                 else:
@@ -186,16 +186,14 @@ class simple_tree(abstract_trees):
         return super().delta(x, y, corres1, corres2, times1, times2)
 
     def get_norm(self):
-        return len(
-            self.lT.get_sub_tree(self.root, end_time=self.end_time)
-        )
+        return len(self.lT.get_sub_tree(self.root, end_time=self.end_time))
 
 
 class fragmented_tree(abstract_trees):
     """Similar idea to simple tree, but tries to correct its flaws.
-        Instead of having branches with length == life cycle of cell,nodes of specific length are added on the
-        edges of the branch, providing both accuratr results and speed.
-        It's the recommended method for calculating edit distances on developing embryos.
+    Instead of having branches with length == life cycle of cell,nodes of specific length are added on the
+    edges of the branch, providing both accuratr results and speed.
+    It's the recommended method for calculating edit distances on developing embryos.
     """
 
     def __init__(self, **kwargs):
@@ -255,9 +253,7 @@ class fragmented_tree(abstract_trees):
         return self.out_dict, self.times
 
     def get_norm(self):
-        return len(
-            self.lT.get_sub_tree(self.root, end_time=self.end_time)
-        )
+        return len(self.lT.get_sub_tree(self.root, end_time=self.end_time))
 
     def delta(self, x, y, corres1, corres2, times1, times2):
         return super().delta(x, y, corres1, corres2, times1, times2)
