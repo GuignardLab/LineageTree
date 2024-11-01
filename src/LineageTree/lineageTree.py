@@ -1896,7 +1896,7 @@ class lineageTree(lineageTreeLoaders):
 
     def plot_all_lineages(
         self,
-        nodes,
+        nodes=[],
         last_time_point_to_consider: int = 0,
         nrows=2,
         figsize=(10, 15),
@@ -1924,7 +1924,10 @@ class lineageTree(lineageTreeLoaders):
             graphs = {
                 i: self.to_simple_graph(node) for i, node in enumerate(nodes)
             }
-        graphs = self.to_simple_graph(start_time=last_time_point_to_consider)
+        else:
+            graphs = self.to_simple_graph(
+                start_time=last_time_point_to_consider
+            )
         pos = {
             i: hierarchical_pos(
                 g, g["root"], ycenter=-int(self.time[g["root"]])
