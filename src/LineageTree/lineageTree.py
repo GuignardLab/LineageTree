@@ -1821,7 +1821,7 @@ class lineageTree(lineageTreeLoaders):
             tree1.get_norm(), tree2.get_norm()
         )
 
-    def draw_deadworkx(
+    def draw_tree_graph(
         self,
         hier,
         lnks_tms,
@@ -1938,7 +1938,7 @@ class lineageTree(lineageTreeLoaders):
         flat_axes = axes.flatten()
         ax2root = {}
         for i, graph in graphs.items():
-            self.draw_deadworkx(
+            self.draw_tree_graph(
                 hier=pos[i], lnks_tms=graph, ax=flat_axes[i], **kwargs
             )
             root = graph["root"]
@@ -1972,7 +1972,7 @@ class lineageTree(lineageTreeLoaders):
             raise Warning("Please enter only one node")
         graph = graph[0]
         figure, ax = plt.subplots(nrows=1, ncols=1, figsize=figsize, dpi=dpi)
-        self.draw_deadworkx(
+        self.draw_tree_graph(
             hier=hierarchical_pos(
                 graph,
                 graph["root"],
