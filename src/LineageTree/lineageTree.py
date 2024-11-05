@@ -1950,7 +1950,7 @@ class lineageTree(lineageTreeLoaders):
             xlim = flat_axes[i].get_xlim()
             ylim = flat_axes[i].get_ylim()
             x_pos = (xlim[0]) / 10
-            y_pos = ylim[1]
+            y_pos = ylim[1]-10
             flat_axes[i].text(
                 x_pos,
                 y_pos,
