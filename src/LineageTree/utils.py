@@ -2,7 +2,6 @@ import csv
 import random
 import warnings
 
-import networkx as nx
 
 from LineageTree import lineageTree
 
@@ -17,6 +16,11 @@ except ImportError:
 def to_motile(
     lT: lineageTree, crop: int = None, max_dist=200, max_skip_frames=1
 ):
+    try:
+        import networkx as nx
+    except:
+        raise Warning("Please install networkx")
+
     fmt = nx.DiGraph()
     if not crop:
         crop = lT.t_e
@@ -66,25 +70,6 @@ def write_csv_from_lT_to_lineaja(
                     "id": node,
                 }
             )
-
-
-def postions_of_nx(lt, graphs):
-    """Calculates the positions of the Lineagetree to be plotted.
-
-    Args:
-        graphs (nx.Digraph): Graphs produced by export_nx_simple_graph
-
-    Returns:
-        pos (list): The positions of the nodes of the graphs for plotting
-    """
-    pos = {}
-    for i in range(len(graphs)):
-        pos[i] = hierarchy_pos(
-            graphs[i],
-            lt,
-            root=[n for n, d in graphs[i].in_degree() if d == 0][0],
-        )
-    return pos
 
 
 def create_links_and_cycles(lT: lineageTree, roots=None):
@@ -170,7 +155,4 @@ def hierarchical_pos(
                 prev_width[curr] / 2,
                 prev_width[curr] / 2,
             )
-            # see if i need that!
-        else:
-            continue
     return pos_node

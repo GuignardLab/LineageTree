@@ -23,7 +23,6 @@ except ImportError:
         "No edist installed therefore you will not be able to compute the tree edit distance."
     )
 import matplotlib.pyplot as plt
-import networkx as nx
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.spatial import Delaunay, distance
@@ -383,13 +382,18 @@ class lineageTree(lineageTreeLoaders):
     @property
     def labels(self):
         if not hasattr(self, "_labels"):
-            self._labels = {
-                i: "Unlabeled"
-                for i in self.roots
-                for l in self.find_leaves(i)
-                if abs(self.time[l] - self.time[i])
-                >= abs(self.t_e - self.t_b) / 4
-            }
+            if hasattr(self, "cell_name"):
+                self._labels = {
+                    i: self.cell_name.get(i, "Unlabeled") for i in self.roots
+                }
+            else:
+                self._labels = {
+                    i: "Unlabeled"
+                    for i in self.roots
+                    for l in self.find_leaves(i)
+                    if abs(self.time[l] - self.time[i])
+                    >= abs(self.t_e - self.t_b) / 4
+                }
         return self._labels
 
     def _write_header_am(self, f: TextIO, nb_points: int, length: int):
@@ -1625,9 +1629,7 @@ class lineageTree(lineageTreeLoaders):
             list: A list that contains the array of eigenvalues and eigenvectors.
         """
         if time is None:
-            time = max(
-                [(len(nodes), time) for time, nodes in self.time_nodes.items()]
-            )[1]
+            time = max(self.time_nodes, key=lambda x: len(self.time_nodes[x]))
         pos = np.array([self.pos[node] for node in self.time_nodes[time]])
         pos = pos - np.mean(pos, axis=0)
         cov = np.cov(np.array(pos).T)
@@ -1853,8 +1855,7 @@ class lineageTree(lineageTreeLoaders):
                         y.extend((hier[succ][1], hier[pred][1], None))
             ax.plot(x, y, c="black", linewidth=0.3, zorder=0.5, **kwargs)
             ax.scatter(
-                unselected.T[0],
-                unselected.T[1],
+                *unselected.T,
                 s=0.1,
                 c="black",
                 zorder=1,
@@ -1882,10 +1883,23 @@ class lineageTree(lineageTreeLoaders):
         ax.get_xaxis().set_visible(False)
         return ax
 
-    def to_simple_graph(self, node=None, start_time: int = 0):
+    def to_simple_graph(self, node=None, start_time: int = None):
+        """Generates a dictionary of graphs where the keys are the index of the graph and
+        the values are the graphs themselves which are produced by create_links_and _cycles
+
+        Args:
+            node (_type_, optional): The id of the node/nodes to produce the simple graphs. Defaults to None.
+            start_time (int, optional): Important only if there are no nodes it will produce the graph of every
+            root that starts before or at start time. Defaults to None.
+
+        Returns:
+            (dict): The keys are just index values  0-n and the values are the graphs produced.
+        """
         if node is None:
             mothers = [
-                root for root in self.roots if self.time[root] <= start_time
+                root
+                for root in self.roots
+                if self.time[root] <= start_time + self.t_b
             ]
         else:
             mothers = node if isinstance(node, (list, set)) else [node]
@@ -1897,7 +1911,7 @@ class lineageTree(lineageTreeLoaders):
     def plot_all_lineages(
         self,
         nodes=[],
-        last_time_point_to_consider: int = 0,
+        last_time_point_to_consider: int = None,
         nrows=2,
         figsize=(10, 15),
         dpi=100,
@@ -1909,14 +1923,17 @@ class lineageTree(lineageTreeLoaders):
         """Plots all lineages.
 
         Args:
-            last_time_point_to_consider (int, optional): Which timepoints and upwards are the graphs to be calculated.
+            last_time_point_to_consider (int, optional): Which timepoints and upwards are the graphs to be plotted.
                                                         For example if start_time is 10, then all trees that begin
-                                                        on tp 10 or before are calculated. Defaults to None.
+                                                        on tp 10 or before are calculated. Defaults to None, where
+                                                        it will plot all the roots that exist on self.t_b.
             nrows (int):  How many rows of plots should be printed.
-            kwargs: args accepted by networkx
+            kwargs: args accepted by matplotlib
         """
 
         nrows = int(nrows)
+        if last_time_point_to_consider is None:
+            last_time_point_to_consider = self.t_b
         if nrows < 1 or not nrows:
             nrows = 1
             raise Warning("Number of rows has to be at least 1")
@@ -1940,6 +1957,15 @@ class lineageTree(lineageTreeLoaders):
         )
         flat_axes = axes.flatten()
         ax2root = {}
+        min_width, min_height = float("inf"), float("inf")
+        for ax in flat_axes:
+            bbox = ax.get_window_extent().transformed(
+                figure.dpi_scale_trans.inverted()
+            )
+            min_width = min(min_width, bbox.width)
+            min_height = min(min_height, bbox.height)
+
+        adjusted_fontsize = fontsize * min(min_width, min_height) / 5
         for i, graph in graphs.items():
             self.draw_tree_graph(
                 hier=pos[i], lnks_tms=graph, ax=flat_axes[i], **kwargs
@@ -1949,16 +1975,21 @@ class lineageTree(lineageTreeLoaders):
             label = self.labels.get(root, "Unlabeled")
             xlim = flat_axes[i].get_xlim()
             ylim = flat_axes[i].get_ylim()
-            x_pos = (xlim[0]) / 10
-            y_pos = ylim[1] - 10
+            x_pos = (xlim[0] + xlim[1]) / 2
+            y_pos = ylim[1] * 0.8
             flat_axes[i].text(
                 x_pos,
                 y_pos,
                 label,
-                fontsize=fontsize,
+                fontsize=adjusted_fontsize,
                 color="black",
                 ha="center",
                 va="center",
+                bbox={
+                    "facecolor": "white",
+                    "alpha": 0.5,
+                    "edgecolor": "green",
+                },
             )
         [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
         return figure, axes, ax2root
@@ -1968,7 +1999,7 @@ class lineageTree(lineageTreeLoaders):
 
         Args:
             node (int): The id of the node that is going to be plotted.
-            kwargs: args accepted by networkx
+            kwargs: args accepted by matplotlib
         """
         graph = self.to_simple_graph(node)
         if len(graph) > 1:
@@ -2377,7 +2408,7 @@ class lineageTree(lineageTreeLoaders):
         """
         Plot DTW cost matrix between two cell cycles in heatmap format
 
-            Args:`
+            Args:
                 nodes1 (int): node to compare distance
                 nodes2 (int): node to compare distance
                 start_d (int): start delay
