@@ -2,12 +2,10 @@
 # This file is subject to the terms and conditions defined in
 # file 'LICENCE', which is part of this source code package.
 # Author: Leo Guignard (leo.guignard...@AT@...gmail.com)
-import csv
 import os
 import pickle as pkl
 import struct
 import warnings
-import xml.etree.ElementTree as ET
 from collections.abc import Iterable
 from functools import partial
 from itertools import combinations
@@ -15,6 +13,7 @@ from numbers import Number
 from pathlib import Path
 from typing import TextIO, Union
 
+from .loaders import lineageTreeLoaders
 from .tree_styles import tree_style
 
 try:
@@ -24,16 +23,18 @@ except ImportError:
         "No edist installed therefore you will not be able to compute the tree edit distance."
     )
 import matplotlib.pyplot as plt
-import networkx as nx
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.spatial import Delaunay, distance
 from scipy.spatial import cKDTree as KDTree
 
-from .utils import hierarchy_pos, postions_of_nx
+from .utils import (
+    create_links_and_cycles,
+    hierarchical_pos,
+)
 
 
-class lineageTree:
+class lineageTree(lineageTreeLoaders):
     def __eq__(self, other):
         if isinstance(other, lineageTree):
             return other.successor == self.successor
@@ -381,7 +382,18 @@ class lineageTree:
     @property
     def labels(self):
         if not hasattr(self, "_labels"):
-            self._labels = {i: "Unlabeled" for i in self.roots}
+            if hasattr(self, "cell_name"):
+                self._labels = {
+                    i: self.cell_name.get(i, "Unlabeled") for i in self.roots
+                }
+            else:
+                self._labels = {
+                    i: "Unlabeled"
+                    for i in self.roots
+                    for l in self.find_leaves(i)
+                    if abs(self.time[l] - self.time[i])
+                    >= abs(self.t_e - self.t_b) / 4
+                }
         return self._labels
 
     def _write_header_am(self, f: TextIO, nb_points: int, length: int):
@@ -732,61 +744,6 @@ class lineageTree:
                     )
         dwg.save()
 
-    def to_treex(
-        self,
-        sampling: int = 1,
-        start: int = 0,
-        finish: int = 10000,
-        many: bool = True,
-    ):
-        """
-        TODO: finish the doc
-        Convert the lineage tree into a treex file.
-
-        start/finish refer to first index in the new array times_to_consider
-
-        """
-        from warnings import warn
-
-        from treex.tree import Tree
-
-        if finish - start <= 0:
-            warn("Will return None, because start = finish", stacklevel=2)
-            return None
-        id_to_tree = {_id: Tree() for _id in self.nodes}
-        times_to_consider = sorted(
-            [t for t, n in self.time_nodes.items() if len(n) > 0]
-        )
-        times_to_consider = times_to_consider[start:finish:sampling]
-        start_time = times_to_consider[0]
-        for t in times_to_consider:
-            for id_mother in self.time_nodes[t]:
-                ids_daughters = self[id_mother]
-                new_ids_daughters = ids_daughters.copy()
-                for _ in range(sampling - 1):
-                    tmp = []
-                    for d in new_ids_daughters:
-                        tmp.extend(self.successor.get(d, [d]))
-                    new_ids_daughters = tmp
-                for (
-                    daugther
-                ) in (
-                    new_ids_daughters
-                ):  ## For each daughter in the list of daughters
-                    id_to_tree[id_mother].add_subtree(
-                        id_to_tree[daugther]
-                    )  ## Add the Treex daughter as a subtree of the Treex mother
-        roots = [id_to_tree[_id] for _id in set(self.time_nodes[start_time])]
-        for root, ids in zip(roots, set(self.time_nodes[start_time])):
-            root.add_attribute_to_id("ID", ids)
-        if not many:
-            reroot = Tree()
-            for root in roots:
-                reroot.add_subtree(root)
-            return reroot
-        else:
-            return roots
-
     def to_tlp(
         self,
         fname: str,
@@ -992,726 +949,6 @@ class lineageTree:
 
             f.write(")")
             f.close()
-
-    def read_from_csv(
-        self, file_path: str, z_mult: float, link: int = 1, delim: str = ","
-    ):
-        """
-        TODO: write doc
-        """
-
-        def convert_for_csv(v):
-            if v.isdigit():
-                return int(v)
-            else:
-                return float(v)
-
-        with open(file_path) as f:
-            lines = f.readlines()
-            f.close()
-        self.time_nodes = {}
-        self.time_edges = {}
-        unique_id = 0
-        self.nodes = set()
-        self.successor = {}
-        self.predecessor = {}
-        self.pos = {}
-        self.time_id = {}
-        self.time = {}
-        self.lin = {}
-        self.C_lin = {}
-        if not link:
-            self.displacement = {}
-        lines_to_int = []
-        corres = {}
-        for line in lines:
-            lines_to_int += [
-                [convert_for_csv(v.strip()) for v in line.split(delim)]
-            ]
-        lines_to_int = np.array(lines_to_int)
-        if link == 2:
-            lines_to_int = lines_to_int[np.argsort(lines_to_int[:, 0])]
-        else:
-            lines_to_int = lines_to_int[np.argsort(lines_to_int[:, 1])]
-        for line in lines_to_int:
-            if link == 1:
-                id_, t, z, y, x, pred, lin_id = line
-            elif link == 2:
-                t, z, y, x, id_, pred, lin_id = line
-            else:
-                id_, t, z, y, x, dz, dy, dx = line
-                pred = None
-                lin_id = None
-            t = int(t)
-            pos = np.array([x, y, z])
-            C = unique_id
-            corres[id_] = C
-            pos[-1] = pos[-1] * z_mult
-            if pred in corres:
-                M = corres[pred]
-                self.predecessor[C] = [M]
-                self.successor.setdefault(M, []).append(C)
-                self.time_edges.setdefault(t, set()).add((M, C))
-                self.lin.setdefault(lin_id, []).append(C)
-                self.C_lin[C] = lin_id
-            self.pos[C] = pos
-            self.nodes.add(C)
-            self.time_nodes.setdefault(t, set()).add(C)
-            # self.time_id[(t, cell_id)] = C
-            self.time[C] = t
-            if not link:
-                self.displacement[C] = np.array([dx, dy, dz * z_mult])
-            unique_id += 1
-        self.max_id = unique_id - 1
-        self.t_b = min(self.time_nodes)
-        self.t_e = max(self.time_nodes)
-
-    def read_from_ASTEC(self, file_path: str, eigen: bool = False):
-        """
-        Read an `xml` or `pkl` file produced by the ASTEC algorithm.
-
-        Args:
-            file_path (str): path to an output generated by ASTEC
-            eigen (bool): whether or not to read the eigen values, default False
-        """
-        self._astec_keydictionary = {
-            "cell_lineage": [
-                "lineage_tree",
-                "lin_tree",
-                "Lineage tree",
-                "cell_lineage",
-            ],
-            "cell_h_min": ["cell_h_min", "h_mins_information"],
-            "cell_volume": [
-                "cell_volume",
-                "volumes_information",
-                "volumes information",
-                "vol",
-            ],
-            "cell_surface": ["cell_surface", "cell surface"],
-            "cell_compactness": [
-                "cell_compactness",
-                "Cell Compactness",
-                "compacity",
-                "cell_sphericity",
-            ],
-            "cell_sigma": ["cell_sigma", "sigmas_information", "sigmas"],
-            "cell_labels_in_time": [
-                "cell_labels_in_time",
-                "Cells labels in time",
-                "time_labels",
-            ],
-            "cell_barycenter": [
-                "cell_barycenter",
-                "Barycenters",
-                "barycenters",
-            ],
-            "cell_fate": ["cell_fate", "Fate"],
-            "cell_fate_2": ["cell_fate_2", "Fate2"],
-            "cell_fate_3": ["cell_fate_3", "Fate3"],
-            "cell_fate_4": ["cell_fate_4", "Fate4"],
-            "all_cells": [
-                "all_cells",
-                "All Cells",
-                "All_Cells",
-                "all cells",
-                "tot_cells",
-            ],
-            "cell_principal_values": [
-                "cell_principal_values",
-                "Principal values",
-            ],
-            "cell_name": ["cell_name", "Names", "names", "cell_names"],
-            "cell_contact_surface": [
-                "cell_contact_surface",
-                "cell_cell_contact_information",
-            ],
-            "cell_history": [
-                "cell_history",
-                "Cells history",
-                "cell_life",
-                "life",
-            ],
-            "cell_principal_vectors": [
-                "cell_principal_vectors",
-                "Principal vectors",
-            ],
-            "cell_naming_score": ["cell_naming_score", "Scores", "scores"],
-            "problematic_cells": ["problematic_cells"],
-            "unknown_key": ["unknown_key"],
-        }
-
-        if os.path.splitext(file_path)[-1] == ".xml":
-            tmp_data = self._read_from_ASTEC_xml(file_path)
-        else:
-            tmp_data = self._read_from_ASTEC_pkl(file_path, eigen)
-
-        # make sure these are all named liked they are in tmp_data (or change dictionary above)
-        self.name = {}
-        if "cell_volume" in tmp_data:
-            self.volume = {}
-        if "cell_fate" in tmp_data:
-            self.fates = {}
-        if "cell_barycenter" in tmp_data:
-            self.pos = {}
-        self.lT2pkl = {}
-        self.pkl2lT = {}
-        self.contact = {}
-        self.prob_cells = set()
-        self.image_label = {}
-
-        lt = tmp_data["cell_lineage"]
-
-        if "cell_contact_surface" in tmp_data:
-            do_surf = True
-            surfaces = tmp_data["cell_contact_surface"]
-        else:
-            do_surf = False
-
-        inv = {vi: [c] for c, v in lt.items() for vi in v}
-        nodes = set(lt).union(inv)
-
-        unique_id = 0
-
-        for n in nodes:
-            t = n // 10**4
-            self.image_label[unique_id] = n % 10**4
-            self.lT2pkl[unique_id] = n
-            self.pkl2lT[n] = unique_id
-            self.time_nodes.setdefault(t, set()).add(unique_id)
-            self.nodes.add(unique_id)
-            self.time[unique_id] = t
-            if "cell_volume" in tmp_data:
-                self.volume[unique_id] = tmp_data["cell_volume"].get(n, 0.0)
-            if "cell_fate" in tmp_data:
-                self.fates[unique_id] = tmp_data["cell_fate"].get(n, "")
-            if "cell_barycenter" in tmp_data:
-                self.pos[unique_id] = tmp_data["cell_barycenter"].get(
-                    n, np.zeros(3)
-                )
-
-            unique_id += 1
-        if do_surf:
-            for c in nodes:
-                if c in surfaces and c in self.pkl2lT:
-                    self.contact[self.pkl2lT[c]] = {
-                        self.pkl2lT.get(n, -1): s
-                        for n, s in surfaces[c].items()
-                        if n % 10**4 == 1 or n in self.pkl2lT
-                    }
-
-        for n, new_id in self.pkl2lT.items():
-            if n in inv:
-                self.predecessor[new_id] = [self.pkl2lT[ni] for ni in inv[n]]
-            if n in lt:
-                self.successor[new_id] = [
-                    self.pkl2lT[ni] for ni in lt[n] if ni in self.pkl2lT
-                ]
-
-                for ni in self.successor[new_id]:
-                    self.time_edges.setdefault(t - 1, set()).add((new_id, ni))
-
-        self.t_b = min(self.time_nodes)
-        self.t_e = max(self.time_nodes)
-        self.max_id = unique_id
-
-        # do this in the end of the process, skip lineage tree and whatever is stored already
-        discard = {
-            "cell_volume",
-            "cell_fate",
-            "cell_barycenter",
-            "cell_contact_surface",
-            "cell_lineage",
-            "all_cells",
-            "cell_history",
-            "problematic_cells",
-            "cell_labels_in_time",
-        }
-        self.specific_properties = []
-        for prop_name, prop_values in tmp_data.items():
-            if not (prop_name in discard or hasattr(self, prop_name)):
-                if isinstance(prop_values, dict):
-                    dictionary = {
-                        self.pkl2lT.get(k, -1): v
-                        for k, v in prop_values.items()
-                    }
-                    # is it a regular dictionary or a dictionary with dictionaries inside?
-                    for key, value in dictionary.items():
-                        if isinstance(value, dict):
-                            # rename all ids from old to new
-                            dictionary[key] = {
-                                self.pkl2lT.get(k, -1): v
-                                for k, v in value.items()
-                            }
-                    self.__dict__[prop_name] = dictionary
-                    self.specific_properties.append(prop_name)
-                # is any of this necessary? Or does it mean it anyways does not contain
-                # information about the id and a simple else: is enough?
-                elif (
-                    isinstance(prop_values, (list, set, np.ndarray))
-                    and prop_name not in []
-                ):
-                    self.__dict__[prop_name] = prop_values
-                    self.specific_properties.append(prop_name)
-
-            # what else could it be?
-
-        # add a list of all available properties
-
-    def _read_from_ASTEC_xml(self, file_path: str):
-        def _set_dictionary_value(root):
-            if len(root) == 0:
-                if root.text is None:
-                    return None
-                else:
-                    return eval(root.text)
-            else:
-                dictionary = {}
-                for child in root:
-                    key = child.tag
-                    if child.tag == "cell":
-                        key = int(child.attrib["cell-id"])
-                    dictionary[key] = _set_dictionary_value(child)
-            return dictionary
-
-        tree = ET.parse(file_path)
-        root = tree.getroot()
-        dictionary = {}
-
-        for k, _v in self._astec_keydictionary.items():
-            if root.tag == k:
-                dictionary[str(root.tag)] = _set_dictionary_value(root)
-                break
-        else:
-            for child in root:
-                value = _set_dictionary_value(child)
-                if value is not None:
-                    dictionary[str(child.tag)] = value
-        return dictionary
-
-    def _read_from_ASTEC_pkl(self, file_path: str, eigen: bool = False):
-        with open(file_path, "rb") as f:
-            tmp_data = pkl.load(f, encoding="latin1")
-            f.close()
-        new_ref = {}
-        for k, v in self._astec_keydictionary.items():
-            for key in v:
-                new_ref[key] = k
-        new_dict = {}
-
-        for k, v in tmp_data.items():
-            if k in new_ref:
-                new_dict[new_ref[k]] = v
-            else:
-                new_dict[k] = v
-        return new_dict
-
-    def read_from_txt_for_celegans(self, file: str):
-        """
-        Read a C. elegans lineage tree
-
-        Args:
-            file (str): Path to the file to read
-        """
-        implicit_l_t = {
-            "AB": "P0",
-            "P1": "P0",
-            "EMS": "P1",
-            "P2": "P1",
-            "MS": "EMS",
-            "E": "EMS",
-            "C": "P2",
-            "P3": "P2",
-            "D": "P3",
-            "P4": "P3",
-            "Z2": "P4",
-            "Z3": "P4",
-        }
-        with open(file) as f:
-            raw = f.readlines()[1:]
-            f.close()
-        self.name = {}
-
-        unique_id = 0
-        for line in raw:
-            t = int(line.split("\t")[0])
-            self.name[unique_id] = line.split("\t")[1]
-            position = np.array(line.split("\t")[2:5], dtype=float)
-            self.time_nodes.setdefault(t, set()).add(unique_id)
-            self.nodes.add(unique_id)
-            self.pos[unique_id] = position
-            self.time[unique_id] = t
-            unique_id += 1
-
-        self.t_b = min(self.time_nodes)
-        self.t_e = max(self.time_nodes)
-
-        for t, cells in self.time_nodes.items():
-            if t != self.t_b:
-                prev_cells = self.time_nodes[t - 1]
-                name_to_id = {self.name[c]: c for c in prev_cells}
-                for c in cells:
-                    if self.name[c] in name_to_id:
-                        p = name_to_id[self.name[c]]
-                    elif self.name[c][:-1] in name_to_id:
-                        p = name_to_id[self.name[c][:-1]]
-                    elif implicit_l_t.get(self.name[c]) in name_to_id:
-                        p = name_to_id[implicit_l_t.get(self.name[c])]
-                    else:
-                        print(
-                            "error, cell %s has no predecessors" % self.name[c]
-                        )
-                        p = None
-                    self.predecessor.setdefault(c, []).append(p)
-                    self.successor.setdefault(p, []).append(c)
-                    self.time_edges.setdefault(t - 1, set()).add((p, c))
-            self.max_id = unique_id
-
-    def read_from_txt_for_celegans_CAO(
-        self,
-        file: str,
-        reorder: bool = False,
-        raw_size: float = None,
-        shape: float = None,
-    ):
-        """
-        Read a C. elegans lineage tree from Cao et al.
-
-        Args:
-            file (str): Path to the file to read
-        """
-
-        implicit_l_t = {
-            "AB": "P0",
-            "P1": "P0",
-            "EMS": "P1",
-            "P2": "P1",
-            "MS": "EMS",
-            "E": "EMS",
-            "C": "P2",
-            "P3": "P2",
-            "D": "P3",
-            "P4": "P3",
-            "Z2": "P4",
-            "Z3": "P4",
-        }
-
-        def split_line(line):
-            return (
-                line.split()[0],
-                eval(line.split()[1]),
-                eval(line.split()[2]),
-                eval(line.split()[3]),
-                eval(line.split()[4]),
-            )
-
-        with open(file) as f:
-            raw = f.readlines()[1:]
-            f.close()
-        self.name = {}
-
-        unique_id = 0
-        for name, t, z, x, y in map(split_line, raw):
-            self.name[unique_id] = name
-            position = np.array([x, y, z], dtype=np.float)
-            self.time_nodes.setdefault(t, set()).add(unique_id)
-            self.nodes.add(unique_id)
-            if reorder:
-
-                def flip(x):
-                    return np.array([x[0], x[1], raw_size[2] - x[2]])
-
-                def adjust(x):
-                    return (shape / raw_size * flip(x))[[1, 0, 2]]
-
-                self.pos[unique_id] = adjust(position)
-            else:
-                self.pos[unique_id] = position
-            self.time[unique_id] = t
-            unique_id += 1
-
-        self.t_b = min(self.time_nodes)
-        self.t_e = max(self.time_nodes)
-
-        for t, cells in self.time_nodes.items():
-            if t != self.t_b:
-                prev_cells = self.time_nodes[t - 1]
-                name_to_id = {self.name[c]: c for c in prev_cells}
-                for c in cells:
-                    if self.name[c] in name_to_id:
-                        p = name_to_id[self.name[c]]
-                    elif self.name[c][:-1] in name_to_id:
-                        p = name_to_id[self.name[c][:-1]]
-                    elif implicit_l_t.get(self.name[c]) in name_to_id:
-                        p = name_to_id[implicit_l_t.get(self.name[c])]
-                    else:
-                        print(
-                            "error, cell %s has no predecessors" % self.name[c]
-                        )
-                        p = None
-                    self.predecessor.setdefault(c, []).append(p)
-                    self.successor.setdefault(p, []).append(c)
-                    self.time_edges.setdefault(t - 1, set()).add((p, c))
-            self.max_id = unique_id
-
-    def read_tgmm_xml(
-        self, file_format: str, tb: int, te: int, z_mult: float = 1.0
-    ):
-        """Reads a lineage tree from TGMM xml output.
-
-        Args:
-            file_format (str): path to the xmls location.
-                    it should be written as follow:
-                    path/to/xml/standard_name_t{t:06d}.xml where (as an example)
-                    {t:06d} means a series of 6 digits representing the time and
-                    if the time values is smaller that 6 digits, the missing
-                    digits are filed with 0s
-            tb (int): first time point to read
-            te (int): last time point to read
-            z_mult (float): aspect ratio
-        """
-        self.time_nodes = {}
-        self.time_edges = {}
-        unique_id = 0
-        self.nodes = set()
-        self.successor = {}
-        self.predecessor = {}
-        self.pos = {}
-        self.time_id = {}
-        self.time = {}
-        self.mother_not_found = []
-        self.ind_cells = {}
-        self.svIdx = {}
-        self.lin = {}
-        self.C_lin = {}
-        self.coeffs = {}
-        self.intensity = {}
-        self.W = {}
-        for t in range(tb, te + 1):
-            print(t, end=" ")
-            if t % 10 == 0:
-                print()
-            tree = ET.parse(file_format.format(t=t))
-            root = tree.getroot()
-            self.time_nodes[t] = set()
-            self.time_edges[t] = set()
-            for it in root:
-                if (
-                    "-1.#IND" not in it.attrib["m"]
-                    and "nan" not in it.attrib["m"]
-                ):
-                    M_id, pos, cell_id, svIdx, lin_id = (
-                        int(it.attrib["parent"]),
-                        [
-                            float(v)
-                            for v in it.attrib["m"].split(" ")
-                            if v != ""
-                        ],
-                        int(it.attrib["id"]),
-                        [
-                            int(v)
-                            for v in it.attrib["svIdx"].split(" ")
-                            if v != ""
-                        ],
-                        int(it.attrib["lineage"]),
-                    )
-                    try:
-                        alpha, W, nu, alphaPrior = (
-                            float(it.attrib["alpha"]),
-                            [
-                                float(v)
-                                for v in it.attrib["W"].split(" ")
-                                if v != ""
-                            ],
-                            float(it.attrib["nu"]),
-                            float(it.attrib["alphaPrior"]),
-                        )
-                        pos = np.array(pos)
-                        C = unique_id
-                        pos[-1] = pos[-1] * z_mult
-                        if (t - 1, M_id) in self.time_id:
-                            M = self.time_id[(t - 1, M_id)]
-                            self.successor.setdefault(M, []).append(C)
-                            self.predecessor.setdefault(C, []).append(M)
-                            self.time_edges[t].add((M, C))
-                        else:
-                            if M_id != -1:
-                                self.mother_not_found.append(C)
-                        self.pos[C] = pos
-                        self.nodes.add(C)
-                        self.time_nodes[t].add(C)
-                        self.time_id[(t, cell_id)] = C
-                        self.time[C] = t
-                        self.svIdx[C] = svIdx
-                        self.lin.setdefault(lin_id, []).append(C)
-                        self.C_lin[C] = lin_id
-                        self.intensity[C] = max(alpha - alphaPrior, 0)
-                        tmp = list(np.array(W) * nu)
-                        self.W[C] = np.array(W).reshape(3, 3)
-                        self.coeffs[C] = (
-                            tmp[:3] + tmp[4:6] + tmp[8:9] + list(pos)
-                        )
-                        unique_id += 1
-                    except Exception:
-                        pass
-                else:
-                    if t in self.ind_cells:
-                        self.ind_cells[t] += 1
-                    else:
-                        self.ind_cells[t] = 1
-        self.max_id = unique_id - 1
-
-    def read_from_mastodon(self, path: str, name: str):
-        """
-        TODO: write doc
-        """
-        from mastodon_reader import MastodonReader
-
-        mr = MastodonReader(path)
-        spots, links = mr.read_tables()
-
-        self.node_name = {}
-
-        for c in spots.iloc:
-            unique_id = c.name
-            x, y, z = c.x, c.y, c.z
-            t = c.t
-            n = c[name] if name is not None else ""
-            self.time_nodes.setdefault(t, set()).add(unique_id)
-            self.nodes.add(unique_id)
-            self.time[unique_id] = t
-            self.node_name[unique_id] = n
-            self.pos[unique_id] = np.array([x, y, z])
-
-        for e in links.iloc:
-            source = e.source_idx
-            target = e.target_idx
-            self.predecessor.setdefault(target, []).append(source)
-            self.successor.setdefault(source, []).append(target)
-            self.time_edges.setdefault(self.time[source], set()).add(
-                (source, target)
-            )
-        self.t_b = min(self.time_nodes.keys())
-        self.t_e = max(self.time_nodes.keys())
-
-    def read_from_mastodon_csv(self, path: str):
-        """
-        TODO: Write doc
-        """
-        spots = []
-        links = []
-        self.node_name = {}
-
-        with open(path[0], encoding="utf-8", errors="ignore") as file:
-            csvreader = csv.reader(file)
-            for row in csvreader:
-                spots.append(row)
-        spots = spots[3:]
-
-        with open(path[1], encoding="utf-8", errors="ignore") as file:
-            csvreader = csv.reader(file)
-            for row in csvreader:
-                links.append(row)
-        links = links[3:]
-
-        for spot in spots:
-            unique_id = int(spot[1])
-            x, y, z = spot[5:8]
-            t = int(spot[4])
-            self.time_nodes.setdefault(t, set()).add(unique_id)
-            self.nodes.add(unique_id)
-            self.time[unique_id] = t
-            self.node_name[unique_id] = spot[1]
-            self.pos[unique_id] = np.array([x, y, z], dtype=float)
-
-        for link in links:
-            source = int(float(link[4]))
-            target = int(float(link[5]))
-            self.predecessor.setdefault(target, []).append(source)
-            self.successor.setdefault(source, []).append(target)
-            self.time_edges.setdefault(self.time[source], set()).add(
-                (source, target)
-            )
-        self.t_b = min(self.time_nodes.keys())
-        self.t_e = max(self.time_nodes.keys())
-
-    def read_from_mamut_xml(self, path: str):
-        """Read a lineage tree from a MaMuT xml.
-
-        Args:
-            path (str): path to the MaMut xml
-        """
-        tree = ET.parse(path)
-        for elem in tree.getroot():
-            if elem.tag == "Model":
-                Model = elem
-        FeatureDeclarations, AllSpots, AllTracks, FilteredTracks = list(Model)
-
-        for attr in self.xml_attributes:
-            self.__dict__[attr] = {}
-        self.time_nodes = {}
-        self.time_edges = {}
-        self.nodes = set()
-        self.pos = {}
-        self.time = {}
-        self.node_name = {}
-        for frame in AllSpots:
-            t = int(frame.attrib["frame"])
-            self.time_nodes[t] = set()
-            for cell in frame:
-                cell_id, n, x, y, z = (
-                    int(cell.attrib["ID"]),
-                    cell.attrib["name"],
-                    float(cell.attrib["POSITION_X"]),
-                    float(cell.attrib["POSITION_Y"]),
-                    float(cell.attrib["POSITION_Z"]),
-                )
-                self.time_nodes[t].add(cell_id)
-                self.nodes.add(cell_id)
-                self.pos[cell_id] = np.array([x, y, z])
-                self.time[cell_id] = t
-                self.node_name[cell_id] = n
-                if "TISSUE_NAME" in cell.attrib:
-                    if not hasattr(self, "fate"):
-                        self.fate = {}
-                    self.fate[cell_id] = cell.attrib["TISSUE_NAME"]
-                if "TISSUE_TYPE" in cell.attrib:
-                    if not hasattr(self, "fate_nb"):
-                        self.fate_nb = {}
-                    self.fate_nb[cell_id] = eval(cell.attrib["TISSUE_TYPE"])
-                for attr in cell.attrib:
-                    if attr in self.xml_attributes:
-                        self.__dict__[attr][cell_id] = eval(cell.attrib[attr])
-
-        tracks = {}
-        self.successor = {}
-        self.predecessor = {}
-        self.track_name = {}
-        for track in AllTracks:
-            if "TRACK_DURATION" in track.attrib:
-                t_id, _ = (
-                    int(track.attrib["TRACK_ID"]),
-                    float(track.attrib["TRACK_DURATION"]),
-                )
-            else:
-                t_id = int(track.attrib["TRACK_ID"])
-            t_name = track.attrib["name"]
-            tracks[t_id] = []
-            for edge in track:
-                s, t = (
-                    int(edge.attrib["SPOT_SOURCE_ID"]),
-                    int(edge.attrib["SPOT_TARGET_ID"]),
-                )
-                if s in self.nodes and t in self.nodes:
-                    if self.time[s] > self.time[t]:
-                        s, t = t, s
-                    self.successor.setdefault(s, []).append(t)
-                    self.predecessor.setdefault(t, []).append(s)
-                    self.track_name[s] = t_name
-                    self.track_name[t] = t_name
-                    tracks[t_id].append((s, t))
-        self.t_b = min(self.time_nodes.keys())
-        self.t_e = max(self.time_nodes.keys())
 
     def to_binary(self, fname: str, starting_points: list = None):
         """Writes the lineage tree (a forest) as a binary structure
@@ -2151,12 +1388,12 @@ class lineageTree:
         if not end_time:
             end_time = self.t_e
         branches = [self.get_successors(node)]
-        to_do = self[branches[0][-1]].copy()
+        to_do = list(self[branches[0][-1]])
         while to_do:
             current = to_do.pop()
-            track = self.get_cycle(current, end_time=end_time)
+            track = self.get_successors(current, end_time=end_time)
             branches += [track]
-            to_do.extend(self[track[-1]])
+            to_do += self[track[-1]]
         return branches
 
     def get_all_tracks(self, force_recompute: bool = False) -> list:
@@ -2337,9 +1574,7 @@ class lineageTree:
             list: A list that contains the array of eigenvalues and eigenvectors.
         """
         if time is None:
-            time = np.argmax(
-                [len(self.time_nodes[t]) for t in range(int(self.t_e))]
-            )
+            time = max(self.time_nodes, key=lambda x: len(self.time_nodes[x]))
         pos = np.array([self.pos[node] for node in self.time_nodes[time]])
         pos = pos - np.mean(pos, axis=0)
         cov = np.cov(np.array(pos).T)
@@ -2533,56 +1768,99 @@ class lineageTree:
             tree1.get_norm(), tree2.get_norm()
         )
 
-    def to_simple_networkx(
-        self, node: Union[int, list, set, tuple] = None, start_time: int = 0
+    def draw_tree_graph(
+        self,
+        hier,
+        lnks_tms,
+        selected_cells=None,
+        color="magenta",
+        ax=None,
+        **kwargs,
     ):
-        """
-        Creates a simple networkx tree graph (every branch is a cell lifetime). This function is to be used for producing nx.graph objects(
-        they can be used for visualization or other tasks),
-        so only the start and the end of a branch are calculated, all cells in between are not taken into account.
-        Args:
-            start_time (int): From which timepoints are the graphs to be calculated.
-                                For example if start_time is 10, then all trees that begin
-                                on tp 10 or before are calculated.
-        returns:
-            G : list(nx.Digraph(),...)
-            pos : list(dict(id:position))
-        """
+        if selected_cells is None:
+            selected_cells = []
+        if ax is None:
+            _, ax = plt.subplots()
+        else:
+            ax.clear()
 
+        selected_cells = set(selected_cells)
+        hier_unselected = {
+            k: v for k, v in hier.items() if k not in selected_cells
+        }
+        hier_selected = {k: v for k, v in hier.items() if k in selected_cells}
+        unselected = np.array(tuple(hier_unselected.values()))
+        x = []
+        y = []
+        if hier_unselected:
+            for pred, succs in lnks_tms["links"].items():
+                if pred not in selected_cells:
+                    for succ in succs:
+                        x.extend((hier[succ][0], hier[pred][0], None))
+                        y.extend((hier[succ][1], hier[pred][1], None))
+            ax.plot(x, y, c="black", linewidth=0.3, zorder=0.5, **kwargs)
+            ax.scatter(
+                *unselected.T,
+                s=0.1,
+                c="black",
+                zorder=1,
+                **kwargs,
+            )
+        if selected_cells:
+            selected = np.array(tuple(hier_selected.values()))
+            x = []
+            y = []
+            for pred, succs in lnks_tms["links"].items():
+                if pred in selected_cells:
+                    for succ in succs:
+                        x.extend((hier[succ][0], hier[pred][0], None))
+                        y.extend((hier[succ][1], hier[pred][1], None))
+            ax.plot(x, y, c=color, linewidth=0.3, zorder=0.4, **kwargs)
+            ax.scatter(
+                selected.T[0],
+                selected.T[1],
+                s=0.1,
+                c=color,
+                zorder=0.9,
+                **kwargs,
+            )
+        ax.get_yaxis().set_visible(False)
+        ax.get_xaxis().set_visible(False)
+        return ax
+
+    def to_simple_graph(self, node=None, start_time: int = None):
+        """Generates a dictionary of graphs where the keys are the index of the graph and
+        the values are the graphs themselves which are produced by create_links_and _cycles
+
+        Args:
+            node (_type_, optional): The id of the node/nodes to produce the simple graphs. Defaults to None.
+            start_time (int, optional): Important only if there are no nodes it will produce the graph of every
+            root that starts before or at start time. Defaults to None.
+
+        Returns:
+            (dict): The keys are just index values  0-n and the values are the graphs produced.
+        """
+        if start_time is None:
+            start_time = self.t_b
         if node is None:
             mothers = [
                 root for root in self.roots if self.time[root] <= start_time
             ]
         else:
             mothers = node if isinstance(node, (list, set)) else [node]
-        graph = {}
-        all_nodes = {}
-        all_edges = {}
-        for mom in mothers:
-            edges = set()
-            nodes = set()
-            for branch in self.get_all_branches_of_node(mom):
-                nodes.update((branch[0], branch[-1]))
-                if len(branch) > 1:
-                    edges.add((branch[0], branch[-1]))
-                for suc in self[branch[-1]]:
-                    edges.add((branch[-1], suc))
-            all_edges[mom] = edges
-            all_nodes[mom] = nodes
-        for i, mother in enumerate(mothers):
-            graph[i] = nx.DiGraph()
-            graph[i].add_nodes_from(all_nodes[mother])
-            graph[i].add_edges_from(all_edges[mother])
-
-        return graph
+        return {
+            i: create_links_and_cycles(self, mother)
+            for i, mother in enumerate(mothers)
+        }
 
     def plot_all_lineages(
         self,
-        starting_point: int = 0,
+        nodes: list = None,
+        last_time_point_to_consider: int = None,
         nrows=2,
         figsize=(10, 15),
-        dpi=70,
-        fontsize=22,
+        dpi=100,
+        fontsize=15,
         figure=None,
         axes=None,
         **kwargs,
@@ -2590,78 +1868,98 @@ class lineageTree:
         """Plots all lineages.
 
         Args:
-            starting_point (int, optional): Which timepoints and upwards are the graphs to be calculated.
-                                For example if start_time is 10, then all trees that begin
-                                on tp 10 or before are calculated. Defaults to None.
+            last_time_point_to_consider (int, optional): Which timepoints and upwards are the graphs to be plotted.
+                                                        For example if start_time is 10, then all trees that begin
+                                                        on tp 10 or before are calculated. Defaults to None, where
+                                                        it will plot all the roots that exist on self.t_b.
             nrows (int):  How many rows of plots should be printed.
-            kwargs: args accepted by networkx
+            kwargs: args accepted by matplotlib
         """
 
         nrows = int(nrows)
+        if last_time_point_to_consider is None:
+            last_time_point_to_consider = self.t_b
         if nrows < 1 or not nrows:
             nrows = 1
             raise Warning("Number of rows has to be at least 1")
-
-        graphs = self.to_simple_networkx(start_time=starting_point)
+        if nodes:
+            graphs = {
+                i: self.to_simple_graph(node) for i, node in enumerate(nodes)
+            }
+        else:
+            graphs = self.to_simple_graph(
+                start_time=last_time_point_to_consider
+            )
+        pos = {
+            i: hierarchical_pos(
+                g, g["root"], ycenter=-int(self.time[g["root"]])
+            )
+            for i, g in graphs.items()
+        }
         ncols = int(len(graphs) // nrows) + (+np.sign(len(graphs) % nrows))
-        pos = postions_of_nx(self, graphs)
         figure, axes = plt.subplots(
             figsize=figsize, nrows=nrows, ncols=ncols, dpi=dpi, sharey=True
         )
         flat_axes = axes.flatten()
         ax2root = {}
-        for i, graph in enumerate(graphs.values()):
-            nx.draw_networkx(
-                graph,
-                pos[i],
-                with_labels=False,
-                arrows=False,
-                **kwargs,
-                ax=flat_axes[i],
+        min_width, min_height = float("inf"), float("inf")
+        for ax in flat_axes:
+            bbox = ax.get_window_extent().transformed(
+                figure.dpi_scale_trans.inverted()
             )
-            root = [n for n, d in graph.in_degree() if d == 0][0]
+            min_width = min(min_width, bbox.width)
+            min_height = min(min_height, bbox.height)
+
+        adjusted_fontsize = fontsize * min(min_width, min_height) / 5
+        for i, graph in graphs.items():
+            self.draw_tree_graph(
+                hier=pos[i], lnks_tms=graph, ax=flat_axes[i], **kwargs
+            )
+            root = graph["root"]
+            ax2root[flat_axes[i]] = root
             label = self.labels.get(root, "Unlabeled")
             xlim = flat_axes[i].get_xlim()
             ylim = flat_axes[i].get_ylim()
-            x_pos = (xlim[1]) / 10
-            y_pos = ylim[0] + 15
-            ax2root[flat_axes[i]] = root
+            x_pos = (xlim[0] + xlim[1]) / 2
+            y_pos = ylim[1] * 0.8
             flat_axes[i].text(
                 x_pos,
                 y_pos,
                 label,
-                fontsize=fontsize,
+                fontsize=adjusted_fontsize,
                 color="black",
                 ha="center",
                 va="center",
                 bbox={
                     "facecolor": "white",
+                    "alpha": 0.5,
                     "edgecolor": "green",
-                    "boxstyle": "round",
                 },
             )
         [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
         return figure, axes, ax2root
 
-    def plot_node(self, node, figsize=(4, 7), dpi=150, **kwargs):
+    def plot_node(self, node, figsize=(4, 7), dpi=150, vert_gap=2, **kwargs):
         """Plots the subtree spawn by a node.
 
         Args:
             node (int): The id of the node that is going to be plotted.
-            kwargs: args accepted by networkx
+            kwargs: args accepted by matplotlib
         """
-        graph = self.to_simple_networkx(node)
+        graph = self.to_simple_graph(node)
         if len(graph) > 1:
             raise Warning("Please enter only one node")
-        graph = graph[list(graph)[0]]
-        figure, ax = plt.subplots(nrows=1, ncols=1)
-        nx.draw_networkx(
-            graph,
-            hierarchy_pos(graph, self, node),
-            with_labels=False,
-            arrows=False,
+        graph = graph[0]
+        figure, ax = plt.subplots(nrows=1, ncols=1, figsize=figsize, dpi=dpi)
+        self.draw_tree_graph(
+            hier=hierarchical_pos(
+                graph,
+                graph["root"],
+                vert_gap=vert_gap,
+                ycenter=-int(self.time[node]),
+            ),
+            lnks_tms=graph,
             ax=ax,
-            **kwargs,
         )
         return figure, ax
 
