@@ -744,61 +744,6 @@ class lineageTree(lineageTreeLoaders):
                     )
         dwg.save()
 
-    def to_treex(
-        self,
-        sampling: int = 1,
-        start: int = 0,
-        finish: int = 10000,
-        many: bool = True,
-    ):
-        """
-        TODO: finish the doc
-        Convert the lineage tree into a treex file.
-
-        start/finish refer to first index in the new array times_to_consider
-
-        """
-        from warnings import warn
-
-        from treex.tree import Tree
-
-        if finish - start <= 0:
-            warn("Will return None, because start = finish", stacklevel=2)
-            return None
-        id_to_tree = {_id: Tree() for _id in self.nodes}
-        times_to_consider = sorted(
-            [t for t, n in self.time_nodes.items() if len(n) > 0]
-        )
-        times_to_consider = times_to_consider[start:finish:sampling]
-        start_time = times_to_consider[0]
-        for t in times_to_consider:
-            for id_mother in self.time_nodes[t]:
-                ids_daughters = self[id_mother]
-                new_ids_daughters = ids_daughters.copy()
-                for _ in range(sampling - 1):
-                    tmp = []
-                    for d in new_ids_daughters:
-                        tmp.extend(self.successor.get(d, [d]))
-                    new_ids_daughters = tmp
-                for (
-                    daugther
-                ) in (
-                    new_ids_daughters
-                ):  ## For each daughter in the list of daughters
-                    id_to_tree[id_mother].add_subtree(
-                        id_to_tree[daugther]
-                    )  ## Add the Treex daughter as a subtree of the Treex mother
-        roots = [id_to_tree[_id] for _id in set(self.time_nodes[start_time])]
-        for root, ids in zip(roots, set(self.time_nodes[start_time])):
-            root.add_attribute_to_id("ID", ids)
-        if not many:
-            reroot = Tree()
-            for root in roots:
-                reroot.add_subtree(root)
-            return reroot
-        else:
-            return roots
-
     def to_tlp(
         self,
         fname: str,
@@ -1895,11 +1840,11 @@ class lineageTree(lineageTreeLoaders):
         Returns:
             (dict): The keys are just index values  0-n and the values are the graphs produced.
         """
+        if start_time is None:
+            start_time = self.t_b
         if node is None:
             mothers = [
-                root
-                for root in self.roots
-                if self.time[root] <= start_time + self.t_b
+                root for root in self.roots if self.time[root] <= start_time
             ]
         else:
             mothers = node if isinstance(node, (list, set)) else [node]
@@ -1910,7 +1855,7 @@ class lineageTree(lineageTreeLoaders):
 
     def plot_all_lineages(
         self,
-        nodes=[],
+        nodes: list = None,
         last_time_point_to_consider: int = None,
         nrows=2,
         figsize=(10, 15),

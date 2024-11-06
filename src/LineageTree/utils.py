@@ -88,7 +88,7 @@ def create_links_and_cycles(lT: lineageTree, roots=None):
     elif isinstance(roots, list):
         to_do = set(roots)
     else:
-        to_do = set([int(roots)])
+        to_do = {int(roots)}
     times = {}
     links = {}
     while to_do:
