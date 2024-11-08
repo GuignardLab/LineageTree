@@ -1775,16 +1775,17 @@ class lineageTree(lineageTreeLoaders):
         selected_cells=None,
         color="magenta",
         ax=None,
+        figure=None,
         **kwargs,
     ):
         if selected_cells is None:
             selected_cells = []
         if ax is None:
-            _, ax = plt.subplots()
+            figure, ax = plt.subplots()
         else:
             ax.clear()
-
-        selected_cells = set(selected_cells)
+        if not isinstance(selected_cells, set):
+            selected_cells = set(selected_cells)
         hier_unselected = {
             k: v for k, v in hier.items() if k not in selected_cells
         }
@@ -1826,7 +1827,7 @@ class lineageTree(lineageTreeLoaders):
             )
         ax.get_yaxis().set_visible(False)
         ax.get_xaxis().set_visible(False)
-        return ax
+        return figure, ax
 
     def to_simple_graph(self, node=None, start_time: int = None):
         """Generates a dictionary of graphs where the keys are the index of the graph and
