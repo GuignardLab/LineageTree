@@ -1808,7 +1808,8 @@ class lineageTree(lineageTreeLoaders):
         lnks_tms,
         selected_nodes=None,
         selected_edges=None,
-        color="magenta",
+        color_of_nodes="magenta",
+        color_of_edges=None,
         size=0.1,
         ax=None,
         figure=None,
@@ -1826,9 +1827,13 @@ class lineageTree(lineageTreeLoaders):
             selected_nodes = set(selected_nodes)
         if not isinstance(selected_edges, set):
             selected_edges = set(selected_edges)
-        self.__plot_edges(hier, lnks_tms, selected_edges, color, ax, **kwargs)
         self.__plot_nodes(
-            hier, selected_nodes, color, size=size, ax=ax, **kwargs
+            hier, selected_nodes, color_of_nodes, size=size, ax=ax, **kwargs
+        )
+        if not color_of_edges:
+            color_of_edges = color_of_nodes
+        self.__plot_edges(
+            hier, lnks_tms, selected_edges, color_of_edges, ax, **kwargs
         )
         ax.get_yaxis().set_visible(False)
         ax.get_xaxis().set_visible(False)
