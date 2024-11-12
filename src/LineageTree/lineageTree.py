@@ -1810,7 +1810,7 @@ class lineageTree(lineageTreeLoaders):
         selected_edges=None,
         color_of_nodes="magenta",
         color_of_edges=None,
-        size=0.1,
+        size=10,
         ax=None,
         figure=None,
         **kwargs,
