@@ -1629,6 +1629,8 @@ class lineageTree(lineageTreeLoaders):
         at a given time `time`.
 
         If there is no ancestor, returns `-1`
+        If time is None return the root of the sub tree that spawns
+        the node n.
 
         Args:
             n (int): node for which to look the ancestor
