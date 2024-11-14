@@ -1646,7 +1646,11 @@ class lineageTree(lineageTreeLoaders):
             time = self.t_b
         ancestor = n
         while time < self.time.get(ancestor, -1):
-            ancestor = self.predecessor.get(ancestor, [-1])[0]
+            tmp_anc = self.predecessor.get(ancestor, [-1])[0]
+            if tmp_anc != -1:
+                ancestor = self.predecessor.get(ancestor, [-1])[0]
+            else:
+                break
         return ancestor
 
     def get_labelled_ancestor(self, node: int):
