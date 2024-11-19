@@ -1647,12 +1647,10 @@ class lineageTree(lineageTreeLoaders):
         if time is None:
             time = self.t_b
         ancestor = n
-        while time < self.time.get(ancestor, -1):
-            tmp_anc = self.predecessor.get(ancestor, [-1])[0]
-            if tmp_anc != -1:
-                ancestor = self.predecessor.get(ancestor, [-1])[0]
-            else:
-                break
+        while (
+            time < self.time.get(ancestor, -1) and ancestor in self.predecessor
+        ):
+            ancestor = self.predecessor.get(ancestor, [-1])[0]
         return ancestor
 
     def get_labelled_ancestor(self, node: int):
@@ -1775,13 +1773,19 @@ class lineageTree(lineageTreeLoaders):
         )
 
     @staticmethod
-    def __plot_nodes(hier, selected_nodes, color, size, ax, **kwargs):
+    def __plot_nodes(
+        hier, selected_nodes, color, size, ax, default_color="black", **kwargs
+    ):
         hier_unselected = np.array(
             [v for k, v in hier.items() if k not in selected_nodes]
         )
         if hier_unselected.any():
             ax.scatter(
-                *hier_unselected.T, s=size, zorder=10, color="black", **kwargs
+                *hier_unselected.T,
+                s=size,
+                zorder=10,
+                color=default_color,
+                **kwargs,
             )
         if selected_nodes.intersection(hier.keys()):
             hier_selected = np.array(
@@ -1792,7 +1796,15 @@ class lineageTree(lineageTreeLoaders):
             )
 
     @staticmethod
-    def __plot_edges(hier, lnks_tms, selected_edges, color, ax, **kwargs):
+    def __plot_edges(
+        hier,
+        lnks_tms,
+        selected_edges,
+        color,
+        ax,
+        default_color="black",
+        **kwargs,
+    ):
         x, y = [], []
         for pred, succs in lnks_tms["links"].items():
             for succ in succs:
@@ -1819,6 +1831,7 @@ class lineageTree(lineageTreeLoaders):
         size=10,
         ax=None,
         figure=None,
+        default_color="black",
         **kwargs,
     ):
         if selected_nodes is None:
@@ -1834,12 +1847,24 @@ class lineageTree(lineageTreeLoaders):
         if not isinstance(selected_edges, set):
             selected_edges = set(selected_edges)
         self.__plot_nodes(
-            hier, selected_nodes, color_of_nodes, size=size, ax=ax, **kwargs
+            hier,
+            selected_nodes,
+            color_of_nodes,
+            size=size,
+            ax=ax,
+            default_color=default_color,
+            **kwargs,
         )
         if not color_of_edges:
             color_of_edges = color_of_nodes
         self.__plot_edges(
-            hier, lnks_tms, selected_edges, color_of_edges, ax, **kwargs
+            hier,
+            lnks_tms,
+            selected_edges,
+            color_of_edges,
+            ax,
+            default_color=default_color,
+            **kwargs,
         )
         ax.get_yaxis().set_visible(False)
         ax.get_xaxis().set_visible(False)
