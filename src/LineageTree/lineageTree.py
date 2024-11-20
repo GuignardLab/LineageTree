@@ -1629,6 +1629,8 @@ class lineageTree(lineageTreeLoaders):
         at a given time `time`.
 
         If there is no ancestor, returns `-1`
+        If time is None return the root of the sub tree that spawns
+        the node n.
 
         Args:
             n (int): node for which to look the ancestor
@@ -1645,7 +1647,9 @@ class lineageTree(lineageTreeLoaders):
         if time is None:
             time = self.t_b
         ancestor = n
-        while time < self.time.get(ancestor, -1):
+        while (
+            time < self.time.get(ancestor, -1) and ancestor in self.predecessor
+        ):
             ancestor = self.predecessor.get(ancestor, [-1])[0]
         return ancestor
 
@@ -1768,63 +1772,100 @@ class lineageTree(lineageTreeLoaders):
             tree1.get_norm(), tree2.get_norm()
         )
 
+    @staticmethod
+    def __plot_nodes(
+        hier, selected_nodes, color, size, ax, default_color="black", **kwargs
+    ):
+        hier_unselected = np.array(
+            [v for k, v in hier.items() if k not in selected_nodes]
+        )
+        if hier_unselected.any():
+            ax.scatter(
+                *hier_unselected.T,
+                s=size,
+                zorder=10,
+                color=default_color,
+                **kwargs,
+            )
+        if selected_nodes.intersection(hier.keys()):
+            hier_selected = np.array(
+                [v for k, v in hier.items() if k in selected_nodes]
+            )
+            ax.scatter(
+                *hier_selected.T, s=size, zorder=10, color=color, **kwargs
+            )
+
+    @staticmethod
+    def __plot_edges(
+        hier,
+        lnks_tms,
+        selected_edges,
+        color,
+        ax,
+        default_color="black",
+        **kwargs,
+    ):
+        x, y = [], []
+        for pred, succs in lnks_tms["links"].items():
+            for succ in succs:
+                if pred not in selected_edges or succ not in selected_edges:
+                    x.extend((hier[succ][0], hier[pred][0], None))
+                    y.extend((hier[succ][1], hier[pred][1], None))
+        ax.plot(x, y, linewidth=0.3, zorder=0.1, c="black", **kwargs)
+        x, y = [], []
+        for pred, succs in lnks_tms["links"].items():
+            for succ in succs:
+                if pred in selected_edges and succ in selected_edges:
+                    x.extend((hier[succ][0], hier[pred][0], None))
+                    y.extend((hier[succ][1], hier[pred][1], None))
+        ax.plot(x, y, linewidth=0.3, zorder=0.2, c=color, **kwargs)
+
     def draw_tree_graph(
         self,
         hier,
         lnks_tms,
-        selected_cells=None,
-        color="magenta",
+        selected_nodes=None,
+        selected_edges=None,
+        color_of_nodes="magenta",
+        color_of_edges=None,
+        size=10,
         ax=None,
         figure=None,
+        default_color="black",
         **kwargs,
     ):
-        if selected_cells is None:
-            selected_cells = []
+        if selected_nodes is None:
+            selected_nodes = []
+        if selected_edges is None:
+            selected_edges = []
         if ax is None:
             figure, ax = plt.subplots()
         else:
             ax.clear()
-        if not isinstance(selected_cells, set):
-            selected_cells = set(selected_cells)
-        hier_unselected = {
-            k: v for k, v in hier.items() if k not in selected_cells
-        }
-        hier_selected = {k: v for k, v in hier.items() if k in selected_cells}
-        unselected = np.array(tuple(hier_unselected.values()))
-        x = []
-        y = []
-        if hier_unselected:
-            for pred, succs in lnks_tms["links"].items():
-                if pred not in selected_cells:
-                    for succ in succs:
-                        x.extend((hier[succ][0], hier[pred][0], None))
-                        y.extend((hier[succ][1], hier[pred][1], None))
-            ax.plot(x, y, c="black", linewidth=0.3, zorder=0.5, **kwargs)
-            ax.scatter(
-                *unselected.T,
-                s=0.1,
-                c="black",
-                zorder=1,
-                **kwargs,
-            )
-        if selected_cells:
-            selected = np.array(tuple(hier_selected.values()))
-            x = []
-            y = []
-            for pred, succs in lnks_tms["links"].items():
-                if pred in selected_cells:
-                    for succ in succs:
-                        x.extend((hier[succ][0], hier[pred][0], None))
-                        y.extend((hier[succ][1], hier[pred][1], None))
-            ax.plot(x, y, c=color, linewidth=0.3, zorder=0.4, **kwargs)
-            ax.scatter(
-                selected.T[0],
-                selected.T[1],
-                s=0.1,
-                c=color,
-                zorder=0.9,
-                **kwargs,
-            )
+        if not isinstance(selected_nodes, set):
+            selected_nodes = set(selected_nodes)
+        if not isinstance(selected_edges, set):
+            selected_edges = set(selected_edges)
+        self.__plot_nodes(
+            hier,
+            selected_nodes,
+            color_of_nodes,
+            size=size,
+            ax=ax,
+            default_color=default_color,
+            **kwargs,
+        )
+        if not color_of_edges:
+            color_of_edges = color_of_nodes
+        self.__plot_edges(
+            hier,
+            lnks_tms,
+            selected_edges,
+            color_of_edges,
+            ax,
+            default_color=default_color,
+            **kwargs,
+        )
         ax.get_yaxis().set_visible(False)
         ax.get_xaxis().set_visible(False)
         return figure, ax
@@ -1961,6 +2002,7 @@ class lineageTree(lineageTreeLoaders):
             ),
             lnks_tms=graph,
             ax=ax,
+            **kwargs,
         )
         return figure, ax
 

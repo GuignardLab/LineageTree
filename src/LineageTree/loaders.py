@@ -1,7 +1,8 @@
 import csv
+import os
 import pickle as pkl
 import xml.etree.ElementTree as ET
-import os
+
 import numpy as np
 
 

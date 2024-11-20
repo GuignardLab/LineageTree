@@ -1,7 +1,5 @@
 import csv
-import random
 import warnings
-
 
 from LineageTree import lineageTree
 
