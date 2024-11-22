@@ -13,7 +13,7 @@ class abstract_trees(ABC):
         self.lT = lT
         self.root = root
         self.node_length = node_length
-        self.end_time = end_time
+        self.end_time = end_time if end_time else self.lT.t_e
         self.tree = self.get_tree()
         self.edist = self._edist_format(self.tree[0])
 

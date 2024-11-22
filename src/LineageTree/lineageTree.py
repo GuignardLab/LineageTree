@@ -88,7 +88,7 @@ class lineageTree(lineageTreeLoaders):
             length (int): The length of the new branch.
             pos (np.ndarray, optional): The new position of the branch. Defaults to None.
             move_timepoints (bool): Moves the ti Important only if reverse= True
-            reverese (bool): If reverse will add a successor branch instead of a predecessor branch
+            reverese (bool): If True will create a branch that goes forwards int ime otherwise backwards.
         Returns:
             (int): Id of the first node of the sublineage.
         """
@@ -129,7 +129,7 @@ class lineageTree(lineageTreeLoaders):
                     )
                     pred = _next
         else:
-            for t in range(length):
+            for t in range(1, length):
                 _next = self.add_node(
                     time + t, succ=pred, pos=self.pos[original], reverse=False
                 )
@@ -1719,6 +1719,7 @@ class lineageTree(lineageTreeLoaders):
         end_time: int = None,
         style="fragmented",
         node_lengths: tuple = (1, 5, 7),
+        normalize: bool = True,
     ) -> float:
         """
         TODO: Add option for choosing which tree aproximation should be used (Full, simple, comp)
@@ -1767,15 +1768,21 @@ class lineageTree(lineageTreeLoaders):
             times1=times1,
             times2=times2,
         )
-
+        # print(tree1.tree, tree2.tree)
+        # print(sum(tree1.tree[1].values()), sum(tree2.tree[1].values()))
+        norm1 = tree1.get_norm() if normalize else 1
+        norm2 = tree2.get_norm() if normalize else 1
         return uted.uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / max(
-            tree1.get_norm(), tree2.get_norm()
+            norm1, norm2
         )
 
     @staticmethod
     def __plot_nodes(
         hier, selected_nodes, color, size, ax, default_color="black", **kwargs
     ):
+        """
+        Private method that plots the nodes of the tree.
+        """
         hier_unselected = np.array(
             [v for k, v in hier.items() if k not in selected_nodes]
         )
@@ -1805,13 +1812,16 @@ class lineageTree(lineageTreeLoaders):
         default_color="black",
         **kwargs,
     ):
+        """
+        Private method that plots the edges of the tree.
+        """
         x, y = [], []
         for pred, succs in lnks_tms["links"].items():
             for succ in succs:
                 if pred not in selected_edges or succ not in selected_edges:
                     x.extend((hier[succ][0], hier[pred][0], None))
                     y.extend((hier[succ][1], hier[pred][1], None))
-        ax.plot(x, y, linewidth=0.3, zorder=0.1, c="black", **kwargs)
+        ax.plot(x, y, linewidth=0.3, zorder=0.1, c=default_color, **kwargs)
         x, y = [], []
         for pred, succs in lnks_tms["links"].items():
             for succ in succs:
@@ -1834,6 +1844,25 @@ class lineageTree(lineageTreeLoaders):
         default_color="black",
         **kwargs,
     ):
+        """Function to plot the tree graph.
+
+        Args:
+            hier (dict): Dictinary that contains the positions of all nodes.
+            lnks_tms (dict): 2 dictionaries: 1 contains all links from start of life cycle to end of life cycle and
+                                             the succesors of each cell.
+                                             1 contains the length of each life cycle.
+            selected_nodes (list|set, optional): Which cells are to be selected (Painted with a different color). Defaults to None.
+            selected_edges (list|set, optional): Which edges are to be selected (Painted with a different color). Defaults to None.
+            color_of_nodes (str, optional): Color of selected nodes. Defaults to "magenta".
+            color_of_edges (_type_, optional): Color of selected edges. Defaults to None.
+            size (int, optional): Size of the nodes. Defaults to 10.
+            ax (_type_, optional): Plot the graph on existing ax. Defaults to None.
+            figure (_type_, optional): _description_. Defaults to None.
+            default_color (str, optional): Default color of nodes. Defaults to "black".
+
+        Returns:
+            figure, ax: The matplotlib figure and ax object.
+        """
         if selected_nodes is None:
             selected_nodes = []
         if selected_edges is None:
