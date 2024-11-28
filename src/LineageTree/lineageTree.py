@@ -1718,7 +1718,7 @@ class lineageTree(lineageTreeLoaders):
         n2: int,
         end_time: int = None,
         style="fragmented",
-        node_lengths: tuple = (1, 5, 7),
+        downsample: int = 2,
         normalize: bool = True,
     ) -> float:
         """
@@ -1741,10 +1741,10 @@ class lineageTree(lineageTreeLoaders):
 
         tree = tree_style[style].value
         tree1 = tree(
-            lT=self, node_length=node_lengths, end_time=end_time, root=n1
+            lT=self, downsample=downsample, end_time=end_time, root=n1
         )
         tree2 = tree(
-            lT=self, node_length=node_lengths, end_time=end_time, root=n2
+            lT=self, downsample=downsample, end_time=end_time, root=n2
         )
         delta = tree1.delta
         _, times1 = tree1.tree

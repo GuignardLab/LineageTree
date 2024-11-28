@@ -8,11 +8,11 @@ from LineageTree import lineageTree
 
 class abstract_trees(ABC):
     def __init__(
-        self, lT: lineageTree, root: int, node_length: int, end_time: int
+        self, lT: lineageTree, root: int, downsample: int, end_time: int
     ):
         self.lT = lT
         self.root = root
-        self.node_length = node_length
+        self.downsample = downsample
         self.end_time = end_time if end_time else self.lT.t_e
         self.tree = self.get_tree()
         self.edist = self._edist_format(self.tree[0])
@@ -189,74 +189,42 @@ class simple_tree(abstract_trees):
         return len(self.lT.get_sub_tree(self.root, end_time=self.end_time))
 
 
-class fragmented_tree(abstract_trees):
-    """Similar idea to simple tree, but tries to correct its flaws.
-    Instead of having branches with length == life cycle of cell,nodes of specific length are added on the
-    edges of the branch, providing both accuratr results and speed.
-    It's the recommended method for calculating edit distances on developing embryos.
-    """
+class downsample_tree(abstract_trees):
+    """Downsamples a tree so every n nodes are being used as one."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def get_tree(self):
-        if self.end_time is None:
-            self.end_time = self.lT.t_e
         self.out_dict = {}
         self.times = {}
         to_do = [self.root]
-        if not isinstance(self.node_length, list):
-            self.node_length = list(self.node_length)
         while to_do:
             current = to_do.pop()
-            cycle = np.array(
-                self.lT.get_successors(current, end_time=self.end_time)
+            _next = self.lT.get_cells_at_t_from_root(
+                current, self.lT.time[current] + self.downsample
             )
-            if cycle.size > 0:
-                cumul_sum_of_nodes = np.cumsum(self.node_length) * 2 + 1
-                max_number_fragments = len(
-                    cumul_sum_of_nodes[cumul_sum_of_nodes < len(cycle)]
-                )
-                if max_number_fragments > 0:
-                    current_node_lengths = self.node_length[
-                        :max_number_fragments
-                    ].copy()
-                    length_middle_node = (
-                        len(cycle) - sum(current_node_lengths) * 2
-                    )
-                    times_tmp = (
-                        current_node_lengths
-                        + [length_middle_node]
-                        + current_node_lengths[::-1]
-                    )
-                    pos_all_nodes = np.concatenate(
-                        [[0], np.cumsum(times_tmp[:-1])]
-                    )
-                    track = cycle[pos_all_nodes]
-                    self.out_dict.update(
-                        {k: [v] for k, v in zip(track[:-1], track[1:])}
-                    )
-                    self.times.update(zip(track, times_tmp))
-                else:
-                    for i, cell in enumerate(cycle[:-1]):
-                        self.out_dict[cell] = [cycle[i + 1]]
-                        self.times[cell] = 1
-                current = cycle[-1]
-                _next = self.lT[current]
-                self.times[current] = 1
-                if _next and self.lT.time[_next[0]] <= self.end_time:
-                    to_do.extend(_next)
-                    self.out_dict[current] = _next
-                else:
-                    self.out_dict[current] = []
-
+            if _next == [current]:
+                _next = None
+            if _next and self.lT.time[_next[0]] <= self.end_time:
+                self.out_dict[current] = _next
+                to_do.extend(_next)
+            else:
+                self.out_dict[current] = []
+            self.times[current] = self.downsample
         return self.out_dict, self.times
 
     def get_norm(self):
-        return len(self.lT.get_sub_tree(self.root, end_time=self.end_time))
+        return sum(self.times.values())
 
     def delta(self, x, y, corres1, corres2, times1, times2):
-        return super().delta(x, y, corres1, corres2, times1, times2)
+        if x is None and y is None:
+            return 0
+        if x is None:
+            return self.downsample
+        if y is None:
+            return self.downsample
+        return 0
 
 
 class full_tree(abstract_trees):
@@ -287,13 +255,20 @@ class full_tree(abstract_trees):
         return len(self.lT.get_sub_tree(self.root, end_time=self.end_time))
 
     def delta(self, x, y, corres1, corres2, times1, times2):
-        return super().delta(x, y, corres1, corres2, times1, times2)
+        if x is None and y is None:
+            return 0
+        if x is None:
+            return 1
+        if y is None:
+            return 1
+        return 0
 
 
 class tree_style(Enum):
     mini = mini_tree
     simple = simple_tree
-    fragmented = fragmented_tree
+    # fragmented = fragmented_tree
+    downsampled = downsample_tree
     full = full_tree
 
     @classmethod
