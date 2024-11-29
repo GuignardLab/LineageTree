@@ -227,6 +227,27 @@ class downsample_tree(abstract_trees):
         return 0
 
 
+class normalized_tree(simple_tree):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def delta(self, x, y, corres1, corres2, times1, times2):
+        if x is None and y is None:
+            return 0
+        if x is None:
+            return 1
+        if y is None:
+            return 1
+        return abs(times1[corres1[x]] - times2[corres2[y]]) / (
+            times1[corres1[x]] + times2[corres2[y]]
+        )
+
+    def get_norm(self):
+        return len(
+            self.lT.get_all_branches_of_node(self.root, end_time=self.end_time)
+        )
+
+
 class full_tree(abstract_trees):
     """No approximations the whole tree is used here. Perfect accuracy, but heavy on ram and speed.
     Not recommended to use on napari.
@@ -267,7 +288,7 @@ class full_tree(abstract_trees):
 class tree_style(Enum):
     mini = mini_tree
     simple = simple_tree
-    # fragmented = fragmented_tree
+    normalized = normalized_tree
     downsampled = downsample_tree
     full = full_tree
 

@@ -1392,8 +1392,10 @@ class lineageTree(lineageTreeLoaders):
         while to_do:
             current = to_do.pop()
             track = self.get_successors(current, end_time=end_time)
-            branches += [track]
-            to_do += self[track[-1]]
+            # if len(track) != 1 or self.time[current] <= end_time:
+            if self.time[track[-1]] <= end_time:
+                branches += [track]
+                to_do += self[track[-1]]
         return branches
 
     def get_all_tracks(self, force_recompute: bool = False) -> list:
