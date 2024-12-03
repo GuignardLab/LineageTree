@@ -119,7 +119,7 @@ class lineageTreeManager:
         embryo_2,
         end_time2: int,
         style="fragmented",
-        node_lengths: tuple = (1, 5, 7),
+        downsample: int = 2,
         registration=None,
     ):
         """Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
@@ -141,13 +141,13 @@ class lineageTreeManager:
         tree = tree_style[style].value
         tree1 = tree(
             lT=self.lineagetrees[embryo_1],
-            node_length=node_lengths,
+            downsample=downsample,
             end_time=end_time1,
             root=n1,
         )
         tree2 = tree(
             lT=self.lineagetrees[embryo_2],
-            node_length=node_lengths,
+            downsample=downsample,
             end_time=end_time2,
             root=n2,
         )
