@@ -8,7 +8,7 @@ from LineageTree import lineageTree
 
 class abstract_trees(ABC):
     def __init__(
-        self, lT: lineageTree, root: int, downsample: int, end_time: int
+        self, lT: lineageTree, root: int, downsample: int, end_time: int = None
     ):
         self.lT = lT
         self.root = root

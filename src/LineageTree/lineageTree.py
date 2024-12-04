@@ -88,7 +88,7 @@ class lineageTree(lineageTreeLoaders):
             length (int): The length of the new branch.
             pos (np.ndarray, optional): The new position of the branch. Defaults to None.
             move_timepoints (bool): Moves the ti Important only if reverse= True
-            reverese (bool): If True will create a branch that goes forwards int ime otherwise backwards.
+            reverese (bool): If True will create a branch that goes forwards in time otherwise backwards.
         Returns:
             (int): Id of the first node of the sublineage.
         """
@@ -129,9 +129,12 @@ class lineageTree(lineageTreeLoaders):
                     )
                     pred = _next
         else:
-            for t in range(1, length):
+            for t in range(length):
                 _next = self.add_node(
-                    time + t, succ=pred, pos=self.pos[original], reverse=False
+                    time + t + 1,
+                    succ=pred,
+                    pos=self.pos[original],
+                    reverse=False,
                 )
                 pred = _next
             self.labels[pred] = "New branch"
