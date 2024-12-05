@@ -227,7 +227,7 @@ class downsample_tree(abstract_trees):
         return 0
 
 
-class normalized_tree(simple_tree):
+class normalized_simple_tree(simple_tree):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -288,7 +288,7 @@ class full_tree(abstract_trees):
 class tree_style(Enum):
     mini = mini_tree
     simple = simple_tree
-    normalized = normalized_tree
+    normalized_simple = normalized_simple_tree
     downsampled = downsample_tree
     full = full_tree
 

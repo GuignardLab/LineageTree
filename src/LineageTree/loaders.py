@@ -14,13 +14,6 @@ class lineageTreeLoaders:
         """
         TODO: write doc
         """
-
-        def convert_for_csv(v):
-            if v.isdigit():
-                return int(v)
-            else:
-                return float(v)
-
         with open(file_path) as f:
             lines = f.readlines()
             f.close()
@@ -41,9 +34,7 @@ class lineageTreeLoaders:
         lines_to_int = []
         corres = {}
         for line in lines:
-            lines_to_int += [
-                [convert_for_csv(v.strip()) for v in line.split(delim)]
-            ]
+            lines_to_int += [[eval(v.strip()) for v in line.split(delim)]]
         lines_to_int = np.array(lines_to_int)
         if link == 2:
             lines_to_int = lines_to_int[np.argsort(lines_to_int[:, 0])]

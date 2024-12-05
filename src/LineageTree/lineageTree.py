@@ -20,7 +20,8 @@ try:
     from edist import uted
 except ImportError:
     warnings.warn(
-        "No edist installed therefore you will not be able to compute the tree edit distance."
+        "No edist installed therefore you will not be able to compute the tree edit distance.",
+        stacklevel=2,
     )
 import matplotlib.pyplot as plt
 import numpy as np
@@ -131,7 +132,7 @@ class lineageTree(lineageTreeLoaders):
         else:
             for t in range(length):
                 _next = self.add_node(
-                    time + t + 1,
+                    self.time[pred] + 1,
                     succ=pred,
                     pos=self.pos[original],
                     reverse=False,
