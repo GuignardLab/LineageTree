@@ -7,6 +7,73 @@ import numpy as np
 
 
 class lineageTreeLoaders:
+
+    def read_from_csv(
+        self, file_path: str, z_mult: float, link: int = 1, delim: str = ","
+    ):
+        """
+        TODO: write doc
+        """
+        with open(file_path) as f:
+            lines = f.readlines()
+            f.close()
+        self.time_nodes = {}
+        self.time_edges = {}
+        unique_id = 0
+        self.nodes = set()
+        self.edges = set()
+        self.successor = {}
+        self.predecessor = {}
+        self.pos = {}
+        self.time_id = {}
+        self.time = {}
+        self.lin = {}
+        self.C_lin = {}
+        if not link:
+            self.displacement = {}
+        lines_to_int = []
+        corres = {}
+        for line in lines:
+            lines_to_int += [[eval(v.strip()) for v in line.split(delim)]]
+        lines_to_int = np.array(lines_to_int)
+        if link == 2:
+            lines_to_int = lines_to_int[np.argsort(lines_to_int[:, 0])]
+        else:
+            lines_to_int = lines_to_int[np.argsort(lines_to_int[:, 1])]
+        for line in lines_to_int:
+            if link == 1:
+                id_, t, z, y, x, pred, lin_id = line
+            elif link == 2:
+                t, z, y, x, id_, pred, lin_id = line
+            else:
+                id_, t, z, y, x, dz, dy, dx = line
+                pred = None
+                lin_id = None
+            t = int(t)
+            pos = np.array([x, y, z])
+            C = unique_id
+            corres[id_] = C
+            pos[-1] = pos[-1] * z_mult
+            if pred in corres:
+                M = corres[pred]
+                self.predecessor[C] = [M]
+                self.successor.setdefault(M, []).append(C)
+                self.edges.add((M, C))
+                self.time_edges.setdefault(t, set()).add((M, C))
+                self.lin.setdefault(lin_id, []).append(C)
+                self.C_lin[C] = lin_id
+            self.pos[C] = pos
+            self.nodes.add(C)
+            self.time_nodes.setdefault(t, set()).add(C)
+            # self.time_id[(t, cell_id)] = C
+            self.time[C] = t
+            if not link:
+                self.displacement[C] = np.array([dx, dy, dz * z_mult])
+            unique_id += 1
+        self.max_id = unique_id - 1
+        self.t_b = min(self.time_nodes)
+        self.t_e = max(self.time_nodes)
+
     def read_from_ASTEC(self, file_path: str, eigen: bool = False):
         """
         Read an `xml` or `pkl` file produced by the ASTEC algorithm.
