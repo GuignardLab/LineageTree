@@ -1684,10 +1684,11 @@ class lineageTree(lineageTreeLoaders):
     def unordered_tree_edit_distances_at_time_t(
         self,
         t: int,
-        delta: callable = None,
-        norm: callable = None,
-        recompute: bool = False,
         end_time: int = None,
+        style="simple",
+        downsample: int = 2,
+        normalize: bool = True,
+        recompute: bool = False,
     ) -> dict:
         """
         Compute all the pairwise unordered tree edit distances from Zhang 996 between the trees spawned at time `t`
@@ -1714,7 +1715,12 @@ class lineageTree(lineageTreeLoaders):
         for n1, n2 in combinations(roots, 2):
             key = tuple(sorted((n1, n2)))
             self.uted[t][key] = self.unordered_tree_edit_distance(
-                n1, n2, end_time=end_time
+                n1,
+                n2,
+                end_time=end_time,
+                style=style,
+                downsample=downsample,
+                normalize=normalize,
             )
         return self.uted[t]
 
@@ -1723,12 +1729,11 @@ class lineageTree(lineageTreeLoaders):
         n1: int,
         n2: int,
         end_time: int = None,
-        style="fragmented",
+        norm: Union["max", "sum", None] = "max",
+        style="simple",
         downsample: int = 2,
-        normalize: bool = True,
     ) -> float:
         """
-        TODO: Add option for choosing which tree aproximation should be used (Full, simple, comp)
         Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
         by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
         cost is given by the function delta (see edist doc for more information).
@@ -1774,13 +1779,18 @@ class lineageTree(lineageTreeLoaders):
             times1=times1,
             times2=times2,
         )
-        # print(tree1.tree, tree2.tree)
-        # print(sum(tree1.tree[1].values()), sum(tree2.tree[1].values()))
-        norm1 = tree1.get_norm() if normalize else 1
-        norm2 = tree2.get_norm() if normalize else 1
-        return uted.uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / max(
-            norm1, norm2
-        )
+        norm1 = tree1.get_norm()
+        norm2 = tree2.get_norm()
+        norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
+        if norm is None:
+            norm = "None"
+        if norm not in norm_dict:
+            raise Warning(
+                "Select a viable normalization method (max, sum, None)"
+            )
+        return uted.uted(
+            nodes1, adj1, nodes2, adj2, delta=delta_tmp
+        ) / norm_dict[norm]([norm1, norm2])
 
     @staticmethod
     def __plot_nodes(
