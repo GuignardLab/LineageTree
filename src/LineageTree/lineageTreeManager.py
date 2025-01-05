@@ -17,13 +17,29 @@ from .tree_styles import tree_style
 class lineageTreeManager:
     def __init__(self):
         self.lineagetrees = {}
-        # self.classification = {"Wt": {}, "Ptb": {}}
         self.lineageTree_counter = 0
         self.registered = {}
+        self.greatest_common_divisors = {}
 
     def __next__(self):
         self.lineageTree_counter += 1
         return self.lineageTree_counter - 1
+
+    def gcd(self, n1: int, n2: int):
+        if n2 == 0:
+            return n1
+        else:
+            return self.gcd(n2, n1 % n2)
+
+    def gcd_update(self, new_embryo):
+        if len(self.lineagetrees) > 1:
+            for lineagetree in self.lineagetrees:
+                self.greatest_common_divisors[lineagetree, new_embryo.name] = (
+                    self.gcd(
+                        self.lineagetrees[lineagetree].time_resolution,
+                        new_embryo.time_resolution,
+                    )
+                )
 
     def add(
         self, other_tree: lineageTree, name: str = "", classification: str = ""
@@ -38,7 +54,7 @@ class lineageTreeManager:
             name (str, optional): Then name of. Defaults to "".
 
         """
-        if isinstance(other_tree, lineageTree):
+        if isinstance(other_tree, lineageTree) and other_tree.time_resolution:
             for tree in self.lineagetrees.values():
                 if tree == other_tree:
                     return False
@@ -52,24 +68,14 @@ class lineageTreeManager:
                     name = f"Lineagetree {next(self)}"
                     self.lineagetrees[name] = other_tree
                     self.lineagetrees[name].name = name
-                # try:
-                #     name = other_tree.name
-                #     self.lineagetrees[name] = other_tree
-                # except:
-                #     self.lineagetrees[
-                #         f"Lineagetree {next(self)}"
-                #     ] = other_tree
-        # if classification in ("Wt", "Ptb"):
-        #     self.classification[type] = {name: other_tree}
+                    # self.greatest_common_divisors[name] = gcd
+        else:
+            raise Exception(
+                "Please add a LineageTree object or add time resolution to the LineageTree added."
+            )
 
     def __add__(self, other):
         self.add(other)
-
-    # def classify_existing(self, key, classification: str):
-    #     if classification in ("Wt", "Ptb"):
-    #         self.classification[classification] = {key: self.lineagetrees[key]}
-    #     else:
-    #         return False
 
     def write(self, fname: str):
         """Saves the manager
@@ -120,7 +126,7 @@ class lineageTreeManager:
         end_time2: int,
         style="fragmented",
         downsample: int = 2,
-        registration=None,
+        registration=None,  # will be added as a later feature
     ):
         """Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
         by two nodes `n1` from lineagetree1 and `n2` lineagetree2. The topology of the trees

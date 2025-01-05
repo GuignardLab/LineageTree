@@ -1,20 +1,36 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-
+from typing import Union, List
 import numpy as np
 
 from LineageTree import lineageTree
 
 
 class abstract_trees(ABC):
+    """Template class to produce different techniques to comapare lineageTrees.
+    To add a new technique you need to iherit this class or one of its children
+    and add them to the tree_style enum.
+    For a class to be valid you need a
+    - tree constructor (get_tree) that produces one dictionary that contains
+    arbitary unique labels and one dictionary that contains the duration of each node.
+    - delta function: A function that handles the cost of comparing nodes to each other.
+    - normalization function, a function that returns the length of the tree or any interger.
+    """
+
     def __init__(
-        self, lT: lineageTree, root: int, downsample: int, end_time: int = None
+        self,
+        lT: lineageTree,
+        root: int,
+        downsample: int,
+        end_time: int = None,
+        time_scale: int = None,
     ):
         self.lT = lT
         self.root = root
         self.downsample = downsample
         self.end_time = end_time if end_time else self.lT.t_e
-        self.tree = self.get_tree()
+        self.time_scale = time_scale if time_scale is not None else 1
+        self.tree: Union[tuple, None] = self.get_tree()
         self.edist = self._edist_format(self.tree[0])
 
     @abstractmethod
@@ -172,21 +188,22 @@ class simple_tree(abstract_trees):
             cycle = cycle[cycle_times <= self.end_time]
             if cycle.size:
                 _next = self.lT[cycle[-1]]
-                if 1 < len(_next) and self.lT.time[cycle[-1]] < self.end_time:
+                if len(_next) > 1 and self.lT.time[cycle[-1]] < self.end_time:
                     out_dict[current] = _next
                     to_do.extend(_next)
                 else:
                     out_dict[current] = []
-            self.times[current] = len(
-                cycle
-            )  # * time_resolution will be fixed when working on registered trees.
+            self.times[current] = len(cycle) * self.time_scale
         return out_dict, self.times
 
     def delta(self, x, y, corres1, corres2, times1, times2):
         return super().delta(x, y, corres1, corres2, times1, times2)
 
     def get_norm(self):
-        return len(self.lT.get_sub_tree(self.root, end_time=self.end_time))
+        return (
+            len(self.lT.get_sub_tree(self.root, end_time=self.end_time))
+            * self.time_scale
+        )
 
 
 class downsample_tree(abstract_trees):
@@ -265,6 +282,11 @@ class full_tree(abstract_trees):
             current = to_do.pop()
             _next = self.lT.successor.get(current, [])
             if _next and self.lT.time[_next[0]] <= self.end_time:
+                if self.time_scale > 1:
+                    for _ in range(self.time_scale):
+                        next_id = self.lT.get_next_id()
+                        self.out_dict[current] = next_id
+                        current = next_id
                 self.out_dict[current] = _next
                 to_do.extend(_next)
             else:
@@ -273,7 +295,10 @@ class full_tree(abstract_trees):
         return self.out_dict, self.times
 
     def get_norm(self):
-        return len(self.lT.get_sub_tree(self.root, end_time=self.end_time))
+        return (
+            len(self.lT.get_sub_tree(self.root, end_time=self.end_time))
+            * self.time_scale
+        )
 
     def delta(self, x, y, corres1, corres2, times1, times2):
         if x is None and y is None:

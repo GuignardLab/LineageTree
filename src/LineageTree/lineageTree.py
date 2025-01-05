@@ -1182,6 +1182,8 @@ class lineageTree(lineageTreeLoaders):
         with open(fname, "br") as f:
             lT = pkl.load(f)
             f.close()
+        if not hasattr(lT, "time_resolution"):
+            lT.time_resolution = None
         if rm_empty_lists:
             if [] in lT.successor.values():
                 for node, succ in lT.successor.items():
@@ -1752,10 +1754,18 @@ class lineageTree(lineageTreeLoaders):
 
         tree = tree_style[style].value
         tree1 = tree(
-            lT=self, downsample=downsample, end_time=end_time, root=n1
+            lT=self,
+            downsample=downsample,
+            end_time=end_time,
+            root=n1,
+            time_scale=1,
         )
         tree2 = tree(
-            lT=self, downsample=downsample, end_time=end_time, root=n2
+            lT=self,
+            downsample=downsample,
+            end_time=end_time,
+            root=n2,
+            time_scale=1,
         )
         delta = tree1.delta
         _, times1 = tree1.tree
@@ -2723,6 +2733,7 @@ class lineageTree(lineageTreeLoaders):
         reorder: bool = False,
         xml_attributes: tuple = None,
         name: str = None,
+        time_resolution: Union[int, None] = None,
     ):
         """
         TODO: complete the doc
@@ -2733,13 +2744,22 @@ class lineageTree(lineageTreeLoaders):
             file_format (str): either - path format to TGMM xmls
                                       - path to the MaMuT xml
                                       - path to the binary file
-            tb (int): first time point (necessary for TGMM xmls only)
-            te (int): last time point (necessary for TGMM xmls only)
-            z_mult (float): z aspect ratio if necessary (usually only for TGMM xmls)
-            file_type (str): type of input file. Accepts:
+            tb (int, optional):first time point (necessary for TGMM xmls only)
+            te (int, optional): last time point (necessary for TGMM xmls only)
+            z_mult (float, optional):z aspect ratio if necessary (usually only for TGMM xmls)
+            file_type (str, optional):type of input file. Accepts:
                 'TGMM, 'ASTEC', MaMuT', 'TrackMate', 'csv', 'celegans', 'binary'
                 default is 'binary'
+            delim (str, optional): _description_. Defaults to ",".
+            eigen (bool, optional): _description_. Defaults to False.
+            shape (tuple, optional): _description_. Defaults to None.
+            raw_size (tuple, optional): _description_. Defaults to None.
+            reorder (bool, optional): _description_. Defaults to False.
+            xml_attributes (tuple, optional): _description_. Defaults to None.
+            name (str, optional): The name of the dataset. Defaults to None.
+            time_resolution (Union[int, None], optional): Time resolution in mins (If time resolution is smaller than one minute input the time in ms). Defaults to None.
         """
+
         self.name = name
         self.time_nodes = {}
         self.time_edges = {}
@@ -2751,6 +2771,9 @@ class lineageTree(lineageTreeLoaders):
         self.pos = {}
         self.time_id = {}
         self.time = {}
+        self.time_resolution = (
+            int(time_resolution * 10) if time_resolution is not None else None
+        )
         self.kdtrees = {}
         self.spatial_density = {}
         if file_type and file_format:
