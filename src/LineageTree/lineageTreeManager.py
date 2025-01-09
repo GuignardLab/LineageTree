@@ -2,6 +2,7 @@ import os
 import pickle as pkl
 import warnings
 from functools import partial
+import numpy as np
 
 try:
     from edist import uted
@@ -26,17 +27,11 @@ class lineageTreeManager:
         self.lineageTree_counter += 1
         return self.lineageTree_counter - 1
 
-    def gcd(self, n1: int, n2: int):
-        if n2 == 0:
-            return n1
-        else:
-            return self.gcd(n2, n1 % n2)
-
     def gcd_update(self, new_embryo):
         if len(self.lineagetrees) > 1:
             for lineagetree in self.lineagetrees:
                 self.greatest_common_divisors[lineagetree, new_embryo.name] = (
-                    self.gcd(
+                    np.gcd(
                         self.lineagetrees[lineagetree].time_resolution,
                         new_embryo.time_resolution,
                     )
