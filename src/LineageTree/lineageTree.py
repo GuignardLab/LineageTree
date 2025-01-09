@@ -329,7 +329,10 @@ class lineageTree(lineageTreeLoaders):
         if length == 1 and new_length != 1:
             pred = self.predecessor.pop(node, None)
             new_node = self.add_branch(
-                node, length=new_length, move_timepoints=True, reverse=False
+                node,
+                length=new_length - 1,
+                move_timepoints=True,
+                reverse=False,
             )
             if pred:
                 self.successor[pred[0]].remove(node)
@@ -375,7 +378,8 @@ class lineageTree(lineageTreeLoaders):
 
     @time_resolution.setter
     def time_resolution(self, time_resolution):
-        self._time_resolution = int(time_resolution * 10)
+        if time_resolution is not None:
+            self._time_resolution = int(time_resolution * 10)
 
     @property
     def roots(self):

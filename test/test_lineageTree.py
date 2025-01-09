@@ -32,12 +32,11 @@ def test_uted_2levels_vs_3levels():
     second_level_1 = lT.add_branch(first_level_end, 10, reverse=True)
     second_level_2 = lT.add_branch(first_level_end, 10, reverse=True)
 
-    third_level_1 = lT.add_branch(second_level_1, 10, reverse=True)
-    third_level_2 = lT.add_branch(second_level_1, 10, reverse=True)
-    third_level_3 = lT.add_branch(second_level_2, 10, reverse=True)
-    third_level_4 = lT.add_branch(second_level_2, 10, reverse=True)
+    lT.add_branch(second_level_1, 10, reverse=True)
+    lT.add_branch(second_level_1, 10, reverse=True)
+    lT.add_branch(second_level_2, 10, reverse=True)
+    lT.add_branch(second_level_2, 10, reverse=True)
 
-    # lT_2 =lineageTree()
     t2 = lT.add_node(0)
     lT.roots.add(0)
     lT.t_e = 0
@@ -57,6 +56,8 @@ def test_uted_2levels_vs_3levels():
     assert (
         lT.unordered_tree_edit_distance(t1, t2, style="mini", norm=None) == 4
     )
+    new = lT.fuse_lineage_tree(t1, t2, length=10)
+    assert len(lT.get_sub_tree(new)) == 111
 
 
 def test_adding_nodes():
@@ -67,8 +68,8 @@ def test_adding_nodes():
     lT.t_b = 0
     first_level_end = lT.add_branch(t1, 9, reverse=True, move_timepoints=True)
 
-    second_level_1 = lT.add_branch(first_level_end, 10, reverse=True)
-    second_level_2 = lT.add_branch(first_level_end, 10, reverse=True)
+    lT.add_branch(first_level_end, 10, reverse=True)
+    lT.add_branch(first_level_end, 10, reverse=True)
 
     assert len(lT.get_sub_tree(t1)) == 30
 
@@ -76,12 +77,39 @@ def test_adding_nodes():
 def test_removing_nodes():
     lT = lineageTree()
     t1 = lT.add_node(0)
-    lT.roots.add(0)
+    lT.roots.add(t1)
     lT.t_e = 0
     lT.t_b = 0
     first_level_end = lT.add_branch(t1, 9, reverse=True, move_timepoints=True)
 
     second_level_1 = lT.add_branch(first_level_end, 10, reverse=True)
-    second_level_2 = lT.add_branch(first_level_end, 10, reverse=True)
+    lT.add_branch(first_level_end, 10, reverse=True)
     lT.remove_nodes(lT.get_cycle(second_level_1))
     assert len(lT.get_sub_tree(t1)) == 20
+
+
+def test_modifying_nodes():
+    lT = lineageTree()
+    t1 = lT.add_node(0)
+    lT.roots.add(t1)
+    lT.t_e = 0
+    lT.t_b = 0
+    lT.modify_branch(t1, 100)
+    assert len(lT.get_cycle(t1)) == 100
+
+
+def test_modifying_nodes_2():
+    lT = lineageTree()
+    t1 = lT.add_node(0)
+    lT.roots.add(t1)
+    lT.t_e = 0
+    lT.t_b = 0
+    lT.add_branch(t1, 9, reverse=True, move_timepoints=True)
+    lT.modify_branch(t1, 100)
+    assert len(lT.get_sub_tree(t1)) == 100
+
+
+def test_time_resolution():
+    lT = lineageTree()
+    lT.time_resolution = 3
+    assert lT.time_resolution == 3
