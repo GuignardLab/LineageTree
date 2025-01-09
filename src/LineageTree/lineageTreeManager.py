@@ -7,7 +7,8 @@ try:
     from edist import uted
 except ImportError:
     warnings.warn(
-        "No edist installed therefore you will not be able to compute the tree edit distance."
+        "No edist installed therefore you will not be able to compute the tree edit distance.",
+        stacklevel=2,
     )
 from LineageTree import lineageTree
 

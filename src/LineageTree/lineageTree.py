@@ -130,7 +130,7 @@ class lineageTree(lineageTreeLoaders):
                     )
                     pred = _next
         else:
-            for t in range(length):
+            for _t in range(length):
                 _next = self.add_node(
                     self.time[pred] + 1,
                     succ=pred,
@@ -368,6 +368,14 @@ class lineageTree(lineageTreeLoaders):
             )
         else:
             return None
+
+    @property
+    def time_resolution(self):
+        return self._time_resolution / 10
+
+    @time_resolution.setter
+    def time_resolution(self, time_resolution):
+        self._time_resolution = int(time_resolution * 10)
 
     @property
     def roots(self):
@@ -2771,7 +2779,7 @@ class lineageTree(lineageTreeLoaders):
         self.pos = {}
         self.time_id = {}
         self.time = {}
-        self.time_resolution = (
+        self._time_resolution = (
             int(time_resolution * 10) if time_resolution is not None else None
         )
         self.kdtrees = {}

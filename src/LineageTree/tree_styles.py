@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Union, List
+
 import numpy as np
 
 from LineageTree import lineageTree
@@ -25,12 +25,12 @@ class abstract_trees(ABC):
         end_time: int = None,
         time_scale: int = None,
     ):
-        self.lT = lT
-        self.root = root
-        self.downsample = downsample
-        self.end_time = end_time if end_time else self.lT.t_e
-        self.time_scale = time_scale if time_scale is not None else 1
-        self.tree: Union[tuple, None] = self.get_tree()
+        self.lT: lineageTree = lT
+        self.root: int = root
+        self.downsample: int = downsample
+        self.end_time: int = end_time if end_time else self.lT.t_e
+        self.time_scale: int = time_scale if time_scale is not None else 1
+        self.tree: tuple = self.get_tree()
         self.edist = self._edist_format(self.tree[0])
 
     @abstractmethod
