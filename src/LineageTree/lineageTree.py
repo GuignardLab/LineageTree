@@ -20,7 +20,8 @@ try:
     from edist import uted
 except ImportError:
     warnings.warn(
-        "No edist installed therefore you will not be able to compute the tree edit distance."
+        "No edist installed therefore you will not be able to compute the tree edit distance.",
+        stacklevel=2,
     )
 import matplotlib.pyplot as plt
 import numpy as np
@@ -88,7 +89,7 @@ class lineageTree(lineageTreeLoaders):
             length (int): The length of the new branch.
             pos (np.ndarray, optional): The new position of the branch. Defaults to None.
             move_timepoints (bool): Moves the ti Important only if reverse= True
-            reverese (bool): If reverse will add a successor branch instead of a predecessor branch
+            reverese (bool): If True will create a branch that goes forwards in time otherwise backwards.
         Returns:
             (int): Id of the first node of the sublineage.
         """
@@ -129,9 +130,12 @@ class lineageTree(lineageTreeLoaders):
                     )
                     pred = _next
         else:
-            for t in range(length):
+            for _ in range(length):
                 _next = self.add_node(
-                    time + t, succ=pred, pos=self.pos[original], reverse=False
+                    self.time[pred] + 1,
+                    succ=pred,
+                    pos=self.pos[original],
+                    reverse=False,
                 )
                 pred = _next
             self.labels[pred] = "New branch"
@@ -325,7 +329,10 @@ class lineageTree(lineageTreeLoaders):
         if length == 1 and new_length != 1:
             pred = self.predecessor.pop(node, None)
             new_node = self.add_branch(
-                node, length=new_length, move_timepoints=True, reverse=False
+                node,
+                length=new_length - 1,
+                move_timepoints=True,
+                reverse=False,
             )
             if pred:
                 self.successor[pred[0]].remove(node)
@@ -364,6 +371,20 @@ class lineageTree(lineageTreeLoaders):
             )
         else:
             return None
+
+    @property
+    def time_resolution(self):
+        if not hasattr(self, "_time_resolution"):
+            self.time_resolution = 1
+        return self._time_resolution / 10
+
+    @time_resolution.setter
+    def time_resolution(self, time_resolution):
+        if time_resolution is not None:
+            self._time_resolution = int(time_resolution * 10)
+        else:
+            warnings.warn("Time resolution set to default 1", stacklevel=2)
+            self._time_resolution = 10
 
     @property
     def roots(self):
@@ -1178,6 +1199,8 @@ class lineageTree(lineageTreeLoaders):
         with open(fname, "br") as f:
             lT = pkl.load(f)
             f.close()
+        if not hasattr(lT, "time_resolution"):
+            lT.time_resolution = None
         if rm_empty_lists:
             if [] in lT.successor.values():
                 for node, succ in lT.successor.items():
@@ -1392,8 +1415,10 @@ class lineageTree(lineageTreeLoaders):
         while to_do:
             current = to_do.pop()
             track = self.get_successors(current, end_time=end_time)
-            branches += [track]
-            to_do += self[track[-1]]
+            # if len(track) != 1 or self.time[current] <= end_time:
+            if self.time[track[-1]] <= end_time:
+                branches += [track]
+                to_do += self[track[-1]]
         return branches
 
     def get_all_tracks(self, force_recompute: bool = False) -> list:
@@ -1678,10 +1703,11 @@ class lineageTree(lineageTreeLoaders):
     def unordered_tree_edit_distances_at_time_t(
         self,
         t: int,
-        delta: callable = None,
-        norm: callable = None,
-        recompute: bool = False,
         end_time: int = None,
+        style="simple",
+        downsample: int = 2,
+        normalize: bool = True,
+        recompute: bool = False,
     ) -> dict:
         """
         Compute all the pairwise unordered tree edit distances from Zhang 996 between the trees spawned at time `t`
@@ -1708,7 +1734,12 @@ class lineageTree(lineageTreeLoaders):
         for n1, n2 in combinations(roots, 2):
             key = tuple(sorted((n1, n2)))
             self.uted[t][key] = self.unordered_tree_edit_distance(
-                n1, n2, end_time=end_time
+                n1,
+                n2,
+                end_time=end_time,
+                style=style,
+                downsample=downsample,
+                normalize=normalize,
             )
         return self.uted[t]
 
@@ -1717,11 +1748,11 @@ class lineageTree(lineageTreeLoaders):
         n1: int,
         n2: int,
         end_time: int = None,
-        style="fragmented",
-        node_lengths: tuple = (1, 5, 7),
+        norm: Union["max", "sum", None] = "max",
+        style="simple",
+        downsample: int = 2,
     ) -> float:
         """
-        TODO: Add option for choosing which tree aproximation should be used (Full, simple, comp)
         Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
         by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
         cost is given by the function delta (see edist doc for more information).
@@ -1740,10 +1771,18 @@ class lineageTree(lineageTreeLoaders):
 
         tree = tree_style[style].value
         tree1 = tree(
-            lT=self, node_length=node_lengths, end_time=end_time, root=n1
+            lT=self,
+            downsample=downsample,
+            end_time=end_time,
+            root=n1,
+            time_scale=1,
         )
         tree2 = tree(
-            lT=self, node_length=node_lengths, end_time=end_time, root=n2
+            lT=self,
+            downsample=downsample,
+            end_time=end_time,
+            root=n2,
+            time_scale=1,
         )
         delta = tree1.delta
         _, times1 = tree1.tree
@@ -1767,15 +1806,26 @@ class lineageTree(lineageTreeLoaders):
             times1=times1,
             times2=times2,
         )
-
-        return uted.uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / max(
-            tree1.get_norm(), tree2.get_norm()
-        )
+        norm1 = tree1.get_norm()
+        norm2 = tree2.get_norm()
+        norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
+        if norm is None:
+            norm = "None"
+        if norm not in norm_dict:
+            raise Warning(
+                "Select a viable normalization method (max, sum, None)"
+            )
+        return uted.uted(
+            nodes1, adj1, nodes2, adj2, delta=delta_tmp
+        ) / norm_dict[norm]([norm1, norm2])
 
     @staticmethod
     def __plot_nodes(
         hier, selected_nodes, color, size, ax, default_color="black", **kwargs
     ):
+        """
+        Private method that plots the nodes of the tree.
+        """
         hier_unselected = np.array(
             [v for k, v in hier.items() if k not in selected_nodes]
         )
@@ -1805,13 +1855,16 @@ class lineageTree(lineageTreeLoaders):
         default_color="black",
         **kwargs,
     ):
+        """
+        Private method that plots the edges of the tree.
+        """
         x, y = [], []
         for pred, succs in lnks_tms["links"].items():
             for succ in succs:
                 if pred not in selected_edges or succ not in selected_edges:
                     x.extend((hier[succ][0], hier[pred][0], None))
                     y.extend((hier[succ][1], hier[pred][1], None))
-        ax.plot(x, y, linewidth=0.3, zorder=0.1, c="black", **kwargs)
+        ax.plot(x, y, linewidth=0.3, zorder=0.1, c=default_color, **kwargs)
         x, y = [], []
         for pred, succs in lnks_tms["links"].items():
             for succ in succs:
@@ -1834,6 +1887,25 @@ class lineageTree(lineageTreeLoaders):
         default_color="black",
         **kwargs,
     ):
+        """Function to plot the tree graph.
+
+        Args:
+            hier (dict): Dictinary that contains the positions of all nodes.
+            lnks_tms (dict): 2 dictionaries: 1 contains all links from start of life cycle to end of life cycle and
+                                             the succesors of each cell.
+                                             1 contains the length of each life cycle.
+            selected_nodes (list|set, optional): Which cells are to be selected (Painted with a different color). Defaults to None.
+            selected_edges (list|set, optional): Which edges are to be selected (Painted with a different color). Defaults to None.
+            color_of_nodes (str, optional): Color of selected nodes. Defaults to "magenta".
+            color_of_edges (_type_, optional): Color of selected edges. Defaults to None.
+            size (int, optional): Size of the nodes. Defaults to 10.
+            ax (_type_, optional): Plot the graph on existing ax. Defaults to None.
+            figure (_type_, optional): _description_. Defaults to None.
+            default_color (str, optional): Default color of nodes. Defaults to "black".
+
+        Returns:
+            figure, ax: The matplotlib figure and ax object.
+        """
         if selected_nodes is None:
             selected_nodes = []
         if selected_edges is None:
@@ -2678,6 +2750,7 @@ class lineageTree(lineageTreeLoaders):
         reorder: bool = False,
         xml_attributes: tuple = None,
         name: str = None,
+        time_resolution: Union[int, None] = None,
     ):
         """
         TODO: complete the doc
@@ -2688,13 +2761,22 @@ class lineageTree(lineageTreeLoaders):
             file_format (str): either - path format to TGMM xmls
                                       - path to the MaMuT xml
                                       - path to the binary file
-            tb (int): first time point (necessary for TGMM xmls only)
-            te (int): last time point (necessary for TGMM xmls only)
-            z_mult (float): z aspect ratio if necessary (usually only for TGMM xmls)
-            file_type (str): type of input file. Accepts:
+            tb (int, optional):first time point (necessary for TGMM xmls only)
+            te (int, optional): last time point (necessary for TGMM xmls only)
+            z_mult (float, optional):z aspect ratio if necessary (usually only for TGMM xmls)
+            file_type (str, optional):type of input file. Accepts:
                 'TGMM, 'ASTEC', MaMuT', 'TrackMate', 'csv', 'celegans', 'binary'
                 default is 'binary'
+            delim (str, optional): _description_. Defaults to ",".
+            eigen (bool, optional): _description_. Defaults to False.
+            shape (tuple, optional): _description_. Defaults to None.
+            raw_size (tuple, optional): _description_. Defaults to None.
+            reorder (bool, optional): _description_. Defaults to False.
+            xml_attributes (tuple, optional): _description_. Defaults to None.
+            name (str, optional): The name of the dataset. Defaults to None.
+            time_resolution (Union[int, None], optional): Time resolution in mins (If time resolution is smaller than one minute input the time in ms). Defaults to None.
         """
+
         self.name = name
         self.time_nodes = {}
         self.time_edges = {}
@@ -2706,6 +2788,8 @@ class lineageTree(lineageTreeLoaders):
         self.pos = {}
         self.time_id = {}
         self.time = {}
+        if time_resolution is not None:
+            self._time_resolution = time_resolution
         self.kdtrees = {}
         self.spatial_density = {}
         if file_type and file_format:

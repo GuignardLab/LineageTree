@@ -2,12 +2,14 @@ import os
 import pickle as pkl
 import warnings
 from functools import partial
+import numpy as np
 
 try:
     from edist import uted
 except ImportError:
     warnings.warn(
-        "No edist installed therefore you will not be able to compute the tree edit distance."
+        "No edist installed therefore you will not be able to compute the tree edit distance.",
+        stacklevel=2,
     )
 from LineageTree import lineageTree
 
@@ -17,13 +19,23 @@ from .tree_styles import tree_style
 class lineageTreeManager:
     def __init__(self):
         self.lineagetrees = {}
-        # self.classification = {"Wt": {}, "Ptb": {}}
         self.lineageTree_counter = 0
         self.registered = {}
+        self.greatest_common_divisors = {}
 
     def __next__(self):
         self.lineageTree_counter += 1
         return self.lineageTree_counter - 1
+
+    def gcd_update(self, new_embryo):
+        if len(self.lineagetrees) > 1:
+            for lineagetree in self.lineagetrees:
+                self.greatest_common_divisors[lineagetree, new_embryo.name] = (
+                    np.gcd(
+                        self.lineagetrees[lineagetree].time_resolution,
+                        new_embryo.time_resolution,
+                    )
+                )
 
     def add(
         self, other_tree: lineageTree, name: str = "", classification: str = ""
@@ -38,7 +50,7 @@ class lineageTreeManager:
             name (str, optional): Then name of. Defaults to "".
 
         """
-        if isinstance(other_tree, lineageTree):
+        if isinstance(other_tree, lineageTree) and other_tree.time_resolution:
             for tree in self.lineagetrees.values():
                 if tree == other_tree:
                     return False
@@ -52,24 +64,14 @@ class lineageTreeManager:
                     name = f"Lineagetree {next(self)}"
                     self.lineagetrees[name] = other_tree
                     self.lineagetrees[name].name = name
-                # try:
-                #     name = other_tree.name
-                #     self.lineagetrees[name] = other_tree
-                # except:
-                #     self.lineagetrees[
-                #         f"Lineagetree {next(self)}"
-                #     ] = other_tree
-        # if classification in ("Wt", "Ptb"):
-        #     self.classification[type] = {name: other_tree}
+                    # self.greatest_common_divisors[name] = gcd
+        else:
+            raise Exception(
+                "Please add a LineageTree object or add time resolution to the LineageTree added."
+            )
 
     def __add__(self, other):
         self.add(other)
-
-    # def classify_existing(self, key, classification: str):
-    #     if classification in ("Wt", "Ptb"):
-    #         self.classification[classification] = {key: self.lineagetrees[key]}
-    #     else:
-    #         return False
 
     def write(self, fname: str):
         """Saves the manager
@@ -119,8 +121,8 @@ class lineageTreeManager:
         embryo_2,
         end_time2: int,
         style="fragmented",
-        node_lengths: tuple = (1, 5, 7),
-        registration=None,
+        downsample: int = 2,
+        registration=None,  # will be added as a later feature
     ):
         """Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
         by two nodes `n1` from lineagetree1 and `n2` lineagetree2. The topology of the trees
@@ -141,13 +143,13 @@ class lineageTreeManager:
         tree = tree_style[style].value
         tree1 = tree(
             lT=self.lineagetrees[embryo_1],
-            node_length=node_lengths,
+            downsample=downsample,
             end_time=end_time1,
             root=n1,
         )
         tree2 = tree(
             lT=self.lineagetrees[embryo_2],
-            node_length=node_lengths,
+            downsample=downsample,
             end_time=end_time2,
             root=n2,
         )
