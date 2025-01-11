@@ -70,7 +70,12 @@ class lineageTree(lineageTreeLoaders):
             sub = set(self.get_sub_tree(node))
             specific_leaves = sub.intersection(self.leaves)
             for leaf in specific_leaves:
-                self.add_branch(leaf, self.t_e - self.time[leaf], reverse=True)
+                self.add_branch(
+                    leaf,
+                    (self.t_e - self.time[leaf]),
+                    reverse=True,
+                    move_timepoints=True,
+                )
 
     ###TODO pos can be callable and stay motionless (copy the position of the succ node, use something like optical flow)
     def add_branch(
@@ -88,7 +93,7 @@ class lineageTree(lineageTreeLoaders):
             pred (int): Id of the successor (predecessor if reverse is False)
             length (int): The length of the new branch.
             pos (np.ndarray, optional): The new position of the branch. Defaults to None.
-            move_timepoints (bool): Moves the ti Important only if reverse= True
+            move_timepoints (bool): Moves the time, important only if reverse= True
             reverese (bool): If True will create a branch that goes forwards in time otherwise backwards.
         Returns:
             (int): Id of the first node of the sublineage.
@@ -147,7 +152,7 @@ class lineageTree(lineageTreeLoaders):
             self.labels[pred] = "New branch"
             self.roots.remove(original)
             self.labels.pop(original, -1)
-        self.t_e = max(self.time_nodes)
+        self.t_e = max(self.time_nodes.keys())
         return pred
 
     def cut_tree(self, root):
@@ -167,9 +172,7 @@ class lineageTree(lineageTreeLoaders):
             self.predecessor.pop(new_lT)
             label_of_root = self.labels.get(cycle[0], cycle[0])
             self.labels[cycle[0]] = f"L-Split {label_of_root}"
-            new_tr = self.add_branch(
-                new_lT, len(cycle) + 1, move_timepoints=False
-            )
+            new_tr = self.add_branch(new_lT, len(cycle), move_timepoints=False)
             self.roots.add(new_tr)
             self.labels[new_tr] = f"R-Split {label_of_root}"
             return new_tr
@@ -209,7 +212,10 @@ class lineageTree(lineageTreeLoaders):
         self.remove_nodes(new_root1)
         self.successor[new_root2].append(next_root1)
         self.predecessor[next_root1] = [new_root2]
-        new_branch = self.add_branch(new_root2, length)
+        new_branch = self.add_branch(
+            new_root2,
+            length - 1,
+        )
         self.labels[new_branch] = f"Fusion of {new_root1} and {new_root2}"
         return new_branch
 
@@ -383,7 +389,7 @@ class lineageTree(lineageTreeLoaders):
         if time_resolution is not None:
             self._time_resolution = int(time_resolution * 10)
         else:
-            warnings.warn("Time resolution set to default 1", stacklevel=2)
+            warnings.warn("Time resolution set to default 0", stacklevel=2)
             self._time_resolution = 10
 
     @property

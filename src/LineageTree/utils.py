@@ -7,7 +7,8 @@ try:
     import motile
 except ImportError:
     warnings.warn(
-        "No motile installed therefore you will not be able to produce links with motile."
+        "No motile installed therefore you will not be able to produce links with motile.",
+        stacklevel=2,
     )
 
 

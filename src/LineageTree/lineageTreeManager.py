@@ -30,11 +30,11 @@ class lineageTreeManager:
     def gcd_update(self, new_embryo):
         if len(self.lineagetrees) > 1:
             for lineagetree in self.lineagetrees:
-                self.greatest_common_divisors[lineagetree, new_embryo.name] = (
-                    np.gcd(
-                        self.lineagetrees[lineagetree].time_resolution,
-                        new_embryo.time_resolution,
-                    )
+                self.greatest_common_divisors[
+                    lineagetree, new_embryo.name
+                ] = np.gcd(
+                    self.lineagetrees[lineagetree].time_resolution,
+                    new_embryo.time_resolution,
                 )
 
     def add(

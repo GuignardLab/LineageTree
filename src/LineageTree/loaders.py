@@ -7,7 +7,6 @@ import numpy as np
 
 
 class lineageTreeLoaders:
-
     def read_from_csv(
         self, file_path: str, z_mult: float, link: int = 1, delim: str = ","
     ):
