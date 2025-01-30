@@ -291,11 +291,12 @@ class full_tree(abstract_trees):
             current = to_do.pop()
             _next = self.lT.successor.get(current, [])
             if _next and self.lT.time[_next[0]] <= self.end_time:
-                if self.time_scale >= 1:
+                if self.time_scale > 1:
                     for _ in range(self.time_scale):
                         next_id = self.lT.get_next_id()
                         self.out_dict[current] = next_id
                         current = next_id
+
                 self.out_dict[current] = _next
                 to_do.extend(_next)
             else:
