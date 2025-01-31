@@ -2825,6 +2825,8 @@ class lineageTree(lineageTreeLoaders):
                 self.read_from_ASTEC(file_format, eigen)
             elif file_type == "csv":
                 self.read_from_csv(file_format, z_mult, link=1, delim=delim)
+            elif file_type == "bao":
+                self.read_C_elegans_bao(file_format)
             elif file_format and file_format.endswith(".lT"):
                 with open(file_format, "br") as f:
                     tmp = pkl.load(f)

@@ -7,6 +7,21 @@ import numpy as np
 
 
 class lineageTreeLoaders:
+    implicit_l_t = {
+        "AB": "P0",
+        "P1": "P0",
+        "EMS": "P1",
+        "P2": "P1",
+        "MS": "EMS",
+        "E": "EMS",
+        "C": "P2",
+        "P3": "P2",
+        "D": "P3",
+        "P4": "P3",
+        "Z2": "P4",
+        "Z3": "P4",
+    }
+
     def read_from_csv(
         self, file_path: str, z_mult: float, link: int = 1, delim: str = ","
     ):
@@ -320,20 +335,6 @@ class lineageTreeLoaders:
         Args:
             file (str): Path to the file to read
         """
-        implicit_l_t = {
-            "AB": "P0",
-            "P1": "P0",
-            "EMS": "P1",
-            "P2": "P1",
-            "MS": "EMS",
-            "E": "EMS",
-            "C": "P2",
-            "P3": "P2",
-            "D": "P3",
-            "P4": "P3",
-            "Z2": "P4",
-            "Z3": "P4",
-        }
         with open(file) as f:
             raw = f.readlines()[1:]
             f.close()
@@ -362,8 +363,8 @@ class lineageTreeLoaders:
                         p = name_to_id[self.name[c]]
                     elif self.name[c][:-1] in name_to_id:
                         p = name_to_id[self.name[c][:-1]]
-                    elif implicit_l_t.get(self.name[c]) in name_to_id:
-                        p = name_to_id[implicit_l_t.get(self.name[c])]
+                    elif self.implicit_l_t.get(self.name[c]) in name_to_id:
+                        p = name_to_id[self.implicit_l_t.get(self.name[c])]
                     else:
                         print(
                             "error, cell %s has no predecessors" % self.name[c]
@@ -387,21 +388,6 @@ class lineageTreeLoaders:
         Args:
             file (str): Path to the file to read
         """
-
-        implicit_l_t = {
-            "AB": "P0",
-            "P1": "P0",
-            "EMS": "P1",
-            "P2": "P1",
-            "MS": "EMS",
-            "E": "EMS",
-            "C": "P2",
-            "P3": "P2",
-            "D": "P3",
-            "P4": "P3",
-            "Z2": "P4",
-            "Z3": "P4",
-        }
 
         def split_line(line):
             return (
@@ -449,8 +435,8 @@ class lineageTreeLoaders:
                         p = name_to_id[self.name[c]]
                     elif self.name[c][:-1] in name_to_id:
                         p = name_to_id[self.name[c][:-1]]
-                    elif implicit_l_t.get(self.name[c]) in name_to_id:
-                        p = name_to_id[implicit_l_t.get(self.name[c])]
+                    elif self.implicit_l_t.get(self.name[c]) in name_to_id:
+                        p = name_to_id[self.implicit_l_t.get(self.name[c])]
                     else:
                         print(
                             "error, cell %s has no predecessors" % self.name[c]
@@ -719,3 +705,49 @@ class lineageTreeLoaders:
                     tracks[t_id].append((s, t))
         self.t_b = min(self.time_nodes.keys())
         self.t_e = max(self.time_nodes.keys())
+
+    def read_C_elegans_bao(self, path):
+        cell_times = {}
+        with open(path) as f:
+            for line in f:
+                if "cell_name" not in line:
+                    cell_times[line.split("\t")[0]] = len(
+                        list(line.split("\t")[-1].split(","))
+                    )
+        new_dict = {}
+        end_dict = {}
+        self.t_e = 0
+        self.t_b = 0
+        for c, lc in cell_times.items():
+            new_dict[c] = self.add_node(0)
+            tmp = self.add_branch(
+                new_dict[c], length=lc, reverse=True, move_timepoints=True
+            )
+            self._labels[self.get_cycle(tmp)[0]] = c
+            self._labels.pop(tmp)
+            end_dict[c] = self.get_cycle(new_dict[c])[-1]
+        cell_names = list(cell_times.keys())
+        c_to_p = {}
+        while cell_names:
+            cur = cell_names.pop()
+            if cur[:-1] in cell_names:
+                c_to_p[cur] = cur[:-1]
+        c_to_p.update(self.implicit_l_t)
+        for c, p in c_to_p.items():
+            if p in cell_times:
+                cyc = end_dict[p]
+                self.predecessor[new_dict[c]] = [cyc]
+                if cyc not in self.successor:
+                    self.successor[cyc] = []
+                self.successor[cyc].append(new_dict[c])
+        self.time_nodes.clear()
+        for root in self.roots:
+            to_do = [root]
+            while to_do:
+                cur = to_do.pop()
+                self.time_nodes.setdefault(self.time[cur], set()).add(cur)
+                _next = self.successor.get(cur, [])
+                to_do += _next
+                for n in _next:
+                    self.time[n] = self.time[cur] + 1
+        self.t_e = max(self.time.values())
