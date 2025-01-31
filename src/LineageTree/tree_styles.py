@@ -32,7 +32,7 @@ class abstract_trees(ABC):
         self.time_scale: int = time_scale if not time_scale else 1
         self.tree: tuple = self.get_tree()
         self.edist = self._edist_format(self.tree[0])
-        if time_scale <= 0:
+        if not time_scale or time_scale <= 0:
             raise Exception("Please used a valid time_scale (Larger than 0)")
 
     @abstractmethod

@@ -145,14 +145,11 @@ class lineageTree(lineageTreeLoaders):
                 pred = _next
             self.labels[pred] = "New branch"
         if self.time[pred] == self.t_b:
-            self.roots.add(pred)
             self.labels[pred] = "New branch"
         if original in self.roots and reverse is True:
-            self.roots.add(pred)
             self.labels[pred] = "New branch"
-            self.roots.remove(original)
             self.labels.pop(original, -1)
-        self.t_e = max(self.time_nodes.keys())
+        self.t_e = max(self.time_nodes)
         return pred
 
     def cut_tree(self, root):
@@ -394,9 +391,7 @@ class lineageTree(lineageTreeLoaders):
 
     @property
     def roots(self):
-        if not hasattr(self, "_roots"):
-            self._roots = set(self.nodes).difference(self.predecessor)
-        return self._roots
+        return set(self.nodes).difference(self.predecessor)
 
     @property
     def edges(self):
