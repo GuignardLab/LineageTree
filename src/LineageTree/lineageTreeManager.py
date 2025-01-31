@@ -22,19 +22,19 @@ class lineageTreeManager:
         self.lineagetrees = {}
         self.lineageTree_counter = 0
         self.registered = {}
-        self.greatest_common_divisors = {}
 
     def __next__(self):
         self.lineageTree_counter += 1
         return self.lineageTree_counter - 1
 
-    def gcd_update(self):
-        if len(self.lineagetrees) > 1:
+    @property
+    def gcd(self):
+        if len(self.lineagetrees) >= 1:
             all_time_res = [
                 embryo._time_resolution
                 for embryo in self.lineagetrees.values()
             ]
-            self.greatest_common_divisors = np.gcd.reduce(all_time_res)
+            return np.gcd.reduce(all_time_res)
 
     def add(
         self, other_tree: lineageTree, name: str = "", classification: str = ""
@@ -63,7 +63,6 @@ class lineageTreeManager:
                     name = f"Lineagetree {next(self)}"
                     self.lineagetrees[name] = other_tree
                     self.lineagetrees[name].name = name
-                    # self.greatest_common_divisors[name] = gcd
         else:
             raise Exception(
                 "Please add a LineageTree object or add time resolution to the LineageTree added."
@@ -141,9 +140,9 @@ class lineageTreeManager:
 
         tree = tree_style[style].value
         lcm = (
-            self.lineagetrees[embryo_2].time_resolution
+            self.lineagetrees[embryo_1].time_resolution
             * self.lineagetrees[embryo_2].time_resolution
-        ) / self.greatest_common_divisors
+        ) / self.gcd
         if style == "downsampled":
             if downsample % lcm != 0:
                 raise Exception(
@@ -166,14 +165,14 @@ class lineageTreeManager:
             downsample=downsample,
             end_time=end_time1,
             root=n1,
-            time_resolution=time_res[1],
+            time_scale=time_res[0],
         )
         tree2 = tree(
             lT=self.lineagetrees[embryo_2],
             downsample=downsample,
             end_time=end_time2,
             root=n2,
-            time_resolution=time_res[0],
+            time_scale=time_res[1],
         )
         delta = tree1.delta
         _, times1 = tree1.tree

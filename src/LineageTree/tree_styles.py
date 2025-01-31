@@ -33,7 +33,7 @@ class abstract_trees(ABC):
         self.time_scale: int = time_scale if not time_scale else 1
         self.tree: tuple = self.get_tree()
         self.edist = self._edist_format(self.tree[0])
-        if not time_scale or time_scale <= 0:
+        if time_scale <= 0:
             raise Exception("Please used a valid time_scale (Larger than 0)")
 
     @abstractmethod
@@ -229,7 +229,8 @@ class downsample_tree(abstract_trees):
         while to_do:
             current = to_do.pop()
             _next = self.lT.get_cells_at_t_from_root(
-                current, self.lT.time[current] + self.downsample
+                current,
+                self.lT.time[current] + self.downsample / self.time_scale,
             )
             if _next == [current]:
                 _next = None
@@ -238,11 +239,11 @@ class downsample_tree(abstract_trees):
                 to_do.extend(_next)
             else:
                 self.out_dict[current] = []
-            self.times[current] = self.downsample
+            self.times[current] = 1  # self.downsample
         return self.out_dict, self.times
 
     def get_norm(self):
-        return sum(self.times.values())
+        return sum(self.times.values()) * self.downsample / self.time_scale
 
     def delta(self, x, y, corres1, corres2, times1, times2):
         if x is None and y is None:
