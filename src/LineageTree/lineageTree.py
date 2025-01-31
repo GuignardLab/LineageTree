@@ -387,6 +387,23 @@ class lineageTree(lineageTreeLoaders):
             self._time_resolution = 10
 
     @property
+    def depth(self):
+        if not hasattr(self, "_depth"):
+            self._depth = {}
+            for leaf in self.leaves:
+                self._depth[leaf] = 1
+                while leaf in self.predecessor:
+                    parent = self.predecessor[leaf][0]
+                    current_depth = self._depth.get(parent, 0)
+                    self._depth[parent] = max(
+                        self._depth[leaf] + 1, current_depth
+                    )
+                    leaf = parent
+            for root in self.roots - set(self._depth):
+                self._depth[root] = 1
+        return self._depth
+
+    @property
     def roots(self):
         if not hasattr(self, "_roots"):
             self._roots = set(self.nodes).difference(self.predecessor)
