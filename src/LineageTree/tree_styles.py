@@ -1,6 +1,7 @@
+import warnings
 from abc import ABC, abstractmethod
 from enum import Enum
-import warnings
+
 import numpy as np
 
 from LineageTree import lineageTree
