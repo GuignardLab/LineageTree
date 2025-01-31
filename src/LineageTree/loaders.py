@@ -850,11 +850,12 @@ class lineageTreeLoaders:
 
     def read_C_elegans_bao(self, path):
         cell_times = {}
+        self.expression = {}
         with open(path) as f:
             for line in f:
                 if "cell_name" not in line:
-                    cell_times[line.split("\t")[0]] = len(
-                        list(line.split("\t")[-1].split(","))
+                    cell_times[line.split("\t")[0]] = list(
+                        line.split("\t")[-1].split(",")
                     )
         new_dict = {}
         end_dict = {}
@@ -863,8 +864,13 @@ class lineageTreeLoaders:
         for c, lc in cell_times.items():
             new_dict[c] = self.add_node(0)
             tmp = self.add_branch(
-                new_dict[c], length=lc, reverse=True, move_timepoints=True
+                new_dict[c],
+                length=len(lc) - 1,
+                reverse=True,
+                move_timepoints=True,
             )
+            for i, node in enumerate(self.get_cycle(tmp)):
+                self.expression[node] = int(lc[i])
             self._labels[self.get_cycle(tmp)[0]] = c
             self._labels.pop(tmp)
             end_dict[c] = self.get_cycle(new_dict[c])[-1]
