@@ -398,7 +398,9 @@ class lineageTree(lineageTreeLoaders):
                 while leaf in self.predecessor:
                     parent = self.predecessor[leaf][0]
                     current_depth = self._depth.get(parent, 0)
-                    self._depth[parent] = max(self._depth[leaf]+1, current_depth)
+                    self._depth[parent] = max(
+                        self._depth[leaf] + 1, current_depth
+                    )
                     leaf = parent
             for root in self.roots - set(self._depth):
                 self._depth[root] = 1
