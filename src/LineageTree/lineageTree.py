@@ -1350,11 +1350,10 @@ class lineageTree(lineageTreeLoaders):
         leaves = set()
         while to_do:
             curr = to_do.pop()
-            succ = self.successor.get(curr)
+            succ = self.successor.get(curr, [])
             if succ is not None:
                 leaves.add(curr)
-            else:
-                to_do += succ
+            to_do += succ
         return leaves
 
     def get_sub_tree(
