@@ -180,7 +180,7 @@ def test_cross_comparison():
     lT_2 = lineageTree(
         "/home/giannis/programs/tree_stuff/LineageTree/test/data/test-mamut.xml",
         file_type="MaMuT",
-    )  # lineageTree.load("/home/giannis/programs/tree_stuff/LineageTree/test/data/demo.lT")
+    )
     lT_2.remove_nodes(lT_2.get_sub_tree(168322))
     lT_2.time_resolution = 10
 
@@ -196,7 +196,7 @@ def test_cross_comparison():
     lT_2 = lineageTree(
         "test/data/test-mamut.xml",
         file_type="MaMuT",
-    )  # lineageTree.load("/home/giannis/programs/tree_stuff/LineageTree/test/data/demo.lT")
+    )
     lT_2.remove_nodes(lT_2.get_sub_tree(168322))
     lT_2.time_resolution = 10
 
