@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod
 from enum import Enum
 
@@ -23,15 +24,18 @@ class abstract_trees(ABC):
         root: int,
         downsample: int,
         end_time: int = None,
-        time_scale: int = None,
+        time_scale: int = 1,
     ):
         self.lT: lineageTree = lT
         self.root: int = root
         self.downsample: int = downsample
         self.end_time: int = end_time if end_time else self.lT.t_e
-        self.time_scale: int = time_scale if time_scale is not None else 1
+        self.time_scale: int = int(time_scale) if time_scale else 1
+        print(time_scale)
         self.tree: tuple = self.get_tree()
         self.edist = self._edist_format(self.tree[0])
+        if time_scale <= 0:
+            raise Exception("Please used a valid time_scale (Larger than 0)")
 
     @abstractmethod
     def get_tree(self):
@@ -211,6 +215,13 @@ class downsample_tree(abstract_trees):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        if self.downsample == 0:
+            raise Exception("Please use a valide downsampling rate")
+        if self.downsample == 1:
+            warnings.warn(
+                "Downsampling rate of 1 is identical to the full tree.",
+                stacklevel=1,
+            )
 
     def get_tree(self):
         self.out_dict = {}
@@ -219,7 +230,8 @@ class downsample_tree(abstract_trees):
         while to_do:
             current = to_do.pop()
             _next = self.lT.get_cells_at_t_from_root(
-                current, self.lT.time[current] + self.downsample
+                current,
+                self.lT.time[current] + self.downsample / self.time_scale,
             )
             if _next == [current]:
                 _next = None
@@ -228,11 +240,11 @@ class downsample_tree(abstract_trees):
                 to_do.extend(_next)
             else:
                 self.out_dict[current] = []
-            self.times[current] = self.downsample
+            self.times[current] = 1  # self.downsample
         return self.out_dict, self.times
 
     def get_norm(self):
-        return sum(self.times.values())
+        return len(self.times.values()) * self.downsample
 
     def delta(self, x, y, corres1, corres2, times1, times2):
         if x is None and y is None:
@@ -285,7 +297,7 @@ class full_tree(abstract_trees):
                 if self.time_scale > 1:
                     for _ in range(self.time_scale):
                         next_id = self.lT.get_next_id()
-                        self.out_dict[current] = next_id
+                        self.out_dict[current] = [next_id]
                         current = next_id
                 self.out_dict[current] = _next
                 to_do.extend(_next)
@@ -295,10 +307,7 @@ class full_tree(abstract_trees):
         return self.out_dict, self.times
 
     def get_norm(self):
-        return (
-            len(self.lT.get_sub_tree(self.root, end_time=self.end_time))
-            * self.time_scale
-        )
+        return len(self.times) * self.time_scale
 
     def delta(self, x, y, corres1, corres2, times1, times2):
         if x is None and y is None:

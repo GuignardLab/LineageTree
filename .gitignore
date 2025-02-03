@@ -3,6 +3,7 @@ __pycache__/
 *.svg
 *.xml
 *.png
+*.coverage
 .pytest_cache/
 .vscode
 *.pyc

@@ -70,7 +70,12 @@ class lineageTree(lineageTreeLoaders):
             sub = set(self.get_sub_tree(node))
             specific_leaves = sub.intersection(self.leaves)
             for leaf in specific_leaves:
-                self.add_branch(leaf, self.t_e - self.time[leaf], reverse=True)
+                self.add_branch(
+                    leaf,
+                    (self.t_e - self.time[leaf]),
+                    reverse=True,
+                    move_timepoints=True,
+                )
 
     ###TODO pos can be callable and stay motionless (copy the position of the succ node, use something like optical flow)
     def add_branch(
@@ -88,7 +93,7 @@ class lineageTree(lineageTreeLoaders):
             pred (int): Id of the successor (predecessor if reverse is False)
             length (int): The length of the new branch.
             pos (np.ndarray, optional): The new position of the branch. Defaults to None.
-            move_timepoints (bool): Moves the ti Important only if reverse= True
+            move_timepoints (bool): Moves the time, important only if reverse= True
             reverese (bool): If True will create a branch that goes forwards in time otherwise backwards.
         Returns:
             (int): Id of the first node of the sublineage.
@@ -140,12 +145,9 @@ class lineageTree(lineageTreeLoaders):
                 pred = _next
             self.labels[pred] = "New branch"
         if self.time[pred] == self.t_b:
-            self.roots.add(pred)
             self.labels[pred] = "New branch"
         if original in self.roots and reverse is True:
-            self.roots.add(pred)
             self.labels[pred] = "New branch"
-            self.roots.remove(original)
             self.labels.pop(original, -1)
         self.t_e = max(self.time_nodes)
         return pred
@@ -167,9 +169,7 @@ class lineageTree(lineageTreeLoaders):
             self.predecessor.pop(new_lT)
             label_of_root = self.labels.get(cycle[0], cycle[0])
             self.labels[cycle[0]] = f"L-Split {label_of_root}"
-            new_tr = self.add_branch(
-                new_lT, len(cycle) + 1, move_timepoints=False
-            )
+            new_tr = self.add_branch(new_lT, len(cycle), move_timepoints=False)
             self.roots.add(new_tr)
             self.labels[new_tr] = f"R-Split {label_of_root}"
             return new_tr
@@ -209,7 +209,10 @@ class lineageTree(lineageTreeLoaders):
         self.remove_nodes(new_root1)
         self.successor[new_root2].append(next_root1)
         self.predecessor[next_root1] = [new_root2]
-        new_branch = self.add_branch(new_root2, length)
+        new_branch = self.add_branch(
+            new_root2,
+            length - 1,
+        )
         self.labels[new_branch] = f"Fusion of {new_root1} and {new_root2}"
         return new_branch
 
@@ -383,7 +386,7 @@ class lineageTree(lineageTreeLoaders):
         if time_resolution is not None:
             self._time_resolution = int(time_resolution * 10)
         else:
-            warnings.warn("Time resolution set to default 1", stacklevel=2)
+            warnings.warn("Time resolution set to default 0", stacklevel=2)
             self._time_resolution = 10
 
     @property
@@ -405,9 +408,7 @@ class lineageTree(lineageTreeLoaders):
 
     @property
     def roots(self):
-        if not hasattr(self, "_roots"):
-            self._roots = set(self.nodes).difference(self.predecessor)
-        return self._roots
+        return set(self.nodes).difference(self.predecessor)
 
     @property
     def edges(self):
@@ -1046,148 +1047,6 @@ class lineageTree(lineageTreeLoaders):
             f.write(struct.pack("d" * len(pos_sequence), *pos_sequence))
 
             f.close()
-
-    def read_from_binary(self, fname: str):
-        """
-        Reads a binary lineageTree file name.
-        Format description: see self.to_binary
-
-        Args:
-            fname: string, path to the binary file
-            reverse_time: bool, not used
-        """
-        q_size = struct.calcsize("q")
-        H_size = struct.calcsize("H")
-        d_size = struct.calcsize("d")
-
-        with open(fname, "rb") as f:
-            len_tree = struct.unpack("q", f.read(q_size))[0]
-            len_time = struct.unpack("q", f.read(q_size))[0]
-            len_pos = struct.unpack("q", f.read(q_size))[0]
-            number_sequence = list(
-                struct.unpack("q" * len_tree, f.read(q_size * len_tree))
-            )
-            time_sequence = list(
-                struct.unpack("H" * len_time, f.read(H_size * len_time))
-            )
-            pos_sequence = np.array(
-                struct.unpack("d" * len_pos, f.read(d_size * len_pos))
-            )
-
-            f.close()
-
-        successor = {}
-        predecessor = {}
-        time = {}
-        time_nodes = {}
-        time_edges = {}
-        pos = {}
-        is_root = {}
-        nodes = []
-        edges = []
-        waiting_list = []
-        print(number_sequence[0])
-        i = 0
-        done = False
-        if max(number_sequence[::2]) == -1:
-            tmp = number_sequence[1::2]
-            if len(tmp) * 3 == len(pos_sequence) == len(time_sequence) * 3:
-                time = dict(list(zip(tmp, time_sequence)))
-                for c, t in time.items():
-                    time_nodes.setdefault(t, set()).add(c)
-                pos = dict(
-                    list(zip(tmp, np.reshape(pos_sequence, (len_time, 3))))
-                )
-                is_root = {c: True for c in tmp}
-                nodes = tmp
-                done = True
-        while (
-            i < len(number_sequence) and not done
-        ):  # , c in enumerate(number_sequence[:-1]):
-            c = number_sequence[i]
-            if c == -1:
-                if waiting_list != []:
-                    prev_mother = waiting_list.pop()
-                    successor[prev_mother].insert(0, number_sequence[i + 1])
-                    edges.append((prev_mother, number_sequence[i + 1]))
-                    time_edges.setdefault(t, set()).add(
-                        (prev_mother, number_sequence[i + 1])
-                    )
-                    is_root[number_sequence[i + 1]] = False
-                    t = time[prev_mother] + 1
-                else:
-                    t = time_sequence.pop(0)
-                    is_root[number_sequence[i + 1]] = True
-
-            elif c == -2:
-                successor[waiting_list[-1]] = [number_sequence[i + 1]]
-                edges.append((waiting_list[-1], number_sequence[i + 1]))
-                time_edges.setdefault(t, set()).add(
-                    (waiting_list[-1], number_sequence[i + 1])
-                )
-                is_root[number_sequence[i + 1]] = False
-                pos[waiting_list[-1]] = pos_sequence[:3]
-                pos_sequence = pos_sequence[3:]
-                nodes.append(waiting_list[-1])
-                time[waiting_list[-1]] = t
-                time_nodes.setdefault(t, set()).add(waiting_list[-1])
-                t += 1
-
-            elif number_sequence[i + 1] >= 0:
-                successor[c] = [number_sequence[i + 1]]
-                edges.append((c, number_sequence[i + 1]))
-                time_edges.setdefault(t, set()).add(
-                    (c, number_sequence[i + 1])
-                )
-                is_root[number_sequence[i + 1]] = False
-                pos[c] = pos_sequence[:3]
-                pos_sequence = pos_sequence[3:]
-                nodes.append(c)
-                time[c] = t
-                time_nodes.setdefault(t, set()).add(c)
-                t += 1
-
-            elif number_sequence[i + 1] == -2:
-                waiting_list += [c]
-
-            elif number_sequence[i + 1] == -1:
-                pos[c] = pos_sequence[:3]
-                pos_sequence = pos_sequence[3:]
-                nodes.append(c)
-                time[c] = t
-                time_nodes.setdefault(t, set()).add(c)
-                t += 1
-                i += 1
-                if waiting_list != []:
-                    prev_mother = waiting_list.pop()
-                    successor[prev_mother].insert(0, number_sequence[i + 1])
-                    edges.append((prev_mother, number_sequence[i + 1]))
-                    time_edges.setdefault(t, set()).add(
-                        (prev_mother, number_sequence[i + 1])
-                    )
-                    if i + 1 < len(number_sequence):
-                        is_root[number_sequence[i + 1]] = False
-                    t = time[prev_mother] + 1
-                else:
-                    if len(time_sequence) > 0:
-                        t = time_sequence.pop(0)
-                    if i + 1 < len(number_sequence):
-                        is_root[number_sequence[i + 1]] = True
-            i += 1
-
-        predecessor = {vi: [k] for k, v in successor.items() for vi in v}
-
-        self.successor = successor
-        self.predecessor = predecessor
-        self.time = time
-        self.time_nodes = time_nodes
-        self.time_edges = time_edges
-        self.pos = pos
-        self.nodes = set(nodes)
-        self.t_b = min(time_nodes.keys())
-        self.t_e = max(time_nodes.keys())
-        self.is_root = is_root
-        self.max_id = max(self.nodes)
 
     def write(self, fname: str):
         """
@@ -2841,6 +2700,8 @@ class lineageTree(lineageTreeLoaders):
                 self.read_from_ASTEC(file_format, eigen)
             elif file_type == "csv":
                 self.read_from_csv(file_format, z_mult, link=1, delim=delim)
+            elif file_type == "bao":
+                self.read_C_elegans_bao(file_format)
             elif file_format and file_format.endswith(".lT"):
                 with open(file_format, "br") as f:
                     tmp = pkl.load(f)
