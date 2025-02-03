@@ -140,8 +140,8 @@ class lineageTreeManager:
 
         tree = tree_style[style].value
         lcm = (
-            self.lineagetrees[embryo_1].time_resolution
-            * self.lineagetrees[embryo_2].time_resolution
+            self.lineagetrees[embryo_1]._time_resolution
+            * self.lineagetrees[embryo_2]._time_resolution
         ) / self.gcd
         if style == "downsampled":
             if downsample % lcm != 0:
@@ -149,17 +149,20 @@ class lineageTreeManager:
                     f"Use a valid downsampling rate (multiple of {lcm})"
                 )
             time_res = [
-                downsample / self.lineagetrees[embryo_1].time_resolution,
-                downsample / self.lineagetrees[embryo_2].time_resolution,
+                downsample / self.lineagetrees[embryo_2]._time_resolution,
+                downsample / self.lineagetrees[embryo_1]._time_resolution,
             ]
 
         if style != "downsampled":
             time_res = [
-                self.lineagetrees[embryo_1].time_resolution,
-                self.lineagetrees[embryo_2].time_resolution,
+                self.lineagetrees[embryo_2]._time_resolution,
+                self.lineagetrees[embryo_1]._time_resolution,
             ]
-            time_res = [i / self.greatest_common_divisors for i in time_res]
-
+            time_res = [i / self.gcd for i in time_res]
+        print(
+            time_res,
+            lcm,
+        )
         tree1 = tree(
             lT=self.lineagetrees[embryo_1],
             downsample=downsample,

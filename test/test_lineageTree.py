@@ -1,4 +1,4 @@
-from LineageTree import lineageTree
+from LineageTree import lineageTree, lineageTreeManager
 
 
 def test_read_MaMuT_xml():
@@ -169,3 +169,108 @@ def test_complete_lineage():
     lT.t_e = 40
     lT.complete_lineage()
     assert len(lT.nodes) == 82
+
+
+def test_cross_comparison():
+    lT_1 = lineageTree(
+        "/home/giannis/programs/tree_stuff/LineageTree/test/data/test-mamut.xml",
+        file_type="MaMuT",
+    )
+    lT_1.time_resolution = 1
+    lT_2 = lineageTree(
+        "/home/giannis/programs/tree_stuff/LineageTree/test/data/test-mamut.xml",
+        file_type="MaMuT",
+    )  # lineageTree.load("/home/giannis/programs/tree_stuff/LineageTree/test/data/demo.lT")
+    lT_2.remove_nodes(lT_2.get_sub_tree(168322))
+    lT_2.time_resolution = 10
+
+    lTm1 = lineageTreeManager()
+    lTm1.add(lT_1, name="embryo_1")
+    lTm1.add(lT_2, name="embryo_2")
+
+    lT_1 = lineageTree(
+        "test/data/test-mamut.xml",
+        file_type="MaMuT",
+    )
+    lT_1.time_resolution = 5
+    lT_2 = lineageTree(
+        "test/data/test-mamut.xml",
+        file_type="MaMuT",
+    )  # lineageTree.load("/home/giannis/programs/tree_stuff/LineageTree/test/data/demo.lT")
+    lT_2.remove_nodes(lT_2.get_sub_tree(168322))
+    lT_2.time_resolution = 10
+
+    lTm2 = lineageTreeManager()
+    lTm2.add(lT_1, name="embryo_1")
+    lTm2.add(lT_2, name="embryo_2")
+
+    assert lTm2.cross_lineage_edit_distance(
+        110832,
+        "embryo_1",
+        1,
+        110832,
+        "embryo_2",
+        100,
+        style="full",
+    ) != lTm1.cross_lineage_edit_distance(
+        110832,
+        "embryo_1",
+        1,
+        110832,
+        "embryo_2",
+        100,
+        style="full",
+    )
+    assert lTm2.cross_lineage_edit_distance(
+        110832,
+        "embryo_1",
+        1,
+        110832,
+        "embryo_2",
+        100,
+        style="simple",
+    ) != lTm1.cross_lineage_edit_distance(
+        110832,
+        "embryo_1",
+        1,
+        110832,
+        "embryo_2",
+        100,
+        style="simple",
+    )
+    assert lTm2.cross_lineage_edit_distance(
+        110832,
+        "embryo_1",
+        1,
+        110832,
+        "embryo_2",
+        100,
+        style="normalized_simple",
+    ) != lTm1.cross_lineage_edit_distance(
+        110832,
+        "embryo_1",
+        1,
+        110832,
+        "embryo_2",
+        100,
+        style="normalized_simple",
+    )
+    assert lTm2.cross_lineage_edit_distance(
+        110832,
+        "embryo_1",
+        1,
+        110832,
+        "embryo_2",
+        100,
+        style="downsampled",
+        downsample=100,
+    ) != lTm1.cross_lineage_edit_distance(
+        110832,
+        "embryo_1",
+        1,
+        110832,
+        "embryo_2",
+        100,
+        style="downsampled",
+        downsample=100,
+    )

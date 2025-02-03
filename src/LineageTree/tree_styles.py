@@ -30,7 +30,8 @@ class abstract_trees(ABC):
         self.root: int = root
         self.downsample: int = downsample
         self.end_time: int = end_time if end_time else self.lT.t_e
-        self.time_scale: int = time_scale if not time_scale else 1
+        self.time_scale: int = int(time_scale) if time_scale else 1
+        print(time_scale)
         self.tree: tuple = self.get_tree()
         self.edist = self._edist_format(self.tree[0])
         if time_scale <= 0:
@@ -243,7 +244,7 @@ class downsample_tree(abstract_trees):
         return self.out_dict, self.times
 
     def get_norm(self):
-        return sum(self.times.values()) * self.downsample / self.time_scale
+        return len(self.times.values()) * self.downsample
 
     def delta(self, x, y, corres1, corres2, times1, times2):
         if x is None and y is None:
@@ -296,9 +297,8 @@ class full_tree(abstract_trees):
                 if self.time_scale > 1:
                     for _ in range(self.time_scale):
                         next_id = self.lT.get_next_id()
-                        self.out_dict[current] = next_id
+                        self.out_dict[current] = [next_id]
                         current = next_id
-
                 self.out_dict[current] = _next
                 to_do.extend(_next)
             else:
@@ -307,10 +307,7 @@ class full_tree(abstract_trees):
         return self.out_dict, self.times
 
     def get_norm(self):
-        return (
-            len(self.lT.get_sub_tree(self.root, end_time=self.end_time))
-            * self.time_scale
-        )
+        return len(self.times) * self.time_scale
 
     def delta(self, x, y, corres1, corres2, times1, times2):
         if x is None and y is None:
