@@ -3,8 +3,10 @@ from LineageTree import lineageTree, lineageTreeManager
 
 def test_read_MaMuT_xml():
     lT = lineageTree("test/data/test.mastodon", file_type="mastodon")
+    assert len(lT.roots) == 3
     assert len(lT.nodes) == 41
     assert len(lT.successor) == 36
+    assert len(lT.find_leaves(40)) == 2
     lT = lineageTree("test/data/test-mamut.xml", file_type="MaMuT")
     assert len(lT.nodes) == 2430
     assert len(lT.successor) == 2418
@@ -199,6 +201,7 @@ def test_cross_comparison():
     )
     lT_2.remove_nodes(lT_2.get_sub_tree(168322))
     lT_2.time_resolution = 10
+    assert lT_2.time_resolution == lT_2._time_resolution / 10
 
     lTm2 = lineageTreeManager()
     lTm2.add(lT_1, name="embryo_1")
@@ -274,3 +277,9 @@ def test_cross_comparison():
         style="downsampled",
         downsample=100,
     )
+
+
+def test_plots():
+    lT = lineageTree("test/data/test.mastodon", file_type="mastodon")
+    assert len(lT.plot_all_lineages()) == 3
+    assert len(lT.plot_node(40)) == 2

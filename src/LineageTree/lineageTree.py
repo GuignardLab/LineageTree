@@ -1062,7 +1062,7 @@ class lineageTree(lineageTreeLoaders):
             f.close()
 
     @classmethod
-    def load(clf, fname: str, rm_empty_lists=True):
+    def load(clf, fname: str, rm_empty_lists=False):
         """
         Loading a lineage tree from a ".lT" file.
 
@@ -1351,7 +1351,7 @@ class lineageTree(lineageTreeLoaders):
         while to_do:
             curr = to_do.pop()
             succ = self.successor.get(curr, [])
-            if succ is not None:
+            if not succ:
                 leaves.add(curr)
             to_do += succ
         return leaves
@@ -2626,6 +2626,7 @@ class lineageTree(lineageTreeLoaders):
         xml_attributes: tuple = None,
         name: str = None,
         time_resolution: Union[int, None] = None,
+        remove_empty_lists=False,
     ):
         """
         TODO: complete the doc
@@ -2713,13 +2714,14 @@ class lineageTree(lineageTreeLoaders):
                     self.name = Path(file_format).stem
                 except:
                     self.name = Path(file_format[0]).stem
-        if [] in self.successor.values():
-            successors = list(self.successor.keys())
-            for succ in successors:
-                if self[succ] == []:
-                    self.successor.pop(succ)
-        if [] in self.predecessor.values():
-            predecessors = list(self.predecessor.keys())
-            for succ in predecessors:
-                if self[succ] == []:
-                    self.predecessor.pop(succ)
+        if remove_empty_lists:
+            if [] in self.successor.values():
+                successors = list(self.successor.keys())
+                for succ in successors:
+                    if self[succ] == []:
+                        self.successor.pop(succ)
+            if [] in self.predecessor.values():
+                predecessors = list(self.predecessor.keys())
+                for succ in predecessors:
+                    if self[succ] == []:
+                        self.predecessor.pop(succ)

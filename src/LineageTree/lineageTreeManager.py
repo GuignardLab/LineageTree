@@ -144,9 +144,9 @@ class lineageTreeManager:
             * self.lineagetrees[embryo_2]._time_resolution
         ) / self.gcd
         if style == "downsampled":
-            if downsample % lcm != 0:
+            if downsample % (lcm / 10) != 0:
                 raise Exception(
-                    f"Use a valid downsampling rate (multiple of {lcm})"
+                    f"Use a valid downsampling rate (multiple of {lcm/10})"
                 )
             time_res = [
                 downsample / self.lineagetrees[embryo_2]._time_resolution,
@@ -159,10 +159,6 @@ class lineageTreeManager:
                 self.lineagetrees[embryo_1]._time_resolution,
             ]
             time_res = [i / self.gcd for i in time_res]
-        print(
-            time_res,
-            lcm,
-        )
         tree1 = tree(
             lT=self.lineagetrees[embryo_1],
             downsample=downsample,

@@ -31,7 +31,6 @@ class abstract_trees(ABC):
         self.downsample: int = downsample
         self.end_time: int = end_time if end_time else self.lT.t_e
         self.time_scale: int = int(time_scale) if time_scale else 1
-        print(time_scale)
         self.tree: tuple = self.get_tree()
         self.edist = self._edist_format(self.tree[0])
         if time_scale <= 0:
@@ -244,7 +243,7 @@ class downsample_tree(abstract_trees):
         return self.out_dict, self.times
 
     def get_norm(self):
-        return len(self.times.values()) * self.downsample
+        return len(self.times.values()) * self.downsample / self.time_scale
 
     def delta(self, x, y, corres1, corres2, times1, times2):
         if x is None and y is None:

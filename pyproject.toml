@@ -40,7 +40,8 @@ select = [
     "G", # flake8-logging-format
     "PIE", # flake8-pie
     "SIM", # flake8-simplify
-    "I"
+    "I",
+    "T201"
 ]
 ignore = [
     "E501", # line too long. let black handle this
