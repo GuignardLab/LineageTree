@@ -31,10 +31,10 @@ class abstract_trees(ABC):
         self.downsample: int = downsample
         self.end_time: int = end_time if end_time else self.lT.t_e
         self.time_scale: int = int(time_scale) if time_scale else 1
-        self.tree: tuple = self.get_tree()
-        self.edist = self._edist_format(self.tree[0])
         if time_scale <= 0:
             raise Exception("Please used a valid time_scale (Larger than 0)")
+        self.tree: tuple = self.get_tree()
+        self.edist = self._edist_format(self.tree[0])
 
     @abstractmethod
     def get_tree(self):
@@ -215,7 +215,7 @@ class downsample_tree(abstract_trees):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if self.downsample == 0:
-            raise Exception("Please use a valide downsampling rate")
+            raise Exception("Please use a valid downsampling rate")
         if self.downsample == 1:
             warnings.warn(
                 "Downsampling rate of 1 is identical to the full tree.",
@@ -230,7 +230,7 @@ class downsample_tree(abstract_trees):
             current = to_do.pop()
             _next = self.lT.get_cells_at_t_from_root(
                 current,
-                self.lT.time[current] + self.downsample / self.time_scale,
+                self.lT.time[current] + (self.downsample / self.time_scale),
             )
             if _next == [current]:
                 _next = None
@@ -294,13 +294,17 @@ class full_tree(abstract_trees):
             _next = self.lT.successor.get(current, [])
             if _next and self.lT.time[_next[0]] <= self.end_time:
                 if self.time_scale > 1:
-                    for _ in range(self.time_scale):
+                    for _ in range(self.time_scale - 1):
                         next_id = self.lT.get_next_id()
                         self.out_dict[current] = [next_id]
                         current = next_id
                 self.out_dict[current] = _next
                 to_do.extend(_next)
             else:
+                for _ in range(self.time_scale - 1):
+                    next_id = self.lT.get_next_id()
+                    self.out_dict[current] = [next_id]
+                    current = next_id
                 self.out_dict[current] = []
             self.times[current] = 1
         return self.out_dict, self.times

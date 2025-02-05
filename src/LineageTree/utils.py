@@ -17,16 +17,13 @@ def to_motile(
 ):
     try:
         import networkx as nx
-    except:
-        raise Warning("Please install networkx")
+    except ImportError:
+        raise Warning("Please install networkx")  # noqa: B904
 
     fmt = nx.DiGraph()
     if not crop:
         crop = lT.t_e
-    # time_nodes = [
     for time in range(crop):
-        #     time_nodes += lT.time_nodes[time]
-        # print(time_nodes)
         for time_node in lT.time_nodes[time]:
             fmt.add_node(
                 time_node,
@@ -34,8 +31,6 @@ def to_motile(
                 pos=lT.pos[time_node],
                 score=1,
             )
-            # for suc in lT.successor:
-            #     fmt.add_edge(time_node, suc, **{"score":0})
 
     motile.add_cand_edges(fmt, max_dist, max_skip_frames=max_skip_frames)
 

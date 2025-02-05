@@ -174,108 +174,121 @@ def test_complete_lineage():
 
 
 def test_cross_comparison():
-    lT_1 = lineageTree(
-        "/home/giannis/programs/tree_stuff/LineageTree/test/data/test-mamut.xml",
-        file_type="MaMuT",
+    lT_1 = lineageTree()
+    t1 = lT_1.add_node(0)
+    lT_1.t_e = 0
+    lT_1.t_b = 0
+    first_level_end = lT_1.add_branch(
+        t1, 9, reverse=True, move_timepoints=True
     )
-    lT_1.time_resolution = 1
-    lT_2 = lineageTree(
-        "/home/giannis/programs/tree_stuff/LineageTree/test/data/test-mamut.xml",
-        file_type="MaMuT",
+    node_1 = lT_1.get_cycle(t1)[0]
+
+    second_level_1 = lT_1.add_branch(first_level_end, 10, reverse=True)
+    second_level_2 = lT_1.add_branch(first_level_end, 10, reverse=True)
+
+    lT_1.add_branch(second_level_1, 10, reverse=True)
+    lT_1.add_branch(second_level_1, 10, reverse=True)
+    lT_1.add_branch(second_level_2, 10, reverse=True)
+    lT_1.add_branch(second_level_2, 10, reverse=True)
+    lT_1.time_resolution = 5
+
+    lT_2 = lineageTree()
+    t1 = lT_2.add_node(0)
+    lT_2.t_e = 0
+    lT_2.t_b = 0
+    first_level_end = lT_2.add_branch(
+        t1, 4, reverse=True, move_timepoints=True
     )
-    lT_2.remove_nodes(lT_2.get_sub_tree(168322))
+    node_2 = lT_2.get_cycle(t1)[0]
+
+    second_level_1 = lT_2.add_branch(first_level_end, 5, reverse=True)
+    second_level_2 = lT_2.add_branch(first_level_end, 5, reverse=True)
+
+    lT_2.add_branch(second_level_1, 5, reverse=True)
+    lT_2.add_branch(second_level_1, 5, reverse=True)
+    lT_2.add_branch(second_level_2, 5, reverse=True)
+    lT_2.add_branch(second_level_2, 5, reverse=True)
     lT_2.time_resolution = 10
 
     lTm1 = lineageTreeManager()
     lTm1.add(lT_1, name="embryo_1")
     lTm1.add(lT_2, name="embryo_2")
-
-    lT_1 = lineageTree(
-        "test/data/test-mamut.xml",
-        file_type="MaMuT",
-    )
-    lT_1.time_resolution = 5
-    lT_2 = lineageTree(
-        "test/data/test-mamut.xml",
-        file_type="MaMuT",
-    )
-    lT_2.remove_nodes(lT_2.get_sub_tree(168322))
-    lT_2.time_resolution = 10
     assert lT_2.time_resolution == lT_2._time_resolution / 10
+    assert len(lT_1.get_sub_tree(node_1)) == len(lT_2.get_sub_tree(node_2)) * 2
+    assert (
+        lTm1.cross_lineage_edit_distance(
+            node_1,
+            "embryo_1",
+            100,
+            node_2,
+            "embryo_2",
+            100,
+            style="full",
+        )
+        == 0
+    )
+    assert (
+        lTm1.cross_lineage_edit_distance(
+            node_1,
+            "embryo_1",
+            100,
+            node_2,
+            "embryo_2",
+            100,
+            style="simple",
+        )
+        == 0
+    )
+    assert (
+        lTm1.cross_lineage_edit_distance(
+            node_1,
+            "embryo_1",
+            100,
+            node_2,
+            "embryo_2",
+            100,
+            style="normalized_simple",
+        )
+        == 0
+    )
+    assert (
+        lTm1.cross_lineage_edit_distance(
+            node_1,
+            "embryo_1",
+            100,
+            node_2,
+            "embryo_2",
+            100,
+            style="downsampled",
+            downsample=20,
+        )
+        == 0
+    )
+    lT_3 = lineageTree()
+    t1 = lT_3.add_node(0)
+    lT_3.t_e = 0
+    lT_3.t_b = 0
+    first_level_end = lT_3.add_branch(
+        t1, 4, reverse=True, move_timepoints=True
+    )
+    node_3 = lT_3.get_cycle(t1)[0]
 
-    lTm2 = lineageTreeManager()
-    lTm2.add(lT_1, name="embryo_1")
-    lTm2.add(lT_2, name="embryo_2")
-
-    assert lTm2.cross_lineage_edit_distance(
-        110832,
-        "embryo_1",
-        1,
-        110832,
-        "embryo_2",
-        100,
-        style="full",
-    ) != lTm1.cross_lineage_edit_distance(
-        110832,
-        "embryo_1",
-        1,
-        110832,
-        "embryo_2",
-        100,
-        style="full",
-    )
-    assert lTm2.cross_lineage_edit_distance(
-        110832,
-        "embryo_1",
-        1,
-        110832,
-        "embryo_2",
-        100,
-        style="simple",
-    ) != lTm1.cross_lineage_edit_distance(
-        110832,
-        "embryo_1",
-        1,
-        110832,
-        "embryo_2",
-        100,
-        style="simple",
-    )
-    assert lTm2.cross_lineage_edit_distance(
-        110832,
-        "embryo_1",
-        1,
-        110832,
-        "embryo_2",
-        100,
-        style="normalized_simple",
-    ) != lTm1.cross_lineage_edit_distance(
-        110832,
-        "embryo_1",
-        1,
-        110832,
-        "embryo_2",
-        100,
-        style="normalized_simple",
-    )
-    assert lTm2.cross_lineage_edit_distance(
-        110832,
-        "embryo_1",
-        1,
-        110832,
-        "embryo_2",
-        100,
-        style="downsampled",
-        downsample=100,
-    ) != lTm1.cross_lineage_edit_distance(
-        110832,
-        "embryo_1",
-        1,
-        110832,
-        "embryo_2",
-        100,
-        style="downsampled",
-        downsample=100,
+    second_level_1 = lT_3.add_branch(first_level_end, 5, reverse=True)
+    second_level_2 = lT_3.add_branch(first_level_end, 5, reverse=True)
+    lT_3.time_resolution = 10
+    lTm1.add(lT_3, "embryo_3")
+    assert (
+        lTm1.cross_lineage_edit_distance(
+            node_1,
+            "embryo_1",
+            100,
+            node_3,
+            "embryo_2",
+            100,
+            style="downsampled",
+            downsample=20,
+        )
+        < 1
     )
 
 

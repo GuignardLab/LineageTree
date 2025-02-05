@@ -143,6 +143,7 @@ class lineageTree(lineageTreeLoaders):
                     reverse=False,
                 )
                 pred = _next
+            self.successor[self.get_cycle(pred)[-1]] = []
             self.labels[pred] = "New branch"
         if self.time[pred] == self.t_b:
             self.labels[pred] = "New branch"
@@ -416,7 +417,7 @@ class lineageTree(lineageTreeLoaders):
 
     @property
     def leaves(self):
-        return set(self.predecessor).difference(self.successor)
+        return {p for p, s in self.successor.items() if s == []}
 
     @property
     def labels(self):
@@ -429,8 +430,8 @@ class lineageTree(lineageTreeLoaders):
                 self._labels = {
                     i: "Unlabeled"
                     for i in self.roots
-                    for l in self.find_leaves(i)
-                    if abs(self.time[l] - self.time[i])
+                    for leaf in self.find_leaves(i)
+                    if abs(self.time[leaf] - self.time[i])
                     >= abs(self.t_e - self.t_b) / 4
                 }
         return self._labels
@@ -1077,18 +1078,6 @@ class lineageTree(lineageTreeLoaders):
             f.close()
         if not hasattr(lT, "time_resolution"):
             lT.time_resolution = None
-        if rm_empty_lists:
-            if [] in lT.successor.values():
-                for node, succ in lT.successor.items():
-                    if succ == []:
-                        lT.successor.pop(node)
-            if [] in lT.predecessor.values():
-                for node, succ in lT.predecessor.items():
-                    if succ == []:
-                        lT.predecessor.pop(node)
-            lT.t_e = max(lT.time_nodes)
-            lT.t_b = min(lT.time_nodes)
-            warnings.warn("Empty lists have been removed")
         return lT
 
     def get_idx3d(self, t: int) -> tuple:
@@ -2626,7 +2615,6 @@ class lineageTree(lineageTreeLoaders):
         xml_attributes: tuple = None,
         name: str = None,
         time_resolution: Union[int, None] = None,
-        remove_empty_lists=False,
     ):
         """
         TODO: complete the doc
@@ -2714,14 +2702,3 @@ class lineageTree(lineageTreeLoaders):
                     self.name = Path(file_format).stem
                 except:
                     self.name = Path(file_format[0]).stem
-        if remove_empty_lists:
-            if [] in self.successor.values():
-                successors = list(self.successor.keys())
-                for succ in successors:
-                    if self[succ] == []:
-                        self.successor.pop(succ)
-            if [] in self.predecessor.values():
-                predecessors = list(self.predecessor.keys())
-                for succ in predecessors:
-                    if self[succ] == []:
-                        self.predecessor.pop(succ)

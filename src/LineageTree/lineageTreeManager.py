@@ -149,14 +149,18 @@ class lineageTreeManager:
                     f"Use a valid downsampling rate (multiple of {lcm/10})"
                 )
             time_res = [
-                downsample / self.lineagetrees[embryo_2]._time_resolution,
-                downsample / self.lineagetrees[embryo_1]._time_resolution,
+                downsample / self.lineagetrees[embryo_2].time_resolution,
+                downsample / self.lineagetrees[embryo_1].time_resolution,
             ]
-
-        if style != "downsampled":
+        elif style == "full":
             time_res = [
-                self.lineagetrees[embryo_2]._time_resolution,
+                lcm / 10 / self.lineagetrees[embryo_2].time_resolution,
+                lcm / 10 / self.lineagetrees[embryo_1].time_resolution,
+            ]
+        else:
+            time_res = [
                 self.lineagetrees[embryo_1]._time_resolution,
+                self.lineagetrees[embryo_2]._time_resolution,
             ]
             time_res = [i / self.gcd for i in time_res]
         tree1 = tree(
@@ -176,6 +180,7 @@ class lineageTreeManager:
         delta = tree1.delta
         _, times1 = tree1.tree
         _, times2 = tree2.tree
+
         nodes1, adj1, corres1 = tree1.edist
         nodes2, adj2, corres2 = tree2.edist
         if len(nodes1) == len(nodes2) == 0:
