@@ -131,7 +131,9 @@ def hierarchical_pos(
         elif len(succ) == 1:
             pos_node[succ[0]] = [
                 pos_node[curr][0],
-                pos_node[curr][1] - lnks_tms["times"].get(curr, 0) + vert_gap,
+                pos_node[curr][1]
+                - lnks_tms["times"].get(curr, 0)
+                + min(vert_gap, lnks_tms["times"].get(curr, 0)),
             ]
             to_do.extend(succ)
             prev_width[succ[0]] = prev_width[curr]

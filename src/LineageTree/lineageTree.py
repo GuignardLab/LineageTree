@@ -1840,6 +1840,7 @@ class lineageTree(lineageTreeLoaders):
         fontsize=15,
         figure=None,
         axes=None,
+        vert_gap=1,
         **kwargs,
     ):
         """Plots all lineages.
@@ -1872,6 +1873,7 @@ class lineageTree(lineageTreeLoaders):
                 g,
                 g["root"],
                 ycenter=-int(self.time[g["root"]]),
+                vert_gap=vert_gap,
             )
             for i, g in graphs.items()
         }
@@ -1918,7 +1920,16 @@ class lineageTree(lineageTreeLoaders):
         [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
         return figure, axes, ax2root
 
-    def plot_node(self, node, figsize=(4, 7), dpi=150, vert_gap=2, **kwargs):
+    def plot_node(
+        self,
+        node,
+        figsize=(4, 7),
+        dpi=150,
+        vert_gap=2,
+        figure=None,
+        ax=None,
+        **kwargs,
+    ):
         """Plots the subtree spawn by a node.
 
         Args:
@@ -1929,7 +1940,10 @@ class lineageTree(lineageTreeLoaders):
         if len(graph) > 1:
             raise Warning("Please enter only one node")
         graph = graph[0]
-        figure, ax = plt.subplots(nrows=1, ncols=1, figsize=figsize, dpi=dpi)
+        if not ax or not figure:
+            figure, ax = plt.subplots(
+                nrows=1, ncols=1, figsize=figsize, dpi=dpi
+            )
         self.draw_tree_graph(
             hier=hierarchical_pos(
                 graph,
