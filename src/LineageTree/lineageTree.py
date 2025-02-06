@@ -70,7 +70,12 @@ class lineageTree(lineageTreeLoaders):
             sub = set(self.get_sub_tree(node))
             specific_leaves = sub.intersection(self.leaves)
             for leaf in specific_leaves:
-                self.add_branch(leaf, self.t_e - self.time[leaf], reverse=True)
+                self.add_branch(
+                    leaf,
+                    (self.t_e - self.time[leaf]),
+                    reverse=True,
+                    move_timepoints=True,
+                )
 
     ###TODO pos can be callable and stay motionless (copy the position of the succ node, use something like optical flow)
     def add_branch(
@@ -88,7 +93,7 @@ class lineageTree(lineageTreeLoaders):
             pred (int): Id of the successor (predecessor if reverse is False)
             length (int): The length of the new branch.
             pos (np.ndarray, optional): The new position of the branch. Defaults to None.
-            move_timepoints (bool): Moves the ti Important only if reverse= True
+            move_timepoints (bool): Moves the time, important only if reverse= True
             reverese (bool): If True will create a branch that goes forwards in time otherwise backwards.
         Returns:
             (int): Id of the first node of the sublineage.
@@ -138,14 +143,12 @@ class lineageTree(lineageTreeLoaders):
                     reverse=False,
                 )
                 pred = _next
+            self.successor[self.get_cycle(pred)[-1]] = []
             self.labels[pred] = "New branch"
         if self.time[pred] == self.t_b:
-            self.roots.add(pred)
             self.labels[pred] = "New branch"
         if original in self.roots and reverse is True:
-            self.roots.add(pred)
             self.labels[pred] = "New branch"
-            self.roots.remove(original)
             self.labels.pop(original, -1)
         self.t_e = max(self.time_nodes)
         return pred
@@ -167,9 +170,7 @@ class lineageTree(lineageTreeLoaders):
             self.predecessor.pop(new_lT)
             label_of_root = self.labels.get(cycle[0], cycle[0])
             self.labels[cycle[0]] = f"L-Split {label_of_root}"
-            new_tr = self.add_branch(
-                new_lT, len(cycle) + 1, move_timepoints=False
-            )
+            new_tr = self.add_branch(new_lT, len(cycle), move_timepoints=False)
             self.roots.add(new_tr)
             self.labels[new_tr] = f"R-Split {label_of_root}"
             return new_tr
@@ -209,7 +210,10 @@ class lineageTree(lineageTreeLoaders):
         self.remove_nodes(new_root1)
         self.successor[new_root2].append(next_root1)
         self.predecessor[next_root1] = [new_root2]
-        new_branch = self.add_branch(new_root2, length)
+        new_branch = self.add_branch(
+            new_root2,
+            length - 1,
+        )
         self.labels[new_branch] = f"Fusion of {new_root1} and {new_root2}"
         return new_branch
 
@@ -321,7 +325,7 @@ class lineageTree(lineageTreeLoaders):
             new_length (int): The new length of the tree.
         """
         if new_length <= 1:
-            warnings.warn("New length should be more than 1")
+            warnings.warn("New length should be more than 1", stacklevel=2)
             return None
         cycle = self.get_cycle(node)
         length = len(cycle)
@@ -383,7 +387,7 @@ class lineageTree(lineageTreeLoaders):
         if time_resolution is not None:
             self._time_resolution = int(time_resolution * 10)
         else:
-            warnings.warn("Time resolution set to default 1", stacklevel=2)
+            warnings.warn("Time resolution set to default 0", stacklevel=2)
             self._time_resolution = 10
 
     @property
@@ -405,9 +409,7 @@ class lineageTree(lineageTreeLoaders):
 
     @property
     def roots(self):
-        if not hasattr(self, "_roots"):
-            self._roots = set(self.nodes).difference(self.predecessor)
-        return self._roots
+        return set(self.nodes).difference(self.predecessor)
 
     @property
     def edges(self):
@@ -415,7 +417,7 @@ class lineageTree(lineageTreeLoaders):
 
     @property
     def leaves(self):
-        return set(self.predecessor).difference(self.successor)
+        return {p for p, s in self.successor.items() if s == []}
 
     @property
     def labels(self):
@@ -426,10 +428,10 @@ class lineageTree(lineageTreeLoaders):
                 }
             else:
                 self._labels = {
-                    i: "Unlabeled"
-                    for i in self.roots
-                    for l in self.find_leaves(i)
-                    if abs(self.time[l] - self.time[i])
+                    root: "Unlabeled"
+                    for root in self.roots
+                    for leaf in self.find_leaves(root)
+                    if abs(self.time[leaf] - self.time[root])
                     >= abs(self.t_e - self.t_b) / 4
                 }
         return self._labels
@@ -521,7 +523,7 @@ class lineageTree(lineageTreeLoaders):
 
                 f.write("@5\n")
                 for C in self.to_take_time[t]:
-                    f.write("%f\n" % (manual_labels.get(C, default_label)))
+                    f.write(f"{manual_labels.get(C, default_label):f}\n")
                     f.write(f"{0:f}\n")
 
                 f.write("@6\n")
@@ -540,8 +542,7 @@ class lineageTree(lineageTreeLoaders):
                 f.write("@7\n")
                 for C in self.to_take_time[t]:
                     f.write(
-                        "%f\n"
-                        % (np.linalg.norm(points_v[C][0] - points_v[C][-1]))
+                        f"{np.linalg.norm(points_v[C][0] - points_v[C][-1]):f}\n"
                     )
 
                 f.write("@8\n")
@@ -970,10 +971,10 @@ class lineageTree(lineageTreeLoaders):
             if node_properties:
                 for p_name, (p_dict, default) in node_properties.items():
                     if isinstance(list(p_dict.values())[0], str):
-                        f.write('(property 0 string "%s"\n' % p_name)
+                        f.write(f'(property 0 string "{p_name}"\n')
                         f.write(f"\t(default {default} {default})\n")
                     elif isinstance(list(p_dict.values())[0], Number):
-                        f.write('(property 0 double "%s"\n' % p_name)
+                        f.write(f'(property 0 double "{p_name}"\n')
                         f.write('\t(default "0" "0")\n')
                     for n in nodes_to_use:
                         f.write(
@@ -1047,148 +1048,6 @@ class lineageTree(lineageTreeLoaders):
 
             f.close()
 
-    def read_from_binary(self, fname: str):
-        """
-        Reads a binary lineageTree file name.
-        Format description: see self.to_binary
-
-        Args:
-            fname: string, path to the binary file
-            reverse_time: bool, not used
-        """
-        q_size = struct.calcsize("q")
-        H_size = struct.calcsize("H")
-        d_size = struct.calcsize("d")
-
-        with open(fname, "rb") as f:
-            len_tree = struct.unpack("q", f.read(q_size))[0]
-            len_time = struct.unpack("q", f.read(q_size))[0]
-            len_pos = struct.unpack("q", f.read(q_size))[0]
-            number_sequence = list(
-                struct.unpack("q" * len_tree, f.read(q_size * len_tree))
-            )
-            time_sequence = list(
-                struct.unpack("H" * len_time, f.read(H_size * len_time))
-            )
-            pos_sequence = np.array(
-                struct.unpack("d" * len_pos, f.read(d_size * len_pos))
-            )
-
-            f.close()
-
-        successor = {}
-        predecessor = {}
-        time = {}
-        time_nodes = {}
-        time_edges = {}
-        pos = {}
-        is_root = {}
-        nodes = []
-        edges = []
-        waiting_list = []
-        print(number_sequence[0])
-        i = 0
-        done = False
-        if max(number_sequence[::2]) == -1:
-            tmp = number_sequence[1::2]
-            if len(tmp) * 3 == len(pos_sequence) == len(time_sequence) * 3:
-                time = dict(list(zip(tmp, time_sequence)))
-                for c, t in time.items():
-                    time_nodes.setdefault(t, set()).add(c)
-                pos = dict(
-                    list(zip(tmp, np.reshape(pos_sequence, (len_time, 3))))
-                )
-                is_root = {c: True for c in tmp}
-                nodes = tmp
-                done = True
-        while (
-            i < len(number_sequence) and not done
-        ):  # , c in enumerate(number_sequence[:-1]):
-            c = number_sequence[i]
-            if c == -1:
-                if waiting_list != []:
-                    prev_mother = waiting_list.pop()
-                    successor[prev_mother].insert(0, number_sequence[i + 1])
-                    edges.append((prev_mother, number_sequence[i + 1]))
-                    time_edges.setdefault(t, set()).add(
-                        (prev_mother, number_sequence[i + 1])
-                    )
-                    is_root[number_sequence[i + 1]] = False
-                    t = time[prev_mother] + 1
-                else:
-                    t = time_sequence.pop(0)
-                    is_root[number_sequence[i + 1]] = True
-
-            elif c == -2:
-                successor[waiting_list[-1]] = [number_sequence[i + 1]]
-                edges.append((waiting_list[-1], number_sequence[i + 1]))
-                time_edges.setdefault(t, set()).add(
-                    (waiting_list[-1], number_sequence[i + 1])
-                )
-                is_root[number_sequence[i + 1]] = False
-                pos[waiting_list[-1]] = pos_sequence[:3]
-                pos_sequence = pos_sequence[3:]
-                nodes.append(waiting_list[-1])
-                time[waiting_list[-1]] = t
-                time_nodes.setdefault(t, set()).add(waiting_list[-1])
-                t += 1
-
-            elif number_sequence[i + 1] >= 0:
-                successor[c] = [number_sequence[i + 1]]
-                edges.append((c, number_sequence[i + 1]))
-                time_edges.setdefault(t, set()).add(
-                    (c, number_sequence[i + 1])
-                )
-                is_root[number_sequence[i + 1]] = False
-                pos[c] = pos_sequence[:3]
-                pos_sequence = pos_sequence[3:]
-                nodes.append(c)
-                time[c] = t
-                time_nodes.setdefault(t, set()).add(c)
-                t += 1
-
-            elif number_sequence[i + 1] == -2:
-                waiting_list += [c]
-
-            elif number_sequence[i + 1] == -1:
-                pos[c] = pos_sequence[:3]
-                pos_sequence = pos_sequence[3:]
-                nodes.append(c)
-                time[c] = t
-                time_nodes.setdefault(t, set()).add(c)
-                t += 1
-                i += 1
-                if waiting_list != []:
-                    prev_mother = waiting_list.pop()
-                    successor[prev_mother].insert(0, number_sequence[i + 1])
-                    edges.append((prev_mother, number_sequence[i + 1]))
-                    time_edges.setdefault(t, set()).add(
-                        (prev_mother, number_sequence[i + 1])
-                    )
-                    if i + 1 < len(number_sequence):
-                        is_root[number_sequence[i + 1]] = False
-                    t = time[prev_mother] + 1
-                else:
-                    if len(time_sequence) > 0:
-                        t = time_sequence.pop(0)
-                    if i + 1 < len(number_sequence):
-                        is_root[number_sequence[i + 1]] = True
-            i += 1
-
-        predecessor = {vi: [k] for k, v in successor.items() for vi in v}
-
-        self.successor = successor
-        self.predecessor = predecessor
-        self.time = time
-        self.time_nodes = time_nodes
-        self.time_edges = time_edges
-        self.pos = pos
-        self.nodes = set(nodes)
-        self.t_b = min(time_nodes.keys())
-        self.t_e = max(time_nodes.keys())
-        self.is_root = is_root
-        self.max_id = max(self.nodes)
-
     def write(self, fname: str):
         """
         Write a lineage tree on disk as an .lT file.
@@ -1203,7 +1062,7 @@ class lineageTree(lineageTreeLoaders):
             f.close()
 
     @classmethod
-    def load(clf, fname: str, rm_empty_lists=True):
+    def load(clf, fname: str, rm_empty_lists=False):
         """
         Loading a lineage tree from a ".lT" file.
 
@@ -1218,18 +1077,6 @@ class lineageTree(lineageTreeLoaders):
             f.close()
         if not hasattr(lT, "time_resolution"):
             lT.time_resolution = None
-        if rm_empty_lists:
-            if [] in lT.successor.values():
-                for node, succ in lT.successor.items():
-                    if succ == []:
-                        lT.successor.pop(node)
-            if [] in lT.predecessor.values():
-                for node, succ in lT.predecessor.items():
-                    if succ == []:
-                        lT.predecessor.pop(node)
-            lT.t_e = max(lT.time_nodes)
-            lT.t_b = min(lT.time_nodes)
-            warnings.warn("Empty lists have been removed")
         return lT
 
     def get_idx3d(self, t: int) -> tuple:
@@ -1491,11 +1338,10 @@ class lineageTree(lineageTreeLoaders):
         leaves = set()
         while to_do:
             curr = to_do.pop()
-            succ = self.successor.get(curr)
-            if succ is not None:
+            succ = self.successor.get(curr, [])
+            if not succ:
                 leaves.add(curr)
-            else:
-                to_do += succ
+            to_do += succ
         return leaves
 
     def get_sub_tree(
@@ -1994,6 +1840,7 @@ class lineageTree(lineageTreeLoaders):
         fontsize=15,
         figure=None,
         axes=None,
+        vert_gap=1,
         **kwargs,
     ):
         """Plots all lineages.
@@ -2023,7 +1870,10 @@ class lineageTree(lineageTreeLoaders):
             )
         pos = {
             i: hierarchical_pos(
-                g, g["root"], ycenter=-int(self.time[g["root"]])
+                g,
+                g["root"],
+                ycenter=-int(self.time[g["root"]]),
+                vert_gap=vert_gap,
             )
             for i, g in graphs.items()
         }
@@ -2070,7 +1920,16 @@ class lineageTree(lineageTreeLoaders):
         [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
         return figure, axes, ax2root
 
-    def plot_node(self, node, figsize=(4, 7), dpi=150, vert_gap=2, **kwargs):
+    def plot_node(
+        self,
+        node,
+        figsize=(4, 7),
+        dpi=150,
+        vert_gap=2,
+        figure=None,
+        ax=None,
+        **kwargs,
+    ):
         """Plots the subtree spawn by a node.
 
         Args:
@@ -2081,7 +1940,10 @@ class lineageTree(lineageTreeLoaders):
         if len(graph) > 1:
             raise Warning("Please enter only one node")
         graph = graph[0]
-        figure, ax = plt.subplots(nrows=1, ncols=1, figsize=figsize, dpi=dpi)
+        if not ax or not figure:
+            figure, ax = plt.subplots(
+                nrows=1, ncols=1, figsize=figsize, dpi=dpi
+            )
         self.draw_tree_graph(
             hier=hierarchical_pos(
                 graph,
@@ -2746,6 +2608,7 @@ class lineageTree(lineageTreeLoaders):
             warnings.warn(
                 "Error: not possible to show alignment in PCA projection !",
                 UserWarning,
+                stacklevel=2,
             )
 
         return distance, fig
@@ -2841,6 +2704,8 @@ class lineageTree(lineageTreeLoaders):
                 self.read_from_ASTEC(file_format, eigen)
             elif file_type == "csv":
                 self.read_from_csv(file_format, z_mult, link=1, delim=delim)
+            elif file_type == "bao":
+                self.read_C_elegans_bao(file_format)
             elif file_format and file_format.endswith(".lT"):
                 with open(file_format, "br") as f:
                     tmp = pkl.load(f)
@@ -2851,15 +2716,5 @@ class lineageTree(lineageTreeLoaders):
             if self.name is None:
                 try:
                     self.name = Path(file_format).stem
-                except:
+                except TypeError:
                     self.name = Path(file_format[0]).stem
-        if [] in self.successor.values():
-            successors = list(self.successor.keys())
-            for succ in successors:
-                if self[succ] == []:
-                    self.successor.pop(succ)
-        if [] in self.predecessor.values():
-            predecessors = list(self.predecessor.keys())
-            for succ in predecessors:
-                if self[succ] == []:
-                    self.predecessor.pop(succ)

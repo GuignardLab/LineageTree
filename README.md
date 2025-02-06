@@ -8,6 +8,7 @@ With LineageTree you can read from:
 - MaMuT files described in [Wolff et al. 2018](https://doi.org/10.7554/eLife.34410)
 - SVF algorithm outputs described in [McDole, Guignard et al. 2018](https://doi.org/10.1016/j.cell.2018.09.031)
 - ASTEC algorithm outputs described in [Guignard, Fiuza et al. 2020](https://doi.org/10.1126/science.aar5663)
+- Data from the [Digital development Database](http://digital-development.org/index.html) described in [Du et al. 2014](https://www.cell.com/fulltext/S0092-8674(13)01542-0) and [Du et al. 2015](https://www.sciencedirect.com/science/article/pii/S1534580715004876?via%3Dihub)
 - and few others
 
 ## Basic usage

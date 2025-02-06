@@ -1,12 +1,28 @@
 import csv
 import os
 import pickle as pkl
+import struct
 import xml.etree.ElementTree as ET
+from warnings import warn
 
 import numpy as np
 
 
 class lineageTreeLoaders:
+    implicit_l_t = {
+        "AB": "P0",
+        "P1": "P0",
+        "EMS": "P1",
+        "P2": "P1",
+        "MS": "EMS",
+        "E": "EMS",
+        "C": "P2",
+        "P3": "P2",
+        "D": "P3",
+        "P4": "P3",
+        "Z2": "P4",
+        "Z3": "P4",
+    }
 
     def read_from_csv(
         self, file_path: str, z_mult: float, link: int = 1, delim: str = ","
@@ -65,7 +81,6 @@ class lineageTreeLoaders:
             self.pos[C] = pos
             self.nodes.add(C)
             self.time_nodes.setdefault(t, set()).add(C)
-            # self.time_id[(t, cell_id)] = C
             self.time[C] = t
             if not link:
                 self.displacement[C] = np.array([dx, dy, dz * z_mult])
@@ -314,6 +329,147 @@ class lineageTreeLoaders:
                 new_dict[k] = v
         return new_dict
 
+    def read_from_binary(self, fname: str):
+        """
+        Reads a binary lineageTree file name.
+        Format description: see self.to_binary
+
+        Args:
+            fname: string, path to the binary file
+            reverse_time: bool, not used
+        """
+        q_size = struct.calcsize("q")
+        H_size = struct.calcsize("H")
+        d_size = struct.calcsize("d")
+
+        with open(fname, "rb") as f:
+            len_tree = struct.unpack("q", f.read(q_size))[0]
+            len_time = struct.unpack("q", f.read(q_size))[0]
+            len_pos = struct.unpack("q", f.read(q_size))[0]
+            number_sequence = list(
+                struct.unpack("q" * len_tree, f.read(q_size * len_tree))
+            )
+            time_sequence = list(
+                struct.unpack("H" * len_time, f.read(H_size * len_time))
+            )
+            pos_sequence = np.array(
+                struct.unpack("d" * len_pos, f.read(d_size * len_pos))
+            )
+
+            f.close()
+
+        successor = {}
+        predecessor = {}
+        time = {}
+        time_nodes = {}
+        time_edges = {}
+        pos = {}
+        is_root = {}
+        nodes = []
+        edges = []
+        waiting_list = []
+        i = 0
+        done = False
+        if max(number_sequence[::2]) == -1:
+            tmp = number_sequence[1::2]
+            if len(tmp) * 3 == len(pos_sequence) == len(time_sequence) * 3:
+                time = dict(list(zip(tmp, time_sequence)))
+                for c, t in time.items():
+                    time_nodes.setdefault(t, set()).add(c)
+                pos = dict(
+                    list(zip(tmp, np.reshape(pos_sequence, (len_time, 3))))
+                )
+                is_root = {c: True for c in tmp}
+                nodes = tmp
+                done = True
+        while (
+            i < len(number_sequence) and not done
+        ):  # , c in enumerate(number_sequence[:-1]):
+            c = number_sequence[i]
+            if c == -1:
+                if waiting_list != []:
+                    prev_mother = waiting_list.pop()
+                    successor[prev_mother].insert(0, number_sequence[i + 1])
+                    edges.append((prev_mother, number_sequence[i + 1]))
+                    time_edges.setdefault(t, set()).add(
+                        (prev_mother, number_sequence[i + 1])
+                    )
+                    is_root[number_sequence[i + 1]] = False
+                    t = time[prev_mother] + 1
+                else:
+                    t = time_sequence.pop(0)
+                    is_root[number_sequence[i + 1]] = True
+
+            elif c == -2:
+                successor[waiting_list[-1]] = [number_sequence[i + 1]]
+                edges.append((waiting_list[-1], number_sequence[i + 1]))
+                time_edges.setdefault(t, set()).add(
+                    (waiting_list[-1], number_sequence[i + 1])
+                )
+                is_root[number_sequence[i + 1]] = False
+                pos[waiting_list[-1]] = pos_sequence[:3]
+                pos_sequence = pos_sequence[3:]
+                nodes.append(waiting_list[-1])
+                time[waiting_list[-1]] = t
+                time_nodes.setdefault(t, set()).add(waiting_list[-1])
+                t += 1
+
+            elif number_sequence[i + 1] >= 0:
+                successor[c] = [number_sequence[i + 1]]
+                edges.append((c, number_sequence[i + 1]))
+                time_edges.setdefault(t, set()).add(
+                    (c, number_sequence[i + 1])
+                )
+                is_root[number_sequence[i + 1]] = False
+                pos[c] = pos_sequence[:3]
+                pos_sequence = pos_sequence[3:]
+                nodes.append(c)
+                time[c] = t
+                time_nodes.setdefault(t, set()).add(c)
+                t += 1
+
+            elif number_sequence[i + 1] == -2:
+                waiting_list += [c]
+
+            elif number_sequence[i + 1] == -1:
+                pos[c] = pos_sequence[:3]
+                pos_sequence = pos_sequence[3:]
+                nodes.append(c)
+                time[c] = t
+                time_nodes.setdefault(t, set()).add(c)
+                t += 1
+                i += 1
+                if waiting_list != []:
+                    prev_mother = waiting_list.pop()
+                    successor[prev_mother].insert(0, number_sequence[i + 1])
+                    edges.append((prev_mother, number_sequence[i + 1]))
+                    time_edges.setdefault(t, set()).add(
+                        (prev_mother, number_sequence[i + 1])
+                    )
+                    if i + 1 < len(number_sequence):
+                        is_root[number_sequence[i + 1]] = False
+                    t = time[prev_mother] + 1
+                else:
+                    if len(time_sequence) > 0:
+                        t = time_sequence.pop(0)
+                    if i + 1 < len(number_sequence):
+                        is_root[number_sequence[i + 1]] = True
+            i += 1
+
+        predecessor = {vi: [k] for k, v in successor.items() for vi in v}
+
+        self.successor = successor
+        self.predecessor = predecessor
+        self.time = time
+        self.time_nodes = time_nodes
+        self.time_edges = time_edges
+        self.pos = pos
+        self.nodes = set(nodes)
+        self.t_b = min(time_nodes)
+        self.t_e = max(time_nodes)
+        self.is_root = is_root
+        self.max_id = max(self.nodes)
+
     def read_from_txt_for_celegans(self, file: str):
         """
         Read a C. elegans lineage tree
@@ -321,20 +477,6 @@ class lineageTreeLoaders:
         Args:
             file (str): Path to the file to read
         """
-        implicit_l_t = {
-            "AB": "P0",
-            "P1": "P0",
-            "EMS": "P1",
-            "P2": "P1",
-            "MS": "EMS",
-            "E": "EMS",
-            "C": "P2",
-            "P3": "P2",
-            "D": "P3",
-            "P4": "P3",
-            "Z2": "P4",
-            "Z3": "P4",
-        }
         with open(file) as f:
             raw = f.readlines()[1:]
             f.close()
@@ -363,12 +505,9 @@ class lineageTreeLoaders:
                         p = name_to_id[self.name[c]]
                     elif self.name[c][:-1] in name_to_id:
                         p = name_to_id[self.name[c][:-1]]
-                    elif implicit_l_t.get(self.name[c]) in name_to_id:
-                        p = name_to_id[implicit_l_t.get(self.name[c])]
+                    elif self.implicit_l_t.get(self.name[c]) in name_to_id:
+                        p = name_to_id[self.implicit_l_t.get(self.name[c])]
                     else:
-                        print(
-                            "error, cell %s has no predecessors" % self.name[c]
-                        )
                         p = None
                     self.predecessor.setdefault(c, []).append(p)
                     self.successor.setdefault(p, []).append(c)
@@ -388,21 +527,6 @@ class lineageTreeLoaders:
         Args:
             file (str): Path to the file to read
         """
-
-        implicit_l_t = {
-            "AB": "P0",
-            "P1": "P0",
-            "EMS": "P1",
-            "P2": "P1",
-            "MS": "EMS",
-            "E": "EMS",
-            "C": "P2",
-            "P3": "P2",
-            "D": "P3",
-            "P4": "P3",
-            "Z2": "P4",
-            "Z3": "P4",
-        }
 
         def split_line(line):
             return (
@@ -450,11 +574,12 @@ class lineageTreeLoaders:
                         p = name_to_id[self.name[c]]
                     elif self.name[c][:-1] in name_to_id:
                         p = name_to_id[self.name[c][:-1]]
-                    elif implicit_l_t.get(self.name[c]) in name_to_id:
-                        p = name_to_id[implicit_l_t.get(self.name[c])]
+                    elif self.implicit_l_t.get(self.name[c]) in name_to_id:
+                        p = name_to_id[self.implicit_l_t.get(self.name[c])]
                     else:
-                        print(
-                            "error, cell %s has no predecessors" % self.name[c]
+                        warn(
+                            f"error, cell {self.name[c]} has no predecessors",
+                            stacklevel=2,
                         )
                         p = None
                     self.predecessor.setdefault(c, []).append(p)
@@ -496,9 +621,6 @@ class lineageTreeLoaders:
         self.intensity = {}
         self.W = {}
         for t in range(tb, te + 1):
-            print(t, end=" ")
-            if t % 10 == 0:
-                print()
             tree = ET.parse(file_format.format(t=t))
             root = tree.getroot()
             self.time_nodes[t] = set()
@@ -720,3 +842,55 @@ class lineageTreeLoaders:
                     tracks[t_id].append((s, t))
         self.t_b = min(self.time_nodes.keys())
         self.t_e = max(self.time_nodes.keys())
+
+    def read_C_elegans_bao(self, path):
+        cell_times = {}
+        self.expression = {}
+        with open(path) as f:
+            for line in f:
+                if "cell_name" not in line:
+                    cell_times[line.split("\t")[0]] = list(
+                        line.split("\t")[-1].split(",")
+                    )
+        new_dict = {}
+        end_dict = {}
+        self.t_e = 0
+        self.t_b = 0
+        for c, lc in cell_times.items():
+            new_dict[c] = self.add_node(0)
+            tmp = self.add_branch(
+                new_dict[c],
+                length=len(lc) - 1,
+                reverse=True,
+                move_timepoints=True,
+            )
+            for i, node in enumerate(self.get_cycle(tmp)):
+                self.expression[node] = int(lc[i])
+            self._labels[self.get_cycle(tmp)[0]] = c
+            self._labels.pop(tmp)
+            end_dict[c] = self.get_cycle(new_dict[c])[-1]
+        cell_names = list(cell_times.keys())
+        c_to_p = {}
+        while cell_names:
+            cur = cell_names.pop()
+            if cur[:-1] in cell_names:
+                c_to_p[cur] = cur[:-1]
+        c_to_p.update(self.implicit_l_t)
+        for c, p in c_to_p.items():
+            if p in cell_times:
+                cyc = end_dict[p]
+                self.predecessor[new_dict[c]] = [cyc]
+                if cyc not in self.successor:
+                    self.successor[cyc] = []
+                self.successor[cyc].append(new_dict[c])
+        self.time_nodes.clear()
+        for root in self.roots:
+            to_do = [root]
+            while to_do:
+                cur = to_do.pop()
+                self.time_nodes.setdefault(self.time[cur], set()).add(cur)
+                _next = self.successor.get(cur, [])
+                to_do += _next
+                for n in _next:
+                    self.time[n] = self.time[cur] + 1
+        self.t_e = max(self.time.values())

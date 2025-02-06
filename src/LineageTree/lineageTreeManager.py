@@ -2,6 +2,7 @@ import os
 import pickle as pkl
 import warnings
 from functools import partial
+
 import numpy as np
 
 try:
@@ -21,21 +22,19 @@ class lineageTreeManager:
         self.lineagetrees = {}
         self.lineageTree_counter = 0
         self.registered = {}
-        self.greatest_common_divisors = {}
 
     def __next__(self):
         self.lineageTree_counter += 1
         return self.lineageTree_counter - 1
 
-    def gcd_update(self, new_embryo):
-        if len(self.lineagetrees) > 1:
-            for lineagetree in self.lineagetrees:
-                self.greatest_common_divisors[lineagetree, new_embryo.name] = (
-                    np.gcd(
-                        self.lineagetrees[lineagetree].time_resolution,
-                        new_embryo.time_resolution,
-                    )
-                )
+    @property
+    def gcd(self):
+        if len(self.lineagetrees) >= 1:
+            all_time_res = [
+                embryo._time_resolution
+                for embryo in self.lineagetrees.values()
+            ]
+            return np.gcd.reduce(all_time_res)
 
     def add(
         self, other_tree: lineageTree, name: str = "", classification: str = ""
@@ -64,7 +63,6 @@ class lineageTreeManager:
                     name = f"Lineagetree {next(self)}"
                     self.lineagetrees[name] = other_tree
                     self.lineagetrees[name].name = name
-                    # self.greatest_common_divisors[name] = gcd
         else:
             raise Exception(
                 "Please add a LineageTree object or add time resolution to the LineageTree added."
@@ -120,7 +118,7 @@ class lineageTreeManager:
         n2: int,
         embryo_2,
         end_time2: int,
-        style="fragmented",
+        style="simple",
         downsample: int = 2,
         registration=None,  # will be added as a later feature
     ):
@@ -141,21 +139,48 @@ class lineageTreeManager:
         """
 
         tree = tree_style[style].value
+        lcm = (
+            self.lineagetrees[embryo_1]._time_resolution
+            * self.lineagetrees[embryo_2]._time_resolution
+        ) / self.gcd
+        if style == "downsampled":
+            if downsample % (lcm / 10) != 0:
+                raise Exception(
+                    f"Use a valid downsampling rate (multiple of {lcm/10})"
+                )
+            time_res = [
+                downsample / self.lineagetrees[embryo_2].time_resolution,
+                downsample / self.lineagetrees[embryo_1].time_resolution,
+            ]
+        elif style == "full":
+            time_res = [
+                lcm / 10 / self.lineagetrees[embryo_2].time_resolution,
+                lcm / 10 / self.lineagetrees[embryo_1].time_resolution,
+            ]
+        else:
+            time_res = [
+                self.lineagetrees[embryo_1]._time_resolution,
+                self.lineagetrees[embryo_2]._time_resolution,
+            ]
+            time_res = [i / self.gcd for i in time_res]
         tree1 = tree(
             lT=self.lineagetrees[embryo_1],
             downsample=downsample,
             end_time=end_time1,
             root=n1,
+            time_scale=time_res[0],
         )
         tree2 = tree(
             lT=self.lineagetrees[embryo_2],
             downsample=downsample,
             end_time=end_time2,
             root=n2,
+            time_scale=time_res[1],
         )
         delta = tree1.delta
         _, times1 = tree1.tree
         _, times2 = tree2.tree
+
         nodes1, adj1, corres1 = tree1.edist
         nodes2, adj2, corres2 = tree2.edist
         if len(nodes1) == len(nodes2) == 0:
