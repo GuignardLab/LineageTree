@@ -3,6 +3,7 @@ import os
 import pickle as pkl
 import struct
 import xml.etree.ElementTree as ET
+from warnings import warn
 
 import numpy as np
 
@@ -367,7 +368,6 @@ class lineageTreeLoaders:
         nodes = []
         edges = []
         waiting_list = []
-        print(number_sequence[0])  # noqa: T201
         i = 0
         done = False
         if max(number_sequence[::2]) == -1:
@@ -508,10 +508,6 @@ class lineageTreeLoaders:
                     elif self.implicit_l_t.get(self.name[c]) in name_to_id:
                         p = name_to_id[self.implicit_l_t.get(self.name[c])]
                     else:
-                        print(  # noqa: T201
-                            "error, cell %s has no predecessors"  # noqa: UP031
-                            % self.name[c]  # noqa: UP031
-                        )
                         p = None
                     self.predecessor.setdefault(c, []).append(p)
                     self.successor.setdefault(p, []).append(c)
@@ -581,9 +577,9 @@ class lineageTreeLoaders:
                     elif self.implicit_l_t.get(self.name[c]) in name_to_id:
                         p = name_to_id[self.implicit_l_t.get(self.name[c])]
                     else:
-                        print(  # noqa: T201
-                            "error, cell %s has no predecessors"  # noqa: UP031
-                            % self.name[c]  # noqa: UP031
+                        warn(
+                            f"error, cell {self.name[c]} has no predecessors",
+                            stacklevel=2,
                         )
                         p = None
                     self.predecessor.setdefault(c, []).append(p)
@@ -625,9 +621,6 @@ class lineageTreeLoaders:
         self.intensity = {}
         self.W = {}
         for t in range(tb, te + 1):
-            print(t, end=" ")  # noqa: T201
-            if t % 10 == 0:
-                print()  # noqa: T201
             tree = ET.parse(file_format.format(t=t))
             root = tree.getroot()
             self.time_nodes[t] = set()

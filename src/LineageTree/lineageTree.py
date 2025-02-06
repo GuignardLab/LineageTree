@@ -325,7 +325,7 @@ class lineageTree(lineageTreeLoaders):
             new_length (int): The new length of the tree.
         """
         if new_length <= 1:
-            warnings.warn("New length should be more than 1")
+            warnings.warn("New length should be more than 1", stacklevel=2)
             return None
         cycle = self.get_cycle(node)
         length = len(cycle)
@@ -428,10 +428,10 @@ class lineageTree(lineageTreeLoaders):
                 }
             else:
                 self._labels = {
-                    i: "Unlabeled"
-                    for i in self.roots
-                    for leaf in self.find_leaves(i)
-                    if abs(self.time[leaf] - self.time[i])
+                    root: "Unlabeled"
+                    for root in self.roots
+                    for leaf in self.find_leaves(root)
+                    if abs(self.time[leaf] - self.time[root])
                     >= abs(self.t_e - self.t_b) / 4
                 }
         return self._labels
@@ -523,7 +523,7 @@ class lineageTree(lineageTreeLoaders):
 
                 f.write("@5\n")
                 for C in self.to_take_time[t]:
-                    f.write("%f\n" % (manual_labels.get(C, default_label)))
+                    f.write(f"{manual_labels.get(C, default_label):f}\n")
                     f.write(f"{0:f}\n")
 
                 f.write("@6\n")
@@ -542,8 +542,7 @@ class lineageTree(lineageTreeLoaders):
                 f.write("@7\n")
                 for C in self.to_take_time[t]:
                     f.write(
-                        "%f\n"
-                        % (np.linalg.norm(points_v[C][0] - points_v[C][-1]))
+                        f"{np.linalg.norm(points_v[C][0] - points_v[C][-1]):f}\n"
                     )
 
                 f.write("@8\n")
@@ -972,10 +971,10 @@ class lineageTree(lineageTreeLoaders):
             if node_properties:
                 for p_name, (p_dict, default) in node_properties.items():
                     if isinstance(list(p_dict.values())[0], str):
-                        f.write('(property 0 string "%s"\n' % p_name)
+                        f.write(f'(property 0 string "{p_name}"\n')
                         f.write(f"\t(default {default} {default})\n")
                     elif isinstance(list(p_dict.values())[0], Number):
-                        f.write('(property 0 double "%s"\n' % p_name)
+                        f.write(f'(property 0 double "{p_name}"\n')
                         f.write('\t(default "0" "0")\n')
                     for n in nodes_to_use:
                         f.write(
@@ -1870,7 +1869,9 @@ class lineageTree(lineageTreeLoaders):
             )
         pos = {
             i: hierarchical_pos(
-                g, g["root"], ycenter=-int(self.time[g["root"]])
+                g,
+                g["root"],
+                ycenter=-int(self.time[g["root"]]),
             )
             for i, g in graphs.items()
         }
@@ -2593,6 +2594,7 @@ class lineageTree(lineageTreeLoaders):
             warnings.warn(
                 "Error: not possible to show alignment in PCA projection !",
                 UserWarning,
+                stacklevel=2,
             )
 
         return distance, fig
@@ -2700,5 +2702,5 @@ class lineageTree(lineageTreeLoaders):
             if self.name is None:
                 try:
                     self.name = Path(file_format).stem
-                except:
+                except TypeError:
                     self.name = Path(file_format[0]).stem
