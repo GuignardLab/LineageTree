@@ -1746,7 +1746,6 @@ class lineageTree(lineageTreeLoaders):
         color_of_edges=None,
         size=10,
         ax=None,
-        figure=None,
         default_color="black",
         **kwargs,
     ):
@@ -1803,7 +1802,7 @@ class lineageTree(lineageTreeLoaders):
         )
         ax.get_yaxis().set_visible(False)
         ax.get_xaxis().set_visible(False)
-        return figure, ax
+        return ax.get_figure(), ax
 
     def to_simple_graph(self, node=None, start_time: int = None):
         """Generates a dictionary of graphs where the keys are the index of the graph and
@@ -1838,7 +1837,6 @@ class lineageTree(lineageTreeLoaders):
         figsize=(10, 15),
         dpi=100,
         fontsize=15,
-        figure=None,
         axes=None,
         vert_gap=1,
         **kwargs,
@@ -1877,10 +1875,17 @@ class lineageTree(lineageTreeLoaders):
             )
             for i, g in graphs.items()
         }
-        ncols = int(len(graphs) // nrows) + (+np.sign(len(graphs) % nrows))
-        figure, axes = plt.subplots(
-            figsize=figsize, nrows=nrows, ncols=ncols, dpi=dpi, sharey=True
-        )
+        if axes is None:
+            ncols = int(len(graphs) // nrows) + (+np.sign(len(graphs) % nrows))
+            figure, axes = plt.subplots(
+                figsize=figsize, nrows=nrows, ncols=ncols, dpi=dpi, sharey=True
+            )
+        else:
+            figure, axes = axes.flatten()[0].get_figure(), axes
+            if len(axes.flatten()) < len(graphs):
+                raise Exception(
+                    f"Not enough axes, they should be at least {len(graphs)}."
+                )
         flat_axes = axes.flatten()
         ax2root = {}
         min_width, min_height = float("inf"), float("inf")
@@ -1918,7 +1923,7 @@ class lineageTree(lineageTreeLoaders):
                 },
             )
         [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
-        return figure, axes, ax2root
+        return axes.flatten()[0].get_figure(), axes, ax2root
 
     def plot_node(
         self,
@@ -1926,7 +1931,6 @@ class lineageTree(lineageTreeLoaders):
         figsize=(4, 7),
         dpi=150,
         vert_gap=2,
-        figure=None,
         ax=None,
         **kwargs,
     ):
@@ -1940,7 +1944,7 @@ class lineageTree(lineageTreeLoaders):
         if len(graph) > 1:
             raise Warning("Please enter only one node")
         graph = graph[0]
-        if not ax or not figure:
+        if not ax:
             figure, ax = plt.subplots(
                 nrows=1, ncols=1, figsize=figsize, dpi=dpi
             )
@@ -1953,9 +1957,8 @@ class lineageTree(lineageTreeLoaders):
             ),
             lnks_tms=graph,
             ax=ax,
-            **kwargs,
         )
-        return figure, ax
+        return ax.get_figure(), ax
 
     # def DTW(self, t1, t2, max_w=None, start_delay=None, end_delay=None,
     #         metric='euclidian', **kwargs):
