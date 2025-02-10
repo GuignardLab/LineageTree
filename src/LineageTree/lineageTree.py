@@ -2721,3 +2721,70 @@ class lineageTree(lineageTreeLoaders):
                     self.name = Path(file_format).stem
                 except TypeError:
                     self.name = Path(file_format[0]).stem
+
+
+class lineageTreeDicts(lineageTree):
+    """Placeholder class to give a proof of concept of what the lineageTree init method would look like.
+    """
+    def __init__(
+        self, 
+        relationship_dict: dict[int, set], 
+        time_nodes_dict: dict[float, set], 
+        pos_dict: dict[int, Iterable] = None, 
+        successors: bool = True, 
+        **kwargs
+    ):
+        """Creates a lineageTree object from minimal information, without reading from a file.
+        
+        Args:
+            relationship_dict (dict[int, set]): Dictionary assigning nodes to their successors or predecessors, according to the selected relationship type.
+            time_nodes_dict (dict[float, set]): Dictionary assigning times to sets of nodes. 
+            pos_dict (dict[int, Iterable], optional): Dictionary assigning nodes to their positions. Defaults to None.
+            successors (bool): Relationship type, True if the relationship_dict corresponds to node successors, False for predecessors. Defaults to True.
+            **kwargs: Supported keyword arguments are dictionaries assigning nodes to any custom property. The property must be specified for every node, and named differently from lineageTree's own attributes.
+        """
+        self.time_nodes = time_nodes_dict
+        self.time = { node:t for t in list(self.time_nodes) for node in self.time_nodes[t] }
+        self.t_b, self.t_e = min(self.time_nodes), max(self.time_nodes)
+        self.nodes = set(self.time)
+        if not set(relationship_dict).issubset(self.nodes):
+           warnings.warn("Please specify all nodes in time_nodes_dict.")
+           return
+        if successors:
+           self.successor = relationship_dict
+           self.predecessor = {}
+        else:
+           self.successor = {}
+           self.predecessor = relationship_dict
+        self.complete_successor_predecessor()
+        if pos_dict is not None: # separated from kwargs to impose attribute name pos
+            if set(pos_dict) != self.nodes:
+               warnings.warn("Please specify positions for all nodes.")
+            self.pos = pos_dict
+        for name, d in kwargs.items():
+            if name in self.__dict__.keys():
+                warnings.warn(f"Attribute name {name} is reserved.")
+                continue
+            if set(d) != self.nodes:
+                warnings.warn(f"Please specify {name} for all nodes.")
+                continue
+            setattr(self, name, d)
+
+    def complete_successor_predecessor(self):
+        """Compute missing relationship dictionary."""
+        if self.predecessor == self.successor == {}:
+            warnings.warn("Both successor and predecessor attributes are empty.")
+            return
+        if self.predecessor == {}:
+            for node in self.nodes:
+                for parent, successors in self.successor.items():
+                    if node in successors:
+                        self.predecessor[node] = [parent]
+            return 
+        if self.successor == {}:
+            for node in self.nodes:
+                self.successor[node] = []
+                for child, predecessors in self.predecessor.items():
+                    if node in predecessors:
+                        self.successor[node].append(child)
+            return
