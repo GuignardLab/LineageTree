@@ -2729,7 +2729,7 @@ class lineageTreeDicts(lineageTree):
     def __init__(
         self, 
         relationship_dict: dict[int, set], 
-        time_nodes_dict: dict[float, set], 
+        time_dict: dict[int, set] = None, 
         pos_dict: dict[int, Iterable] = None, 
         successors: bool = True, 
         **kwargs
@@ -2738,18 +2738,16 @@ class lineageTreeDicts(lineageTree):
         
         Args:
             relationship_dict (dict[int, set]): Dictionary assigning nodes to their successors or predecessors, according to the selected relationship type.
-            time_nodes_dict (dict[float, set]): Dictionary assigning times to sets of nodes. 
+            time_dict (dict[float, set], optional): Dictionary assigning nodes to the time point they were recorded to.  Defaults to None, in which case all times are set to 0.
             pos_dict (dict[int, Iterable], optional): Dictionary assigning nodes to their positions. Defaults to None.
             successors (bool): Relationship type, True if the relationship_dict corresponds to node successors, False for predecessors. Defaults to True.
             **kwargs: Supported keyword arguments are dictionaries assigning nodes to any custom property. The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
-        self.time_nodes = time_nodes_dict
-        self.time = { node:t for t in list(self.time_nodes) for node in self.time_nodes[t] }
+        self.time = time_dict
+        self.time_nodes = { t:node for node in list(self.time) for t in self.time[node] }
         self.t_b, self.t_e = min(self.time_nodes), max(self.time_nodes)
-        self.nodes = set(self.time)
-        if not set(relationship_dict).issubset(self.nodes):
-           warnings.warn("Please specify all nodes in time_nodes_dict.")
-           return
+        self.nodes = set(relationship_dict).union(set(node for s in relationship_dict.values() for node in list(s)))
+        # relationship dict should include empty lists as values for unlinked nodes -- should we specify this in the docstring?
         if successors:
            self.successor = relationship_dict
            self.predecessor = {}
@@ -2757,7 +2755,7 @@ class lineageTreeDicts(lineageTree):
            self.successor = {}
            self.predecessor = relationship_dict
         self.complete_successor_predecessor()
-        if pos_dict is not None: # separated from kwargs to impose attribute name pos
+        if pos_dict is not None:
             if set(pos_dict) != self.nodes:
                warnings.warn("Please specify positions for all nodes.")
             self.pos = pos_dict
