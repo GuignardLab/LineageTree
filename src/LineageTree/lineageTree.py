@@ -2780,7 +2780,7 @@ class lineageTreeDicts(lineageTree):
             self.time = {node:starting_time for node in self.nodes}
         else:
             self.time = time
-            if pos is None and nodes is not None and self.nodes.difference(time) != set():
+            if pos is None and nodes is not None and self.nodes.difference(self.time) != set():
                 raise ValueError("Please provide the time of all nodes.")
             if not all([self.time[node] < self.time[s] for node, succ in self.successor.items() for s in succ]):
                 warnings.warn("Provided times are not strictly increasing. Setting times to default.")
@@ -2790,7 +2790,7 @@ class lineageTreeDicts(lineageTree):
         self.t_e = max(self.time_nodes)
 
         # I feel like the error messages I wrote aren't super helpful, let me know if you have any suggestions
-        if pos is None and time is None and set(pos).symmetric_difference(time) != set():
+        if pos is not None and time is not None and set(self.pos).symmetric_difference(self.time) != set():
             raise ValueError("Please provide the time and position of all nodes.")
 
         self.nodes = self.nodes.union(time.keys()) 
