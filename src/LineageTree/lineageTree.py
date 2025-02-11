@@ -2762,7 +2762,7 @@ class lineageTreeDicts(lineageTree):
         if pos is None:
             self.pos = {}
         else:
-            if self.nodes.difference(pos) != set():
+            if nodes is not None and self.nodes.difference(pos) != set():
                 raise ValueError("Please provide the position of all nodes.")
             self.pos = pos
 
@@ -2780,7 +2780,7 @@ class lineageTreeDicts(lineageTree):
             self.time = {node:starting_time for node in self.nodes}
         else:
             self.time = time
-            if pos is None and self.nodes.difference(time) != set():
+            if pos is None and nodes is not None and self.nodes.difference(time) != set():
                 raise ValueError("Please provide the time of all nodes.")
             if not all([self.time[node] < self.time[s] for node, succ in self.successor.items() for s in succ]):
                 warnings.warn("Provided times are not strictly increasing. Setting times to default.")
