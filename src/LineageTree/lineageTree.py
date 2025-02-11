@@ -2729,25 +2729,44 @@ class lineageTreeDicts(lineageTree):
     def __init__(
         self, 
         relationship_dict: dict[int, set], 
-        time_dict: dict[int, set] = None, 
-        pos_dict: dict[int, Iterable] = None, 
+        time: dict[int, set] = None, 
+        starting_time: float = 0,
+        nodes: set = None,
+        pos: dict[int, Iterable] = None, 
         successors: bool = True, 
+        name: str = None,
         **kwargs
     ):
         """Creates a lineageTree object from minimal information, without reading from a file.
         
         Args:
             relationship_dict (dict[int, set]): Dictionary assigning nodes to their successors or predecessors, according to the selected relationship type.
-            time_dict (dict[float, set], optional): Dictionary assigning nodes to the time point they were recorded to.  Defaults to None, in which case all times are set to 0.
-            pos_dict (dict[int, Iterable], optional): Dictionary assigning nodes to their positions. Defaults to None.
-            successors (bool): Relationship type, True if the relationship_dict corresponds to node successors, False for predecessors. Defaults to True.
+            time (dict[float, set], optional): Dictionary assigning nodes to the time point they were recorded to.  Defaults to None, in which case all times are set to `starting_time`.
+            starting_time (float, optional): Starting time of the lineage tree. Defaults to 0.
+            nodes (set, optional): Set of nodes. Defaults to None, in which case it will be inferred from `relationship_dict`.
+            pos (dict[int, Iterable], optional): Dictionary assigning nodes to their positions. Defaults to None.
+            successors (bool, optional): Relationship type, True if the relationship_dict corresponds to node successors, False for predecessors. Defaults to True.
+            name (str, optional): Name of the lineage tree. Defaults to None.
             **kwargs: Supported keyword arguments are dictionaries assigning nodes to any custom property. The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
-        self.time = time_dict
-        self.time_nodes = { t:node for node in list(self.time) for t in self.time[node] }
-        self.t_b, self.t_e = min(self.time_nodes), max(self.time_nodes)
-        self.nodes = set(relationship_dict).union(set(node for s in relationship_dict.values() for node in list(s)))
-        # relationship dict should include empty lists as values for unlinked nodes -- should we specify this in the docstring?
+        # I'll remove comments later, leaving those for now to express my confusion in some parts
+        self.name = name
+        # set nodes as given parameter, or compute as union of keys and values of relationship dict
+        # this will be updated later using pos and time if provided
+        if nodes is None:
+            self.nodes = set(relationship_dict).union(set(node for s in relationship_dict.values() for node in list(s)))
+        else:
+            self.nodes = nodes
+
+        # set pos as given parameter, or set to empty dict. 
+        if pos is None:
+            self.pos = {}
+        else:
+            if self.nodes.difference(pos) != set():
+                raise ValueError("Please provide the position of all nodes.")
+            self.pos = pos
+
+        # set successors and predecessors
         if successors:
            self.successor = relationship_dict
            self.predecessor = {}
@@ -2755,10 +2774,29 @@ class lineageTreeDicts(lineageTree):
            self.successor = {}
            self.predecessor = relationship_dict
         self.complete_successor_predecessor()
-        if pos_dict is not None:
-            if set(pos_dict) != self.nodes:
-               warnings.warn("Please specify positions for all nodes.")
-            self.pos = pos_dict
+
+        # set times as given parameter if consistent, otherwise set each node's time to starting time 
+        if time is None:
+            self.time = {node:starting_time for node in self.nodes}
+        else:
+            self.time = time
+            if pos is None and self.nodes.difference(time) != set():
+                raise ValueError("Please provide the time of all nodes.")
+            if not all([self.time[node] < self.time[s] for node, succ in self.successor.items() for s in succ]):
+                warnings.warn("Provided times are not strictly increasing. Setting times to default.")
+                self.time = {node:starting_time for node in self.nodes}
+        self.time_nodes = { t:node for node in list(self.time) for t in self.time[node] }
+        self.t_b = starting_time
+        self.t_e = max(self.time_nodes)
+
+        # I feel like the error messages I wrote aren't super helpful, let me know if you have any suggestions
+        if pos is None and time is None and set(pos).symmetric_difference(time) != set():
+            raise ValueError("Please provide the time and position of all nodes.")
+
+        self.nodes = self.nodes.union(time.keys()) 
+        self.nodes = self.nodes.union(pos.keys())
+
+        # custom properties
         for name, d in kwargs.items():
             if name in self.__dict__.keys():
                 warnings.warn(f"Attribute name {name} is reserved.")
