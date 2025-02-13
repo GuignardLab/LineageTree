@@ -480,7 +480,7 @@ class lineageTree(lineageTreeLoaders):
                 points_v = {}
                 for C in self.to_take_time[t]:
                     C_tmp = C
-                    positions = ()
+                    positions = []
                     for _ in range(length):
                         C_tmp = self.predecessor.get(C_tmp, [C_tmp])[0]
                         positions.append(new_pos[C_tmp])
@@ -858,13 +858,13 @@ class lineageTree(lineageTreeLoaders):
                         ]
                 else:
                     nodes_to_use = list(self.nodes)
-                    edges_to_use = ()
+                    edges_to_use = []
                     if temporal:
                         edges_to_use += list(self.edges)
                     if spatial:
                         edges_to_use += list(s_edges)
             else:
-                edges_to_use = ()
+                edges_to_use = []
                 nodes_to_use = set(nodes_to_use)
                 if temporal:
                     for n in nodes_to_use:
