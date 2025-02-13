@@ -2732,3 +2732,115 @@ class lineageTree(lineageTreeLoaders):
             self.predecessor[node] = ()
         for node in self.nodes.difference(self.successor):
             self.successor[node] = ()
+
+
+class lineageTreeDicts(lineageTree):
+    """Placeholder class to give a proof of concept of what the lineageTree init method would look like."""
+
+    def __init__(
+        self,
+        *,
+        successor: dict[int, tuple] = None,
+        predecessor: dict[int, tuple] = None,
+        time: dict[int, tuple] = None,
+        starting_time: float = 0,
+        pos: dict[int, Iterable] = None,
+        name: str = None,
+        **kwargs,
+    ):
+        """Creates a lineageTree object from minimal information, without reading from a file.
+        Either `successor` or `predecessor` should be specified.
+
+        Args:
+            successor (dict[int, tuple]): Dictionary assigning nodes to their successors.
+            predecessor (dict[int, tuple]): Dictionary assigning nodes to their predecessors.
+            time (dict[float, tuple], optional): Dictionary assigning nodes to the time point they were recorded to.  Defaults to None, in which case all times are set to `starting_time`.
+            starting_time (float, optional): Starting time of the lineage tree. Defaults to 0.
+            pos (dict[int, Iterable], optional): Dictionary assigning nodes to their positions. Defaults to None.
+            name (str, optional): Name of the lineage tree. Defaults to None.
+            **kwargs: Supported keyword arguments are dictionaries assigning nodes to any custom property. The property must be specified for every node, and named differently from lineageTree's own attributes.
+        """
+        self.name = name
+        if successor and predecessor:
+            raise ValueError(
+                "You cannot have both successors and predecessors."
+            )
+
+        if successor:
+            self.successor = successor
+            self.predecessor = {}
+            for pred, succ in successor.items():
+                for s in succ:
+                    if s in self.predecessor.keys():
+                        raise ValueError(
+                            "Node can have at most one predecessor."
+                        )
+                    self.predecessor[s] = (pred,)
+        elif predecessor:
+            self.successor = {}
+            self.predecessor = predecessor
+            for succ, pred in predecessor.items():
+                if isinstance(pred, Iterable):
+                    if 1 < len(pred):
+                        raise ValueError(
+                            "Node can have at most one predecessor."
+                        )
+                    pred = pred[0]
+                successor.setdefault(pred, ())
+                successor[pred] += (succ,)
+        else:
+            warnings.warn(
+                "Both successor and predecessor attributes are empty.",
+                stacklevel=2,
+            )
+        self.nodes = set(self.predecessor).union(self.successor)
+        for root in set(self.nodes).difference(self.predecessor):
+            self.predecessor[root] = ()
+        for leaf in set(self.nodes).difference(self.successor):
+            self.successor[leaf] = ()
+
+        if pos is None:
+            self.pos = {}
+        else:
+            if self.nodes.difference(pos) != set():
+                raise ValueError("Please provide the position of all nodes.")
+            self.pos = pos
+
+        if time is None:
+            self.time = {node: starting_time for node in self.roots}
+            queue = list(self.roots)
+            for node in queue:
+                for succ in self.successor[node]:
+                    self.time[succ] = self.time[node] + 1
+                    queue.append(succ)
+        else:
+            self.time = time
+            if self.nodes.difference(self.time) != set():
+                raise ValueError("Please provide the time of all nodes.")
+            if not all(
+                self.time[node] < self.time[s]
+                for node, succ in self.successor.items()
+                for s in succ
+            ):
+                raise ValueError(
+                    "Provided times are not strictly increasing. Setting times to default."
+                )
+        self.time_nodes = {t: () for t in self.time.values()}
+        for node in list(self.time):
+            self.time_nodes[self.time[node]] += (node,)
+
+        self.t_b = min(self.time_nodes)
+        self.t_e = max(self.time_nodes)
+
+        # custom properties
+        for name, d in kwargs.items():
+            if name in self.__dict__.keys():
+                warnings.warn(f"Attribute name {name} is reserved.")
+                continue
+            if set(d) != self.nodes:
+                warnings.warn(f"Please specify {name} for all nodes.")
+                continue
+            setattr(self, name, d)
+
+        # cast to tuple to fix nodes
+        self.nodes = tuple(self.nodes)
