@@ -296,25 +296,23 @@ class full_tree(abstract_trees):
         to_do = [self.root]
         while to_do:
             current = to_do.pop()
-            _next = list(self.lT.successor.get(current, []))
+            _next = list(self.lT.successor[current])
             if _next and self.lT.time[_next[0]] <= self.end_time:
                 if self.time_scale > 1:
                     for _ in range(self.time_scale - 1):
                         next_id = self.get_next_id()
                         self.out_dict[current] = [next_id]
-                        # self.times[current] = 1
                         current = next_id
                 self.out_dict[current] = _next
                 to_do.extend(_next)
             else:
                 if self.time_scale > 1:
-                    for _ in range(self.time_scale - 1):
+                    for _ in range(self.time_scale - 2):
                         next_id = self.get_next_id()
                         self.out_dict[current] = [next_id]
-                        self.times[current] = 1
                         current = next_id
                 self.out_dict[current] = []
-            self.times[current] = 1
+        self.times = {n_id: 1 for n_id in self.out_dict}
         return self.out_dict, self.times
 
     def get_norm(self):
