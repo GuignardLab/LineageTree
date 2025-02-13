@@ -154,8 +154,8 @@ class lineageTreeManager:
             ]
         elif style == "full":
             time_res = [
-                lcm / 10 / self.lineagetrees[embryo_2].time_resolution,
                 lcm / 10 / self.lineagetrees[embryo_1].time_resolution,
+                lcm / 10 / self.lineagetrees[embryo_2].time_resolution,
             ]
         else:
             time_res = [
@@ -183,6 +183,7 @@ class lineageTreeManager:
 
         nodes1, adj1, corres1 = tree1.edist
         nodes2, adj2, corres2 = tree2.edist
+        print(len(nodes1), len(nodes2))
         if len(nodes1) == len(nodes2) == 0:
             return 0
 

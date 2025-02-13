@@ -27,6 +27,7 @@ class abstract_trees(ABC):
         time_scale: int = 1,
     ):
         self.lT: lineageTree = lT
+        self.internal_ids = max(self.lT.nodes)
         self.root: int = root
         self.downsample: int = downsample
         self.end_time: int = end_time if end_time else self.lT.t_e
@@ -35,6 +36,10 @@ class abstract_trees(ABC):
             raise Exception("Please used a valid time_scale (Larger than 0)")
         self.tree: tuple = self.get_tree()
         self.edist = self._edist_format(self.tree[0])
+
+    def get_next_id(self):
+        self.internal_ids += 1
+        return self.internal_ids - 1
 
     @abstractmethod
     def get_tree(self):
@@ -144,7 +149,7 @@ class mini_tree(abstract_trees):
             if cycle.size:
                 _next = self.lT[cycle[-1]]
                 if 1 < len(_next):
-                    out_dict[current] = _next
+                    out_dict[current] = list(_next)
                     to_do.extend(_next)
                 else:
                     out_dict[current] = []
@@ -192,7 +197,7 @@ class simple_tree(abstract_trees):
             if cycle.size:
                 _next = self.lT[cycle[-1]]
                 if len(_next) > 1 and self.lT.time[cycle[-1]] < self.end_time:
-                    out_dict[current] = _next
+                    out_dict[current] = list(_next)
                     to_do.extend(_next)
                 else:
                     out_dict[current] = []
@@ -291,26 +296,29 @@ class full_tree(abstract_trees):
         to_do = [self.root]
         while to_do:
             current = to_do.pop()
-            _next = self.lT.successor.get(current, [])
+            _next = list(self.lT.successor.get(current, []))
             if _next and self.lT.time[_next[0]] <= self.end_time:
                 if self.time_scale > 1:
                     for _ in range(self.time_scale - 1):
-                        next_id = self.lT.get_next_id()
+                        next_id = self.get_next_id()
                         self.out_dict[current] = [next_id]
+                        # self.times[current] = 1
                         current = next_id
                 self.out_dict[current] = _next
                 to_do.extend(_next)
             else:
-                for _ in range(self.time_scale - 1):
-                    next_id = self.lT.get_next_id()
-                    self.out_dict[current] = [next_id]
-                    current = next_id
+                if self.time_scale > 1:
+                    for _ in range(self.time_scale - 1):
+                        next_id = self.get_next_id()
+                        self.out_dict[current] = [next_id]
+                        self.times[current] = 1
+                        current = next_id
                 self.out_dict[current] = []
             self.times[current] = 1
         return self.out_dict, self.times
 
     def get_norm(self):
-        return len(self.times) * self.time_scale
+        return len(self.out_dict) * self.time_scale
 
     def delta(self, x, y, corres1, corres2, times1, times2):
         if x is None and y is None:

@@ -5,11 +5,11 @@ def test_read_MaMuT_xml():
     lT = lineageTree("test/data/test.mastodon", file_type="mastodon")
     assert len(lT.roots) == 3
     assert len(lT.nodes) == 41
-    assert len(lT.successor) == 36
+    assert len(lT.successor) == 41
     assert len(lT.find_leaves(40)) == 2
     lT = lineageTree("test/data/test-mamut.xml", file_type="MaMuT")
     assert len(lT.nodes) == 2430
-    assert len(lT.successor) == 2418
+    assert len(lT.successor) == 2430
 
 
 def test_writting_svg():
