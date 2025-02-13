@@ -49,7 +49,7 @@ class lineageTree(lineageTreeLoaders):
         """
         if self.max_id == -1 and self.nodes:
             self.max_id = max(self.nodes)
-        if self.next_id == ():
+        if self.next_id == []:
             self.max_id += 1
             return self.max_id
         else:
@@ -843,7 +843,7 @@ class lineageTree(lineageTreeLoaders):
                     nodes_to_use = [
                         n for n in self.nodes if t_min < self.time[n] <= t_max
                     ]
-                    edges_to_use = ()
+                    edges_to_use = []
                     if temporal:
                         edges_to_use += [
                             e
@@ -998,8 +998,8 @@ class lineageTree(lineageTreeLoaders):
                 c for c in self.successor if self.predecessor.get(c, ()) == ()
             ]
         number_sequence = [-1]
-        pos_sequence = ()
-        time_sequence = ()
+        pos_sequence = []
+        time_sequence = []
         for c in starting_points:
             time_sequence.append(self.time.get(c, 0))
             to_treat = [c]
@@ -1087,7 +1087,7 @@ class lineageTree(lineageTreeLoaders):
         to_check_self = list(self.time_nodes[t])
         if t not in self.kdtrees:
             data_corres = {}
-            data = ()
+            data = []
             for i, C in enumerate(to_check_self):
                 data.append(tuple(self.pos[C]))
                 data_corres[i] = C
@@ -1115,7 +1115,7 @@ class lineageTree(lineageTreeLoaders):
             idx3d, nodes = self.get_idx3d(t)
 
             data_corres = {}
-            data = ()
+            data = []
             for i, C in enumerate(nodes):
                 data.append(self.pos[C])
                 data_corres[i] = C
@@ -1312,7 +1312,7 @@ class lineageTree(lineageTreeLoaders):
         if roots is None:
             return self.get_all_tracks(force_recompute=True)
         else:
-            tracks = ()
+            tracks = []
             to_do = list(roots)
             while len(to_do) != 0:
                 current = to_do.pop()
@@ -1371,12 +1371,12 @@ class lineageTree(lineageTreeLoaders):
             curr = to_do.pop()
             succ = self.successor.get(curr, ())
             if succ and end_time < self.time.get(curr, end_time):
-                succ = ()
+                succ = []
                 continue
             if preorder:
-                to_do = list(succ) + to_do
+                to_do = succ + to_do
             else:
-                to_do += list(succ)
+                to_do += succ
                 sub_tree += [curr]
         return sub_tree
 
@@ -1768,9 +1768,9 @@ class lineageTree(lineageTreeLoaders):
             figure, ax: The matplotlib figure and ax object.
         """
         if selected_nodes is None:
-            selected_nodes = ()
+            selected_nodes = []
         if selected_edges is None:
-            selected_edges = ()
+            selected_edges = []
         if ax is None:
             figure, ax = plt.subplots()
         else:
@@ -2233,8 +2233,8 @@ class lineageTree(lineageTreeLoaders):
                 (list of list) x, y, z postions for track1
                 (list of list) x, y, z postions for track2
         """
-        inter1_pos = ()
-        inter2_pos = ()
+        inter1_pos = []
+        inter2_pos = []
 
         track1_pos = np.array([self.pos[c_id] for c_id in track1])
         track2_pos = np.array([self.pos[c_id] for c_id in track2])
@@ -2665,7 +2665,7 @@ class lineageTree(lineageTreeLoaders):
         self.time_nodes = {}
         self.time_edges = {}
         self.max_id = -1
-        self.next_id = ()
+        self.next_id = []
         self.nodes = set()
         self.successor = {}
         self.predecessor = {}
@@ -2680,7 +2680,7 @@ class lineageTree(lineageTreeLoaders):
         self.spatial_density = {}
         if file_type and file_format:
             if xml_attributes is None:
-                self.xml_attributes = ()
+                self.xml_attributes = []
             else:
                 self.xml_attributes = xml_attributes
             file_type = file_type.lower()
