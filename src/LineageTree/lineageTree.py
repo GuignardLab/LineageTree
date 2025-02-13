@@ -2729,9 +2729,9 @@ class lineageTreeDicts(lineageTree):
     def __init__(
         self,
         *,
-        successor: dict[int, set],
-        predecessor: dict[int, set],
-        time: dict[int, set] = None,
+        successor: dict[int, tuple] = None,
+        predecessor: dict[int, tuple] = None,
+        time: dict[int, tuple] = None,
         starting_time: float = 0,
         pos: dict[int, Iterable] = None,
         name: str = None,
@@ -2741,9 +2741,9 @@ class lineageTreeDicts(lineageTree):
         Either `successor` or `predecessor` should be specified.
 
         Args:
-            successor (dict[int, set]): Dictionary assigning nodes to their successors.
-            predecessor (dict[int, set]): Dictionary assigning nodes to their predecessors.
-            time (dict[float, set], optional): Dictionary assigning nodes to the time point they were recorded to.  Defaults to None, in which case all times are set to `starting_time`.
+            successor (dict[int, tuple]): Dictionary assigning nodes to their successors.
+            predecessor (dict[int, tuple]): Dictionary assigning nodes to their predecessors.
+            time (dict[float, tuple], optional): Dictionary assigning nodes to the time point they were recorded to.  Defaults to None, in which case all times are set to `starting_time`.
             starting_time (float, optional): Starting time of the lineage tree. Defaults to 0.
             pos (dict[int, Iterable], optional): Dictionary assigning nodes to their positions. Defaults to None.
             name (str, optional): Name of the lineage tree. Defaults to None.
@@ -2757,32 +2757,36 @@ class lineageTreeDicts(lineageTree):
 
         if successor:
             self.successor = successor
-            self.predecessor = {
-                s: {pred} for pred, succ in successor.items() for s in succ
-            }
-        elif predecessor:
-            self.successor = {}
-            self.predecessor = predecessor
-            for pred, succ in predecessor.items():
-                if isinstance(succ, Iterable):
-                    if 1 < len(succ):
+            self.predecessor = {}
+            for pred, succ in successor.items():
+                for s in succ:
+                    if s in self.predecessor.keys():
                         raise ValueError(
                             "Node can have at most one predecessor."
                         )
-                    succ = succ.next()
-                self.nodes.update({succ, pred})
-                successor.setdefault(succ, {}).add(pred)
+                    self.predecessor[s] = (pred,)
+        elif predecessor:
+            self.successor = {}
+            self.predecessor = predecessor
+            for succ, pred in predecessor.items():
+                if isinstance(pred, Iterable):
+                    if 1 < len(pred):
+                        raise ValueError(
+                            "Node can have at most one predecessor."
+                        )
+                    pred = pred[0]
+                successor.setdefault(pred, ())
+                successor[pred] += (succ,)
         else:
             warnings.warn(
                 "Both successor and predecessor attributes are empty.",
                 stacklevel=2,
             )
         self.nodes = set(self.predecessor).union(self.successor)
-        # complete nodes with pos and time dict ?
-        # for root in self.roots:
-        #   self.predecessor[root] = []
-        # for leaf in self.leaves:
-        #   self.predecessor[leaf] = []
+        for root in set(self.nodes).difference(self.predecessor):
+            self.predecessor[root] = ()
+        for leaf in set(self.nodes).difference(self.successor):
+            self.successor[leaf] = ()
 
         if pos is None:
             self.pos = {}
@@ -2792,12 +2796,9 @@ class lineageTreeDicts(lineageTree):
             self.pos = pos
 
         if time is None:
-            self.time = {
-                node: starting_time for node in self.roots
-            }  # how will roots be computed if mentionned in predecessors ?
+            self.time = {node: starting_time for node in self.roots}
             queue = list(self.roots)
             for node in queue:
-                # if node in self.successor: # this should not be necessary if we include leaves and roots
                 for succ in self.successor[node]:
                     self.time[succ] = self.time[node] + 1
                     queue.append(succ)
@@ -2813,9 +2814,9 @@ class lineageTreeDicts(lineageTree):
                 raise ValueError(
                     "Provided times are not strictly increasing. Setting times to default."
                 )
-        self.time_nodes = {t: [] for t in self.time.values()}
+        self.time_nodes = {t: () for t in self.time.values()}
         for node in list(self.time):
-            self.time_nodes[self.time[node]].append(node)
+            self.time_nodes[self.time[node]] += (node,)
 
         self.t_b = min(self.time_nodes)
         self.t_e = max(self.time_nodes)
@@ -2829,3 +2830,6 @@ class lineageTreeDicts(lineageTree):
                 warnings.warn(f"Please specify {name} for all nodes.")
                 continue
             setattr(self, name, d)
+
+        # cast to tuple to fix nodes
+        self.nodes = tuple(self.nodes)
