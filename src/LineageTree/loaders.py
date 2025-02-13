@@ -502,7 +502,7 @@ def read_from_txt_for_celegans_CAO(
     )
 
 
-def read_C_elegans_bao(path: str):
+def read_from_txt_for_celegans_BAO(path: str):
     cell_times = {}
     properties = {}
     properties["expression"] = {}
@@ -537,7 +537,9 @@ def read_C_elegans_bao(path: str):
     )
 
 
-def read_tgmm_xml(file_format: str, tb: int, te: int, z_mult: float = 1.0):
+def read_from_tgmm_xml(
+    file_format: str, tb: int, te: int, z_mult: float = 1.0
+):
     """Reads a lineage tree from TGMM xml output.
 
     Args:
