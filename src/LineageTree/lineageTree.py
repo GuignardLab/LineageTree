@@ -2729,9 +2729,9 @@ class lineageTreeDicts(lineageTree):
     def __init__(
         self,
         *,
-        successors: dict[int, set] = None,
-        predecessors: dict[int, set] = None,
-        time: dict[int, set] = None,
+        successor: dict[int, tuple] = None,
+        predecessor: dict[int, tuple] = None,
+        time: dict[int, tuple] = None,
         starting_time: float = 0,
         pos: dict[int, Iterable] = None,
         name: str = None,
@@ -2740,8 +2740,9 @@ class lineageTreeDicts(lineageTree):
         """Creates a lineageTree object from minimal information, without reading from a file.
 
         Args:
-            relationship_dict (dict[int, set]): Dictionary assigning nodes to their successors or predecessors, according to the selected relationship type.
-            time (dict[float, set], optional): Dictionary assigning nodes to the time point they were recorded to.  Defaults to None, in which case all times are set to `starting_time`.
+            successor (dict[int, tuple]): Dictionary assigning nodes to their successors.
+            predecessor (dict[int, tuple]): Dictionary assigning nodes to their predecessors.
+            time (dict[float, tuple], optional): Dictionary assigning nodes to the time point they were recorded to.  Defaults to None, in which case all times are set to `starting_time`.
             starting_time (float, optional): Starting time of the lineage tree. Defaults to 0.
             nodes (set, optional): Set of nodes. Defaults to None, in which case it will be inferred from `relationship_dict`.
             pos (dict[int, Iterable], optional): Dictionary assigning nodes to their positions. Defaults to None.
@@ -2758,14 +2759,39 @@ class lineageTreeDicts(lineageTree):
             raise ValueError(
                 "You cannot have both successors and predecessors."
             )
-        # set successors and predecessors
-        if successors:
-            self.successor = relationship_dict
+
+        if successor:
+            self.successor = successor
             self.predecessor = {}
-        else:
+            for pred, succ in successor.items():
+                for s in succ:
+                    if s in self.predecessor.keys():
+                        raise ValueError(
+                            "Node can have at most one predecessor."
+                        )
+                    self.predecessor[s] = (pred,)
+        elif predecessor:
             self.successor = {}
-            self.predecessor = relationship_dict
-        self.complete_successor_predecessor()
+            self.predecessor = predecessor
+            for succ, pred in predecessor.items():
+                if isinstance(pred, Iterable):
+                    if 1 < len(pred):
+                        raise ValueError(
+                            "Node can have at most one predecessor."
+                        )
+                    pred = pred[0]
+                successor.setdefault(pred, ())
+                successor[pred] += (succ,)
+        else:
+            warnings.warn(
+                "Both successor and predecessor attributes are empty.",
+                stacklevel=2,
+            )
+        self.nodes = set(self.predecessor).union(self.successor)
+        for root in set(self.nodes).difference(self.predecessor):
+            self.predecessor[root] = ()
+        for leaf in set(self.nodes).difference(self.successor):
+            self.successor[leaf] = ()
 
         # set pos as given parameter, or set to empty dict.
         if pos is None:
@@ -2777,7 +2803,12 @@ class lineageTreeDicts(lineageTree):
 
         # set times as given parameter if consistent, otherwise set each node's time to starting time
         if time is None:
-            self.time = {node: starting_time for node in self.nodes}
+            self.time = {node: starting_time for node in self.roots}
+            queue = list(self.roots)
+            for node in queue:
+                for succ in self.successor[node]:
+                    self.time[succ] = self.time[node] + 1
+                    queue.append(succ)
         else:
             self.time = time
             if self.nodes.symmetric_difference(time) == set():
@@ -2790,11 +2821,10 @@ class lineageTreeDicts(lineageTree):
                 raise ValueError(
                     "Provided times are not strictly increasing. Setting times to default."
                 )
-        self.time_nodes = {}
-        for node, t in self.time.items():
-            self.time_nodes.setdefault(t, []).append(node)
-        #     t: node for node in list(self.time) for t in self.time[node]
-        # }
+        self.time_nodes = {t: () for t in self.time.values()}
+        for node in list(self.time):
+            self.time_nodes[self.time[node]] += (node,)
+
         self.t_b = min(self.time_nodes)
         self.t_e = max(self.time_nodes)
 
@@ -2818,37 +2848,5 @@ class lineageTreeDicts(lineageTree):
                 continue
             setattr(self, name, d)
 
-    def complete_successor_predecessor(self, successor, predecessor):
-        """Compute missing relationship dictionary."""
-        if self.predecessor == self.successor == {}:
-            warnings.warn(
-                "Both successor and predecessor attributes are empty.",
-                stacklevel=2,
-            )
-            return
-        if not predecessor:
-            predecessor = {
-                s: {pred} for pred, succ in successor.items() for s in succ
-            }
-        else:
-            successor = {}
-            for pred, succ in predecessor.items():
-                if isinstance(succ, Iterable):
-                    if 1 < len(succ):
-                        raise ValueError("more than one predecessor")
-                    succ = succ.next()
-                self.nodes.update({succ, pred})
-                successor.setdefault(succ, {}).add(pred)
-        # if self.predecessor == {}:
-        #     for node in self.nodes:
-        #         for parent, successors in self.successor.items():
-        #             if node in successors:
-        #                 self.predecessor[node] = [parent]
-        #     return
-        # if self.successor == {}:
-        #     for node in self.nodes:
-        #         self.successor[node] = []
-        #         for child, predecessors in self.predecessor.items():
-        #             if node in predecessors:
-        #                 self.successor[node].append(child)
-        #     return
+        # cast to tuple to fix nodes
+        self.nodes = tuple(self.nodes)
