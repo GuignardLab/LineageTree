@@ -2,6 +2,7 @@
 # This file is subject to the terms and conditions defined in
 # file 'LICENCE', which is part of this source code package.
 # Author: Leo Guignard (leo.guignard...@AT@...gmail.com)
+import importlib.metadata
 import os
 import pickle as pkl
 import struct
@@ -15,7 +16,6 @@ from typing import TextIO, Union
 
 from packaging.version import Version
 
-from .__init__ import __version__
 from .tree_styles import tree_style
 
 try:
@@ -2742,7 +2742,9 @@ class lineageTreeDicts(lineageTree):
         with open(fname, "br") as f:
             lT = pkl.load(f)
             f.close()
-        if Version(lT.__version__) <= Version("2.0.0"):
+        if not hasattr(lT, "__version__") or Version(
+            lT.__version__
+        ) <= Version("2.0.0"):
             properties = {
                 prop_name: prop
                 for prop_name, prop in lT.__dict__.items()
@@ -2755,7 +2757,7 @@ class lineageTreeDicts(lineageTree):
                 successor=lT.successor,
                 time=lT.time,
                 pos=lT.pos,
-                name=lT.name,
+                name=lT.name if hasattr(lT, "name") else None,
                 **properties,
             )
         if not hasattr(lT, "time_resolution"):
@@ -2786,7 +2788,8 @@ class lineageTreeDicts(lineageTree):
             name (str, optional): Name of the lineage tree. Defaults to None.
             **kwargs: Supported keyword arguments are dictionaries assigning nodes to any custom property. The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
-        self.__version__ = __version__
+        self.__version__ = importlib.metadata.version("LineageTree")
+
         self.name = name
         if successor is not None and predecessor is not None:
             raise ValueError(
@@ -2863,9 +2866,13 @@ class lineageTreeDicts(lineageTree):
         # custom properties
         for name, d in kwargs.items():
             if name in self.__dict__:
-                warnings.warn(f"Attribute name {name} is reserved.")
+                warnings.warn(
+                    f"Attribute name {name} is reserved.", stacklevel=2
+                )
                 continue
             if set(d) != self.nodes:
-                warnings.warn(f"Please specify {name} for all nodes.")
+                warnings.warn(
+                    f"Please specify {name} for all nodes.", stacklevel=2
+                )
                 continue
             setattr(self, name, d)
