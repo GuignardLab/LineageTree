@@ -13,7 +13,6 @@ from numbers import Number
 from pathlib import Path
 from typing import TextIO, Union
 
-from .loaders import lineageTreeLoaders
 from .tree_styles import tree_style
 
 try:
@@ -35,7 +34,7 @@ from .utils import (
 )
 
 
-class lineageTree(lineageTreeLoaders):
+class lineageTree:
     def __eq__(self, other):
         if isinstance(other, lineageTree):
             return other.successor == self.successor
