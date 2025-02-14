@@ -2,6 +2,7 @@
 # This file is subject to the terms and conditions defined in
 # file 'LICENCE', which is part of this source code package.
 # Author: Leo Guignard (leo.guignard...@AT@...gmail.com)
+import importlib.metadata
 import os
 import pickle as pkl
 import struct
@@ -12,6 +13,8 @@ from itertools import combinations
 from numbers import Number
 from pathlib import Path
 from typing import TextIO, Union
+
+from packaging.version import Version
 
 from .tree_styles import tree_style
 
@@ -2725,6 +2728,43 @@ class lineageTree:
 class lineageTreeDicts(lineageTree):
     """Placeholder class to give a proof of concept of what the lineageTree init method would look like."""
 
+    @classmethod
+    def load(clf, fname: str):
+        """
+        Loading a lineage tree from a ".lT" file.
+
+        Args:
+            fname (str): path to and name of the file to read
+
+        Returns:
+            (lineageTree): loaded file
+        """
+        with open(fname, "br") as f:
+            lT = pkl.load(f)
+            f.close()
+        if not hasattr(lT, "__version__") or Version(
+            lT.__version__
+        ) <= Version("2.0.0"):
+            properties = {
+                prop_name: prop
+                for prop_name, prop in lT.__dict__.items()
+                if isinstance(prop, dict)
+                and prop_name
+                not in ["successor", "predecessor", "time", "pos"]
+                and set(prop).symmetric_difference(lT.nodes) == set()
+            }
+            lT = lineageTreeDicts(
+                successor=lT.successor,
+                time=lT.time,
+                pos=lT.pos,
+                name=lT.name if hasattr(lT, "name") else None,
+                **properties,
+            )
+        if not hasattr(lT, "time_resolution"):
+            lT.time_resolution = None
+
+        return lT
+
     def __init__(
         self,
         *,
@@ -2748,6 +2788,8 @@ class lineageTreeDicts(lineageTree):
             name (str, optional): Name of the lineage tree. Defaults to None.
             **kwargs: Supported keyword arguments are dictionaries assigning nodes to any custom property. The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
+        self.__version__ = importlib.metadata.version("LineageTree")
+
         self.name = name
         if successor is not None and predecessor is not None:
             raise ValueError(
@@ -2824,9 +2866,13 @@ class lineageTreeDicts(lineageTree):
         # custom properties
         for name, d in kwargs.items():
             if name in self.__dict__:
-                warnings.warn(f"Attribute name {name} is reserved.")
+                warnings.warn(
+                    f"Attribute name {name} is reserved.", stacklevel=2
+                )
                 continue
             if set(d) != self.nodes:
-                warnings.warn(f"Please specify {name} for all nodes.")
+                warnings.warn(
+                    f"Please specify {name} for all nodes.", stacklevel=2
+                )
                 continue
             setattr(self, name, d)
