@@ -203,11 +203,11 @@ def read_from_ASTEC(self, file_path: str, eigen: bool = False):
     if "cell_volume" in tmp_data:
         properties["volume"] = {}
     if "cell_fate" in tmp_data:
-        properties["fates"] = {}
+        properties["fate"] = {}
     if "cell_barycenter" in tmp_data:
         pos = {}
     if "cell_name" in tmp_data:
-        properties["node_name"] = {}
+        properties["label"] = {}
     lT2pkl = {}
     pkl2lT = {}
     image_label = {}
@@ -238,13 +238,11 @@ def read_from_ASTEC(self, file_path: str, eigen: bool = False):
                 n, 0.0
             )
         if "cell_fate" in tmp_data:
-            properties["fates"][unique_id] = tmp_data["cell_fate"].get(n, "")
+            properties["fate"][unique_id] = tmp_data["cell_fate"].get(n, "")
         if "cell_barycenter" in tmp_data:
             pos[unique_id] = tmp_data["cell_barycenter"].get(n, np.zeros(3))
         if "cell_name" in tmp_data:
-            properties["node_name"][unique_id] = tmp_data["cell_name"].get(
-                n, ""
-            )
+            properties["label"][unique_id] = tmp_data["cell_name"].get(n, "")
 
     if do_surf:
         for c in nodes:
@@ -429,7 +427,7 @@ def read_from_txt_for_celegans(file: str):
                 successor.setdefault(p, []).append(c)
 
     return lineageTreeDicts(
-        successor=successor, time=time, pos=pos, node_name=name
+        successor=successor, time=time, pos=pos, label=name
     )
 
 
@@ -504,7 +502,7 @@ def read_from_txt_for_celegans_CAO(
                 successor.setdefault(p, []).append(c)
 
     return lineageTreeDicts(
-        successor=successor, time=time, pos=pos, node_name=name
+        successor=successor, time=time, pos=pos, label=name
     )
 
 
@@ -512,7 +510,7 @@ def read_from_txt_for_celegans_BAO(path: str):
     cell_times = {}
     properties = {}
     properties["expression"] = {}
-    properties["node_name"] = {}
+    properties["label"] = {}
     with open(path) as f:
         for line in f:
             if "cell_name" not in line:
@@ -629,7 +627,7 @@ def read_from_mastodon(path: str, name: str = None):
     mr = MastodonReader(path)
     spots, links = mr.read_tables()
 
-    node_name = {}
+    label = {}
     time = {}
     pos = {}
     successor = {}
@@ -640,7 +638,7 @@ def read_from_mastodon(path: str, name: str = None):
         t = c.t
         n = c[name] if name is not None else ""
         time[unique_id] = t
-        node_name[unique_id] = n
+        label[unique_id] = n
         pos[unique_id] = np.array([x, y, z])
 
     for e in links.iloc:
@@ -649,7 +647,7 @@ def read_from_mastodon(path: str, name: str = None):
         successor.setdefault(source, []).append(target)
 
     return lineageTreeDicts(
-        successor=successor, time=time, pos=pos, node_name=node_name
+        successor=successor, time=time, pos=pos, label=label
     )
 
 
@@ -659,7 +657,7 @@ def read_from_mastodon_csv(paths: list[str]):
     """
     spots = []
     links = []
-    node_name = {}
+    label = {}
     time = {}
     pos = {}
     successor = {}
@@ -681,7 +679,7 @@ def read_from_mastodon_csv(paths: list[str]):
         x, y, z = spot[5:8]
         t = int(spot[4])
         time[unique_id] = t
-        node_name[unique_id] = spot[1]
+        label[unique_id] = spot[1]
         pos[unique_id] = np.array([x, y, z], dtype=float)
 
     for link in links:
@@ -690,7 +688,7 @@ def read_from_mastodon_csv(paths: list[str]):
         successor.setdefault(source, []).append(target)
 
     return lineageTreeDicts(
-        successor=successor, time=time, pos=pos, node_name=node_name
+        successor=successor, time=time, pos=pos, label=label
     )
 
 
@@ -713,7 +711,7 @@ def read_from_mamut_xml(path: str, xml_attributes: list[str] | None = None):
     nodes = set()
     pos = {}
     time = {}
-    properties["node_name"] = {}
+    properties["label"] = {}
 
     for frame in AllSpots:
         t = int(frame.attrib["frame"])
@@ -728,7 +726,7 @@ def read_from_mamut_xml(path: str, xml_attributes: list[str] | None = None):
             nodes.add(cell_id)
             pos[cell_id] = np.array([x, y, z])
             time[cell_id] = t
-            properties["node_name"][cell_id] = n
+            properties["label"][cell_id] = n
             if "TISSUE_NAME" in cell.attrib:
                 if "fate" not in properties:
                     properties["fate"] = {}
@@ -943,7 +941,7 @@ class lineageTreeLoaders:
         if "cell_volume" in tmp_data:
             self.volume = {}
         if "cell_fate" in tmp_data:
-            self.fates = {}
+            self.fate = {}
         if "cell_barycenter" in tmp_data:
             self.pos = {}
         self.lT2pkl = {}
@@ -976,7 +974,7 @@ class lineageTreeLoaders:
             if "cell_volume" in tmp_data:
                 self.volume[unique_id] = tmp_data["cell_volume"].get(n, 0.0)
             if "cell_fate" in tmp_data:
-                self.fates[unique_id] = tmp_data["cell_fate"].get(n, "")
+                self.fate[unique_id] = tmp_data["cell_fate"].get(n, "")
             if "cell_barycenter" in tmp_data:
                 self.pos[unique_id] = tmp_data["cell_barycenter"].get(
                     n, np.zeros(3)
@@ -1469,7 +1467,7 @@ class lineageTreeLoaders:
         mr = MastodonReader(path)
         spots, links = mr.read_tables()
 
-        self.node_name = {}
+        self.label = {}
 
         for c in spots.iloc:
             unique_id = c.name
@@ -1479,7 +1477,7 @@ class lineageTreeLoaders:
             self.time_nodes.setdefault(t, set()).add(unique_id)
             self.nodes.add(unique_id)
             self.time[unique_id] = t
-            self.node_name[unique_id] = n
+            self.label[unique_id] = n
             self.pos[unique_id] = np.array([x, y, z])
 
         for e in links.iloc:
@@ -1499,7 +1497,7 @@ class lineageTreeLoaders:
         """
         spots = []
         links = []
-        self.node_name = {}
+        self.label = {}
 
         with open(path[0], encoding="utf-8", errors="ignore") as file:
             csvreader = csv.reader(file)
@@ -1520,7 +1518,7 @@ class lineageTreeLoaders:
             self.time_nodes.setdefault(t, set()).add(unique_id)
             self.nodes.add(unique_id)
             self.time[unique_id] = t
-            self.node_name[unique_id] = spot[1]
+            self.label[unique_id] = spot[1]
             self.pos[unique_id] = np.array([x, y, z], dtype=float)
 
         for link in links:
@@ -1553,7 +1551,7 @@ class lineageTreeLoaders:
         self.nodes = set()
         self.pos = {}
         self.time = {}
-        self.node_name = {}
+        self.label = {}
         for frame in AllSpots:
             t = int(frame.attrib["frame"])
             self.time_nodes[t] = set()
@@ -1569,7 +1567,7 @@ class lineageTreeLoaders:
                 self.nodes.add(cell_id)
                 self.pos[cell_id] = np.array([x, y, z])
                 self.time[cell_id] = t
-                self.node_name[cell_id] = n
+                self.label[cell_id] = n
                 if "TISSUE_NAME" in cell.attrib:
                     if not hasattr(self, "fate"):
                         self.fate = {}
