@@ -12,8 +12,11 @@ from functools import partial
 from itertools import combinations
 from numbers import Number
 from pathlib import Path
-from typing import TextIO, Union
 from types import MappingProxyType
+from typing import TextIO, Union
+
+from packaging.version import Version
+
 from .tree_styles import tree_style
 
 try:
