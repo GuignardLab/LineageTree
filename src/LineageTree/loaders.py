@@ -131,7 +131,7 @@ def read_from_csv(
             successor.setdefault(M, []).append(C)
         pos[C] = pos
         time[C] = t
-    return lineageTreeDicts(successors=successor, time=time, pos=pos)
+    return lineageTreeDicts(successor=successor, time=time, pos=pos)
 
 
 def read_from_ASTEC_xml(file_path: str):
@@ -206,6 +206,8 @@ def read_from_ASTEC(self, file_path: str, eigen: bool = False):
         properties["fates"] = {}
     if "cell_barycenter" in tmp_data:
         pos = {}
+    if "cell_name" in tmp_data:
+        properties["node_name"] = {}
     lT2pkl = {}
     pkl2lT = {}
     image_label = {}
@@ -230,7 +232,6 @@ def read_from_ASTEC(self, file_path: str, eigen: bool = False):
         image_label[unique_id] = n % 10**4
         lT2pkl[unique_id] = n
         pkl2lT[n] = unique_id
-        nodes.add(unique_id)
         time[unique_id] = t
         if "cell_volume" in tmp_data:
             properties["volume"][unique_id] = tmp_data["cell_volume"].get(
@@ -240,6 +241,10 @@ def read_from_ASTEC(self, file_path: str, eigen: bool = False):
             properties["fates"][unique_id] = tmp_data["cell_fate"].get(n, "")
         if "cell_barycenter" in tmp_data:
             pos[unique_id] = tmp_data["cell_barycenter"].get(n, np.zeros(3))
+        if "cell_name" in tmp_data:
+            properties["node_name"][unique_id] = tmp_data["cell_name"].get(
+                n, ""
+            )
 
     if do_surf:
         for c in nodes:
@@ -262,6 +267,7 @@ def read_from_ASTEC(self, file_path: str, eigen: bool = False):
         "cell_barycenter",  # already stored
         "cell_contact_surface",  # already stored
         "cell_lineage",  # already stored
+        "cell_name",  # already stored
         "all_cells",  # not a property
         "cell_history",  # redundant
         "problematic_cells",  # not useful here
@@ -282,7 +288,7 @@ def read_from_ASTEC(self, file_path: str, eigen: bool = False):
             properties[prop_name] = dictionary
 
     return lineageTreeDicts(
-        successors=successor, time=time, pos=pos, **properties
+        successor=successor, time=time, pos=pos, **properties
     )
 
 
@@ -375,7 +381,7 @@ def read_from_binary(fname: str):
         i += 1
 
     return lineageTreeDicts(
-        successors=successor,
+        successor=successor,
         time=time,
         pos=pos,
     )
@@ -423,7 +429,7 @@ def read_from_txt_for_celegans(file: str):
                 successor.setdefault(p, []).append(c)
 
     return lineageTreeDicts(
-        successors=successor, time=time, pos=pos, node_name=name
+        successor=successor, time=time, pos=pos, node_name=name
     )
 
 
@@ -498,7 +504,7 @@ def read_from_txt_for_celegans_CAO(
                 successor.setdefault(p, []).append(c)
 
     return lineageTreeDicts(
-        successors=successor, time=time, pos=pos, node_name=name
+        successor=successor, time=time, pos=pos, node_name=name
     )
 
 
@@ -506,7 +512,7 @@ def read_from_txt_for_celegans_BAO(path: str):
     cell_times = {}
     properties = {}
     properties["expression"] = {}
-    properties["name"] = {}
+    properties["node_name"] = {}
     with open(path) as f:
         for line in f:
             if "cell_name" not in line:
@@ -532,9 +538,7 @@ def read_from_txt_for_celegans_BAO(path: str):
                 c_id[0]
             )
 
-    return lineageTreeDicts(
-        successors=successor, starting_time=0, **properties
-    )
+    return lineageTreeDicts(successor=successor, starting_time=0, **properties)
 
 
 def read_from_tgmm_xml(
@@ -558,12 +562,12 @@ def read_from_tgmm_xml(
     pos = {}
     time_id = {}
     time = {}
-    params = {}
-    params["svIdx"] = {}
-    params["lin"] = {}
-    params["C_lin"] = {}
-    params["coeffs"] = {}
-    params["intensity"] = {}
+    properties = {}
+    properties["svIdx"] = {}
+    properties["lin"] = {}
+    properties["C_lin"] = {}
+    properties["coeffs"] = {}
+    properties["intensity"] = {}
     W = {}
     for t in range(tb, te + 1):
         tree = ET.parse(file_format.format(t=t))
@@ -602,19 +606,21 @@ def read_from_tgmm_xml(
                     pos[C] = pos
                     time_id[(t, cell_id)] = C
                     time[C] = t
-                    params["svIdx"][C] = svIdx
-                    params["lin"].setdefault(lin_id, []).append(C)
-                    params["C_lin"][C] = lin_id
-                    params["intensity"][C] = max(alpha - alphaPrior, 0)
+                    properties["svIdx"][C] = svIdx
+                    properties["lin"].setdefault(lin_id, []).append(C)
+                    properties["C_lin"][C] = lin_id
+                    properties["intensity"][C] = max(alpha - alphaPrior, 0)
                     tmp = list(np.array(W) * nu)
                     W[C] = np.array(W).reshape(3, 3)
-                    params["coeffs"][C] = (
+                    properties["coeffs"][C] = (
                         tmp[:3] + tmp[4:6] + tmp[8:9] + list(pos)
                     )
-    return lineageTreeDicts(successors=successor, time=time, pos=pos, **params)
+    return lineageTreeDicts(
+        successor=successor, time=time, pos=pos, **properties
+    )
 
 
-def read_from_mastodon(path: str, name: str):
+def read_from_mastodon(path: str, name: str = None):
     """
     TODO: write doc
     """
@@ -643,11 +649,11 @@ def read_from_mastodon(path: str, name: str):
         successor.setdefault(source, []).append(target)
 
     return lineageTreeDicts(
-        successors=successor, time=time, pos=pos, node_name=node_name
+        successor=successor, time=time, pos=pos, node_name=node_name
     )
 
 
-def read_from_mastodon_csv(path: str):
+def read_from_mastodon_csv(paths: list[str]):
     """
     TODO: Write doc
     """
@@ -658,13 +664,13 @@ def read_from_mastodon_csv(path: str):
     pos = {}
     successor = {}
 
-    with open(path[0], encoding="utf-8", errors="ignore") as file:
+    with open(paths[0], encoding="utf-8", errors="ignore") as file:
         csvreader = csv.reader(file)
         for row in csvreader:
             spots.append(row)
     spots = spots[3:]
 
-    with open(path[1], encoding="utf-8", errors="ignore") as file:
+    with open(paths[1], encoding="utf-8", errors="ignore") as file:
         csvreader = csv.reader(file)
         for row in csvreader:
             links.append(row)
@@ -684,7 +690,7 @@ def read_from_mastodon_csv(path: str):
         successor.setdefault(source, []).append(target)
 
     return lineageTreeDicts(
-        successors=successor, time=time, pos=pos, node_name=node_name
+        successor=successor, time=time, pos=pos, node_name=node_name
     )
 
 
@@ -764,7 +770,7 @@ def read_from_mamut_xml(path: str, xml_attributes: list[str] | None = None):
                 properties["tracks"][t_id].append((s, t))
 
     return lineageTreeDicts(
-        successors=successor,
+        successor=successor,
         time=time,
         pos=pos,
         **properties,
