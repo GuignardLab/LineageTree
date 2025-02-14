@@ -147,7 +147,7 @@ class mini_tree(abstract_trees):
             cycle_times = np.array([self.lT.time[c] for c in cycle])
             cycle = cycle[cycle_times <= self.end_time]
             if cycle.size:
-                _next = self.lT[cycle[-1]]
+                _next = self.lT.successor[cycle[-1]]
                 if 1 < len(_next):
                     out_dict[current] = list(_next)
                     to_do.extend(_next)
@@ -195,9 +195,9 @@ class simple_tree(abstract_trees):
             cycle_times = np.array([self.lT.time[c] for c in cycle])
             cycle = cycle[cycle_times <= self.end_time]
             if cycle.size:
-                _next = self.lT[cycle[-1]]
+                _next = list(self.lT.successor[cycle[-1]])
                 if len(_next) > 1 and self.lT.time[cycle[-1]] < self.end_time:
-                    out_dict[current] = list(_next)
+                    out_dict[current] = _next
                     to_do.extend(_next)
                 else:
                     out_dict[current] = []

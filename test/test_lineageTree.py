@@ -1,25 +1,30 @@
-from LineageTree import lineageTree, lineageTreeManager
+from LineageTree import (
+    lineageTree,
+    lineageTreeManager,
+    read_from_mamut_xml,
+    read_from_mastodon,
+)
 
 
 def test_read_MaMuT_xml():
-    lT = lineageTree("test/data/test.mastodon", file_type="mastodon")
+    lT = read_from_mastodon("test/data/test.mastodon")
     assert len(lT.roots) == 3
     assert len(lT.nodes) == 41
     assert len(lT.successor) == 41
     assert len(lT.find_leaves(40)) == 2
-    lT = lineageTree("test/data/test-mamut.xml", file_type="MaMuT")
+    lT = read_from_mamut_xml("test/data/test-mamut.xml")
     assert len(lT.nodes) == 2430
     assert len(lT.successor) == 2430
 
 
 def test_writting_svg():
-    lT = lineageTree("test/data/test-mamut.xml", file_type="MaMuT")
-    lT = lineageTree("test/data/test.mastodon", file_type="mastodon")
+    lT = read_from_mamut_xml("test/data/test-mamut.xml")
+    lT = read_from_mastodon("test/data/test.mastodon")
     lT.write_to_svg("test/test.svg")
 
 
 def test_all_tracks():
-    lT = lineageTree("test/data/test-mamut.xml", file_type="MaMuT")
+    lT = read_from_mamut_xml("test/data/test-mamut.xml")
     assert len(lT.all_tracks) == 18
 
 
@@ -287,6 +292,6 @@ def test_cross_comparison():
 
 
 def test_plots():
-    lT = lineageTree("test/data/test.mastodon", file_type="mastodon")
+    lT = read_from_mastodon("test/data/test.mastodon")
     assert len(lT.plot_all_lineages()) == 3
     assert len(lT.plot_node(40)) == 2
