@@ -358,6 +358,14 @@ class lineageTree:
                 )
 
     @property
+    def successor(self):
+        return MappingProxyType(self._successor)
+
+    @property
+    def predecessor(self):
+        return MappingProxyType(self._predecessor)
+
+    @property
     def time_resolution(self):
         if not hasattr(self, "_time_resolution"):
             self.time_resolution = 1
