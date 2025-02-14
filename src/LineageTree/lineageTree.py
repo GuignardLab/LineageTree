@@ -12,6 +12,7 @@ from itertools import combinations
 from numbers import Number
 from pathlib import Path
 from typing import TextIO, Union
+from packaging.version import Version
 
 from .tree_styles import tree_style
 
@@ -2724,6 +2725,41 @@ class lineageTree:
 
 class lineageTreeDicts(lineageTree):
     """Placeholder class to give a proof of concept of what the lineageTree init method would look like."""
+
+    @classmethod
+    def load(clf, fname: str, rm_empty_lists=False):
+        """
+        Loading a lineage tree from a ".lT" file.
+
+        Args:
+            fname (str): path to and name of the file to read
+
+        Returns:
+            (lineageTree): loaded file
+        """
+        with open(fname, "br") as f:
+            lT = pkl.load(f)
+            f.close()
+        if Version(lT.__version__) <= Version("2.0.0"):
+            properties = {
+                prop_name: prop
+                for prop_name, prop in lT.__dict__.items()
+                if isinstance(prop, dict)
+                and prop_name
+                not in ["successor", "predecessor", "time", "pos"]
+                and set(prop).symmetric_difference(lT.nodes) == set()
+            }
+            lT = lineageTreeDicts(
+                successor=lT.successor,
+                time=lT.time,
+                pos=lT.pos,
+                name=lT.name,
+                **properties,
+            )
+        if not hasattr(lT, "time_resolution"):
+            lT.time_resolution = None
+
+        return lT
 
     def __init__(
         self,
