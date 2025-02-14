@@ -2742,29 +2742,29 @@ class lineageTreeDicts(lineageTree):
         Args:
             successor (dict[int, tuple]): Dictionary assigning nodes to their successors.
             predecessor (dict[int, tuple]): Dictionary assigning nodes to their predecessors.
-            time (dict[float, tuple], optional): Dictionary assigning nodes to the time point they were recorded to.  Defaults to None, in which case all times are set to `starting_time`.
+            time (dict[int, float], optional): Dictionary assigning nodes to the time point they were recorded to.  Defaults to None, in which case all times are set to `starting_time`.
             starting_time (float, optional): Starting time of the lineage tree. Defaults to 0.
             pos (dict[int, Iterable], optional): Dictionary assigning nodes to their positions. Defaults to None.
             name (str, optional): Name of the lineage tree. Defaults to None.
             **kwargs: Supported keyword arguments are dictionaries assigning nodes to any custom property. The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
         self.name = name
-        if successor and predecessor:
+        if successor is not None and predecessor is not None:
             raise ValueError(
                 "You cannot have both successors and predecessors."
             )
 
-        if successor:
+        if successor is not None:
             self.successor = successor
             self.predecessor = {}
             for pred, succ in successor.items():
                 for s in succ:
-                    if s in self.predecessor.keys():
+                    if s in self.predecessor:
                         raise ValueError(
                             "Node can have at most one predecessor."
                         )
                     self.predecessor[s] = (pred,)
-        elif predecessor:
+        elif predecessor is not None:
             self.successor = {}
             self.predecessor = predecessor
             for succ, pred in predecessor.items():
@@ -2813,22 +2813,20 @@ class lineageTreeDicts(lineageTree):
                 raise ValueError(
                     "Provided times are not strictly increasing. Setting times to default."
                 )
-        self.time_nodes = {t: () for t in self.time.values()}
+        self.time_nodes = {t: set() for t in self.time.values()}
         for node in list(self.time):
-            self.time_nodes[self.time[node]] += (node,)
+            self.time_nodes[self.time[node]].add(node)
 
-        self.t_b = min(self.time_nodes)
-        self.t_e = max(self.time_nodes)
+        if len(self.nodes) > 0:
+            self.t_b = min(self.time_nodes)
+            self.t_e = max(self.time_nodes)
 
         # custom properties
         for name, d in kwargs.items():
-            if name in self.__dict__.keys():
+            if name in self.__dict__:
                 warnings.warn(f"Attribute name {name} is reserved.")
                 continue
             if set(d) != self.nodes:
                 warnings.warn(f"Please specify {name} for all nodes.")
                 continue
             setattr(self, name, d)
-
-        # cast to tuple to fix nodes
-        self.nodes = tuple(self.nodes)
