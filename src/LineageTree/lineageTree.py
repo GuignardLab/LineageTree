@@ -12,8 +12,10 @@ from itertools import combinations
 from numbers import Number
 from pathlib import Path
 from typing import TextIO, Union
+
 from packaging.version import Version
 
+from .__init__ import __version__
 from .tree_styles import tree_style
 
 try:
@@ -2727,7 +2729,7 @@ class lineageTreeDicts(lineageTree):
     """Placeholder class to give a proof of concept of what the lineageTree init method would look like."""
 
     @classmethod
-    def load(clf, fname: str, rm_empty_lists=False):
+    def load(clf, fname: str):
         """
         Loading a lineage tree from a ".lT" file.
 
@@ -2784,6 +2786,7 @@ class lineageTreeDicts(lineageTree):
             name (str, optional): Name of the lineage tree. Defaults to None.
             **kwargs: Supported keyword arguments are dictionaries assigning nodes to any custom property. The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
+        self.__version__ = __version__
         self.name = name
         if successor is not None and predecessor is not None:
             raise ValueError(
