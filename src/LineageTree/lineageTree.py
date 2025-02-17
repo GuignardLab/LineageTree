@@ -13,8 +13,9 @@ from itertools import combinations
 from numbers import Number
 from pathlib import Path
 from types import MappingProxyType
-from typing import TextIO, Union
+from typing import Union
 
+import svgwrite
 from packaging.version import Version
 
 from .tree_styles import tree_style
@@ -621,7 +622,6 @@ class lineageTree:
             positions ({int: [float, float], ...}): dictionary that maps a node id to a 2D position.
                        Default `None`. If provided it will be used to position the nodes.
         """
-        import svgwrite
 
         def normalize_values(v, nodes, _range, shift, mult):
             min_ = np.percentile(v, 1)
@@ -837,9 +837,9 @@ class lineageTree:
             for k, v in names_which_matter.items():
                 tmp[k] = (
                     v.split(".")[0][0]
-                    + "%02d" % int(v.split(".")[0][1:])
+                    + f"{int(v.split(".")[0][1:]):02d}"
                     + "."
-                    + "%04d" % int(v.split(".")[1][:-1])
+                    + f"{int(v.split(".")[1][:-1]):04d}"
                     + v.split(".")[1][-1]
                 )
             return tmp
@@ -2033,6 +2033,17 @@ class lineageTree:
     #     return d[-1, -1], d
 
     def get_cells_at_t_from_root(self, r: [int, list], t: int = None) -> list:
+    def __getitem__(self, item):
+        if isinstance(item, str):
+            return self.__dict__[item]
+        elif np.issubdtype(type(item), np.integer):
+            return self.successor.get(item, [])
+        else:
+            raise KeyError(
+                "Only integer or string are valid key for lineageTree"
+            )
+
+    def get_cells_at_t_from_root(self, r: int | list, t: int = None) -> list:
         """
         Returns the list of cells at time `t` that are spawn by the node(s) `r`.
 
@@ -2062,7 +2073,7 @@ class lineageTree:
         return final_nodes
 
     @staticmethod
-    def __calculate_diag_line(dist_mat: np.ndarray) -> (float, float):
+    def __calculate_diag_line(dist_mat: np.ndarray) -> tuple[float, float]:
         """
         Calculate the line that centers the band w.
 
@@ -2091,7 +2102,7 @@ class lineageTree:
         fast: bool = False,
         w: int = 0,
         centered_band: bool = True,
-    ) -> (((int, int), ...), np.ndarray):
+    ) -> tuple[tuple[int, ...], np.ndarray, float]:
         """
         Find DTW minimum cost between two series using dynamic programming.
 
@@ -2227,7 +2238,6 @@ class lineageTree:
 
         # special reflection case
         if np.linalg.det(R) < 0:
-            # print("det(R) < R, reflection detected!, correcting for it ...")
             Vt[2, :] *= -1
             R = Vt.T @ U.T
 
@@ -2237,7 +2247,7 @@ class lineageTree:
 
     def __interpolate(
         self, track1: list, track2: list, threshold: int
-    ) -> (np.ndarray, np.ndarray):
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Interpolate two series that have different lengths
 
@@ -2297,7 +2307,7 @@ class lineageTree:
         w: int = 0,
         centered_band: bool = True,
         cost_mat_p: bool = False,
-    ) -> (float, tuple, np.ndarray, np.ndarray, np.ndarray):
+    ) -> tuple[float, tuple, np.ndarray, np.ndarray, np.ndarray]:
         """
         Calculate DTW distance between two cell cycles
 
@@ -2364,7 +2374,7 @@ class lineageTree:
         fast: bool = False,
         w: int = 0,
         centered_band: bool = True,
-    ) -> (float, plt.figure):
+    ) -> tuple[float, plt.figure]:
         """
         Plot DTW cost matrix between two cell cycles in heatmap format
 
@@ -2448,7 +2458,7 @@ class lineageTree:
         centered_band: bool = True,
         projection: str = None,
         alig: bool = False,
-    ) -> (float, plt.figure):
+    ) -> tuple[float, plt.figure]:
         """
         Plots DTW trajectories aligment between two cell cycles in 2D or 3D
 

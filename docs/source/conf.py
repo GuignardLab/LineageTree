@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath("../src"))
 # -- Project information -----------------------------------------------------
 
 project = "LineageTree"
-copyright = "2020, Leo Guignard"
+copyright = "2020, Leo Guignard"  # noqa: A001
 author = "Leo Guignard"
 
 
