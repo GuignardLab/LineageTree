@@ -13,7 +13,7 @@ from itertools import combinations
 from numbers import Number
 from pathlib import Path
 from types import MappingProxyType
-from typing import Union
+from typing import TextIO, Union
 
 import svgwrite
 from packaging.version import Version
@@ -175,24 +175,24 @@ class lineageTree:
         Returns:
             int: The id of the root of the new lineage.
         """
-        # if self._predecessor.get(l1_root) or self._predecessor.get(l2_root):
-        #     raise ValueError("Please select 2 roots.")
-        # if self.time[l1_root] != self.time[l2_root]:
-        #     warnings.warn(
-        #         "Using lineagetrees that do not exist in the same timepoint. The operation will continue"
-        #     )
-        # new_root1 = self.add_branch(l1_root, length_l1)
-        # new_root2 = self.add_branch(l2_root, length_l2)
-        # next_root1 = self[new_root1][0]
-        # self.remove_nodes(new_root1)
-        # self._successor[new_root2].append(next_root1)
-        # self._predecessor[next_root1] = [new_root2]
-        # new_branch = self.add_branch(
-        #     new_root2,
-        #     length - 1,
-        # )
-        # self.labels[new_branch] = f"Fusion of {new_root1} and {new_root2}"
-        # return new_branch
+        if self.predecessor.get(l1_root) or self.predecessor.get(l2_root):
+            raise ValueError("Please select 2 roots.")
+        if self.time[l1_root] != self.time[l2_root]:
+            warnings.warn(
+                "Using lineagetrees that do not exist in the same timepoint. The operation will continue"
+            )
+        new_root1 = self.add_branch(l1_root, length_l1)
+        new_root2 = self.add_branch(l2_root, length_l2)
+        next_root1 = self[new_root1][0]
+        self.remove_nodes(new_root1)
+        self.successor[new_root2].append(next_root1)
+        self.predecessor[next_root1] = [new_root2]
+        new_branch = self.add_branch(
+            new_root2,
+            length - 1,
+        )
+        self.labels[new_branch] = f"Fusion of {new_root1} and {new_root2}"
+        return new_branch
 
     def copy_lineage(self, root):
         """
@@ -503,7 +503,7 @@ class lineageTree:
                     C_tmp = C
                     positions = []
                     for _ in range(length):
-                        C_tmp = self._predecessor.get(C_tmp, [C_tmp])[0]
+                        C_tmp = self.predecessor.get(C_tmp, [C_tmp])[0]
                         positions.append(new_pos[C_tmp])
                     points_v[C] = positions
 
@@ -837,9 +837,9 @@ class lineageTree:
             for k, v in names_which_matter.items():
                 tmp[k] = (
                     v.split(".")[0][0]
-                    + f"{int(v.split(".")[0][1:]):02d}"
+                    + f"{int(v.split('.')[0][1:]):02d}"
                     + "."
-                    + f"{int(v.split(".")[1][:-1]):04d}"
+                    + f"{int(v.split('.')[1][:-1]):04d}"
                     + v.split(".")[1][-1]
                 )
             return tmp
@@ -1986,53 +1986,6 @@ class lineageTree:
         )
         return ax.get_figure(), ax
 
-    # def DTW(self, t1, t2, max_w=None, start_delay=None, end_delay=None,
-    #         metric='euclidian', **kwargs):
-    #     """ Computes the dynamic time warping distance between the tracks t1 and t2
-
-    #         Args:
-    #             t1 ([int, ]): list of node ids for the first track
-    #             t2 ([int, ]): list of node ids for the second track
-    #             w (int): maximum wapring allowed (default infinite),
-    #                      if w=1 then the DTW is the distance between t1 and t2
-    #             start_delay (int): maximum number of time points that can be
-    #                                skipped at the beginning of the track
-    #             end_delay (int): minimum number of time points that can be
-    #                              skipped at the beginning of the track
-    #             metric (str): str or callable, optional The distance metric to use.
-    #                           Default='euclidean'. Refer to the documentation for
-    #                           scipy.spatial.distance.cdist. Some examples:
-    #                           'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation',
-    #                           'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'kulsinski',
-    #                           'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto', 'russellrao',
-    #                           'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
-    #                           'wminkowski', 'yule'
-    #             **kwargs (dict): Extra arguments to `metric`: refer to each metric
-    #                              documentation in scipy.spatial.distance (optional)
-
-    #         Returns:
-    #             float: the dynamic time warping distance between the two tracks
-    #     """
-    #     from scipy.sparse import
-    #     pos_t1 = [self.pos[ti] for ti in t1]
-    #     pos_t2 = [self.pos[ti] for ti in t2]
-    #     distance_matrix = np.zeros((len(t1), len(t2))) + np.inf
-
-    #     c = distance.cdist(exp_data, num_data, metric=metric, **kwargs)
-
-    #     d = np.zeros(c.shape)
-    #     d[0, 0] = c[0, 0]
-    #     n, m = c.shape
-    #     for i in range(1, n):
-    #         d[i, 0] = d[i-1, 0] + c[i, 0]
-    #     for j in range(1, m):
-    #         d[0, j] = d[0, j-1] + c[0, j]
-    #     for i in range(1, n):
-    #         for j in range(1, m):
-    #             d[i, j] = c[i, j] + min((d[i-1, j], d[i, j-1], d[i-1, j-1]))
-    #     return d[-1, -1], d
-
-    def get_cells_at_t_from_root(self, r: [int, list], t: int = None) -> list:
     def __getitem__(self, item):
         if isinstance(item, str):
             return self.__dict__[item]
@@ -2043,7 +1996,7 @@ class lineageTree:
                 "Only integer or string are valid key for lineageTree"
             )
 
-    def get_cells_at_t_from_root(self, r: int | list, t: int = None) -> list:
+    def get_cells_at_t_from_root(self, r: [int, list], t: int = None) -> list:
         """
         Returns the list of cells at time `t` that are spawn by the node(s) `r`.
 
