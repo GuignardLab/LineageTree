@@ -2,6 +2,53 @@
 requires = ["setuptools>=42.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project]
+authors = [
+    { name = "Léo Guignard", email = "leo.guignard@univ-amu.fr"},
+    { name = "Giannis Liaskas"},
+    { name = "Christopher Mazzerbo"},
+]
+maintainers = [
+    {name = "Léo Guignard", email = "leo.guignard@univ-amu.fr"}
+]
+name = "LineageTree"
+description = "Structure for Lineage Trees"
+version = "1.7.0"
+license = { file = "LICENSE" }
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">= 3.10"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "scipy>=1.9",
+    "numpy>=1.23",
+    "mastodon-reader",
+    "matplotlib",
+    "edist",
+]
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "tox", "black", "ruff", "bumpver"]
+
+[project.urls]
+"Bug Tracker" = "https://github.com/GuignardLab/LineageTree/issues"
+Documentation = "https://github.com/GuignardLab/LineageTree#README.md"
+"Source Code" = "https://github.com/GuignardLab/LineageTree"
+"User Support" = "https://github.com/GuignardLab/LineageTree/issues"
+
 [tool.black]
 line-length = 79
 
@@ -25,7 +72,6 @@ push = false
     '__version__ = "{version}"',
 ]
 
-
 [tool.ruff]
 line-length = 79
 select = [
@@ -46,8 +92,6 @@ select = [
 ]
 ignore = [
     "E501", # line too long. let black handle this
-    "UP006", "UP007", # type annotation. As using magicgui require runtime type annotation then we disable this.
-    "SIM117", # flake8-simplify - some of merged with statements are not looking great with black, reanble after drop python 3.9
     "SIM300", # yoda conditions
 ]
 
