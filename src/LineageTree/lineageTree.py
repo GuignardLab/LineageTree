@@ -1849,16 +1849,6 @@ class lineageTree:
         )
         return ax.get_figure(), ax
 
-    def __getitem__(self, item):
-        if isinstance(item, str):
-            return self.__dict__[item]
-        elif np.issubdtype(type(item), np.integer):
-            return self.successor.get(item, [])
-        else:
-            raise KeyError(
-                "Only integer or string are valid key for lineageTree"
-            )
-
     def get_cells_at_t_from_root(self, r: int | list, t: int = None) -> list:
         """
         Returns the list of cells at time `t` that are spawn by the node(s) `r`.
