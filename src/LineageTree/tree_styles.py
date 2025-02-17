@@ -27,7 +27,7 @@ class abstract_trees(ABC):
         time_scale: int = 1,
     ):
         self.lT: lineageTree = lT
-        self.internal_ids = max(self.lT.nodes)
+        self.internal_ids = max(self.lT.successor) + 1
         self.root: int = root
         self.downsample: int = downsample
         self.end_time: int = end_time if end_time else self.lT.t_e
@@ -290,7 +290,7 @@ class full_tree(abstract_trees):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def get_tree(self) -> dict:
+    def get_tree(self):
         self.out_dict = {}
         self.times = {}
         to_do = [self.root]
@@ -302,15 +302,15 @@ class full_tree(abstract_trees):
                     for _ in range(self.time_scale - 1):
                         next_id = self.get_next_id()
                         self.out_dict[current] = [next_id]
-                        current = next_id
+                        current = int(next_id)
                 self.out_dict[current] = _next
                 to_do.extend(_next)
             else:
                 if self.time_scale > 1:
-                    for _ in range(self.time_scale - 2):
+                    for _ in range(self.time_scale - 1):
                         next_id = self.get_next_id()
                         self.out_dict[current] = [next_id]
-                        current = next_id
+                        current = int(next_id)
                 self.out_dict[current] = []
         self.times = {n_id: 1 for n_id in self.out_dict}
         return self.out_dict, self.times

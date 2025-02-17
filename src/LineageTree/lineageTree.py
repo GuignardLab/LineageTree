@@ -361,6 +361,10 @@ class lineageTree:
                 )
 
     @property
+    def nodes(self):
+        return set(self.successor.keys())
+
+    @property
     def successor(self):
         return MappingProxyType(self._successor)
 
@@ -2685,7 +2689,7 @@ class lineageTree:
         self.time_edges = {}
         self.max_id = -1
         self.next_id = []
-        self.nodes = set()
+        # self.nodes = set()
         self._successor = {}
         self._predecessor = {}
         self.pos = {}
@@ -2852,10 +2856,9 @@ class lineageTreeDicts(lineageTree):
                 "Both successor and predecessor attributes are empty.",
                 stacklevel=2,
             )
-        self.nodes = set(self._predecessor).union(self._successor)
-        for root in set(self.nodes).difference(self._predecessor):
+        for root in set(self.successor).difference(self._predecessor):
             self._predecessor[root] = ()
-        for leaf in set(self.nodes).difference(self._successor):
+        for leaf in set(self.predecessor).difference(self._successor):
             self._successor[leaf] = ()
 
         if pos is None:

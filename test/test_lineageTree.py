@@ -196,11 +196,11 @@ def test_cross_comparison():
     lT_1.time_resolution = 5
 
     lT_2 = lineageTree()
-    t1 = lT_2.add_root(0)
+    t2 = lT_2.add_root(0)
     lT_2.t_e = 0
     lT_2.t_b = 0
-    first_level_end = lT_2.add_branch(t1, 4, downstream=True)
-    node_2 = lT_2.get_cycle(t1)[0]
+    first_level_end = lT_2.add_branch(t2, 4, downstream=True)
+    node_2 = lT_2.get_cycle(t2)[0]
 
     second_level_1 = lT_2.add_branch(first_level_end, 5, downstream=True)
     second_level_2 = lT_2.add_branch(first_level_end, 5, downstream=True)
@@ -218,10 +218,10 @@ def test_cross_comparison():
     assert len(lT_1.get_sub_tree(node_1)) == len(lT_2.get_sub_tree(node_2)) * 2
     assert (
         lTm1.cross_lineage_edit_distance(
-            node_1,
+            t1,
             "embryo_1",
             100,
-            node_2,
+            t2,
             "embryo_2",
             100,
             style="full",
