@@ -7,11 +7,12 @@ import os
 import pickle as pkl
 import struct
 import warnings
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from functools import partial
 from itertools import combinations
 from numbers import Number
 from pathlib import Path
+from typing import Literal
 
 import svgwrite
 from packaging.version import Version
@@ -85,7 +86,7 @@ class lineageTree:
         pred: int,
         length: int,
         move_timepoints: bool = True,
-        pos: callable | None = None,
+        pos: Callable | None = None,
         reverse: bool = False,
     ) -> int:
         """Adds a branch of specific length to a node either as a successor or as a predecessor.
@@ -462,16 +463,16 @@ class lineageTree:
         roots: list = None,
         draw_nodes: bool = True,
         draw_edges: bool = True,
-        order_key: callable = None,
+        order_key: Callable = None,
         vert_space_factor: float = 0.5,
         horizontal_space: float = 1,
-        node_size: callable = None,
-        stroke_width: callable = None,
+        node_size: Callable = None,
+        stroke_width: Callable = None,
         factor: float = 1.0,
-        node_color: callable = None,
-        stroke_color: callable = None,
+        node_color: Callable = None,
+        stroke_color: Callable = None,
         positions: dict = None,
-        node_color_map: callable = None,
+        node_color_map: Callable = None,
         normalize: bool = True,
     ) -> None:
         """Writes the lineage tree to an SVG file.
@@ -482,22 +483,22 @@ class lineageTree:
             roots ([int, ...]): list of node ids to be drawn. If `None` all the nodes will be drawn. Default `None`
             draw_nodes (bool): wether to print the nodes or not, default `True`
             draw_edges (bool): wether to print the edges or not, default `True`
-            order_key (callable): function that would work for the attribute `key=` for the `sort`/`sorted` function
+            order_key (Callable): function that would work for the attribute `key=` for the `sort`/`sorted` function
             vert_space_factor (float): the vertical position of a node is its time. `vert_space_factor` is a
                                multiplier to space more or less nodes in time
             horizontal_space (float): space between two consecutive nodes
-            node_size (callable | str): a function that maps a node id to a `float` value that will determine the
+            node_size (Callable | str): a function that maps a node id to a `float` value that will determine the
                        radius of the node. The default function return the constant value `vertical_space_factor/2.1`
                        If a string is given instead and it is a property of the tree,
                        the the size will be mapped according to the property
-            stroke_width (callable): a function that maps a node id to a `float` value that will determine the
+            stroke_width (Callable): a function that maps a node id to a `float` value that will determine the
                           width of the daughter edge.  The default function return the constant value `vertical_space_factor/2.1`
             factor (float): scaling factor for nodes positions, default 1
-            node_color (callable | str): a function that maps a node id to a triplet between 0 and 255.
+            node_color (Callable | str): a function that maps a node id to a triplet between 0 and 255.
                         The triplet will determine the color of the node. If a string is given instead and it is a property
                         of the tree, the the color will be mapped according to the property
-            node_color_map (callable | str): the name of the colormap to use to color the nodes, or a colormap function
-            stroke_color (callable): a function that maps a node id to a triplet between 0 and 255.
+            node_color_map (Callable | str): the name of the colormap to use to color the nodes, or a colormap function
+            stroke_color (Callable): a function that maps a node id to a triplet between 0 and 255.
                           The triplet will determine the color of the stroke of the inward edge.
             positions ({int: [float, float], ...}): dictionary that maps a node id to a 2D position.
                        Default `None`. If provided it will be used to position the nodes.
@@ -1461,6 +1462,7 @@ class lineageTree:
         recompute: bool = False,
     ) -> dict[int, float]:
         """
+        TODO: change docstring
         Compute all the pairwise unordered tree edit distances from Zhang 996 between the trees spawned at time `t`
 
         Args:
@@ -1499,7 +1501,7 @@ class lineageTree:
         n1: int,
         n2: int,
         end_time: int = None,
-        norm: "max" | "sum" | None = "max",
+        norm: Literal["max", "sum"] | None = "max",
         style="simple",
         downsample: int = 2,
     ) -> float:
