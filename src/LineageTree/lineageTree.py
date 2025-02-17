@@ -2,6 +2,8 @@
 # This file is subject to the terms and conditions defined in
 # file 'LICENCE', which is part of this source code package.
 # Author: Leo Guignard (leo.guignard...@AT@...gmail.com)
+from __future__ import annotations
+
 import importlib.metadata
 import os
 import pickle as pkl
@@ -947,7 +949,7 @@ class lineageTree:
             f.close()
 
     @classmethod
-    def load(clf, fname: str, rm_empty_lists=False) -> "lineageTree":
+    def load(clf, fname: str, rm_empty_lists=False) -> lineageTree:
         """
         Loading a lineage tree from a ".lT" file.
 
@@ -2580,9 +2582,9 @@ class lineageTreeDicts(lineageTree):
         with open(fname, "br") as f:
             lT = pkl.load(f)
             f.close()
-        if not hasattr(lT, "__version__") or Version(
-            lT.__version__
-        ) <= Version("2.0.0"):
+        if not hasattr(lT, "__version__") or Version(lT.__version__) < Version(
+            "2.0.0"
+        ):
             properties = {
                 prop_name: prop
                 for prop_name, prop in lT.__dict__.items()
@@ -2592,8 +2594,8 @@ class lineageTreeDicts(lineageTree):
                 and set(prop).symmetric_difference(lT.nodes) == set()
             }
             lT = lineageTreeDicts(
-                successor=lT.successor,
-                time=lT.time,
+                successor=lT._successor,
+                time=lT._time,
                 pos=lT.pos,
                 name=lT.name if hasattr(lT, "name") else None,
                 **properties,
