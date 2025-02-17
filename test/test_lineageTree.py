@@ -118,7 +118,6 @@ def test_adding_nodes():
 def test_removing_nodes():
     lT = lineageTree()
     t1 = lT.add_root(0)
-    lT.roots.add(t1)
     lT.t_e = 0
     lT.t_b = 0
     first_level_end = lT.add_branch(t1, 9, downstream=True)

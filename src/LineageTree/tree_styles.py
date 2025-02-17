@@ -27,7 +27,7 @@ class abstract_trees(ABC):
         time_scale: int = 1,
     ):
         self.lT: lineageTree = lT
-        self.internal_ids = max(self.lT.successor) + 1
+        self.internal_ids = max(self.lT.nodes)
         self.root: int = root
         self.downsample: int = downsample
         self.end_time: int = end_time if end_time else self.lT.t_e
@@ -39,7 +39,7 @@ class abstract_trees(ABC):
 
     def get_next_id(self):
         self.internal_ids += 1
-        return self.internal_ids - 1
+        return self.internal_ids
 
     @abstractmethod
     def get_tree(self):

@@ -236,7 +236,6 @@ class lineageTree:
         self._successor[C_next] = ()
         self._predecessor[C_next] = ()
         self.time[C_next] = t
-        self.nodes.add(C_next)
         self.time_nodes.setdefault(t, set()).add(C_next)
         self.pos[C_next] = pos if isinstance(pos, list) else ()
         return C_next
@@ -281,7 +280,6 @@ class lineageTree:
             ) + (C_next,)
         else:
             self._predecessor[C_next] = ()
-        self.nodes.add(C_next)
         if isinstance(pos, list):
             self.pos[C_next] = pos
         return C_next
@@ -297,7 +295,6 @@ class lineageTree:
         if isinstance(group, list):
             group = set(group)
         group = self.nodes.intersection(group)
-        self.nodes.difference_update(group)
         for node in group:
             self.time_nodes[self.time[node]].discard(node)
             for attr in self.__dict__:
@@ -308,13 +305,13 @@ class lineageTree:
                     "time_nodes",
                 ]:
                     attr_value.pop(node, ())
-            if self._predecessor[node]:
-                self._successor[self._predecessor[node][0]] = [
+            if self._predecessor.get(node):
+                self._successor[self._predecessor[node][0]] = (
                     suc
                     for suc in self._successor[self._predecessor[node][0]]
                     if node != suc
-                ]
-            for p_node in self._successor[node]:
+                )
+            for p_node in self._successor.get(node, []):
                 self._predecessor[p_node] = ()
             self._predecessor.pop(node, ())
             self._successor.pop(node, ())
@@ -362,7 +359,7 @@ class lineageTree:
 
     @property
     def nodes(self):
-        return set(self.successor.keys())
+        return frozenset(self.successor.keys())
 
     @property
     def successor(self):
@@ -1092,16 +1089,13 @@ class lineageTree:
         if not hasattr(lT, "time_resolution"):
             lT.time_resolution = None
         for node in lT.nodes.difference(lT.predecessor):
-            lT.predecessor[node] = ()
+            lT._predecessor[node] = ()
         for node in lT.nodes.difference(lT.successor):
-            lT.successor[node] = ()
+            lT._successor[node] = ()
         for k, v in lT.successor.items():
-            lT.successor[k] = tuple(v)
+            lT._successor[k] = tuple(v)
         for k, v in lT.predecessor.items():
-            lT.predecessor[k] = tuple(v)
-        # lT._predecessor = dict(lT.predecessor)
-        # lT._successor = dict(lT.successor)
-
+            lT._predecessor[k] = tuple(v)
         return lT
 
     def get_idx3d(self, t: int) -> tuple:
@@ -2689,7 +2683,6 @@ class lineageTree:
         self.time_edges = {}
         self.max_id = -1
         self.next_id = []
-        # self.nodes = set()
         self._successor = {}
         self._predecessor = {}
         self.pos = {}
@@ -2856,9 +2849,9 @@ class lineageTreeDicts(lineageTree):
                 "Both successor and predecessor attributes are empty.",
                 stacklevel=2,
             )
-        for root in set(self.successor).difference(self._predecessor):
+        for root in set(self.successor).difference(self.predecessor):
             self._predecessor[root] = ()
-        for leaf in set(self.predecessor).difference(self._successor):
+        for leaf in set(self.predecessor).difference(self.successor):
             self._successor[leaf] = ()
 
         if pos is None:
