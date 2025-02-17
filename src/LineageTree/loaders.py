@@ -1412,17 +1412,20 @@ class lineageTreeLoaders:
                         ],
                         int(it.attrib["lineage"]),
                     )
-                    try:
-                        alpha, W, nu, alphaPrior = (
-                            float(it.attrib["alpha"]),
-                            [
-                                float(v)
-                                for v in it.attrib["W"].split(" ")
-                                if v != ""
-                            ],
-                            float(it.attrib["nu"]),
-                            float(it.attrib["alphaPrior"]),
-                        )
+                    if (
+                        "alpha" in it.attrib
+                        and "W" in it.attrib
+                        and "nu" in it.attrib
+                        and "alphaPrior" in it.attrib
+                    ):
+                        alpha = float(it.attrib["alpha"])
+                        W = [
+                            float(v)
+                            for v in it.attrib["W"].split(" ")
+                            if v != ""
+                        ]
+                        nu = float(it.attrib["nu"])
+                        alphaPrior = float(it.attrib["alphaPrior"])
                         pos = np.array(pos)
                         C = unique_id
                         pos[-1] = pos[-1] * z_mult
@@ -1449,8 +1452,6 @@ class lineageTreeLoaders:
                             tmp[:3] + tmp[4:6] + tmp[8:9] + list(pos)
                         )
                         unique_id += 1
-                    except Exception:
-                        pass
                 else:
                     if t in self.ind_cells:
                         self.ind_cells[t] += 1

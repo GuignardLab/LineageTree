@@ -12,8 +12,9 @@ from functools import partial
 from itertools import combinations
 from numbers import Number
 from pathlib import Path
-from typing import TextIO, Union
+from typing import Union
 
+import svgwrite
 from packaging.version import Version
 
 from .tree_styles import tree_style
@@ -204,7 +205,8 @@ class lineageTree:
             raise ValueError("Please select 2 roots.")
         if self.time[l1_root] != self.time[l2_root]:
             warnings.warn(
-                "Using lineagetrees that do not exist in the same timepoint. The operation will continue"
+                "Using lineagetrees that do not exist in the same timepoint. The operation will continue",
+                stacklevel=2,
             )
         new_root1 = self.add_branch(l1_root, length_l1)
         new_root2 = self.add_branch(l2_root, length_l2)
@@ -438,121 +440,6 @@ class lineageTree:
                 }
         return self._labels
 
-    def _write_header_am(self, f: TextIO, nb_points: int, length: int):
-        """Header for Amira .am files"""
-        f.write("# AmiraMesh 3D ASCII 2.0\n")
-        f.write("define VERTEX %d\n" % (nb_points * 2))
-        f.write("define EDGE %d\n" % nb_points)
-        f.write("define POINT %d\n" % ((length) * nb_points))
-        f.write("Parameters {\n")
-        f.write('\tContentType "HxSpatialGraph"\n')
-        f.write("}\n")
-
-        f.write("VERTEX { float[3] VertexCoordinates } @1\n")
-        f.write("EDGE { int[2] EdgeConnectivity } @2\n")
-        f.write("EDGE { int NumEdgePoints } @3\n")
-        f.write("POINT { float[3] EdgePointCoordinates } @4\n")
-        f.write("VERTEX { float Vcolor } @5\n")
-        f.write("VERTEX { int Vbool } @6\n")
-        f.write("EDGE { float Ecolor } @7\n")
-        f.write("VERTEX { int Vbool2 } @8\n")
-
-    def write_to_am(
-        self,
-        path_format: str,
-        t_b: int = None,
-        t_e: int = None,
-        length: int = 5,
-        manual_labels: dict = None,
-        default_label: int = 5,
-        new_pos: np.ndarray = None,
-    ):
-        """Writes a lineageTree into an Amira readable data (.am format).
-
-        Args:
-            path_format (str): path to the output. It should contain 1 %03d where the time step will be entered
-            t_b (int): first time point to write (if None, min(LT.to_take_time) is taken)
-            t_e (int): last time point to write (if None, max(LT.to_take_time) is taken)
-                note, if there is no 'to_take_time' attribute, self.time_nodes
-                is considered instead (historical)
-            length (int): length of the track to print (how many time before).
-            manual_labels ({id: label, }): dictionary that maps cell ids to
-            default_label (int): default value for the manual label
-            new_pos ({id: [x, y, z]}): dictionary that maps a 3D position to a cell ID.
-                if new_pos == None (default) then self.pos is considered.
-        """
-        if not hasattr(self, "to_take_time"):
-            self.to_take_time = self.time_nodes
-        if t_b is None:
-            t_b = min(self.to_take_time.keys())
-        if t_e is None:
-            t_e = max(self.to_take_time.keys())
-        if new_pos is None:
-            new_pos = self.pos
-
-        if manual_labels is None:
-            manual_labels = {}
-        for t in range(t_b, t_e + 1):
-            with open(path_format % t, "w") as f:
-                nb_points = len(self.to_take_time[t])
-                self._write_header_am(f, nb_points, length)
-                points_v = {}
-                for C in self.to_take_time[t]:
-                    C_tmp = C
-                    positions = []
-                    for _ in range(length):
-                        C_tmp = self.predecessor.get(C_tmp, [C_tmp])[0]
-                        positions.append(new_pos[C_tmp])
-                    points_v[C] = positions
-
-                f.write("@1\n")
-                for C in self.to_take_time[t]:
-                    f.write("{:f} {:f} {:f}\n".format(*tuple(points_v[C][0])))
-                    f.write("{:f} {:f} {:f}\n".format(*tuple(points_v[C][-1])))
-
-                f.write("@2\n")
-                for i, _ in enumerate(self.to_take_time[t]):
-                    f.write("%d %d\n" % (2 * i, 2 * i + 1))
-
-                f.write("@3\n")
-                for _ in self.to_take_time[t]:
-                    f.write("%d\n" % (length))
-
-                f.write("@4\n")
-                for C in self.to_take_time[t]:
-                    for p in points_v[C]:
-                        f.write("{:f} {:f} {:f}\n".format(*tuple(p)))
-
-                f.write("@5\n")
-                for C in self.to_take_time[t]:
-                    f.write(f"{manual_labels.get(C, default_label):f}\n")
-                    f.write(f"{0:f}\n")
-
-                f.write("@6\n")
-                for C in self.to_take_time[t]:
-                    f.write(
-                        "%d\n"
-                        % (
-                            int(
-                                manual_labels.get(C, default_label)
-                                != default_label
-                            )
-                        )
-                    )
-                    f.write("%d\n" % (0))
-
-                f.write("@7\n")
-                for C in self.to_take_time[t]:
-                    f.write(
-                        f"{np.linalg.norm(points_v[C][0] - points_v[C][-1]):f}\n"
-                    )
-
-                f.write("@8\n")
-                for _ in self.to_take_time[t]:
-                    f.write("%d\n" % (1))
-                    f.write("%d\n" % (0))
-                f.close()
-
     def _get_height(self, c: int, done: dict):
         """Recursively computes the height of a cell within a tree * a space factor.
         This function is specific to the function write_to_svg.
@@ -620,7 +507,6 @@ class lineageTree:
             positions ({int: [float, float], ...}): dictionary that maps a node id to a 2D position.
                        Default `None`. If provided it will be used to position the nodes.
         """
-        import svgwrite
 
         def normalize_values(v, nodes, _range, shift, mult):
             min_ = np.percentile(v, 1)
@@ -830,9 +716,9 @@ class lineageTree:
             for k, v in names_which_matter.items():
                 tmp[k] = (
                     v.split(".")[0][0]
-                    + "%02d" % int(v.split(".")[0][1:])
+                    + f"{int(v.split(".")[0][1:]):02d}"
                     + "."
-                    + "%04d" % int(v.split(".")[1][:-1])
+                    + f"{int(v.split(".")[1][:-1]):04d}"
                     + v.split(".")[1][-1]
                 )
             return tmp
@@ -1962,52 +1848,6 @@ class lineageTree:
         )
         return ax.get_figure(), ax
 
-    # def DTW(self, t1, t2, max_w=None, start_delay=None, end_delay=None,
-    #         metric='euclidian', **kwargs):
-    #     """ Computes the dynamic time warping distance between the tracks t1 and t2
-
-    #         Args:
-    #             t1 ([int, ]): list of node ids for the first track
-    #             t2 ([int, ]): list of node ids for the second track
-    #             w (int): maximum wapring allowed (default infinite),
-    #                      if w=1 then the DTW is the distance between t1 and t2
-    #             start_delay (int): maximum number of time points that can be
-    #                                skipped at the beginning of the track
-    #             end_delay (int): minimum number of time points that can be
-    #                              skipped at the beginning of the track
-    #             metric (str): str or callable, optional The distance metric to use.
-    #                           Default='euclidean'. Refer to the documentation for
-    #                           scipy.spatial.distance.cdist. Some examples:
-    #                           'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation',
-    #                           'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'kulsinski',
-    #                           'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto', 'russellrao',
-    #                           'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
-    #                           'wminkowski', 'yule'
-    #             **kwargs (dict): Extra arguments to `metric`: refer to each metric
-    #                              documentation in scipy.spatial.distance (optional)
-
-    #         Returns:
-    #             float: the dynamic time warping distance between the two tracks
-    #     """
-    #     from scipy.sparse import
-    #     pos_t1 = [self.pos[ti] for ti in t1]
-    #     pos_t2 = [self.pos[ti] for ti in t2]
-    #     distance_matrix = np.zeros((len(t1), len(t2))) + np.inf
-
-    #     c = distance.cdist(exp_data, num_data, metric=metric, **kwargs)
-
-    #     d = np.zeros(c.shape)
-    #     d[0, 0] = c[0, 0]
-    #     n, m = c.shape
-    #     for i in range(1, n):
-    #         d[i, 0] = d[i-1, 0] + c[i, 0]
-    #     for j in range(1, m):
-    #         d[0, j] = d[0, j-1] + c[0, j]
-    #     for i in range(1, n):
-    #         for j in range(1, m):
-    #             d[i, j] = c[i, j] + min((d[i-1, j], d[i, j-1], d[i-1, j-1]))
-    #     return d[-1, -1], d
-
     def __getitem__(self, item):
         if isinstance(item, str):
             return self.__dict__[item]
@@ -2018,7 +1858,7 @@ class lineageTree:
                 "Only integer or string are valid key for lineageTree"
             )
 
-    def get_cells_at_t_from_root(self, r: [int, list], t: int = None) -> list:
+    def get_cells_at_t_from_root(self, r: int | list, t: int = None) -> list:
         """
         Returns the list of cells at time `t` that are spawn by the node(s) `r`.
 
@@ -2046,7 +1886,7 @@ class lineageTree:
         return final_nodes
 
     @staticmethod
-    def __calculate_diag_line(dist_mat: np.ndarray) -> (float, float):
+    def __calculate_diag_line(dist_mat: np.ndarray) -> tuple[float, float]:
         """
         Calculate the line that centers the band w.
 
@@ -2075,7 +1915,7 @@ class lineageTree:
         fast: bool = False,
         w: int = 0,
         centered_band: bool = True,
-    ) -> (((int, int), ...), np.ndarray):
+    ) -> tuple[tuple[int, ...], np.ndarray, float]:
         """
         Find DTW minimum cost between two series using dynamic programming.
 
@@ -2211,7 +2051,6 @@ class lineageTree:
 
         # special reflection case
         if np.linalg.det(R) < 0:
-            # print("det(R) < R, reflection detected!, correcting for it ...")
             Vt[2, :] *= -1
             R = Vt.T @ U.T
 
@@ -2221,7 +2060,7 @@ class lineageTree:
 
     def __interpolate(
         self, track1: list, track2: list, threshold: int
-    ) -> (np.ndarray, np.ndarray):
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Interpolate two series that have different lengths
 
@@ -2281,7 +2120,7 @@ class lineageTree:
         w: int = 0,
         centered_band: bool = True,
         cost_mat_p: bool = False,
-    ) -> (float, tuple, np.ndarray, np.ndarray, np.ndarray):
+    ) -> tuple[float, tuple, np.ndarray, np.ndarray, np.ndarray]:
         """
         Calculate DTW distance between two cell cycles
 
@@ -2348,7 +2187,7 @@ class lineageTree:
         fast: bool = False,
         w: int = 0,
         centered_band: bool = True,
-    ) -> (float, plt.figure):
+    ) -> tuple[float, plt.figure]:
         """
         Plot DTW cost matrix between two cell cycles in heatmap format
 
@@ -2432,7 +2271,7 @@ class lineageTree:
         centered_band: bool = True,
         projection: str = None,
         alig: bool = False,
-    ) -> (float, plt.figure):
+    ) -> tuple[float, plt.figure]:
         """
         Plots DTW trajectories aligment between two cell cycles in 2D or 3D
 
