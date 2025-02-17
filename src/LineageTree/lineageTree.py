@@ -12,7 +12,6 @@ from functools import partial
 from itertools import combinations
 from numbers import Number
 from pathlib import Path
-from typing import Union
 
 import svgwrite
 from packaging.version import Version
@@ -1215,7 +1214,7 @@ class lineageTree:
         """Finds the leaves of a tree spawned by one or more nodes.
 
         Args:
-            roots (Union[int,set,list,tuple]): The roots of the trees.
+            roots (int | Iterable): The roots of the trees.
 
         Returns:
             set: The leaves of one or more trees.
@@ -1500,7 +1499,7 @@ class lineageTree:
         n1: int,
         n2: int,
         end_time: int = None,
-        norm: Union["max", "sum", None] = "max",
+        norm: "max" | "sum" | None = "max",
         style="simple",
         downsample: int = 2,
     ) -> float:
@@ -2489,7 +2488,7 @@ class lineageTree:
             reorder (bool, optional): _description_. Defaults to False.
             xml_attributes (tuple, optional): _description_. Defaults to None.
             name (str, optional): The name of the dataset. Defaults to None.
-            time_resolution (Union[int, None], optional): Time resolution in mins (If time resolution is smaller than one minute input the time in ms). Defaults to None.
+            time_resolution (int | None, optional): Time resolution in mins (If time resolution is smaller than one minute input the time in ms). Defaults to None.
         """
 
         self.name = name
