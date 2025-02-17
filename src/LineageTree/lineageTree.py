@@ -2,7 +2,6 @@
 # This file is subject to the terms and conditions defined in
 # file 'LICENCE', which is part of this source code package.
 # Author: Leo Guignard (leo.guignard...@AT@...gmail.com)
-from __future__ import annotations
 
 import importlib.metadata
 import os
@@ -949,7 +948,7 @@ class lineageTree:
             f.close()
 
     @classmethod
-    def load(clf, fname: str, rm_empty_lists=False) -> lineageTree:
+    def load(clf, fname: str, rm_empty_lists=False) -> "lineageTree":
         """
         Loading a lineage tree from a ".lT" file.
 
