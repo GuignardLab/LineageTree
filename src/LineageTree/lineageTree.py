@@ -58,7 +58,7 @@ class lineageTree:
         else:
             return self.next_id.pop()
 
-    def complete_lineage(self, nodes: Union[int, set] = None):
+    def complete_lineage(self, nodes: int | set = None):
         """Makes all leaf branches longer so that they reach the last timepoint( self.t_e), useful
         for tree edit distance algorithms.
 
@@ -86,7 +86,7 @@ class lineageTree:
         pred: int,
         length: int,
         move_timepoints: bool = True,
-        pos: Union[callable, None] = None,
+        pos: callable | None = None,
         reverse: bool = False,
     ):
         """Adds a branch of specific length to a node either as a successor or as a predecessor.
@@ -289,7 +289,7 @@ class lineageTree:
         self.time[C_next] = t
         return C_next
 
-    def remove_nodes(self, group: Union[int, set, list]):
+    def remove_nodes(self, group: int | set | list):
         """Removes a group of nodes from the LineageTree
 
         Args:
@@ -512,7 +512,7 @@ class lineageTree:
             min_ = np.percentile(v, 1)
             max_ = np.percentile(v, 99)
             values = _range * ((v - min_) / (max_ - min_)) + shift
-            values_dict_nodes = dict(zip(nodes, values))
+            values_dict_nodes = dict(zip(nodes, values, strict=True))
             return lambda x: values_dict_nodes[x] * mult
 
         if roots is None:
@@ -589,7 +589,8 @@ class lineageTree:
                         [0.0, 0.0],
                     ]
                     * len(self.nodes),
-                )
+                    strict=True,
+                ),
             )
         for _i, r in enumerate(roots):
             r_leaves = []
@@ -1210,7 +1211,7 @@ class lineageTree:
                 to_do.extend(self[track[-1]])
             return tracks
 
-    def find_leaves(self, roots: Union[int, set, list, tuple]):
+    def find_leaves(self, roots: int | Iterable) -> set:
         """Finds the leaves of a tree spawned by one or more nodes.
 
         Args:
@@ -1234,8 +1235,8 @@ class lineageTree:
 
     def get_sub_tree(
         self,
-        x: Union[int, Iterable],
-        end_time: Union[int, None] = None,
+        x: int | Iterable,
+        end_time: int | None = None,
         preorder: bool = False,
     ) -> list:
         """Computes the list of cells from the subtree spawned by *x*
@@ -1292,7 +1293,7 @@ class lineageTree:
                 (len(ni) - 1) / s_vol
                 for ni in idx3d.query_ball_tree(idx3d, th)
             ]
-            self.spatial_density.update(dict(zip(nodes, nb_ni)))
+            self.spatial_density.update(dict(zip(nodes, nb_ni, strict=True)))
         return self.spatial_density
 
     def compute_k_nearest_neighbours(self, k: int = 10) -> dict:
@@ -1312,7 +1313,7 @@ class lineageTree:
             idx3d, nodes = self.get_idx3d(t)
             pos = [self.pos[c] for c in nodes]
             _, neighbs = idx3d.query(pos, use_k)
-            out = dict(zip(nodes, [set(nodes[ni[1:]]) for ni in neighbs]))
+            out = dict(zip(nodes, [set(nodes[ni[1:]]) for ni in neighbs], strict=True))
             self.kn_graph.update(out)
         return self.kn_graph
 
@@ -1331,7 +1332,7 @@ class lineageTree:
         for t, _ in self.time_nodes.items():
             idx3d, nodes = self.get_idx3d(t)
             neighbs = idx3d.query_ball_tree(idx3d, th)
-            out = dict(zip(nodes, [set(nodes[ni]) for ni in neighbs]))
+            out = dict(zip(nodes, [set(nodes[ni]) for ni in neighbs], strict=True))
             self.th_edges.update(
                 {k: v.difference([k]) for k, v in out.items()}
             )
@@ -1711,7 +1712,7 @@ class lineageTree:
                 root for root in self.roots if self.time[root] <= start_time
             ]
         else:
-            mothers = node if isinstance(node, (list, set)) else [node]
+            mothers = node if isinstance(node, list | set) else [node]
         return {
             i: create_links_and_cycles(self, mother)
             for i, mother in enumerate(mothers)
@@ -2226,7 +2227,7 @@ class lineageTree:
         ax.set_title("Heatmap of DTW Cost Matrix")
         ax.set_xlabel("Tree 1")
         ax.set_ylabel("tree 2")
-        x_path, y_path = zip(*path)
+        x_path, y_path = zip(*path, strict=True)
         ax.plot(y_path, x_path, color="black")
 
         return cost, fig
@@ -2474,7 +2475,7 @@ class lineageTree:
         reorder: bool = False,
         xml_attributes: tuple = None,
         name: str = None,
-        time_resolution: Union[int, None] = None,
+        time_resolution: int| None = None,
     ):
         """
         TODO: complete the doc

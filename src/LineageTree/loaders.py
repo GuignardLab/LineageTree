@@ -329,8 +329,16 @@ def read_from_binary(fname: str):
     if max(number_sequence[::2]) == -1:
         tmp = number_sequence[1::2]
         if len(tmp) * 3 == len(pos_sequence) == len(time_sequence) * 3:
-            time = dict(list(zip(tmp, time_sequence)))
-            pos = dict(list(zip(tmp, np.reshape(pos_sequence, (len_time, 3)))))
+            time = dict(list(zip(tmp, time_sequence, strict=True)))
+            pos = dict(
+                list(
+                    zip(
+                        tmp,
+                        np.reshape(pos_sequence, (len_time, 3)),
+                        strict=True,
+                    )
+                )
+            )
             is_root = {c: True for c in tmp}
             done = True
     while (
@@ -523,7 +531,7 @@ def read_from_txt_for_celegans_BAO(path: str):
     for c, lc in cell_times.items():
         ids = list(range(unique_id, unique_id + len(lc)))
         successor.update({ids[i]: [ids[i + 1]] for i in range(len(ids) - 1)})
-        properties["expression"].update(dict(zip(ids, lc)))
+        properties["expression"].update(dict(zip(ids, lc, strict=True)))
         properties["name"].update({id_: c for id_ in ids})
         to_link[c] = (unique_id, unique_id + len(lc) - 1)
         unique_id += len(lc)
@@ -1038,7 +1046,7 @@ class lineageTreeLoaders:
                 # is any of this necessary? Or does it mean it anyways does not contain
                 # information about the id and a simple else: is enough?
                 elif (
-                    isinstance(prop_values, (list, set, np.ndarray))
+                    isinstance(prop_values, list | set | np.ndarray)
                     and prop_name not in []
                 ):
                     self.__dict__[prop_name] = prop_values
@@ -1140,11 +1148,17 @@ class lineageTreeLoaders:
         if max(number_sequence[::2]) == -1:
             tmp = number_sequence[1::2]
             if len(tmp) * 3 == len(pos_sequence) == len(time_sequence) * 3:
-                time = dict(list(zip(tmp, time_sequence)))
+                time = dict(list(zip(tmp, time_sequence, strict=True)))
                 for c, t in time.items():
                     time_nodes.setdefault(t, set()).add(c)
                 pos = dict(
-                    list(zip(tmp, np.reshape(pos_sequence, (len_time, 3))))
+                    list(
+                        zip(
+                            tmp,
+                            np.reshape(pos_sequence, (len_time, 3)),
+                            strict=True,
+                        )
+                    )
                 )
                 is_root = {c: True for c in tmp}
                 nodes = tmp
