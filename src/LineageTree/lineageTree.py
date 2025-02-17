@@ -38,12 +38,12 @@ from .utils import (
 
 
 class lineageTree:
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if isinstance(other, lineageTree):
             return other.successor == self.successor
         return False
 
-    def get_next_id(self):
+    def get_next_id(self) -> int:
         """Computes the next authorized id.
 
         Returns:
@@ -57,12 +57,12 @@ class lineageTree:
         else:
             return self.next_id.pop()
 
-    def complete_lineage(self, nodes: int | set = None):
-        """Makes all leaf branches longer so that they reach the last timepoint( self.t_e), useful
+    def complete_lineage(self, nodes: int | set = None) -> None:
+        """Makes all leaf branches longer so that they reach the last timepoint (self.t_e), useful
         for tree edit distance algorithms.
 
         Args:
-            nodes (int,set), optional): Which trees should be "completed", if None it will complete the whole dataset. Defaults to None.
+            nodes int | set (optional): Which trees should be "completed", if None it will complete the whole dataset. Defaults to None.
         """
         if nodes is None:
             nodes = set(self.roots)
@@ -87,7 +87,7 @@ class lineageTree:
         move_timepoints: bool = True,
         pos: callable | None = None,
         reverse: bool = False,
-    ):
+    ) -> int:
         """Adds a branch of specific length to a node either as a successor or as a predecessor.
         If it is placed on top of a tree all the nodes will move timepoints #length down.
 
@@ -98,7 +98,7 @@ class lineageTree:
             move_timepoints (bool): Moves the time, important only if reverse= True
             reverese (bool): If True will create a branch that goes forwards in time otherwise backwards.
         Returns:
-            (int): Id of the first node of the sublineage.
+            int: Id of the first node of the sublineage.
         """
         if length == 0:
             return pred
@@ -155,7 +155,7 @@ class lineageTree:
         self.t_e = max(self.time_nodes)
         return pred
 
-    def cut_tree(self, root):
+    def cut_tree(self, root: int) -> int:
         """It transforms a lineage that has at least 2 divisions into 2 independent lineages,
         that spawn from the time point of the first node. (splits a tree into 2)
 
@@ -186,7 +186,7 @@ class lineageTree:
         length_l1: int = 0,
         length_l2: int = 0,
         length: int = 1,
-    ):
+    ) -> int:
         """Fuses 2 lineages from the lineagetree object. The 2 lineages that are to be fused can have a longer
         first node and the node of the resulting lineage can also be longer.
 
@@ -220,7 +220,7 @@ class lineageTree:
         self.labels[new_branch] = f"Fusion of {new_root1} and {new_root2}"
         return new_branch
 
-    def copy_lineage(self, root):
+    def copy_lineage(self, root: int) -> int:
         """
         Copies the structure of a tree and makes a new with new nodes.
         Warning does not take into account the predecessor of the root node.
@@ -288,11 +288,11 @@ class lineageTree:
         self.time[C_next] = t
         return C_next
 
-    def remove_nodes(self, group: int | set | list):
+    def remove_nodes(self, group: int | set | list) -> None:
         """Removes a group of nodes from the LineageTree
 
         Args:
-            group (set|list|int): One or more nodes that are to be removed.
+            group (set | list | int): One or more nodes that are to be removed.
         """
         if isinstance(group, int):
             group = {group}
@@ -319,7 +319,7 @@ class lineageTree:
             if node in self.roots:
                 self.roots.remove(node)
 
-    def modify_branch(self, node, new_length):
+    def modify_branch(self, node: int, new_length: int) -> None:
         """Changes the length of a branch, so it adds or removes nodes
         to make the correct length of the cycle.
 
@@ -376,17 +376,15 @@ class lineageTree:
             self.time[last_cell] = (
                 self.time[self.predecessor[last_cell][0]] + 1
             )
-        else:
-            return None
 
     @property
-    def time_resolution(self):
+    def time_resolution(self) -> float:
         if not hasattr(self, "_time_resolution"):
             self.time_resolution = 1
         return self._time_resolution / 10
 
     @time_resolution.setter
-    def time_resolution(self, time_resolution):
+    def time_resolution(self, time_resolution: float):
         if time_resolution is not None:
             self._time_resolution = int(time_resolution * 10)
         else:
@@ -394,7 +392,7 @@ class lineageTree:
             self._time_resolution = 10
 
     @property
-    def depth(self):
+    def depth(self) -> dict[int, int]:
         if not hasattr(self, "_depth"):
             self._depth = {}
             for leaf in self.leaves:
@@ -439,7 +437,7 @@ class lineageTree:
                 }
         return self._labels
 
-    def _get_height(self, c: int, done: dict):
+    def _get_height(self, c: int, done: dict) -> float:
         """Recursively computes the height of a cell within a tree * a space factor.
         This function is specific to the function write_to_svg.
 
@@ -447,7 +445,7 @@ class lineageTree:
             c (int): id of a cell in a lineage tree from which the height will be computed from
             done ({int: [int, int]}): a dictionary that maps a cell id to its vertical and horizontal position
         Returns:
-            float:
+            float: the height of the cell `c`
         """
         if c in done:
             return done[c][0]
@@ -475,9 +473,7 @@ class lineageTree:
         positions: dict = None,
         node_color_map: callable = None,
         normalize: bool = True,
-    ):
-        ##### remove background? default True background value? default 1
-
+    ) -> None:
         """Writes the lineage tree to an SVG file.
         Node and edges coloring and size can be provided.
 
@@ -682,7 +678,7 @@ class lineageTree:
         write_layout: bool = True,
         node_properties: dict = None,
         Names: bool = False,
-    ):
+    ) -> None:
         """Write a lineage tree into an understable tulip file.
 
         Args:
@@ -716,9 +712,9 @@ class lineageTree:
             for k, v in names_which_matter.items():
                 tmp[k] = (
                     v.split(".")[0][0]
-                    + f"{int(v.split(".")[0][1:]):02d}"
+                    + "{:02d}".format(int(v.split(".")[0][1:]))
                     + "."
-                    + f"{int(v.split(".")[1][:-1]):04d}"
+                    + "{:04d}".format(int(v.split(".")[1][:-1]))
                     + v.split(".")[1][-1]
                 )
             return tmp
@@ -877,7 +873,7 @@ class lineageTree:
             f.write(")")
             f.close()
 
-    def to_binary(self, fname: str, starting_points: list = None):
+    def to_binary(self, fname: str, starting_points: list = None) -> None:
         """Writes the lineage tree (a forest) as a binary structure
         (assuming it is a binary tree, it would not work for *n* ary tree with 2 < *n*).
         The binary file is composed of 3 sequences of numbers and
@@ -936,7 +932,7 @@ class lineageTree:
 
             f.close()
 
-    def write(self, fname: str):
+    def write(self, fname: str) -> None:
         """
         Write a lineage tree on disk as an .lT file.
 
@@ -950,7 +946,7 @@ class lineageTree:
             f.close()
 
     @classmethod
-    def load(clf, fname: str, rm_empty_lists=False):
+    def load(clf, fname: str, rm_empty_lists=False) -> "lineageTree":
         """
         Loading a lineage tree from a ".lT" file.
 
@@ -992,7 +988,7 @@ class lineageTree:
             idx3d = self.kdtrees[t]
         return idx3d, np.array(to_check_self)
 
-    def get_gabriel_graph(self, t: int) -> dict:
+    def get_gabriel_graph(self, t: int) -> dict[int, set[int]]:
         """Build the Gabriel graph of the given graph for time point `t`
         The Garbiel graph is then stored in self.Gabriel_graph and returned
         *WARNING: the graph is not recomputed if already computed. even if nodes were added*.
@@ -1048,7 +1044,7 @@ class lineageTree:
 
     def get_predecessors(
         self, x: int, depth: int = None, start_time: int = None, end_time=None
-    ) -> list:
+    ) -> list[int]:
         """Computes the predecessors of the node `x` up to
         `depth` predecessors or the begining of the life of `x`.
         The ordered list of ids is returned.
@@ -1086,7 +1082,7 @@ class lineageTree:
 
     def get_successors(
         self, x: int, depth: int = None, end_time: int = None
-    ) -> list:
+    ) -> list[int]:
         """Computes the successors of the node `x` up to
         `depth` successors or the end of the life of `x`.
         The ordered list of ids is returned.
@@ -1118,7 +1114,7 @@ class lineageTree:
         depth_pred: int = None,
         depth_succ: int = None,
         end_time: int = None,
-    ) -> list:
+    ) -> list[int]:
         """Computes the predecessors and successors of the node `x` up to
         `depth_pred` predecessors plus `depth_succ` successors.
         If the value `depth` is provided and not None,
@@ -1143,14 +1139,14 @@ class lineageTree:
         ] + self.get_successors(x, depth_succ, end_time=end_time)
 
     @property
-    def all_tracks(self):
+    def all_tracks(self) -> list[list[int]]:
         if not hasattr(self, "_all_tracks"):
             self._all_tracks = self.get_all_tracks()
         return self._all_tracks
 
     def get_all_branches_of_node(
         self, node: int, end_time: int = None
-    ) -> list:
+    ) -> list[list[int]]:
         """Computes all the tracks of the subtree spawn by a given node.
         Similar to get_all_tracks().
 
@@ -1173,7 +1169,7 @@ class lineageTree:
                 to_do += self[track[-1]]
         return branches
 
-    def get_all_tracks(self, force_recompute: bool = False) -> list:
+    def get_all_tracks(self, force_recompute: bool = False) -> list[list[int]]:
         """Computes all the tracks of a given lineage tree,
         stores it in `self.all_tracks` and returns it.
 
@@ -1190,7 +1186,7 @@ class lineageTree:
                 to_do.extend(self[track[-1]])
         return self._all_tracks
 
-    def get_tracks(self, roots: list = None) -> list:
+    def get_tracks(self, roots: list = None) -> list[list[int]]:
         """Computes the tracks given by the list of nodes `roots` and returns it.
 
         Args:
@@ -1210,7 +1206,7 @@ class lineageTree:
                 to_do.extend(self[track[-1]])
             return tracks
 
-    def find_leaves(self, roots: int | Iterable) -> set:
+    def find_leaves(self, roots: int | Iterable) -> set[int]:
         """Finds the leaves of a tree spawned by one or more nodes.
 
         Args:
@@ -1237,7 +1233,7 @@ class lineageTree:
         x: int | Iterable,
         end_time: int | None = None,
         preorder: bool = False,
-    ) -> list:
+    ) -> list[int]:
         """Computes the list of cells from the subtree spawned by *x*
         The default output order is breadth first traversal.
         Unless preorder is `True` in that case the order is
@@ -1271,7 +1267,7 @@ class lineageTree:
 
     def compute_spatial_density(
         self, t_b: int = None, t_e: int = None, th: float = 50
-    ) -> dict:
+    ) -> dict[int, float]:
         """Computes the spatial density of cells between `t_b` and `t_e`.
         The spatial density is computed as follow:
         #cell/(4/3*pi*th^3)
@@ -1295,7 +1291,7 @@ class lineageTree:
             self.spatial_density.update(dict(zip(nodes, nb_ni, strict=True)))
         return self.spatial_density
 
-    def compute_k_nearest_neighbours(self, k: int = 10) -> dict:
+    def compute_k_nearest_neighbours(self, k: int = 10) -> dict[int, set[int]]:
         """Computes the k-nearest neighbors
         Writes the output in the attribute `kn_graph`
         and returns it.
@@ -1312,11 +1308,13 @@ class lineageTree:
             idx3d, nodes = self.get_idx3d(t)
             pos = [self.pos[c] for c in nodes]
             _, neighbs = idx3d.query(pos, use_k)
-            out = dict(zip(nodes, [set(nodes[ni[1:]]) for ni in neighbs], strict=True))
+            out = dict(
+                zip(nodes, [set(nodes[ni[1:]]) for ni in neighbs], strict=True)
+            )
             self.kn_graph.update(out)
         return self.kn_graph
 
-    def compute_spatial_edges(self, th: int = 50) -> dict:
+    def compute_spatial_edges(self, th: int = 50) -> dict[int, set[int]]:
         """Computes the neighbors at a distance `th`
         Writes the output in the attribute `th_edge`
         and returns it.
@@ -1331,13 +1329,15 @@ class lineageTree:
         for t, _ in self.time_nodes.items():
             idx3d, nodes = self.get_idx3d(t)
             neighbs = idx3d.query_ball_tree(idx3d, th)
-            out = dict(zip(nodes, [set(nodes[ni]) for ni in neighbs], strict=True))
+            out = dict(
+                zip(nodes, [set(nodes[ni]) for ni in neighbs], strict=True)
+            )
             self.th_edges.update(
                 {k: v.difference([k]) for k, v in out.items()}
             )
         return self.th_edges
 
-    def main_axes(self, time: int = None):
+    def main_axes(self, time: int = None) -> tuple[np.array, np.array]:
         """Finds the main axes for a timepoint.
         If none will select the timepoint with the highest amound of cells.
 
@@ -1359,7 +1359,7 @@ class lineageTree:
         self.eig_val, self.eig_vec = eig_val[srt], eig_vec[:, srt]
         return eig_val[srt], eig_vec[:, srt]
 
-    def scale_embryo(self, scale=1000):
+    def scale_embryo(self, scale=1000) -> float:
         """Scale the embryo using their eigenvalues.
 
         Args:
@@ -1399,7 +1399,7 @@ class lineageTree:
         )
         return np.eye(3) + np.sin(angle) * K + (1 - np.cos(angle)) * K @ K
 
-    def get_ancestor_at_t(self, n: int, time: int = None):
+    def get_ancestor_at_t(self, n: int, time: int = None) -> int:
         """
         Find the id of the ancestor of a give node `n`
         at a given time `time`.
@@ -1429,14 +1429,14 @@ class lineageTree:
             ancestor = self.predecessor.get(ancestor, [-1])[0]
         return ancestor
 
-    def get_labelled_ancestor(self, node: int):
+    def get_labelled_ancestor(self, node: int) -> int:
         """Finds the first labelled ancestor and returns its ID otherwise returns None
 
         Args:
             node (int): The id of the node
 
         Returns:
-            [None,int]: Returns the first ancestor found that has a label otherwise
+            None | int: Returns the first ancestor found that has a label otherwise
             None.
         """
         if node not in self.nodes:
@@ -1449,7 +1449,7 @@ class lineageTree:
             if ancestor in self.labels:
                 return ancestor
             ancestor = self.predecessor.get(ancestor, [-1])[0]
-        return
+        return None
 
     def unordered_tree_edit_distances_at_time_t(
         self,
@@ -1459,7 +1459,7 @@ class lineageTree:
         downsample: int = 2,
         normalize: bool = True,
         recompute: bool = False,
-    ) -> dict:
+    ) -> dict[int, float]:
         """
         Compute all the pairwise unordered tree edit distances from Zhang 996 between the trees spawned at time `t`
 
@@ -1572,8 +1572,14 @@ class lineageTree:
 
     @staticmethod
     def __plot_nodes(
-        hier, selected_nodes, color, size, ax, default_color="black", **kwargs
-    ):
+        hier: dict,
+        selected_nodes: set,
+        color: str,
+        size: int,
+        ax: plt.Axes,
+        default_color: str = "black",
+        **kwargs,
+    ) -> None:
         """
         Private method that plots the nodes of the tree.
         """
@@ -1598,14 +1604,14 @@ class lineageTree:
 
     @staticmethod
     def __plot_edges(
-        hier,
-        lnks_tms,
-        selected_edges,
-        color,
-        ax,
-        default_color="black",
+        hier: dict,
+        lnks_tms: dict,
+        selected_edges: set,
+        color: str,
+        ax: plt.Axes,
+        default_color: str = "black",
         **kwargs,
-    ):
+    ) -> None:
         """
         Private method that plots the edges of the tree.
         """
@@ -1626,17 +1632,17 @@ class lineageTree:
 
     def draw_tree_graph(
         self,
-        hier,
-        lnks_tms,
-        selected_nodes=None,
-        selected_edges=None,
-        color_of_nodes="magenta",
-        color_of_edges=None,
-        size=10,
-        ax=None,
-        default_color="black",
+        hier: dict[int : tuple[int, int]],
+        lnks_tms: dict,
+        selected_nodes: list | set = None,
+        selected_edges: list | set = None,
+        color_of_nodes: str = "magenta",
+        color_of_edges: str = None,
+        size: int = 10,
+        ax: plt.Axes = None,
+        default_color: str = "black",
         **kwargs,
-    ):
+    ) -> tuple[plt.Figure, plt.Axes]:
         """Function to plot the tree graph.
 
         Args:
@@ -1649,8 +1655,7 @@ class lineageTree:
             color_of_nodes (str, optional): Color of selected nodes. Defaults to "magenta".
             color_of_edges (_type_, optional): Color of selected edges. Defaults to None.
             size (int, optional): Size of the nodes. Defaults to 10.
-            ax (_type_, optional): Plot the graph on existing ax. Defaults to None.
-            figure (_type_, optional): _description_. Defaults to None.
+            ax (plt.Axes, optional): Plot the graph on existing ax. Defaults to None.
             default_color (str, optional): Default color of nodes. Defaults to "black".
 
         Returns:
@@ -1692,12 +1697,14 @@ class lineageTree:
         ax.get_xaxis().set_visible(False)
         return ax.get_figure(), ax
 
-    def to_simple_graph(self, node=None, start_time: int = None):
+    def to_simple_graph(
+        self, node: int = None, start_time: int = None
+    ) -> dict[int, dict]:
         """Generates a dictionary of graphs where the keys are the index of the graph and
         the values are the graphs themselves which are produced by create_links_and _cycles
 
         Args:
-            node (_type_, optional): The id of the node/nodes to produce the simple graphs. Defaults to None.
+            node (int, optional): The id of the node/nodes to produce the simple graphs. Defaults to None.
             start_time (int, optional): Important only if there are no nodes it will produce the graph of every
             root that starts before or at start time. Defaults to None.
 
@@ -1721,14 +1728,14 @@ class lineageTree:
         self,
         nodes: list = None,
         last_time_point_to_consider: int = None,
-        nrows=2,
-        figsize=(10, 15),
-        dpi=100,
-        fontsize=15,
-        axes=None,
-        vert_gap=1,
+        nrows: int = 2,
+        figsize: tuple[int, int] = (10, 15),
+        dpi: int = 100,
+        fontsize: int = 15,
+        axes: plt.Axes = None,
+        vert_gap: int = 1,
         **kwargs,
-    ):
+    ) -> tuple[plt.Figure, plt.Axes, dict]:
         """Plots all lineages.
 
         Args:
@@ -1815,11 +1822,11 @@ class lineageTree:
 
     def plot_node(
         self,
-        node,
-        figsize=(4, 7),
-        dpi=150,
-        vert_gap=2,
-        ax=None,
+        node: int,
+        figsize: tuple[int, int] = (4, 7),
+        dpi: int = 150,
+        vert_gap: int = 2,
+        ax: plt.Axes = None,
         **kwargs,
     ):
         """Plots the subtree spawn by a node.
@@ -1833,9 +1840,7 @@ class lineageTree:
             raise Warning("Please enter only one node")
         graph = graph[0]
         if not ax:
-            figure, ax = plt.subplots(
-                nrows=1, ncols=1, figsize=figsize, dpi=dpi
-            )
+            _, ax = plt.subplots(nrows=1, ncols=1, figsize=figsize, dpi=dpi)
         self.draw_tree_graph(
             hier=hierarchical_pos(
                 graph,
@@ -1848,7 +1853,9 @@ class lineageTree:
         )
         return ax.get_figure(), ax
 
-    def get_cells_at_t_from_root(self, r: int | list, t: int = None) -> list:
+    def get_cells_at_t_from_root(
+        self, r: int | list, t: int = None
+    ) -> list[int]:
         """
         Returns the list of cells at time `t` that are spawn by the node(s) `r`.
 
@@ -1905,7 +1912,7 @@ class lineageTree:
         fast: bool = False,
         w: int = 0,
         centered_band: bool = True,
-    ) -> tuple[tuple[int, ...], np.ndarray, float]:
+    ) -> tuple[tuple[int], np.ndarray, float]:
         """
         Find DTW minimum cost between two series using dynamic programming.
 
@@ -2177,7 +2184,7 @@ class lineageTree:
         fast: bool = False,
         w: int = 0,
         centered_band: bool = True,
-    ) -> tuple[float, plt.figure]:
+    ) -> tuple[float, plt.Figure]:
         """
         Plot DTW cost matrix between two cell cycles in heatmap format
 
@@ -2223,16 +2230,16 @@ class lineageTree:
 
     @staticmethod
     def __plot_2d(
-        pos_cycle1,
-        pos_cycle2,
-        nodes1,
-        nodes2,
-        ax,
-        x_idx,
-        y_idx,
-        x_label,
-        y_label,
-    ):
+        pos_cycle1: list[np.ndarray],
+        pos_cycle2: list[np.ndarray],
+        nodes1: list[int],
+        nodes2: list[int],
+        ax: plt.Axes,
+        x_idx: list[int],
+        y_idx: list[int],
+        x_label: str,
+        y_label: str,
+    ) -> None:
         ax.plot(
             pos_cycle1[:, x_idx],
             pos_cycle1[:, y_idx],
@@ -2261,7 +2268,7 @@ class lineageTree:
         centered_band: bool = True,
         projection: str = None,
         alig: bool = False,
-    ) -> tuple[float, plt.figure]:
+    ) -> tuple[float, plt.Figure]:
         """
         Plots DTW trajectories aligment between two cell cycles in 2D or 3D
 
@@ -2464,7 +2471,7 @@ class lineageTree:
         reorder: bool = False,
         xml_attributes: tuple = None,
         name: str = None,
-        time_resolution: int| None = None,
+        time_resolution: int | None = None,
     ):
         """
         TODO: complete the doc
