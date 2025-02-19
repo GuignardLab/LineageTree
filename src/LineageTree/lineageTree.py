@@ -291,7 +291,7 @@ class lineageTree:
         Args:
             group (set|list|int): One or more nodes that are to be removed.
         """
-        if isinstance(group, int):
+        if isinstance(group, int | float):
             group = {group}
         if isinstance(group, list):
             group = set(group)
@@ -304,13 +304,15 @@ class lineageTree:
                     "successor",
                     "predecessor",
                     "time_nodes",
+                    "_successor",
+                    "_predecessor",
                 ]:
                     attr_value.pop(node, ())
             if self._predecessor.get(node):
-                self._successor[self._predecessor[node][0]] = (
-                    suc
-                    for suc in self._successor[self._predecessor[node][0]]
-                    if node != suc
+                self._successor[self._predecessor[node][0]] = tuple(
+                    set(
+                        self._successor[self._predecessor[node][0]]
+                    ).difference(group)
                 )
             for p_node in self._successor.get(node, []):
                 self._predecessor[p_node] = ()
@@ -383,6 +385,13 @@ class lineageTree:
         else:
             warnings.warn("Time resolution set to default 0", stacklevel=2)
             self._time_resolution = 10
+
+    def __setstate__(self, state):
+        if "_successor" not in state:
+            state["_successor"] = state["successor"]
+        if "_predecessor" not in state:
+            state["_predecessor"] = state["predecessor"]
+        self.__dict__.update
 
     @property
     def depth(self):
