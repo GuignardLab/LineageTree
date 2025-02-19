@@ -1,2 +1,2 @@
 sphinx-rtd-theme
-sphinx-autodoc
+sphinx-apidoc
