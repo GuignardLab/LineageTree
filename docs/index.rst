@@ -13,3 +13,4 @@ Welcome to the lineagetree documentation <3
 
    usage/installation
    usage/quickstart
+   source/modules

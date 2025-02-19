@@ -39,9 +39,21 @@ dependencies = [
     "mastodon-reader",
     "matplotlib",
     "edist",
+    "svgwrite",
 ]
 [project.optional-dependencies]
-dev = ["pytest", "pytest-cov", "tox", "black", "ruff", "bumpver"]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "tox",
+    "black",
+    "ruff",
+    "bumpver",
+]
+doc = [
+    "sphinx-rtd-theme",
+    "sphinx-autodoc",
+]
 
 [project.urls]
 "Bug Tracker" = "https://github.com/GuignardLab/LineageTree/issues"
