@@ -97,8 +97,6 @@ def test_adding_nodes():
     lT = lineageTree()
     t1 = lT.add_root(0)
     lT.roots.add(0)
-    lT.t_e = 100
-    lT.t_b = 0
     first_level_end = lT.add_branch(t1, 9, downstream=True)
 
     lT.add_branch(first_level_end, 10, downstream=True)
