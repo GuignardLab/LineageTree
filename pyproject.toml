@@ -52,7 +52,6 @@ dev = [
 ]
 doc = [
     "sphinx-rtd-theme",
-    "sphinx-autodoc",
 ]
 
 [project.urls]
