@@ -301,6 +301,7 @@ class lineageTree:
                     "predecessor",
                     "_successor",
                     "_predecessor",
+                    "_time",
                 ]:
                     attr_value.pop(node, ())
             if self._predecessor.get(node):
@@ -313,13 +314,6 @@ class lineageTree:
                 self._predecessor[p_node] = ()
             self._predecessor.pop(node, ())
             self._successor.pop(node, ())
-
-    def _fix_times(self, node):
-        """Internal function that corrects all the timepoints of a subtree.
-
-        Args:
-            node (int): The node that has the correct time.
-        """
 
     def modify_branch(self, node, new_length):
         """Changes the length of a branch, so it adds or removes nodes
