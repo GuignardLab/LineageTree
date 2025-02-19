@@ -105,7 +105,7 @@ class lineageTree:
             for _ in range(length):
                 old_node = node
                 node = self._add_node(pred=[old_node])
-                self.time[node] = self.time[old_node] + 1
+                self._time[node] = self.time[old_node] + 1
                 self.time_nodes.setdefault(self.time[node], set()).add(node)
                 # if not pos:
                 #     self.pos[node] = self.pos[old_node]
@@ -121,13 +121,14 @@ class lineageTree:
             for _ in range(length):
                 old_node = node
                 node = self._add_node(succ=[old_node])
-                self.time[node] = self.time[old_node] - 1
+                self._time[node] = self.time[old_node] - 1
                 self.time_nodes.setdefault(self.time[node], set()).add(node)
                 # if not pos:
                 #     self.pos[node] = self.pos[old_node]
                 # else:
                 #     self.pos[node] = pos
         self.t_e = max(max(self.time_nodes), self.t_e)
+        self._changed_leaves = True
         return node
 
     def cut_tree(self, root):
@@ -236,9 +237,10 @@ class lineageTree:
         C_next = self.get_next_id()
         self._successor[C_next] = ()
         self._predecessor[C_next] = ()
-        self.time[C_next] = t
+        self._time[C_next] = t
         self.time_nodes.setdefault(t, set()).add(C_next)
         self.pos[C_next] = pos if isinstance(pos, list) else ()
+        self._changed_roots = True
         return C_next
 
     def _add_node(
@@ -365,33 +367,16 @@ class lineageTree:
         return frozenset(self.successor.keys())
 
     @property
+    def time(self):
+        return MappingProxyType(self._time)
+
+    @property
     def successor(self):
         return MappingProxyType(self._successor)
 
     @property
     def predecessor(self):
         return MappingProxyType(self._predecessor)
-
-    @property
-    def time_resolution(self):
-        if not hasattr(self, "_time_resolution"):
-            self.time_resolution = 1
-        return self._time_resolution / 10
-
-    @time_resolution.setter
-    def time_resolution(self, time_resolution):
-        if time_resolution is not None:
-            self._time_resolution = int(time_resolution * 10)
-        else:
-            warnings.warn("Time resolution set to default 0", stacklevel=2)
-            self._time_resolution = 10
-
-    def __setstate__(self, state):
-        if "_successor" not in state:
-            state["_successor"] = state["successor"]
-        if "_predecessor" not in state:
-            state["_predecessor"] = state["predecessor"]
-        self.__dict__.update
 
     @property
     def depth(self):
@@ -448,6 +433,29 @@ class lineageTree:
                     >= abs(self.t_e - self.t_b) / 4
                 }
         return self._labels
+
+    @property
+    def time_resolution(self):
+        if not hasattr(self, "_time_resolution"):
+            self.time_resolution = 1
+        return self._time_resolution / 10
+
+    @time_resolution.setter
+    def time_resolution(self, time_resolution):
+        if time_resolution is not None:
+            self._time_resolution = int(time_resolution * 10)
+        else:
+            warnings.warn("Time resolution set to default 0", stacklevel=2)
+            self._time_resolution = 10
+
+    def __setstate__(self, state):
+        if "_successor" not in state:
+            state["_successor"] = state["successor"]
+        if "_predecessor" not in state:
+            state["_predecessor"] = state["predecessor"]
+        if "_time" not in state:
+            state["_time"] = state["time"]
+        self.__dict__.update(state)
 
     def _write_header_am(self, f: TextIO, nb_points: int, length: int):
         """Header for Amira .am files"""
@@ -1082,7 +1090,7 @@ class lineageTree:
             f.close()
 
     @classmethod
-    def load(clf, fname: str, rm_empty_lists=False):
+    def load(clf, fname: str):
         """
         Loading a lineage tree from a ".lT" file.
 
@@ -1099,7 +1107,7 @@ class lineageTree:
             lT.time_resolution = None
         for node in lT.nodes.difference(lT.predecessor):
             lT._predecessor[node] = ()
-        for node in lT.nodes.difference(lT.successor):
+        for node in set(lT.predecessor).difference(lT.successor):
             lT._successor[node] = ()
         for k, v in lT.successor.items():
             lT._successor[k] = tuple(v)
@@ -2656,10 +2664,10 @@ class lineageTree:
         self.max_id = -1
         self.next_id = []
         self._successor = {}
+        self._time = {}
         self._predecessor = {}
         self.pos = {}
         self.time_id = {}
-        self.time = {}
         self.t_e = 0
         self.t_b = 0
         if time_resolution is not None:
@@ -2759,6 +2767,14 @@ class lineageTreeDicts(lineageTree):
             )
         if not hasattr(lT, "time_resolution"):
             lT.time_resolution = None
+        for node in lT.nodes.difference(lT.predecessor):
+            lT._predecessor[node] = ()
+        for node in set(lT.predecessor).difference(lT.successor):
+            lT._successor[node] = ()
+        for k, v in lT.successor.items():
+            lT._successor[k] = tuple(v)
+        for k, v in lT.predecessor.items():
+            lT._predecessor[k] = tuple(v)
 
         return lT
 
@@ -2834,14 +2850,14 @@ class lineageTreeDicts(lineageTree):
             self.pos = pos
 
         if time is None:
-            self.time = {node: starting_time for node in self.roots}
+            self._time = {node: starting_time for node in self.roots}
             queue = list(self.roots)
             for node in queue:
                 for succ in self._successor[node]:
-                    self.time[succ] = self.time[node] + 1
+                    self._time[succ] = self.time[node] + 1
                     queue.append(succ)
         else:
-            self.time = time
+            self._time = time
             if self.nodes.difference(self.time) != set():
                 raise ValueError("Please provide the time of all nodes.")
             if not all(
