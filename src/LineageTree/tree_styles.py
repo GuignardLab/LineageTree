@@ -233,9 +233,9 @@ class downsample_tree(abstract_trees):
         to_do = [self.root]
         while to_do:
             current = to_do.pop()
-            _next = self.lT.get_cells_at_t_from_root(
-                current,
-                self.lT.time[current] + (self.downsample / self.time_scale),
+            _next = self.lT.nodes_at_t(
+                r=current,
+                t=self.lT.time[current] + (self.downsample / self.time_scale),
             )
             if _next == [current]:
                 _next = None

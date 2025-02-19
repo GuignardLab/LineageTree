@@ -106,7 +106,6 @@ class lineageTree:
                 old_node = node
                 node = self._add_node(pred=[old_node])
                 self._time[node] = self.time[old_node] + 1
-                self.time_nodes.setdefault(self.time[node], set()).add(node)
                 # if not pos:
                 #     self.pos[node] = self.pos[old_node]
                 # else:
@@ -122,12 +121,10 @@ class lineageTree:
                 old_node = node
                 node = self._add_node(succ=[old_node])
                 self._time[node] = self.time[old_node] - 1
-                self.time_nodes.setdefault(self.time[node], set()).add(node)
                 # if not pos:
                 #     self.pos[node] = self.pos[old_node]
                 # else:
                 #     self.pos[node] = pos
-        self.t_e = max(max(self.time_nodes), self.t_e)
         self._changed_leaves = True
         return node
 
@@ -220,7 +217,6 @@ class lineageTree:
             if pred:
                 self._predecessor[new_node] = [new_nodes[n] for n in pred]
             self.pos[new_node] = self.pos[old_node] + 0.5
-            self.time_nodes[self.time[old_node]].add(new_nodes[old_node])
         new_root = new_nodes[root]
         self.labels[new_root] = f"Copy of {root}"
         if self.time[new_root] == 0:
@@ -238,7 +234,6 @@ class lineageTree:
         self._successor[C_next] = ()
         self._predecessor[C_next] = ()
         self._time[C_next] = t
-        self.time_nodes.setdefault(t, set()).add(C_next)
         self.pos[C_next] = pos if isinstance(pos, list) else ()
         self._changed_roots = True
         return C_next
@@ -299,13 +294,11 @@ class lineageTree:
             group = set(group)
         group = self.nodes.intersection(group)
         for node in group:
-            self.time_nodes[self.time[node]].discard(node)
             for attr in self.__dict__:
                 attr_value = self.__getattribute__(attr)
                 if isinstance(attr_value, dict) and attr not in [
                     "successor",
                     "predecessor",
-                    "time_nodes",
                     "_successor",
                     "_predecessor",
                 ]:
@@ -361,6 +354,14 @@ class lineageTree:
                     succ=self._successor[old_node],
                     pred=self._predecessor[old_node],
                 )
+
+    @property
+    def t_b(self):
+        return min(self.time.values())
+
+    @property
+    def t_e(self):
+        return max(self.time.values())
 
     @property
     def nodes(self):
@@ -476,6 +477,7 @@ class lineageTree:
         f.write("EDGE { float Ecolor } @7\n")
         f.write("VERTEX { int Vbool2 } @8\n")
 
+    ###TODO FIX###
     def write_to_am(
         self,
         path_format: str,
@@ -1127,7 +1129,7 @@ class lineageTree:
                 If the query in the kdtree gives you the value i,
                 then it corresponds to the id in the tree to_check_self[i]
         """
-        to_check_self = list(self.time_nodes[t])
+        to_check_self = list(self.nodes_at_t(t=t))
         if t not in self.kdtrees:
             data_corres = {}
             data = []
@@ -1439,7 +1441,7 @@ class lineageTree:
             {int, float}: dictionary that maps a cell id to its spatial density
         """
         s_vol = 4 / 3.0 * np.pi * th**3
-        time_range = set(range(t_b, t_e + 1)).intersection(self.time_nodes)
+        time_range = set(self.time.values())
         for t in time_range:
             idx3d, nodes = self.get_idx3d(t)
             nb_ni = [
@@ -1636,7 +1638,7 @@ class lineageTree:
         elif t in self.uted and not recompute:
             return self.uted[t]
         self.uted[t] = {}
-        roots = self.time_nodes[t]
+        roots = self.nodes_at_t(t=t)
         for n1, n2 in combinations(roots, 2):
             key = tuple(sorted((n1, n2)))
             self.uted[t][key] = self.unordered_tree_edit_distance(
@@ -2013,7 +2015,9 @@ class lineageTree:
                 "Only integer or string are valid key for lineageTree"
             )
 
-    def get_cells_at_t_from_root(self, r: [int, list], t: int = None) -> list:
+    def nodes_at_t(
+        self, *, r: [int, Iterable[int]] = None, t: int = None
+    ) -> list:
         """
         Returns the list of cells at time `t` that are spawn by the node(s) `r`.
 
@@ -2025,6 +2029,13 @@ class lineageTree:
             Returns:
                 (list) list of nodes at time `t` spawned by `r`
         """
+        if r in [
+            None,
+            [],
+            set(),
+            (),
+        ]:
+            r = list(self.roots)
         if not isinstance(r, list):
             r = [r]
         if t is None:
@@ -2615,7 +2626,7 @@ class lineageTree:
         return distance, fig
 
     def first_labelling(self):
-        self.labels = {i: "Unlabeled" for i in self.time_nodes[0]}
+        self.labels = {i: "Unlabeled" for i in self.roots}
 
     def __init__(
         self,
@@ -2659,7 +2670,6 @@ class lineageTree:
         """
 
         self.name = name
-        self.time_nodes = {}
         self.time_edges = {}
         self.max_id = -1
         self.next_id = []
@@ -2668,8 +2678,6 @@ class lineageTree:
         self._predecessor = {}
         self.pos = {}
         self.time_id = {}
-        self.t_e = 0
-        self.t_b = 0
         if time_resolution is not None:
             self._time_resolution = time_resolution
         self.kdtrees = {}
@@ -2682,8 +2690,6 @@ class lineageTree:
             file_type = file_type.lower()
             if file_type == "tgmm":
                 self.read_tgmm_xml(file_format, tb, te, z_mult)
-                self.t_b = tb
-                self.t_e = te
             elif file_type == "mamut" or file_type == "trackmate":
                 self.read_from_mamut_xml(file_format)
             elif file_type == "celegans":
@@ -2868,14 +2874,6 @@ class lineageTreeDicts(lineageTree):
                 raise ValueError(
                     "Provided times are not strictly increasing. Setting times to default."
                 )
-        self.time_nodes = {t: set() for t in self.time.values()}
-        for node in list(self.time):
-            self.time_nodes[self.time[node]].add(node)
-
-        if len(self.nodes) > 0:
-            self.t_b = min(self.time_nodes)
-            self.t_e = max(self.time_nodes)
-
         # custom properties
         for name, d in kwargs.items():
             if name in self.__dict__:

@@ -32,8 +32,6 @@ def test_uted_2levels_vs_3levels():
     lT = lineageTree()
     t1 = lT.add_root(0)
     lT.roots.add(0)
-    lT.t_e = 0
-    lT.t_b = 0
     first_level_end = lT.add_branch(t1, 10, True)
 
     second_level_1 = lT.add_branch(first_level_end, 10, downstream=True)
@@ -46,8 +44,6 @@ def test_uted_2levels_vs_3levels():
 
     t2 = lT.add_root(0)
     lT.roots.add(0)
-    lT.t_e = 0
-    lT.t_b = 0
     first_level_end = lT.add_branch(t2, 10, downstream=True)
 
     second_level_1 = lT.add_branch(first_level_end, 10, downstream=True)
@@ -72,8 +68,6 @@ def test_fusion():
     lT = lineageTree()
     t1 = lT.add_root(0)
     lT.roots.add(0)
-    lT.t_e = 0
-    lT.t_b = 0
     first_level_end = lT.add_branch(t1, 10, downstream=True)
 
     second_level_1 = lT.add_branch(first_level_end, 10, downstream=True)
@@ -86,8 +80,6 @@ def test_fusion():
 
     t2 = lT.add_root(0)
     lT.roots.add(0)
-    lT.t_e = 0
-    lT.t_b = 0
     first_level_end = lT.add_branch(t2, 10, downstream=True)
 
     second_level_1 = lT.add_branch(first_level_end, 10, downstream=True)
@@ -118,8 +110,6 @@ def test_adding_nodes():
 def test_removing_nodes():
     lT = lineageTree()
     t1 = lT.add_root(0)
-    lT.t_e = 0
-    lT.t_b = 0
     first_level_end = lT.add_branch(t1, 9, downstream=True)
 
     second_level_1 = lT.add_branch(first_level_end, 10, downstream=True)
@@ -132,8 +122,6 @@ def test_modifying_nodes():
     lT = lineageTree()
     t1 = lT.add_root(0)
     lT.roots.add(t1)
-    lT.t_e = 0
-    lT.t_b = 0
     lT.modify_branch(t1, 100)
     assert len(lT.get_cycle(t1)) == 100
 
@@ -142,8 +130,6 @@ def test_modifying_nodes_2():
     lT = lineageTree()
     t1 = lT.add_root(0)
     lT.roots.add(t1)
-    lT.t_e = 0
-    lT.t_b = 0
     lT.add_branch(t1, 9, downstream=True)
     lT.modify_branch(t1, 100)
     assert len(lT.get_sub_tree(t1)) == 100
@@ -164,15 +150,13 @@ def test_complete_lineage():
     lT = lineageTree()
     t1 = lT.add_root(0)
     lT.roots.add(t1)
-    lT.t_b = 0
-    lT.t_e = 0
+
     lT.add_branch(t1, 10, downstream=True)
 
     t2 = lT.add_root(0)
     lT.roots.add(t2)
     lT.add_branch(t2, 11, downstream=True)
 
-    lT.t_e = 40
     lT.complete_lineage()
     assert len(lT.nodes) == 82
 
@@ -180,8 +164,6 @@ def test_complete_lineage():
 def test_cross_comparison():
     lT_1 = lineageTree()
     t1 = lT_1.add_root(0)
-    lT_1.t_e = 0
-    lT_1.t_b = 0
     first_level_end = lT_1.add_branch(t1, 9, downstream=True)
     node_1 = lT_1.get_cycle(t1)[0]
 
@@ -196,8 +178,6 @@ def test_cross_comparison():
 
     lT_2 = lineageTree()
     t2 = lT_2.add_root(0)
-    lT_2.t_e = 0
-    lT_2.t_b = 0
     first_level_end = lT_2.add_branch(t2, 4, downstream=True)
     node_2 = lT_2.get_cycle(t2)[0]
 
@@ -266,8 +246,6 @@ def test_cross_comparison():
     )
     lT_3 = lineageTree()
     t1 = lT_3.add_root(0)
-    lT_3.t_e = 0
-    lT_3.t_b = 0
     first_level_end = lT_3.add_branch(t1, 4, downstream=True)
     node_3 = lT_3.get_cycle(t1)[0]
 
