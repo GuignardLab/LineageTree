@@ -22,6 +22,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",  # If using Google/NumPy docstrings
     "sphinx.ext.viewcode",  # Links to source code
+    "myst_parser",  # Markdown support
 ]
 
 templates_path = ["_templates"]
@@ -33,3 +34,5 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
+
+autodoc_inherit_docstrings = True
