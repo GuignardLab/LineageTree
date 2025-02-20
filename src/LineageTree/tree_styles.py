@@ -42,7 +42,7 @@ class abstract_trees(ABC):
         return self.internal_ids
 
     @abstractmethod
-    def get_tree(self) -> dict:
+    def get_tree(self) -> tuple[dict, dict]:
         """
         Get a tree version of the tree spawned by the node `r`
 
@@ -87,7 +87,7 @@ class abstract_trees(ABC):
         return np.abs(len_x - len_y)
 
     @abstractmethod
-    def get_norm(self):
+    def get_norm(self) -> int:
         """
         Returns the valid value for normalizing the edit distance.
         Returns:
@@ -156,7 +156,7 @@ class mini_tree(abstract_trees):
         self.length = len(out_dict)
         return out_dict, None
 
-    def get_norm(self):
+    def get_norm(self) -> int:
         return len(
             self.lT.get_all_branches_of_node(self.root, end_time=self.end_time)
         )
@@ -183,7 +183,7 @@ class simple_tree(abstract_trees):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def get_tree(self):
+    def get_tree(self) -> tuple[dict, dict]:
         if self.end_time is None:
             self.end_time = self.lT.t_e
         out_dict = {}
@@ -207,7 +207,7 @@ class simple_tree(abstract_trees):
     def delta(self, x, y, corres1, corres2, times1, times2):
         return super().delta(x, y, corres1, corres2, times1, times2)
 
-    def get_norm(self):
+    def get_norm(self) -> int:
         return (
             len(self.lT.get_sub_tree(self.root, end_time=self.end_time))
             * self.time_scale
@@ -227,7 +227,7 @@ class downsample_tree(abstract_trees):
                 stacklevel=1,
             )
 
-    def get_tree(self):
+    def get_tree(self) -> tuple[dict, dict]:
         self.out_dict = {}
         self.times = {}
         to_do = [self.root]
@@ -247,7 +247,7 @@ class downsample_tree(abstract_trees):
             self.times[current] = 1  # self.downsample
         return self.out_dict, self.times
 
-    def get_norm(self):
+    def get_norm(self) -> int:
         return len(self.times.values()) * self.downsample / self.time_scale
 
     def delta(self, x, y, corres1, corres2, times1, times2):
@@ -275,7 +275,7 @@ class normalized_simple_tree(simple_tree):
             times1[corres1[x]] + times2[corres2[y]]
         )
 
-    def get_norm(self):
+    def get_norm(self) -> int:
         return len(
             self.lT.get_all_branches_of_node(self.root, end_time=self.end_time)
         )
@@ -290,7 +290,7 @@ class full_tree(abstract_trees):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def get_tree(self):
+    def get_tree(self) -> tuple[dict, dict]:
         self.out_dict = {}
         self.times = {}
         to_do = [self.root]
@@ -315,7 +315,7 @@ class full_tree(abstract_trees):
         self.times = {n_id: 1 for n_id in self.out_dict}
         return self.out_dict, self.times
 
-    def get_norm(self):
+    def get_norm(self) -> int:
         return len(self.out_dict) * self.time_scale
 
     def delta(self, x, y, corres1, corres2, times1, times2):

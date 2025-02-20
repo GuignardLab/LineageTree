@@ -234,7 +234,7 @@ class lineageTree:
         self._successor[C_next] = ()
         self._predecessor[C_next] = ()
         self._time[C_next] = t
-        self.pos[C_next] = pos if isinstance(pos, list) else ()
+        self.pos[C_next] = pos if isinstance(pos, list) else []
         self._changed_roots = True
         return C_next
 
@@ -245,7 +245,8 @@ class lineageTree:
         pos: np.ndarray = None,
         nid: int = None,
     ) -> int:
-        """Adds a node to the LineageTree object that is either a successor or a predecessor.
+        """Adds a node to the LineageTree object that is either a successor or a predecessor of another node.
+        Does not handle time! You cannot enter both a successor and a predecessor.
 
         Args:
             succ (int): id of the node the new node is a successor to
@@ -424,12 +425,12 @@ class lineageTree:
     @property
     def time_resolution(self):
         if not hasattr(self, "_time_resolution"):
-            self.time_resolution = 1
+            self.time_resolution = 0
         return self._time_resolution / 10
 
     @time_resolution.setter
     def time_resolution(self, time_resolution):
-        if time_resolution is not None:
+        if time_resolution is not None and time_resolution > 0:
             self._time_resolution = int(time_resolution * 10)
         else:
             warnings.warn("Time resolution set to default 0", stacklevel=2)
@@ -1880,7 +1881,9 @@ class lineageTree:
         return ax.get_figure(), ax
 
     def nodes_at_t(
-        self, *, r: [int, Iterable[int]] = None, t: int = None
+        self,
+        t: int,
+        r: [int, Iterable[int]] = None,
     ) -> list:
         """
         Returns the list of cells at time `t` that are spawn by the node(s) `r`.
