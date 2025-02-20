@@ -36,17 +36,18 @@ class lineageTreeManager:
             ]
             return np.gcd.reduce(all_time_res)
 
-    def add(
-        self, other_tree: lineageTree, name: str = "", classification: str = ""
-    ):
+    def add(self, other_tree: lineageTree, name: str = ""):
         """Function that adds a new lineagetree object to the class.
         Can be added either by .add or by using the + operator. If a name is
         specified it will also add it as this specific name, otherwise it will
         use the already existing name of the lineagetree.
 
-        Args:
-            other_tree (lineageTree): Thelineagetree to be added.
-            name (str, optional): Then name of. Defaults to "".
+        Parameters
+        ----------
+            other_tree : LineageTree
+                Thelineagetree to be added.
+            name : str, default=""
+                Then name of the lineagetree to be added.
 
         """
         if isinstance(other_tree, lineageTree) and other_tree.time_resolution:
@@ -74,8 +75,10 @@ class lineageTreeManager:
     def write(self, fname: str):
         """Saves the manager
 
-        Args:
-            fname (str): The path and name of the file that is to be saved.
+        Parameters
+        ----------
+            fname : str
+                The path and name of the file that is to be saved.
         """
         if os.path.splitext(fname)[-1] != ".ltM":
             fname = os.path.extsep.join((fname, "ltM"))
@@ -86,11 +89,15 @@ class lineageTreeManager:
     def remove_embryo(self, key):
         """Removes the embryo from the manager.
 
-        Args:
-            key (str): The name of the lineagetree to be removed
+        Parameters
+        ----------
+            key : str
+                The name of the lineagetree to be removed
 
-        Raises:
-            Exception: If there is not such a lineagetree
+        Raises
+        ------
+            IndexError
+                If there is not such a lineagetree
         """
         self.lineagetrees.pop(key, None)
 
@@ -99,11 +106,15 @@ class lineageTreeManager:
         """
         Loading a lineage tree Manager from a ".ltm" file.
 
-        Args:
-            fname (str): path to and name of the file to read
+        Parameters
+        ----------
+            fname : str
+                path to and name of the file to read
 
-        Returns:
-            (lineageTree): loaded file
+        Returns
+        -------
+            lineageTree
+                loaded file
         """
         with open(fname, "br") as f:
             ltm = pkl.load(f)
@@ -113,10 +124,10 @@ class lineageTreeManager:
     def cross_lineage_edit_distance(
         self,
         n1: int,
-        embryo_1,
+        embryo_1: str,
         end_time1: int,
         n2: int,
-        embryo_2,
+        embryo_2: str,
         end_time2: int,
         style="simple",
         downsample: int = 2,
@@ -128,14 +139,22 @@ class lineageTreeManager:
         more information).The distance is normed by the function norm that takes the two list
         of nodes spawned by the trees `n1` and `n2`.
 
-        Args:
-            n1 (int): Node of the first Lineagetree
-            embryo_1 (str): The key/name of the first Lineagetree
-            end_time1 (int): End time of first Lineagetree
-            n2 (int): The key/name of the first Lineagetree
-            embryo_2 (str): Node of the second Lineagetree
-            end_time2 (int): End time of second lineagetree
-            registration (_type_, optional): _description_. Defaults to None.
+        Parameters
+        ----------
+            n1 : int
+                Node of the first Lineagetree
+            embryo_1 : str
+                The key/name of the first Lineagetree
+            end_time1 : int
+                End time of first Lineagetree
+            n2 : int
+                The key/name of the first Lineagetree
+            embryo_2 : str
+                Node of the second Lineagetree
+            end_time2 : int
+                End time of second lineagetree
+            registration : _type_, default=None
+                _description_. Defaults to None.
         """
 
         tree = tree_style[style].value

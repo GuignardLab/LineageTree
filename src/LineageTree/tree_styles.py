@@ -46,17 +46,23 @@ class abstract_trees(ABC):
         """
         Get a tree version of the tree spawned by the node `r`
 
-        Args:
-            r (int): root of the tree to spawn
-            end_time (int): the last time point to consider
-            time_resolution (float): the time between two consecutive time points
+        Parameters
+        ----------
+            r : int
+                root of the tree to spawn
+            end_time : int
+                the last time point to consider
+            time_resolution : float
+                the time between two consecutive time points
 
-        Returns:
-            (dict) {m (int): [d1 (int), d2 (int)]}: an adjacency dictionnary
-                where the ids are the ids of the cells in the original tree
-                at their first time point (except for the cell `r` if it was
-                not the first time point).
-            (dict) {m (int): duration (float)}: life time duration of the cell `m`
+        Returns
+        -------
+            dict mapping an int to a list of int
+                an adjacency dictionnary where the ids are the ids of the
+                cells in the original tree at their first time point
+                (except for the cell `r` if it was not the first time point).
+            dict mapping an int to a float
+                life time duration of the key cell `m`
         """
 
     @abstractmethod
@@ -65,16 +71,25 @@ class abstract_trees(ABC):
             The corres1/2 and time1/2 should always be provided and will be handled accordingly by the specific
             delta of each tree style.
 
-        Args:
-            x (int): The first node to compare, takes the names provided by the edist.
-            y (int): The second node to compare, takes the names provided by the edist
-            corres1 (dict): Correspondance between node1 and its name in the real tree.
-            corres2 (dict): Correspondance between node2 and its name in the real tree.
-            times1 (dict): The dictionary of the branch lengths of the tree that n1 is spawned from.
-            times2 (dict): The dictionary of the branch lengths of the tree that n2 is spawned from.
+        Parameters
+        ----------
+            x : int
+                The first node to compare, takes the names provided by the edist.
+            y : int
+                The second node to compare, takes the names provided by the edist
+            corres1 : dict
+                Correspondance between node1 and its name in the real tree.
+            corres2 : dict
+                Correspondance between node2 and its name in the real tree.
+            times1 : dict
+                The dictionary of the branch lengths of the tree that n1 is spawned from.
+            times2 : dict
+                The dictionary of the branch lengths of the tree that n2 is spawned from.
 
-        Returns:
-            (int|float): The diatance between these 2 nodes.
+        Returns
+        -------
+            int or float
+                The diatance between these 2 nodes.
         """
         if x is None and y is None:
             return 0
@@ -90,18 +105,26 @@ class abstract_trees(ABC):
     def get_norm(self) -> int:
         """
         Returns the valid value for normalizing the edit distance.
-        Returns:
-            (int|float): The number of nodes of each tree according to each style.
+
+        Returns
+        -------
+            int or float
+                The number of nodes of each tree according to each style.
         """
 
     def _edist_format(self, adj_dict: dict):
         """Formating the custom tree style to the format needed by edist.
+        .. warning:: Modifying this function might break your code.
 
-        Args:
-            adj_dict (dict): _description_
+        Parameters
+        ----------
+            adj_dict : dict
+                _description_
 
-        Returns:
-            _type_: _description_
+        Returns
+        -------
+            _type_
+                _description_
         """
         inv_adj = {vi: k for k, v in adj_dict.items() for vi in v}
         roots = set(adj_dict).difference(inv_adj)
