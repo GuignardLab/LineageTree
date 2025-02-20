@@ -59,7 +59,7 @@ html_theme_options = {
     "icon_links": [
         {
             "name": "GitHub",
-            "url": "https://github.com/executablebooks/sphinx-book-theme",
+            "url": "https://github.com/Guignardlab/lineagetree",
             "icon": "fa-brands fa-github",
         },
     ],
