@@ -60,7 +60,7 @@ class lineageTree:
         else:
             return self.next_id.pop()
 
-    ###TODO make it longer.
+    ###TODO make lT longer.
     def complete_lineage(self, nodes: int | set = None) -> None:
         """Makes all leaf branches longer so that they reach the last timepoint (self.t_e), useful
         for tree edit distance algorithms.
@@ -195,6 +195,7 @@ class lineageTree:
         self.labels[new_branch] = f"Fusion of {new_root1} and {new_root2}"
         return new_branch
 
+    ###TODO
     def copy_lineage(self, root: int) -> int:
         """
         Copies the structure of a tree and makes a new with new nodes.
@@ -315,6 +316,7 @@ class lineageTree:
             self._predecessor.pop(node, ())
             self._successor.pop(node, ())
 
+    # TODO
     def modify_branch(self, node: int, new_length: int) -> None:
         """Changes the length of a branch, so it adds or removes nodes
         to make the correct length of the cycle.
@@ -437,7 +439,7 @@ class lineageTree:
             self._time_resolution = int(time_resolution * 10)
         else:
             warnings.warn("Time resolution set to default 0", stacklevel=2)
-            self._time_resolution = 10
+            self._time_resolution = 0
 
     def __setstate__(self, state):
         if "_successor" not in state:
