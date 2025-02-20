@@ -395,27 +395,33 @@ class lineageTree:
                 )
 
     @property
-    def t_b(self):
+    def t_b(self) -> int:
+        """The first timepoint of the tree."""
         return min(self.time.values())
 
     @property
-    def t_e(self):
+    def t_e(self) -> int:
+        """The last timepoint of the tree."""
         return max(self.time.values())
 
     @property
-    def nodes(self):
+    def nodes(self) -> frozenset[int]:
+        """Nodes of the tree"""
         return frozenset(self.successor.keys())
 
     @property
-    def time(self):
+    def time(self) -> MappingProxyType[dict]:
+        """Mapping of nodes to the timepoint they belong to"""
         return MappingProxyType(self._time)
 
     @property
-    def successor(self):
+    def successor(self) -> MappingProxyType[dict]:
+        """Mapping of nodes to the tuple of its successors"""
         return MappingProxyType(self._successor)
 
     @property
-    def predecessor(self):
+    def predecessor(self) -> MappingProxyType[dict]:
+        """Mapping of nodes to the tuple of its predecessor"""
         return MappingProxyType(self._predecessor)
 
     @property
@@ -437,25 +443,34 @@ class lineageTree:
         return self._depth
 
     @property
-    def roots(self):
+    def roots(self) -> frozenset[int]:
+        """Set of roots of the tree"""
         if not hasattr(self, "_roots") or self._changed_roots:
-            self._roots = {s for s, p in self._predecessor.items() if p == ()}
-            self._changed_roots = True
+            self._roots = frozenset(
+                {s for s, p in self._predecessor.items() if p == ()}
+            )
+            self._changed_roots = False
         return self._roots
 
     @property
-    def edges(self):
-        return {(k, vi) for k, v in self._successor.items() for vi in v}
+    def edges(self) -> frozenset[tuple[int]]:
+        """Set of all edges"""
+        return frozenset(
+            {(k, vi) for k, v in self._successor.items() for vi in v}
+        )
 
     @property
-    def leaves(self):
+    def leaves(self) -> frozenset[int]:
+        """Set of leaves"""
         if not hasattr(self, "_leaves") or self._changed_leaves:
-            self._leaves = {p for p, s in self._successor.items() if s == ()}
-            self._changed_leaves = True
+            self._leaves = frozenset(
+                {p for p, s in self._successor.items() if s == ()}
+            )
+            self._changed_leaves = False
         return self._leaves
 
     @property
-    def labels(self):
+    def labels(self) -> dict[int, str]:
         """The labels of the nodes."""
         if not hasattr(self, "_labels"):
             if hasattr(self, "cell_name"):
@@ -473,13 +488,13 @@ class lineageTree:
         return self._labels
 
     @property
-    def time_resolution(self):
+    def time_resolution(self) -> float:
         if not hasattr(self, "_time_resolution"):
             self.time_resolution = 0
         return self._time_resolution / 10
 
     @time_resolution.setter
-    def time_resolution(self, time_resolution):
+    def time_resolution(self, time_resolution) -> None:
         if time_resolution is not None and time_resolution > 0:
             self._time_resolution = int(time_resolution * 10)
         else:
@@ -536,7 +551,6 @@ class lineageTree:
         stroke_color: Callable = None,
         positions: dict = None,
         node_color_map: Callable | str = None,
-        normalize: bool = True,
     ) -> None:
         """Writes the lineage tree to an SVG file.
         Node and edges coloring and size can be provided.
@@ -1083,9 +1097,10 @@ class lineageTree:
 
         return lT
 
-    def get_idx3d(self, t: int) -> tuple:
-        """Get a 3d kdtree for the dataset at time *t* .
-        The  kdtree is stored in *self.kdtrees[t]*
+    def get_idx3d(self, t: int) -> tuple[KDTree, np.ndarray]:
+        """Get a 3d kdtree for the dataset at time `t`.
+        The  kdtree is stored in `self.kdtrees[t]` and returned.
+        The correspondancy list is also returned.
 
         Parameters
         ----------
@@ -1094,8 +1109,10 @@ class lineageTree:
 
         Returns
         -------
-            scipy.KDTree, list of int
-                the built kdtree and the correspondancy list,
+            KDTree
+                The KDTree corresponding to the lineage tree at time `t`
+            np.ndarray
+                The correspondancy list in the KDTree.
                 If the query in the kdtree gives you the value `i`,
                 then it corresponds to the id in the tree `to_check_self[i]`
         """
@@ -1113,8 +1130,9 @@ class lineageTree:
         return idx3d, np.array(to_check_self)
 
     def get_gabriel_graph(self, t: int) -> dict[int, set[int]]:
-        """Build the Gabriel graph of the given graph for time point `t`
-        The Garbiel graph is then stored in self.Gabriel_graph and returned
+        """Build the Gabriel graph of the given graph for time point `t`.
+        The Garbiel graph is then stored in `self.Gabriel_graph` and returned.
+
         .. warning:: the graph is not recomputed if already computed, even if the point cloud has changed
 
         Parameters
@@ -1124,8 +1142,8 @@ class lineageTree:
 
         Returns
         -------
-            dict mapping int to set of int
-                a dictionary that maps a node to the set of its neighbors
+            dict of int to set of int
+                A dictionary that maps a node to the set of its neighbors
         """
         if not hasattr(self, "Gabriel_graph"):
             self.Gabriel_graph = {}
@@ -1462,7 +1480,7 @@ class lineageTree:
                 size of the neighbourhood
         Returns
         -------
-            dict mapping int to float
+            dict of int to float
                 dictionary that maps a cell id to its spatial density
         """
         s_vol = 4 / 3.0 * np.pi * th**3
@@ -1489,7 +1507,7 @@ class lineageTree:
                 number of nearest neighours
         Returns
         -------
-            dict mapping int to set of int
+            dict of int to set of int
                 dictionary that maps
                 a cell id to its `k` nearest neighbors
         """
@@ -1517,7 +1535,7 @@ class lineageTree:
                 distance to consider neighbors
         Returns
         -------
-            dict mapping int to set of int
+            dict of int to set of int
                 dictionary that maps a cell id to its neighbors at a distance `th`
         """
         self.th_edges = {}
@@ -1546,8 +1564,10 @@ class lineageTree:
 
         Returns
         -------
-            np.ndarray, np.ndarray
-                A list that contains the array of eigenvalues and eigenvectors.
+            np.ndarray of shape (3,)
+                sorted eigenvalues
+            np.ndarray
+                sorted eigenvectors (3,)
         """
         time_nodes = {
             t: len(self.nodes_at_t(t)) for t in range(self.t_b, self._te)
@@ -1595,7 +1615,7 @@ class lineageTree:
 
         Returns
         -------
-            np.array
+            np.ndarray of shape (3, 3)
                 The rotation matrix.
         """
         vector1 = vector1 / np.linalg.norm(vector1)
@@ -1704,7 +1724,7 @@ class lineageTree:
 
         Returns
         -------
-            dict mapping tuple of int to float
+            dict of tuple of int to float
                 a dictionary that maps a pair of cell ids at time `t` to their unordered tree edit distance
         """
         if not hasattr(self, "uted"):
@@ -1914,8 +1934,10 @@ class lineageTree:
 
         Returns
         -------
-            figure, ax
-                The matplotlib figure and ax object.
+            plt.Figure
+                The matplotlib figure
+            plt.Axes
+                The matplotlib ax.
         """
         if selected_nodes is None:
             selected_nodes = []
@@ -1957,7 +1979,7 @@ class lineageTree:
         self, node: int = None, start_time: int = None
     ) -> dict[int, dict]:
         """Generates a dictionary of graphs where the keys are the index of the graph and
-        the values are the graphs themselves which are produced by create_links_and _cycles
+        the values are the graphs themselves which are produced by `create_links_and_cycles`
 
         Parameters
         ----------
@@ -1969,7 +1991,8 @@ class lineageTree:
 
         Returns
         -------
-            (dict): The keys are just index values  0-n and the values are the graphs produced.
+            dict of int to dict
+                The keys are just index values 0-n and the values are the graphs produced.
         """
         if start_time is None:
             start_time = self.t_b
@@ -1995,7 +2018,7 @@ class lineageTree:
         axes: plt.Axes = None,
         vert_gap: int = 1,
         **kwargs,
-    ) -> tuple[plt.Figure, plt.Axes, dict]:
+    ) -> tuple[plt.Figure, plt.Axes, dict[plt.Axes, int]]:
         """Plots all lineages.
 
         Parameters
@@ -2024,8 +2047,12 @@ class lineageTree:
 
         Returns
         -------
-            plt.Figure, plt.Axes, dict
-                The figure, axes and a dictionary that maps the axes to the root of the tree.
+            plt.Figure
+                The figure
+            plt.Axes
+                The axes
+            dict of plt.Axes to int
+                A dictionary that maps the axes to the root of the tree.
         """
 
         nrows = int(nrows)
@@ -2126,8 +2153,10 @@ class lineageTree:
 
         Returns
         -------
-            plt.Figure, plt.Axes
-                The figure and axes object.
+            plt.Figure
+                The figure
+            plt.Axes
+                The axes
         """
         graph = self.to_simple_graph(node)
         if len(graph) > 1:
@@ -2198,8 +2227,10 @@ class lineageTree:
 
         Returns
         -------
-            float, float
-                The slope intercept of the line
+            float
+                The slope of the curve
+            float
+                The intercept of the curve
         """
         i, j = dist_mat.shape
         x1 = max(0, i - j) / 2
@@ -2240,8 +2271,12 @@ class lineageTree:
 
             Returns
             -------
-                tuple of tuples of int and np.ndarray and float
-                    Aligment path, cost matrix and final cost
+                tuple of tuples of int
+                    Aligment path
+                np.ndarray
+                    cost matrix
+                float
+                    optimal cost
         """
         N, M = dist_mat.shape
         w_limit = max(w, abs(N - M))  # Calculate the Sakoe-Chiba band width
@@ -2386,8 +2421,10 @@ class lineageTree:
 
         Returns
         -------
-            list of np.ndarray, list of np.ndarray
-                `x`, `y`, `z` postions for `track1` and for `track2`
+            list of np.ndarray
+                `x`, `y`, `z` postions for `track1`
+            list of np.ndarray
+                `x`, `y`, `z` postions for `track2`
         """
         inter1_pos = []
         inter2_pos = []
@@ -2472,9 +2509,9 @@ class lineageTree:
             matrix
                 Cost matrix
             list of lists
-                pos_cycle1: rotated and translated trajectories positions
+                rotated and translated trajectories positions
             list of lists
-                pos_cycle2: rotated and translated trajectories positions
+                rotated and translated trajectories positions
         """
         nodes1_cycle = self.get_cycle(nodes1)
         nodes2_cycle = self.get_cycle(nodes2)
@@ -2995,7 +3032,8 @@ class lineageTreeDicts(lineageTree):
             pos (dict[int, Iterable], optional): Dictionary assigning nodes to their positions. Defaults to None.
             name (str, optional): Name of the lineage tree. Defaults to None.
             **Parameters
-        ---------- Supported keyword arguments are dictionaries assigning nodes to any custom property. The property must be specified for every node, and named differently from lineageTree's own attributes.
+        ---------- Supported keyword arguments are dictionaries assigning nodes to any custom property.
+        The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
         self.__version__ = importlib.metadata.version("LineageTree")
 
