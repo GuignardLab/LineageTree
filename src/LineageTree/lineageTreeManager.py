@@ -204,7 +204,6 @@ class lineageTreeManager:
         nodes2, adj2, corres2 = tree2.edist
         if len(nodes1) == len(nodes2) == 0:
             return 0
-
         delta_tmp = partial(
             delta,
             corres1=corres1,
