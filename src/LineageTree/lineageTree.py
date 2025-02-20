@@ -245,18 +245,14 @@ class lineageTree:
         pos: np.ndarray = None,
         nid: int = None,
     ) -> int:
-        """Adds a node to the lineageTree and update everything except time, this function is not to be called on its own,
-        it's made to help other functions.
+        """Adds a node to the LineageTree object that is either a successor or a predecessor.
 
         Args:
             succ (int): id of the node the new node is a successor to
-            pos ([float, ]): list of three floats representing the 3D
-                spatial position of the node
+            pred (int): id of the node the new node is a predecessor to
+            pos (bool): The position of the new nodes. ###TODO callable###
             nid (int): id value of the new node, to be used carefully,
                 if None is provided the new id is automatically computed.
-            reverse (bool): True if in this lineageTree the predecessors
-                are the successors and reciprocally.
-                This is there for bacward compatibility, should be left at False.
         Returns:
             int: id of the new node.
         """
