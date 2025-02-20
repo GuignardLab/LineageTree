@@ -290,7 +290,7 @@ class lineageTree:
                 list of ids of the nodes the new node is a predecessor to
             pos : np.ndarray, optional
                 position of the new node
-            nid : int, default=None
+            nid : int, optional
                 id value of the new node, to be used carefully,
                 if None is provided the new id is automatically computed.
 
@@ -565,33 +565,33 @@ class lineageTree:
                 wether to print the nodes or not
             draw_edges : bool, default True
                 wether to print the edges or not
-            order_key : Callable, default=None
+            order_key : Callable, optional
                 function that would work for the attribute `key=` for the `sort`/`sorted` function
             vert_space_factor : float, default=0.5
                 the vertical position of a node is its time. `vert_space_factor` is a
                 multiplier to space more or less nodes in time
             horizontal_space : float, default=1
                 space between two consecutive nodes
-            node_size : Callable or str, default=None
+            node_size : Callable or str, optional
                 a function that maps a node id to a `float` value that will determine the
                 radius of the node. The default function return the constant value `vertical_space_factor/2.1`
                 If a string is given instead and it is a property of the tree,
                 the the size will be mapped according to the property
-            stroke_width : Callable, default=None
+            stroke_width : Callable, optional
                 a function that maps a node id to a `float` value that will determine the
                 width of the daughter edge.  The default function return the constant value `vertical_space_factor/2.1`
             factor : float, default=1.0
                 scaling factor for nodes positions, default 1
-            node_color : Callable or str, default=None
+            node_color : Callable or str, optional
                 a function that maps a node id to a triplet between 0 and 255.
                 The triplet will determine the color of the node. If a string is given instead and it is a property
                 of the tree, the the color will be mapped according to the property
-            node_color_map : Callable or str, default=None
+            node_color_map : Callable or str, optional
                 the name of the colormap to use to color the nodes, or a colormap function
-            stroke_color : Callable, default=None
+            stroke_color : Callable, optional
                 a function that maps a node id to a triplet between 0 and 255.
                 The triplet will determine the color of the stroke of the inward edge.
-            positions : dict mapping int to list of two float, default=None
+            positions : dict mapping int to list of two float, optional
                 dictionary that maps a node id to a 2D position.
                 Default `None`. If provided it will be used to position the nodes.
         """
@@ -788,13 +788,13 @@ class lineageTree:
                 minimum time to consider
             t_max : int, default=np.inf
                 maximum time to consider
-            nodes_to_use : list of int, default=None
+            nodes_to_use : list of int, optional
                 list of nodes to show in the graph,
                 if `None` then self.nodes is used
                 (taking into account `t_min` and `t_max`)
             temporal : bool, default=True
                 True if the temporal links should be printed
-            spatial : str, default=None
+            spatial : str, optional
                 Build spatial edges from a spatial neighbourhood graph.
                 The graph has to be computed before running this function
                 'ball': neighbours at a given distance,
@@ -805,7 +805,7 @@ class lineageTree:
             write_layout : bool, default=True
                 write the spatial position as layout if True
                 do not write spatial position otherwise
-            node_properties : dict mapping str to list of dict of properties and its default value, default=None
+            node_properties : dict mapping str to list of dict of properties and its default value, optional
                 a dictionary of properties to write
                 To a key representing the name of the property is
                 paired a dictionary that maps a cell id to a property
@@ -1000,7 +1000,7 @@ class lineageTree:
         ----------
             fname : str
                 name of the binary file
-            starting_points : list of int, default=None
+            starting_points : list of int, optional
                 list of the roots to be written.
                 If `None`, all roots are written, default value, None
         """
@@ -1249,9 +1249,9 @@ class lineageTree:
         ----------
             x : int
                 id of the node to compute
-            depth : int, default=None
+            depth : int, optional
                 maximum number of predecessors to return
-            end_time : int, default=None
+            end_time : int, optional
                 maximum time to consider
 
         Returns
@@ -1292,11 +1292,11 @@ class lineageTree:
         ----------
             x : int
                 id of the node to compute
-            depth : int, default=None
+            depth : int, optional
                 maximum number of predecessors and successor to return
-            depth_pred : int, default=None
+            depth_pred : int, optional
                 maximum number of predecessors to return
-            depth_succ : int, default=None
+            depth_succ : int, optional
                 maximum number of successors to return
 
         Returns
@@ -1328,7 +1328,7 @@ class lineageTree:
         ----------
             node : int
                 The node from which we want to get its branches.
-            end_time : int, default=None
+            end_time : int, optional
                 The time at which we want to stop the branches.
 
         Returns
@@ -1373,7 +1373,7 @@ class lineageTree:
 
         Parameters
         ----------
-            roots : list, default=None
+            roots : list, optional
                 list of ids of the roots to be computed, if `None` all roots are used
 
         Returns
@@ -1466,18 +1466,18 @@ class lineageTree:
         self, t_b: int = None, t_e: int = None, th: float = 50
     ) -> dict[int, float]:
         """Computes the spatial density of cells between `t_b` and `t_e`.
-        The spatial density is computed as follow:
-        #cell/(4/3*pi*th^3)
-        The results is stored in self.spatial_density is returned.
+
+        The results is stored in `self.spatial_density` and returned.
 
         Parameters
         ----------
-            t_b : int, default=None
+            t_b : int, optional
                 starting time to look at, default first time point
-            t_e : int, default=None
+            t_e : int, optional
                 ending time to look at, default last time point
             th : float, default=50
                 size of the neighbourhood
+
         Returns
         -------
             dict of int to float
@@ -1505,6 +1505,7 @@ class lineageTree:
         ----------
             k : float
                 number of nearest neighours
+
         Returns
         -------
             dict of int to set of int
@@ -1533,6 +1534,7 @@ class lineageTree:
         ----------
             th : float, default=50
                 distance to consider neighbors
+
         Returns
         -------
             dict of int to set of int
@@ -1557,7 +1559,7 @@ class lineageTree:
 
         Parameters
         ----------
-            time : int, default=None
+            time : int, optional
                 The timepoint to find the main axes.
                 If `None` will find the timepoint
                 with the largest number of cells.
@@ -1647,7 +1649,7 @@ class lineageTree:
         ----------
             n : int
                 node for which to look the ancestor
-            time : int, default=None
+            time : int, optional
                 time at which the ancestor has to be found.
                 If `None` the ancestor at the first time point
                 will be found (default `None`)
@@ -1917,17 +1919,17 @@ class lineageTree:
                 2 dictionaries: 1 contains all links from start of life cycle to end of life cycle and
                 the succesors of each cell.
                 1 contains the length of each life cycle.
-            selected_nodes : list or set, default=None
+            selected_nodes : list or set, optional
                 Which cells are to be selected (Painted with a different color)
-            selected_edges : list or set, default=None
+            selected_edges : list or set, optional
                 Which edges are to be selected (Painted with a different color)
             color_of_nodes : str, default="magenta"
                 Color of selected nodes
-            color_of_edges : str, default=None
+            color_of_edges : str, optional
                 Color of selected edges
             size : int, default=10
                 Size of the nodes
-            ax : plt.Axes, default=None
+            ax : plt.Axes, optional
                 Plot the graph on existing ax. Defaults to None.
             default_color : str, default="black"
                 Default color of nodes
@@ -1983,9 +1985,9 @@ class lineageTree:
 
         Parameters
         ----------
-            node : int, default=None
+            node : int, optional
                 The id of the node/nodes to produce the simple graphs
-            start_time : int, default=None
+            start_time : int, optional
                 Important only if there are no nodes it will produce the graph of every
                 root that starts before or at start time. Defaults to None.
 
@@ -2023,9 +2025,9 @@ class lineageTree:
 
         Parameters
         ----------
-            nodes : list, default=None
+            nodes : list, optional
                 The nodes spawning the graphs to be plotted.
-            last_time_point_to_consider : int, default=None
+            last_time_point_to_consider : int, optional
                 Which timepoints and upwards are the graphs to be plotted.
                 For example if start_time is 10, then all trees that begin
                 on tp 10 or before are calculated. Defaults to None, where
@@ -2038,7 +2040,7 @@ class lineageTree:
                 The dpi of the figure.
             fontsize : int, default=15
                 The fontsize of the labels.
-            axes : plt.Axes, default=None
+            axes : plt.Axes, optional
                 The axes to plot the graphs on.
             vert_gap : int, default=1
                 space between the nodes.
@@ -2148,7 +2150,7 @@ class lineageTree:
                 The dpi of the figure.
             vert_gap : int, default=2
                 The space between the nodes.
-            ax : plt.Axes, default=None
+            ax : plt.Axes, optional
                 The axes to plot the graph on.
 
         Returns
@@ -2188,7 +2190,7 @@ class lineageTree:
         ----------
                 r : int or list of int
                     id or list of ids of the spawning node
-                t : int, default=None
+                t : int, optional
                     target time, if `None` goes as far as possible
 
         Returns
@@ -2680,7 +2682,7 @@ class lineageTree:
                 True if the user wants to run the fast algorithm with window restrains
             centered_band : bool, default=True
                 if running the fast algorithm, True if the windown is centered
-            projection : {"3d", "xy", "xz", "yz", "pca"}, default=None
+            projection : {"3d", "xy", "xz", "yz", "pca"}, optional
                 specify which 2D to plot ->
                 "3d" : for the 3d visualization
                 "xy" or None (default) : 2D projection of axis x and y

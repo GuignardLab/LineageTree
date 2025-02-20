@@ -23,6 +23,7 @@ extensions = [
     "sphinx.ext.napoleon",  # If using Google/NumPy docstrings
     "sphinx.ext.viewcode",  # Links to source code
     "myst_parser",  # Markdown support
+    "sphinx.ext.mathjax",  # MathJax support
 ]
 
 templates_path = ["_templates"]
@@ -32,7 +33,34 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "sphinx_rtd_theme"
+html_theme = "sphinx_book_theme"
 html_static_path = ["_static"]
 
 autodoc_inherit_docstrings = True
+
+html_theme_options = {
+    "repository_url": "https://github.com/Guignardlab/lineagetree",
+    "use_repository_button": True,
+    "path_to_docs": "docs",
+    "repository_branch": "main",
+    "launch_buttons": {
+        "binderhub_url": "https://mybinder.org",
+        "colab_url": "https://colab.research.google.com/",
+        "deepnote_url": "https://deepnote.com/",
+        "notebook_interface": "jupyterlab",
+        "thebe": True,
+    },
+    "use_edit_page_button": True,
+    "use_source_button": True,
+    "use_issues_button": True,
+    "use_download_button": True,
+    "use_sidenotes": True,
+    "show_toc_level": 2,
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/executablebooks/sphinx-book-theme",
+            "icon": "fa-brands fa-github",
+        },
+    ],
+}
