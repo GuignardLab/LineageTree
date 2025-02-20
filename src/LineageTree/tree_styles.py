@@ -42,7 +42,7 @@ class abstract_trees(ABC):
         return self.internal_ids
 
     @abstractmethod
-    def get_tree(self):
+    def get_tree(self) -> dict:
         """
         Get a tree version of the tree spawned by the node `r`
 
@@ -147,9 +147,9 @@ class mini_tree(abstract_trees):
             cycle_times = np.array([self.lT.time[c] for c in cycle])
             cycle = cycle[cycle_times <= self.end_time]
             if cycle.size:
-                _next = self.lT.successor[cycle[-1]]
+                _next = list(self.lT.successor[cycle[-1]])
                 if 1 < len(_next):
-                    out_dict[current] = list(_next)
+                    out_dict[current] = _next
                     to_do.extend(_next)
                 else:
                     out_dict[current] = []

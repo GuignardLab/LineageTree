@@ -395,9 +395,7 @@ class lineageTree:
         if not hasattr(self, "_roots") or self._changed_roots:
             self._roots = {s for s, p in self._predecessor.items() if p == ()}
             self._changed_roots = True
-            return self._roots
-        else:
-            return self._roots
+        return self._roots
 
     @property
     def edges(self):
@@ -408,9 +406,7 @@ class lineageTree:
         if not hasattr(self, "_leaves") or self._changed_leaves:
             self._leaves = {p for p, s in self._successor.items() if s == ()}
             self._changed_leaves = True
-            return self._leaves
-        else:
-            return self._leaves
+        return self._leaves
 
     @property
     def labels(self):
@@ -915,18 +911,14 @@ class lineageTree:
                 If None, all roots are written, default value, None
         """
         if starting_points is None:
-            starting_points = [
-                c
-                for c in self._successor
-                if self._predecessor.get(c, ()) == ()
-            ]
+            starting_points = list(self.roots)
         number_sequence = [-1]
         pos_sequence = []
         time_sequence = []
         for c in starting_points:
             time_sequence.append(self.time.get(c, 0))
             to_treat = [c]
-            while to_treat != ():
+            while to_treat:
                 curr_c = to_treat.pop()
                 number_sequence.append(curr_c)
                 pos_sequence += list(self.pos[curr_c])
@@ -1091,7 +1083,7 @@ class lineageTree:
         if not end_time:
             end_time = self.t_e
         unconstrained_cycle = [x]
-        cycle = [x] if start_time <= self.time[x] <= end_time else ()
+        cycle = [x] if start_time <= self.time[x] <= end_time else []
         acc = 0
         while (
             acc != depth
@@ -1259,7 +1251,7 @@ class lineageTree:
         leaves = set()
         while to_do:
             curr = to_do.pop()
-            succ = self._successor.get(curr, ())
+            succ = self._successor[curr]
             if not succ:
                 leaves.add(curr)
             to_do += succ
@@ -1291,7 +1283,7 @@ class lineageTree:
         sub_tree = []
         while to_do:
             curr = to_do.pop()
-            succ = self._successor.get(curr, ())
+            succ = self._successor[curr]
             if succ and end_time < self.time.get(curr, end_time):
                 succ = []
                 continue
@@ -1318,7 +1310,9 @@ class lineageTree:
             {int, float}: dictionary that maps a cell id to its spatial density
         """
         s_vol = 4 / 3.0 * np.pi * th**3
-        time_range = set(self.time.values())
+        time_range = set(range(self.t_b, self.t_e)).intersection(
+            self.time.values()
+        )
         for t in time_range:
             idx3d, nodes = self.get_idx3d(t)
             nb_ni = [
@@ -1460,10 +1454,7 @@ class lineageTree:
         if time is None:
             time = self.t_b
         ancestor = n
-        while (
-            time < self.time.get(ancestor, -1)
-            and ancestor in self._predecessor
-        ):
+        while time < self.time.get(ancestor, self.t_b - 1):
             ancestor = self._predecessor.get(ancestor, [-1])[0]
         return ancestor
 
@@ -1488,7 +1479,7 @@ class lineageTree:
                 return ancestor
             ancestor = self._predecessor.get(ancestor, [-1])[0]
         return None
-      
+
     def unordered_tree_edit_distances_at_time_t(
         self,
         t: int,
@@ -1906,14 +1897,9 @@ class lineageTree:
             Returns:
                 (list) list of nodes at time `t` spawned by `r`
         """
-        if r in [
-            None,
-            [],
-            set(),
-            (),
-        ]:
-            r = list(self.roots)
-        if not isinstance(r, list):
+        if not r and r != 0:
+            r = self.roots
+        if isinstance(r, int):
             r = [r]
         if t is None:
             t = self.t_e
@@ -2607,9 +2593,9 @@ class lineageTree:
             self._successor[k] = tuple(v)
         for k, v in self._predecessor.items():
             self._predecessor[k] = tuple(v)
-        for node in self.nodes.difference(self._predecessor):
+        for node in set(self._successor).difference(self._predecessor):
             self._predecessor[node] = ()
-        for node in self.nodes.difference(self._successor):
+        for node in set(self._predecessor).difference(self._successor):
             self._successor[node] = ()
 
 
@@ -2650,14 +2636,6 @@ class lineageTreeDicts(lineageTree):
             )
         if not hasattr(lT, "time_resolution"):
             lT.time_resolution = None
-        for node in lT.nodes.difference(lT.predecessor):
-            lT._predecessor[node] = ()
-        for node in set(lT.predecessor).difference(lT.successor):
-            lT._successor[node] = ()
-        for k, v in lT.successor.items():
-            lT._successor[k] = tuple(v)
-        for k, v in lT.predecessor.items():
-            lT._predecessor[k] = tuple(v)
 
         return lT
 
