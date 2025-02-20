@@ -1,7 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import final
 
 import numpy as np
 
@@ -95,7 +94,6 @@ class abstract_trees(ABC):
             (int|float): The number of nodes of each tree according to each style.
         """
 
-    @final
     def _edist_format(self, adj_dict: dict):
         """Formating the custom tree style to the format needed by edist.
 

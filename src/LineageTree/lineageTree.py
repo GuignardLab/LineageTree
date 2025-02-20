@@ -14,7 +14,7 @@ from itertools import combinations
 from numbers import Number
 from pathlib import Path
 from types import MappingProxyType
-from typing import TextIO, Union, Literal
+from typing import Literal
 
 import svgwrite
 from packaging.version import Version
@@ -86,7 +86,7 @@ class lineageTree:
         node: int,
         length: int,
         downstream: bool,
-        pos: Union[callable, None] = None,
+        pos: Callable | None = None,
     ) -> int:
         """Adds branches either downstream or upstream to the node selected. Does not add nodes
         Args:
@@ -1904,7 +1904,7 @@ class lineageTree:
     def nodes_at_t(
         self,
         t: int,
-        r: [int, Iterable[int]] = None,
+        r: int | Iterable[int] = None,
     ) -> list:
         """
         Returns the list of cells at time `t` that are spawn by the node(s) `r`.
