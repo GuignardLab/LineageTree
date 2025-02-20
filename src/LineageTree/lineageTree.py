@@ -963,7 +963,7 @@ class lineageTree:
             f.close()
 
     @classmethod
-    def load(clf, fname: str) -> "lineageTree":
+    def load(clf, fname: str):
         """
         Loading a lineage tree from a ".lT" file.
 
@@ -976,16 +976,27 @@ class lineageTree:
         with open(fname, "br") as f:
             lT = pkl.load(f)
             f.close()
+        if not hasattr(lT, "__version__") or Version(lT.__version__) < Version(
+            "2.0.0"
+        ):
+            properties = {
+                prop_name: prop
+                for prop_name, prop in lT.__dict__.items()
+                if isinstance(prop, dict)
+                and prop_name
+                not in ["successor", "predecessor", "time", "pos"]
+                and set(prop).symmetric_difference(lT.nodes) == set()
+            }
+            lT = lineageTreeDicts(
+                successor=lT._successor,
+                time=lT._time,
+                pos=lT.pos,
+                name=lT.name if hasattr(lT, "name") else None,
+                **properties,
+            )
         if not hasattr(lT, "time_resolution"):
-            lT.time_resolution = None
-        for node in lT.nodes.difference(lT.predecessor):
-            lT._predecessor[node] = ()
-        for node in set(lT.predecessor).difference(lT.successor):
-            lT._successor[node] = ()
-        for k, v in lT.successor.items():
-            lT._successor[k] = tuple(v)
-        for k, v in lT.predecessor.items():
-            lT._predecessor[k] = tuple(v)
+            lT.time_resolution = 0
+
         return lT
 
     def get_idx3d(self, t: int) -> tuple:
@@ -1336,7 +1347,8 @@ class lineageTree:
                 a cell id to its `k` nearest neighbors
         """
         self.kn_graph = {}
-        for t, nodes in self.time_nodes.items():
+        for t in set(self.time.values()):
+            nodes = self.nodes_at_t(t)
             use_k = k if k < len(nodes) else len(nodes)
             idx3d, nodes = self.get_idx3d(t)
             pos = [self.pos[c] for c in nodes]
@@ -1359,7 +1371,8 @@ class lineageTree:
                 a cell id to its neighbors at a distance `th`
         """
         self.th_edges = {}
-        for t, _ in self.time_nodes.items():
+        for t in set(self.time.values()):
+            nodes = self.nodes_at_t(t)
             idx3d, nodes = self.get_idx3d(t)
             neighbs = idx3d.query_ball_tree(idx3d, th)
             out = dict(
@@ -1382,9 +1395,12 @@ class lineageTree:
         Returns:
             list: A list that contains the array of eigenvalues and eigenvectors.
         """
+        time_nodes = {
+            t: len(self.nodes_at_t(t)) for t in range(self.t_b, self._te)
+        }
         if time is None:
-            time = max(self.time_nodes, key=lambda x: len(self.time_nodes[x]))
-        pos = np.array([self.pos[node] for node in self.time_nodes[time]])
+            time = max(time_nodes, key=lambda x: len(time_nodes[x]))
+        pos = np.array([self.pos[node] for node in time_nodes[time]])
         pos = pos - np.mean(pos, axis=0)
         cov = np.cov(np.array(pos).T)
         eig_val, eig_vec = np.linalg.eig(cov)
@@ -2491,9 +2507,6 @@ class lineageTree:
             )
 
         return distance, fig
-
-    def first_labelling(self):
-        self.labels = {i: "Unlabeled" for i in self.roots}
 
     def __init__(
         self,

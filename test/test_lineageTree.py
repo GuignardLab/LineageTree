@@ -141,7 +141,9 @@ def test_time_resolution():
 
 def test_loading():
     lT = lineageTree.load("test/data/test-mamut.lT")
-    assert lT.time_resolution == 1
+    assert lT.time_resolution == 0
+    lT.time_resolution = 1.51
+    assert lT.time_resolution == 1.5
 
 
 def test_complete_lineage():
