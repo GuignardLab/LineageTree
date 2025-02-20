@@ -60,6 +60,7 @@ class lineageTree:
         else:
             return self.next_id.pop()
 
+    ###TODO make it longer.
     def complete_lineage(self, nodes: int | set = None) -> None:
         """Makes all leaf branches longer so that they reach the last timepoint (self.t_e), useful
         for tree edit distance algorithms.
@@ -100,7 +101,7 @@ class lineageTree:
         if length == 0:
             return node
         if length < 1:
-            raise ValueError("Length cannot be <2")
+            raise ValueError("Length cannot be <1")
         if downstream:
             for _ in range(length):
                 old_node = node
@@ -128,6 +129,7 @@ class lineageTree:
         self._changed_leaves = True
         return node
 
+    ###TODO
     def cut_tree(self, root: int) -> int:
         """It transforms a lineage that has at least 2 divisions into 2 independent lineages,
         that spawn from the time point of the first node. (splits a tree into 2)
@@ -152,6 +154,7 @@ class lineageTree:
         else:
             raise Warning("No division of the branch")
 
+    ###TODO
     def fuse_lineage_tree(
         self,
         l1_root: int,
