@@ -3062,52 +3062,44 @@ class lineageTreeDicts(lineageTree):
             potential_leaves = [None, -1, (), [], set()]
 
         if successor is not None:
-            self._successor = {
-                k: v for k, v in successor.items() if v not in potential_leaves
-            }
-            self._successor.update(
-                {k: () for k, v in successor.items() if v in potential_leaves}
-            )
+            self._successor = {}
             self._predecessor = {}
-            for pred, succ in self._successor.items():
-                for s in succ:
-                    if s in self._predecessor:
-                        raise ValueError(
-                            "Node can have at most one predecessor."
-                        )
-                    self._predecessor[s] = (pred,)
-            for root in set(self.successor).difference(self.predecessor):
-                self._predecessor[root] = ()
+            for pred, succs in successor.items():
+                if succs in potential_leaves:
+                    self._successor[pred] =  ()
+                else:
+                    self._successor[pred] = tuple(succs)
+                    for succ in succs:
+                        if succ in self._predecessor:
+                            raise ValueError(
+                                "Node can have at most one predecessor."
+                            )
+                        self._predecessor[succ] = (pred,)
         elif predecessor is not None:
             self._successor = {}
-            self._predecessor = {
-                k: v
-                for k, v in self._predecessor.items()
-                if v not in potential_leaves
-            }
+            self._predecessor = {}
             for succ, pred in predecessor.items():
-                if isinstance(pred, Iterable):
-                    if 1 < len(pred):
-                        raise ValueError(
-                            "Node can have at most one predecessor."
-                        )
-                    pred = pred[0]
-                self._successor.setdefault(pred, ())
-                self._successor[pred] += (succ,)
-            self._predecessor.update(
-                {
-                    k: ()
-                    for k, v in predecessor.items()
-                    if v in potential_leaves
-                }
-            )
-            for leaf in set(self.predecessor).difference(self.successor):
-                self._successor[leaf] = ()
+                if pred in potential_leaves:
+                    self._predecessor[succ] = ()
+                else:
+                    if isinstance(pred, Iterable):
+                        if 1 < len(pred):
+                            raise ValueError(
+                                "Node can have at most one predecessor."
+                            )
+                        pred = pred[0]
+                    self._predecessor[succ] = (pred,)
+                    self._successor.setdefault(pred, ())
+                    self._successor[pred] += (succ,)
         else:
             warnings.warn(
                 "Both successor and predecessor attributes are empty.",
                 stacklevel=2,
             )
+        for root in set(self._successor).difference(self._predecessor):
+            self._predecessor[root] = ()
+        for leaf in set(self._predecessor).difference(self._successor):
+            self._successor[leaf] = ()
 
         if pos is None:
             self.pos = {}
