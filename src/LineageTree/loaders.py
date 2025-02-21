@@ -576,7 +576,7 @@ def read_from_txt_for_celegans_BAO(path: str):
         ids = list(range(unique_id, unique_id + len(lc)))
         successor.update({ids[i]: [ids[i + 1]] for i in range(len(ids) - 1)})
         properties["expression"].update(dict(zip(ids, lc, strict=True)))
-        properties["name"].update({id_: c for id_ in ids})
+        properties["label"].update({id_: c for id_ in ids})
         to_link[c] = (unique_id, unique_id + len(lc) - 1)
         unique_id += len(lc)
 
