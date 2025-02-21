@@ -13,3 +13,10 @@ lT = LineageTree.load("testdata.lT")
 ```python
 lT.nodes
 ```
+
+## How to inspect the lifecycle of a cell n
+
+```python
+lT.get_cycle(n)
+```
+
