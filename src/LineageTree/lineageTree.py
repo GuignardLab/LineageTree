@@ -2977,10 +2977,12 @@ class lineageTreeDicts(lineageTree):
         """
         Loading a lineage tree from a ".lT" file.
 
-        Args:
+        Parameters
+        ----------
             fname (str): path to and name of the file to read
 
-        Returns:
+        Returns
+        -------
             (lineageTree): loaded file
         """
         with open(fname, "br") as f:
@@ -3024,7 +3026,8 @@ class lineageTreeDicts(lineageTree):
         """Creates a lineageTree object from minimal information, without reading from a file.
         Either `successor` or `predecessor` should be specified.
 
-        Args:
+        Parameters
+        ----------
             successor (dict[int, Iterable]): Dictionary assigning nodes to their successors.
             predecessor (dict[int, int | Iterable]): Dictionary assigning nodes to their predecessors.
             time (dict[int, float], optional): Dictionary assigning nodes to the time point they were recorded to.  Defaults to None, in which case all times are set to `starting_time`.
@@ -3032,7 +3035,9 @@ class lineageTreeDicts(lineageTree):
             pos (dict[int, Iterable], optional): Dictionary assigning nodes to their positions. Defaults to None.
             name (str, optional): Name of the lineage tree. Defaults to None.
             root_leaf_value (Any, optional): Value of roots and leaves in the successor and predecessor dictionaries. Defaults include `[None, -1, (), [], set()]`.
-            **kwargs: Supported keyword arguments are dictionaries assigning nodes to any custom property. The property must be specified for every node, and named differently from lineageTree's own attributes.
+            **Parameters
+        ---------- Supported keyword arguments are dictionaries assigning nodes to any custom property. 
+        The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
         self.__version__ = importlib.metadata.version("LineageTree")
 
