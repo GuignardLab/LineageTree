@@ -14,7 +14,7 @@ from itertools import combinations
 from numbers import Number
 from pathlib import Path
 from types import MappingProxyType
-from typing import Literal
+from typing import Literal, Any
 
 import svgwrite
 from packaging.version import Version
@@ -2979,11 +2979,13 @@ class lineageTreeDicts(lineageTree):
 
         Parameters
         ----------
-            fname (str): path to and name of the file to read
+        fname : str 
+            path to and name of the file to read
 
         Returns
         -------
-            (lineageTree): loaded file
+        lineageTree
+            loaded file
         """
         with open(fname, "br") as f:
             lT = pkl.load(f)
@@ -3014,12 +3016,13 @@ class lineageTreeDicts(lineageTree):
     def __init__(
         self,
         *,
-        successor: dict[int, tuple] = None,
-        predecessor: dict[int, tuple] = None,
-        time: dict[int, tuple] = None,
-        starting_time: float = 0,
+        successor: dict[int, Iterable] = None,
+        predecessor: dict[int, int | Iterable] = None,
+        time: dict[int | float, tuple] = None,
+        starting_time: int | float = 0,
         pos: dict[int, Iterable] = None,
         name: str = None,
+        root_leaf_value: Iterable = None,
         **kwargs,
     ):
         """Creates a lineageTree object from minimal information, without reading from a file.
@@ -3027,15 +3030,25 @@ class lineageTreeDicts(lineageTree):
 
         Parameters
         ----------
-            successor (dict[int, tuple]): Dictionary assigning nodes to their successors.
-            predecessor (dict[int, tuple]): Dictionary assigning nodes to their predecessors.
-            time (dict[int, float], optional): Dictionary assigning nodes to the time point they were recorded to.  Defaults to None, in which case all times are set to `starting_time`.
-            starting_time (float, optional): Starting time of the lineage tree. Defaults to 0.
-            pos (dict[int, Iterable], optional): Dictionary assigning nodes to their positions. Defaults to None.
-            name (str, optional): Name of the lineage tree. Defaults to None.
-            **Parameters
-        ---------- Supported keyword arguments are dictionaries assigning nodes to any custom property.
-        The property must be specified for every node, and named differently from lineageTree's own attributes.
+        successor : dict mapping int to Iterable
+            Dictionary assigning nodes to their successors.
+        predecessor : dict mapping int to int or Iterable
+            Dictionary assigning nodes to their predecessors.
+        time : dict mapping int to int or float, optional
+            Dictionary assigning nodes to the time point they were recorded to.  
+            Defaults to None, in which case all times are set to `starting_time`.
+        starting_time : int or float, optional
+            Starting time of the lineage tree. Defaults to 0.
+        pos : dict mapping int to Iterable, optional
+            Dictionary assigning nodes to their positions. Defaults to None.
+        name : str, optional
+            Name of the lineage tree. Defaults to None.
+        root_leaf_value : Iterable, optional
+            Iterable of values of roots' predecessors and leaves' successors in the successor and predecessor dictionaries. 
+            Defaults are `[None, (), [], set()]`.
+        **kwargs: 
+            Supported keyword arguments are dictionaries assigning nodes to any custom property. 
+            The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
         self.__version__ = importlib.metadata.version("LineageTree")
 
@@ -3046,36 +3059,51 @@ class lineageTreeDicts(lineageTree):
             )
         self._changed_roots = True
         self._changed_leaves = True
+        
+        if not isinstance(root_leaf_value, Iterable):
+            raise ValueError(
+                f"root_leaf_value is of type {type(root_leaf_value)}, expected Iterable."
+            )
+        if len(root_leaf_value) < 1:
+            raise ValueError(
+                f"root_leaf_value should have at least one element."
+            )
+        if root_leaf_value is None:
+            root_leaf_value = [None, (), [], set()]
+
         if successor is not None:
-            self._successor = successor
+            self._successor = {}
             self._predecessor = {}
-            for pred, succ in successor.items():
-                for s in succ:
-                    if s in self._predecessor:
-                        raise ValueError(
-                            "Node can have at most one predecessor."
-                        )
-                    self._predecessor[s] = (pred,)
+            for pred, succs in successor.items():
+                if succs not in root_leaf_value:
+                    self._successor[pred] = tuple(succs)
+                    for succ in succs:
+                        if succ in self._predecessor:
+                            raise ValueError(
+                                "Node can have at most one predecessor."
+                            )
+                        self._predecessor[succ] = (pred,)
         elif predecessor is not None:
             self._successor = {}
-            self._predecessor = predecessor
+            self._predecessor = {}
             for succ, pred in predecessor.items():
-                if isinstance(pred, Iterable):
-                    if 1 < len(pred):
+                if pred not in root_leaf_value:
+                    if isinstance(pred, Iterable) and 1 < len(pred):
                         raise ValueError(
                             "Node can have at most one predecessor."
                         )
                     pred = pred[0]
-                successor.setdefault(pred, ())
-                successor[pred] += (succ,)
+                    self._predecessor[succ] = (pred,)
+                    self._successor.setdefault(pred, ())
+                    self._successor[pred] += (succ,)
         else:
             warnings.warn(
                 "Both successor and predecessor attributes are empty.",
                 stacklevel=2,
             )
-        for root in set(self.successor).difference(self.predecessor):
+        for root in set(self._successor).difference(self._predecessor):
             self._predecessor[root] = ()
-        for leaf in set(self.predecessor).difference(self.successor):
+        for leaf in set(self._predecessor).difference(self._successor):
             self._successor[leaf] = ()
 
         if pos is None:
