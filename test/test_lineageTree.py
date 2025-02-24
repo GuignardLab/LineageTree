@@ -8,11 +8,13 @@ from LineageTree import (
 
 def test_read_MaMuT_xml():
     lT = read_from_mastodon("test/data/test.mastodon")
+    assert lT.name == "test"
     assert len(lT.roots) == 3
     assert len(lT.nodes) == 41
     assert len(lT.successor) == 41
     assert len(lT.find_leaves(40)) == 2
     lT = read_from_mamut_xml("test/data/test-mamut.xml")
+    assert lT.name == "test-mamut"
     assert len(lT.nodes) == 2430
     assert len(lT.successor) == 2430
 

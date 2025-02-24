@@ -114,8 +114,8 @@ def read_from_csv(
         delim : str, default=","
             delimiter used in the csv file
         name : None or str, optional
-            The name attribute of the lineageTree file if given the attribute
-            will be the name given else the stem of the file path.
+           The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
+           will be the name attribute, otherwise the name will be the stem of the file path.
 
     Returns
     -------
@@ -156,7 +156,10 @@ def read_from_csv(
         pos[C] = pos
         time[C] = t
     if not name:
-        name = Path(file_path).stem
+        tmp_name = Path(file_path).stem
+        if name == "":
+            warn(f"Name set to default {tmp_name}", stacklevel=2)
+        name = tmp_name
     return lineageTreeDicts(successor=successor, time=time, pos=pos, name=name)
 
 
@@ -223,8 +226,8 @@ def read_from_ASTEC(
         eigen : bool, default=False
             whether or not to read the eigen values, default False
         name : None or str, optional
-            The name attribute of the lineageTree file if given the attribute
-            will be the name given else the stem of the file path.
+           The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
+           will be the name attribute, otherwise the name will be the stem of the file path.
 
     Returns
     -------
@@ -324,7 +327,10 @@ def read_from_ASTEC(
                     }
             properties[prop_name] = dictionary
     if not name:
-        name = Path(file_path).stem
+        tmp_name = Path(file_path).stem
+        if name == "":
+            warn(f"Name set to default {tmp_name}", stacklevel=2)
+        name = tmp_name
     return lineageTreeDicts(
         successor=successor, time=time, pos=pos, name=name, **properties
     )
@@ -340,8 +346,8 @@ def read_from_binary(fname: str, name: None | str = None):
         fname : string
             path to the binary file
         name : None or str, optional
-            The name attribute of the lineageTree file if given the attribute
-            will be the name given else the stem of the file path.
+            The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
+            will be the name attribute, otherwise the name will be the stem of the file path.
 
     Returns
     -------
@@ -435,7 +441,10 @@ def read_from_binary(fname: str, name: None | str = None):
                     t = time_sequence.pop(0)
         i += 1
     if not name:
-        name = Path(fname).stem
+        tmp_name = Path(fname).stem
+        if name == "":
+            warn(f"Name set to default {tmp_name}", stacklevel=2)
+        name = tmp_name
     return lineageTreeDicts(successor=successor, time=time, pos=pos, name=name)
 
 
@@ -450,8 +459,6 @@ def read_from_txt_for_celegans(file: str, name: None | str = None):
         name : None or str, optional
            The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
            will be the name attribute, otherwise the name will be the stem of the file path.
-
-
 
     Returns
     -------
@@ -492,7 +499,10 @@ def read_from_txt_for_celegans(file: str, name: None | str = None):
                     p = None
                 successor.setdefault(p, []).append(c)
     if not name:
-        name = Path(file).stem
+        tmp_name = Path(file).stem
+        if name == "":
+            warn(f"Name set to default {tmp_name}", stacklevel=2)
+        name = tmp_name
 
     return lineageTreeDicts(
         successor=successor, time=time, pos=pos, label=label, name=name
@@ -516,7 +526,6 @@ def read_from_txt_for_celegans_CAO(
         name : None or str, optional
            The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
            will be the name attribute, otherwise the name will be the stem of the file path.
-
 
     Returns
     -------
@@ -581,9 +590,12 @@ def read_from_txt_for_celegans_CAO(
                     p = None
                 successor.setdefault(p, []).append(c)
     if not name:
-        name = Path(file).stem
+        tmp_name = Path(file).stem
+        if name == "":
+            warn(f"Name set to default {tmp_name}", stacklevel=2)
+        name = tmp_name
     return lineageTreeDicts(
-        successor=successor, time=time, pos=pos, label=name
+        successor=successor, time=time, pos=pos, label=label, name=name
     )
 
 
@@ -632,8 +644,13 @@ def read_from_txt_for_celegans_BAO(path: str, name: None | str = None):
                 c_id[0]
             )
     if not name:
-        name = Path(path).stem
-    return lineageTreeDicts(successor=successor, starting_time=0, **properties)
+        tmp_name = Path(path).stem
+        if name == "":
+            warn(f"Name set to default {tmp_name}", stacklevel=2)
+        name = tmp_name
+    return lineageTreeDicts(
+        successor=successor, starting_time=0, name=name, **properties
+    )
 
 
 def read_from_tgmm_xml(
@@ -728,9 +745,12 @@ def read_from_tgmm_xml(
                         tmp[:3] + tmp[4:6] + tmp[8:9] + list(pos)
                     )
     if not name:
-        name = Path(file_format).stem
+        tmp_name = Path(file_format).stem
+        if name == "":
+            warn(f"Name set to default {tmp_name}", stacklevel=2)
+        name = tmp_name
     return lineageTreeDicts(
-        successor=successor, time=time, pos=pos, **properties
+        successor=successor, time=time, pos=pos, name=name, **properties
     )
 
 
@@ -743,15 +763,11 @@ def read_from_mastodon(
     ----------
         path : str
             path to the mastodon file
-        name : str, default=None
-            name of the column to use
         tag_set : int|None
             The tag set that will be used to label.
         name : None or str, optional
            The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
            will be the name attribute, otherwise the name will be the stem of the file path.
-
-
 
     Returns
     -------
@@ -785,9 +801,12 @@ def read_from_mastodon(
             label[tag["id"]] = tag["label"]
 
     if not name:
-        name = Path(path).stem
+        tmp_name = Path(path).stem
+        if name == "":
+            warn(f"Name set to default {tmp_name}", stacklevel=2)
+        name = tmp_name
     return lineageTreeDicts(
-        successor=successor, time=time, pos=pos, label=label
+        successor=successor, time=time, pos=pos, label=label, name=name
     )
 
 
@@ -801,9 +820,6 @@ def read_from_mastodon_csv(paths: list[str], name: None | str = None):
         name : None or str, optional
            The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
            will be the name attribute, otherwise the name will be the stem of the file path.
-
-
-
 
     Returns
     -------
@@ -842,10 +858,13 @@ def read_from_mastodon_csv(paths: list[str], name: None | str = None):
         target = int(float(link[5]))
         successor.setdefault(source, []).append(target)
     if not name:
-        name = Path(paths[0]).stem
+        tmp_name = Path(paths[0]).stem
+        if name == "":
+            warn(f"Name set to default {tmp_name}", stacklevel=2)
+        name = tmp_name
 
     return lineageTreeDicts(
-        successor=successor, time=time, pos=pos, label=label
+        successor=successor, time=time, pos=pos, label=label, name=name
     )
 
 
@@ -861,9 +880,6 @@ def read_from_mamut_xml(
         name : None or str, optional
            The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
            will be the name attribute, otherwise the name will be the stem of the file path.
-
-
-
 
     Returns
     -------
@@ -939,11 +955,15 @@ def read_from_mamut_xml(
                 properties["track_name"][t] = t_name
                 properties["tracks"][t_id].append((s, t))
     if not name:
-        name = Path(path).stem
+        tmp_name = Path(path).stem
+        if name == "":
+            warn(f"Name set to default {tmp_name}", stacklevel=2)
+        name = tmp_name
 
     return lineageTreeDicts(
         successor=successor,
         time=time,
         pos=pos,
+        name=name,
         **properties,
     )
