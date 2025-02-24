@@ -8,11 +8,13 @@ from LineageTree import (
 
 def test_read_MaMuT_xml():
     lT = read_from_mastodon("test/data/test.mastodon")
+    assert lT.name == "test"
     assert len(lT.roots) == 3
     assert len(lT.nodes) == 41
     assert len(lT.successor) == 41
     assert len(lT.find_leaves(40)) == 2
     lT = read_from_mamut_xml("test/data/test-mamut.xml")
+    assert lT.name == "test-mamut"
     assert len(lT.nodes) == 2430
     assert len(lT.successor) == 2430
 
@@ -31,7 +33,6 @@ def test_all_tracks():
 def test_uted_2levels_vs_3levels():
     lT = lineageTree()
     t1 = lT.add_root(0)
-    lT.roots.add(0)
     first_level_end = lT.add_branch(t1, 10, True)
 
     second_level_1 = lT.add_branch(first_level_end, 10, downstream=True)
@@ -43,7 +44,6 @@ def test_uted_2levels_vs_3levels():
     lT.add_branch(second_level_2, 10, downstream=True)
 
     t2 = lT.add_root(0)
-    lT.roots.add(0)
     first_level_end = lT.add_branch(t2, 10, downstream=True)
 
     second_level_1 = lT.add_branch(first_level_end, 10, downstream=True)
@@ -67,7 +67,6 @@ def test_uted_2levels_vs_3levels():
 def test_fusion():
     lT = lineageTree()
     t1 = lT.add_root(0)
-    lT.roots.add(0)
     first_level_end = lT.add_branch(t1, 10, downstream=True)
 
     second_level_1 = lT.add_branch(first_level_end, 10, downstream=True)
@@ -79,7 +78,6 @@ def test_fusion():
     lT.add_branch(second_level_2, 10, downstream=True)
 
     t2 = lT.add_root(0)
-    lT.roots.add(0)
     first_level_end = lT.add_branch(t2, 10, downstream=True)
 
     second_level_1 = lT.add_branch(first_level_end, 10, downstream=True)
@@ -96,7 +94,6 @@ def test_fusion():
 def test_adding_nodes():
     lT = lineageTree()
     t1 = lT.add_root(0)
-    lT.roots.add(0)
     first_level_end = lT.add_branch(t1, 9, downstream=True)
 
     lT.add_branch(first_level_end, 10, downstream=True)
@@ -119,7 +116,6 @@ def test_removing_nodes():
 def test_modifying_nodes():
     lT = lineageTree()
     t1 = lT.add_root(0)
-    lT.roots.add(t1)
     lT.modify_branch(t1, 100)
     assert len(lT.get_cycle(t1)) == 100
 
@@ -127,7 +123,6 @@ def test_modifying_nodes():
 def test_modifying_nodes_2():
     lT = lineageTree()
     t1 = lT.add_root(0)
-    lT.roots.add(t1)
     lT.add_branch(t1, 9, downstream=True)
     lT.modify_branch(t1, 100)
     assert len(lT.get_sub_tree(t1)) == 100
@@ -149,12 +144,10 @@ def test_loading():
 def test_complete_lineage():
     lT = lineageTree()
     t1 = lT.add_root(0)
-    lT.roots.add(t1)
 
     lT.add_branch(t1, 10, downstream=True)
 
     t2 = lT.add_root(0)
-    lT.roots.add(t2)
     lT.add_branch(t2, 11, downstream=True)
 
     lT.complete_lineage()

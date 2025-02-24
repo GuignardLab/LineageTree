@@ -12,7 +12,7 @@ except ImportError:
         "No edist installed therefore you will not be able to compute the tree edit distance.",
         stacklevel=2,
     )
-from LineageTree import lineageTree
+from LineageTree import lineageTree, lineageTreeDicts
 
 from .tree_styles import tree_style
 
@@ -50,7 +50,11 @@ class lineageTreeManager:
                 Then name of the lineagetree to be added.
 
         """
-        if isinstance(other_tree, lineageTree) and other_tree.time_resolution:
+        if (
+            isinstance(other_tree, lineageTree)
+            or isinstance(other_tree, lineageTreeDicts)
+            and other_tree.time_resolution
+        ):
             for tree in self.lineagetrees.values():
                 if tree == other_tree:
                     return False
