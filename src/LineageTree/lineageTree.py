@@ -207,7 +207,8 @@ class lineageTree:
             raise ValueError("Please select 2 roots.")
         if self.time[l1_root] != self.time[l2_root]:
             warnings.warn(
-                "Using lineagetrees that do not exist in the same timepoint. The operation will continue"
+                "Using lineagetrees that do not exist in the same timepoint. The operation will continue",
+                stacklevel=2,
             )
         new_root1 = self.add_branch(l1_root, length_l1)
         new_root2 = self.add_branch(l2_root, length_l2)
