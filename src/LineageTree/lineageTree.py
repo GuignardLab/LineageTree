@@ -2979,11 +2979,13 @@ class lineageTreeDicts(lineageTree):
 
         Parameters
         ----------
-            fname (str): path to and name of the file to read
+        fname : str 
+            path to and name of the file to read
 
         Returns
         -------
-            (lineageTree): loaded file
+        lineageTree
+            loaded file
         """
         with open(fname, "br") as f:
             lT = pkl.load(f)
@@ -3016,11 +3018,11 @@ class lineageTreeDicts(lineageTree):
         *,
         successor: dict[int, Iterable] = None,
         predecessor: dict[int, int | Iterable] = None,
-        time: dict[int, tuple] = None,
-        starting_time: float = 0,
+        time: dict[int | float, tuple] = None,
+        starting_time: int | float = 0,
         pos: dict[int, Iterable] = None,
         name: str = None,
-        root_leaf_value: Any = None,
+        root_leaf_value: Iterable = None,
         **kwargs,
     ):
         """Creates a lineageTree object from minimal information, without reading from a file.
@@ -3028,16 +3030,25 @@ class lineageTreeDicts(lineageTree):
 
         Parameters
         ----------
-            successor (dict[int, Iterable]): Dictionary assigning nodes to their successors.
-            predecessor (dict[int, int | Iterable]): Dictionary assigning nodes to their predecessors.
-            time (dict[int, float], optional): Dictionary assigning nodes to the time point they were recorded to.  Defaults to None, in which case all times are set to `starting_time`.
-            starting_time (float, optional): Starting time of the lineage tree. Defaults to 0.
-            pos (dict[int, Iterable], optional): Dictionary assigning nodes to their positions. Defaults to None.
-            name (str, optional): Name of the lineage tree. Defaults to None.
-            root_leaf_value (Any, optional): Value of roots and leaves in the successor and predecessor dictionaries. Defaults include `[None, -1, (), [], set()]`.
-            **Parameters
-        ---------- Supported keyword arguments are dictionaries assigning nodes to any custom property. 
-        The property must be specified for every node, and named differently from lineageTree's own attributes.
+        successor : dict mapping int to Iterable
+            Dictionary assigning nodes to their successors.
+        predecessor : dict mapping int to int or Iterable
+            Dictionary assigning nodes to their predecessors.
+        time : dict mapping int to int or float, optional
+            Dictionary assigning nodes to the time point they were recorded to.  
+            Defaults to None, in which case all times are set to `starting_time`.
+        starting_time : int or float, optional
+            Starting time of the lineage tree. Defaults to 0.
+        pos : dict mapping int to Iterable, optional
+            Dictionary assigning nodes to their positions. Defaults to None.
+        name : str, optional
+            Name of the lineage tree. Defaults to None.
+        root_leaf_value : Iterable, optional
+            Iterable of values of roots' predecessors and leaves' successors in the successor and predecessor dictionaries. 
+            Defaults are `[None, (), [], set()]`.
+        **kwargs: 
+            Supported keyword arguments are dictionaries assigning nodes to any custom property. 
+            The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
         self.__version__ = importlib.metadata.version("LineageTree")
 
@@ -3048,26 +3059,23 @@ class lineageTreeDicts(lineageTree):
             )
         self._changed_roots = True
         self._changed_leaves = True
-        potential_leaves = [None, -1, (), [], set()]
-
-        if root_leaf_value is not None and not isinstance(
-            root_leaf_value, Iterable
-        ):
-            potential_leaves = [root_leaf_value]
-        elif root_leaf_value is not None and isinstance(
-            root_leaf_value, Iterable
-        ):
-            potential_leaves = list(root_leaf_value)
-        else:
-            potential_leaves = [None, -1, (), [], set()]
+        
+        if not isinstance(root_leaf_value, Iterable):
+            raise ValueError(
+                f"root_leaf_value is of type {type(root_leaf_value)}, expected Iterable."
+            )
+        if len(root_leaf_value) < 1:
+            raise ValueError(
+                f"root_leaf_value should have at least one element."
+            )
+        if root_leaf_value is None:
+            root_leaf_value = [None, (), [], set()]
 
         if successor is not None:
             self._successor = {}
             self._predecessor = {}
             for pred, succs in successor.items():
-                if succs in potential_leaves:
-                    self._successor[pred] =  ()
-                else:
+                if succs not in root_leaf_value:
                     self._successor[pred] = tuple(succs)
                     for succ in succs:
                         if succ in self._predecessor:
@@ -3079,15 +3087,12 @@ class lineageTreeDicts(lineageTree):
             self._successor = {}
             self._predecessor = {}
             for succ, pred in predecessor.items():
-                if pred in potential_leaves:
-                    self._predecessor[succ] = ()
-                else:
-                    if isinstance(pred, Iterable):
-                        if 1 < len(pred):
-                            raise ValueError(
-                                "Node can have at most one predecessor."
-                            )
-                        pred = pred[0]
+                if pred not in root_leaf_value:
+                    if isinstance(pred, Iterable) and 1 < len(pred):
+                        raise ValueError(
+                            "Node can have at most one predecessor."
+                        )
+                    pred = pred[0]
                     self._predecessor[succ] = (pred,)
                     self._successor.setdefault(pred, ())
                     self._successor[pred] += (succ,)
