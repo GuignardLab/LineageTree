@@ -14,7 +14,7 @@ from itertools import combinations
 from numbers import Number
 from pathlib import Path
 from types import MappingProxyType
-from typing import Literal, Any
+from typing import Literal
 
 import svgwrite
 from packaging.version import Version
@@ -263,7 +263,7 @@ class lineageTree:
 
         Parameters
         ----------
-        t :int 
+        t :int
             The timepoint the node is going to be added.
         pos : list
             The position of the new node.
@@ -2983,7 +2983,7 @@ class lineageTreeDicts(lineageTree):
 
         Parameters
         ----------
-        fname : str 
+        fname : str
             path to and name of the file to read
 
         Returns
@@ -3039,7 +3039,7 @@ class lineageTreeDicts(lineageTree):
         predecessor : dict mapping int to int or Iterable
             Dictionary assigning nodes to their predecessors.
         time : dict mapping int to int or float, optional
-            Dictionary assigning nodes to the time point they were recorded to.  
+            Dictionary assigning nodes to the time point they were recorded to.
             Defaults to None, in which case all times are set to `starting_time`.
         starting_time : int or float, optional
             Starting time of the lineage tree. Defaults to 0.
@@ -3048,10 +3048,10 @@ class lineageTreeDicts(lineageTree):
         name : str, optional
             Name of the lineage tree. Defaults to None.
         root_leaf_value : Iterable, optional
-            Iterable of values of roots' predecessors and leaves' successors in the successor and predecessor dictionaries. 
+            Iterable of values of roots' predecessors and leaves' successors in the successor and predecessor dictionaries.
             Defaults are `[None, (), [], set()]`.
-        **kwargs: 
-            Supported keyword arguments are dictionaries assigning nodes to any custom property. 
+        **kwargs:
+            Supported keyword arguments are dictionaries assigning nodes to any custom property.
             The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
         self.__version__ = importlib.metadata.version("LineageTree")
@@ -3063,17 +3063,17 @@ class lineageTreeDicts(lineageTree):
             )
         self._changed_roots = True
         self._changed_leaves = True
-        
-        if not isinstance(root_leaf_value, Iterable):
+
+        if root_leaf_value is None:
+            root_leaf_value = [None, (), [], set()]
+        elif not isinstance(root_leaf_value, Iterable):
             raise ValueError(
                 f"root_leaf_value is of type {type(root_leaf_value)}, expected Iterable."
             )
-        if len(root_leaf_value) < 1:
+        elif len(root_leaf_value) < 1:
             raise ValueError(
-                f"root_leaf_value should have at least one element."
+                "root_leaf_value should have at least one element."
             )
-        if root_leaf_value is None:
-            root_leaf_value = [None, (), [], set()]
 
         if successor is not None:
             self._successor = {}
