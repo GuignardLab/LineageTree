@@ -12,7 +12,6 @@ from collections.abc import Callable, Iterable
 from functools import partial
 from itertools import combinations
 from numbers import Number
-from pathlib import Path
 from types import MappingProxyType
 from typing import Literal
 
