@@ -1446,9 +1446,7 @@ class lineageTree:
         end_time: int | None = None,
     ) -> list[int]:
         """Computes the list of cells from the subtree spawned by *x*
-        The default output order is Breadth First Traversal.
-        Unless preorder is `True` in that case the order is
-        Depth First Traversal (DFT) preordered.
+        The default output order is Depth First Traversal (DFT) preoredered.
 
         Parameters
         ----------
