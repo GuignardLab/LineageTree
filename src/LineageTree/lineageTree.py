@@ -1422,6 +1422,59 @@ class lineageTree:
             to_do += succ
         return leaves
 
+    def __build_euler_path(self) -> None:
+        self.in_time = {}
+        self.out_time = {}
+        stack = list(self.roots)
+        timer = 0
+        self.euler_path = []
+        while stack:
+            node = stack.pop()
+            if node not in self.in_time:
+                self.in_time[node] = timer
+                self.euler_path.append(node)
+                timer += 1
+                stack.append(node)
+                for child in self.successor[node]:
+                    stack.append(child)
+            else:
+                self.out_time[node] = timer
+
+    def get_sub_tree_fast(
+        self,
+        x: int | Iterable,
+        end_time: int | None = None,
+    ) -> list[int]:
+        """Computes the list of cells from the subtree spawned by *x*
+        The default output order is Breadth First Traversal.
+        Unless preorder is `True` in that case the order is
+        Depth First Traversal (DFT) preordered.
+
+        Parameters
+        ----------
+        x : int
+            id of root node
+        end_time : int, optional
+            timepoint at which to stop the search,
+            it not provided, the search is done until the end of the tree
+
+        Returns
+        -------
+        list of int
+            the ordered list of node ids
+        """
+        if not hasattr(self, "euler_path"):
+            self.__build_euler_path()
+        if end_time is None:
+            output = self.euler_path[self.in_time[x] : self.out_time[x]]
+        else:
+            output = [
+                n
+                for n in self.euler_path[self.in_time[x] : self.out_time[x]]
+                if self.time[n] <= end_time
+            ]
+        return output
+
     def get_sub_tree(
         self,
         x: int | Iterable,
@@ -1437,6 +1490,9 @@ class lineageTree:
         ----------
         x : int
             id of root node
+        end_time : int, optional
+            timepoint at which to stop the search,
+            it not provided, the search is done until the end of the tree
         preorder : bool, default=False
             if True the output preorder is DFT
 
