@@ -8,7 +8,7 @@ from warnings import warn
 
 import numpy as np
 
-from .lineageTree import lineageTreeDicts
+from .lineageTree import lineageTree
 
 IMPLICIT_L_T = {
     "AB": "P0",
@@ -99,7 +99,7 @@ def read_from_csv(
     link: int = 1,
     delim: str = ",",
     name: None | str = None,
-) -> lineageTreeDicts:
+) -> lineageTree:
     """Read a lineage tree from a csv file with the following format:
     id, time, z, y, x, id, pred_id, lin_id
 
@@ -119,7 +119,7 @@ def read_from_csv(
 
     Returns
     -------
-        lineageTreeDicts
+        lineageTree
             lineage tree
     """
     with open(file_path) as f:
@@ -160,7 +160,7 @@ def read_from_csv(
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-    return lineageTreeDicts(successor=successor, time=time, pos=pos, name=name)
+    return lineageTree(successor=successor, time=time, pos=pos, name=name)
 
 
 def _read_from_ASTEC_xml(file_path: str):
@@ -231,7 +231,7 @@ def read_from_ASTEC(
 
     Returns
     -------
-        lineageTreeDicts
+        lineageTree
             lineage tree
     """
 
@@ -331,7 +331,7 @@ def read_from_ASTEC(
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-    return lineageTreeDicts(
+    return lineageTree(
         successor=successor, time=time, pos=pos, name=name, **properties
     )
 
@@ -351,7 +351,7 @@ def read_from_binary(fname: str, name: None | str = None):
 
     Returns
     -------
-        lineageTreeDicts
+        lineageTree
             lineage tree
     """
     q_size = struct.calcsize("q")
@@ -445,7 +445,7 @@ def read_from_binary(fname: str, name: None | str = None):
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-    return lineageTreeDicts(successor=successor, time=time, pos=pos, name=name)
+    return lineageTree(successor=successor, time=time, pos=pos, name=name)
 
 
 def read_from_txt_for_celegans(file: str, name: None | str = None):
@@ -462,7 +462,7 @@ def read_from_txt_for_celegans(file: str, name: None | str = None):
 
     Returns
     -------
-        lineageTreeDicts
+        lineageTree
             lineage tree
     """
     with open(file) as f:
@@ -504,7 +504,7 @@ def read_from_txt_for_celegans(file: str, name: None | str = None):
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
 
-    return lineageTreeDicts(
+    return lineageTree(
         successor=successor, time=time, pos=pos, label=label, name=name
     )
 
@@ -529,7 +529,7 @@ def read_from_txt_for_celegans_CAO(
 
     Returns
     -------
-        lineageTreeDicts
+        lineageTree
             lineage tree
     """
 
@@ -594,7 +594,7 @@ def read_from_txt_for_celegans_CAO(
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-    return lineageTreeDicts(
+    return lineageTree(
         successor=successor, time=time, pos=pos, label=label, name=name
     )
 
@@ -612,7 +612,7 @@ def read_from_txt_for_celegans_BAO(path: str, name: None | str = None):
 
     Returns
     -------
-        lineageTreeDicts
+        lineageTree
             lineage tree
     """
     cell_times = {}
@@ -648,7 +648,7 @@ def read_from_txt_for_celegans_BAO(path: str, name: None | str = None):
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-    return lineageTreeDicts(
+    return lineageTree(
         successor=successor, starting_time=0, name=name, **properties
     )
 
@@ -683,7 +683,7 @@ def read_from_tgmm_xml(
 
     Returns
     -------
-        lineageTreeDicts
+        lineageTree
             lineage tree
     """
     unique_id = 0
@@ -749,7 +749,7 @@ def read_from_tgmm_xml(
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-    return lineageTreeDicts(
+    return lineageTree(
         successor=successor, time=time, pos=pos, name=name, **properties
     )
 
@@ -771,7 +771,7 @@ def read_from_mastodon(
 
     Returns
     -------
-        lineageTreeDicts
+        lineageTree
             lineage tree
     """
     from mastodon_reader import MastodonReader
@@ -805,7 +805,7 @@ def read_from_mastodon(
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-    return lineageTreeDicts(
+    return lineageTree(
         successor=successor, time=time, pos=pos, label=label, name=name
     )
 
@@ -823,7 +823,7 @@ def read_from_mastodon_csv(paths: list[str], name: None | str = None):
 
     Returns
     -------
-        lineageTreeDicts
+        lineageTree
             lineage tree
     """
     spots = []
@@ -863,7 +863,7 @@ def read_from_mastodon_csv(paths: list[str], name: None | str = None):
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
 
-    return lineageTreeDicts(
+    return lineageTree(
         successor=successor, time=time, pos=pos, label=label, name=name
     )
 
@@ -883,7 +883,7 @@ def read_from_mamut_xml(
 
     Returns
     -------
-        lineageTreeDicts
+        lineageTree
             lineage tree
     """
     tree = ET.parse(path)
@@ -960,7 +960,7 @@ def read_from_mamut_xml(
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
 
-    return lineageTreeDicts(
+    return lineageTree(
         successor=successor,
         time=time,
         pos=pos,

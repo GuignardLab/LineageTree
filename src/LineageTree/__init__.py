@@ -1,5 +1,5 @@
 __version__ = "1.7.0"
-from .lineageTree import lineageTree, lineageTreeDicts
+from .lineageTree import lineageTree
 from .lineageTreeManager import lineageTreeManager
 from .loaders import (
     read_from_ASTEC,
@@ -15,7 +15,6 @@ from .loaders import (
 )
 
 __all__ = (
-    "lineageTreeDicts",
     "lineageTree",
     "lineageTreeManager",
     "read_from_tgmm_xml",
