@@ -104,7 +104,7 @@ def create_links_and_cycles(lT: lineageTree, roots=None):
 
 def hierarchical_pos(
     lnks_tms: dict, root, width=1000, vert_gap=2, xcenter=0, ycenter=0
-):
+) -> dict[int, list[int]]:
     """Calculates the position of each node on te tree graph.
 
     Args:

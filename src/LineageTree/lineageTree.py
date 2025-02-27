@@ -1841,7 +1841,7 @@ class lineageTree:
     def __plot_nodes(
         hier: dict,
         selected_nodes: set,
-        color: str,
+        color: str | list | dict,
         size: int,
         ax: plt.Axes,
         default_color: str = "black",
@@ -1865,6 +1865,10 @@ class lineageTree:
             hier_selected = np.array(
                 [v for k, v in hier.items() if k in selected_nodes]
             )
+            if isinstance(color, dict):
+                color = [
+                    color[node] for node in hier if node in selected_nodes
+                ]
             ax.scatter(
                 *hier_selected.T, s=size, zorder=10, color=color, **kwargs
             )
@@ -1874,7 +1878,7 @@ class lineageTree:
         hier: dict,
         lnks_tms: dict,
         selected_edges: set,
-        color: str,
+        color: str | list,
         ax: plt.Axes,
         default_color: str = "black",
         **kwargs,
@@ -1895,6 +1899,8 @@ class lineageTree:
                 if pred in selected_edges and succ in selected_edges:
                     x.extend((hier[succ][0], hier[pred][0], None))
                     y.extend((hier[succ][1], hier[pred][1], None))
+        if isinstance(color, dict):
+            color = [color[node] for node in hier if node in selected_edges]
         ax.plot(x, y, linewidth=0.3, zorder=0.2, c=color, **kwargs)
 
     def draw_tree_graph(
@@ -1906,7 +1912,7 @@ class lineageTree:
         color_of_nodes: str = "magenta",
         color_of_edges: str = None,
         size: int = 10,
-        ax: plt.Axes = None,
+        ax: plt.Axes | None = None,
         default_color: str = "black",
         **kwargs,
     ) -> tuple[plt.Figure, plt.Axes]:
@@ -2137,6 +2143,12 @@ class lineageTree:
         figsize: tuple[int, int] = (4, 7),
         dpi: int = 150,
         vert_gap: int = 2,
+        selected_nodes: list = None,
+        selected_edges: list = None,
+        color_of_nodes: str = "magenta",
+        color_of_edges: str = None,
+        size: int = 10,
+        default_color: str = "black",
         ax: plt.Axes = None,
     ) -> tuple[plt.Figure, plt.Axes]:
         """Plots the subtree spawn by a node.
@@ -2174,6 +2186,12 @@ class lineageTree:
                 vert_gap=vert_gap,
                 ycenter=-int(self.time[node]),
             ),
+            selected_edges=selected_edges,
+            selected_nodes=selected_nodes,
+            color_of_edges=color_of_edges,
+            color_of_nodes=color_of_nodes,
+            default_color=default_color,
+            size=size,
             lnks_tms=graph,
             ax=ax,
         )
