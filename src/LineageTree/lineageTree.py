@@ -65,7 +65,7 @@ class lineageTree:
             next authorized id
         """
         if not hasattr(self, "max_id") or (self.max_id == -1 and self.nodes):
-            self.max_id = max(self.nodes)
+            self.max_id = max(self.nodes) if len(self.nodes) else 1
         if not hasattr(self, "next_id") or self.next_id == []:
             self.max_id += 1
             return self.max_id
@@ -3045,11 +3045,14 @@ class lineageTree:
                     self._successor.setdefault(pred, ())
                     self._successor[pred] += (succ,)
         else:
+            self._successor = {}
+            self._predecessor = {}
             warnings.warn(
                 "Both successor and predecessor attributes are empty.",
                 stacklevel=2,
             )
         for root in set(self._successor).difference(self._predecessor):
+            print(root)
             self._predecessor[root] = ()
         for leaf in set(self._predecessor).difference(self._successor):
             self._successor[leaf] = ()
