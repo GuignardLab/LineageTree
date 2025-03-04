@@ -12,7 +12,6 @@ from collections.abc import Callable, Iterable
 from functools import partial, wraps
 from itertools import combinations
 from numbers import Number
-from pathlib import Path
 from types import MappingProxyType
 from typing import Literal
 
@@ -81,8 +80,8 @@ class lineageTree:
 
         Parameters
         ----------
-            nodes : int or set of int, optional
-                Which trees should be "completed", if left empty it will complete the whole dataset.
+        nodes : int or set of int, optional
+            Which trees should be "completed", if left empty it will complete the whole dataset.
         """
         if nodes is None:
             nodes = set(self.roots)
@@ -110,19 +109,19 @@ class lineageTree:
 
         Parameters
         ----------
-            node : int
-                Id of the successor (predecessor if `downstream==False`)
-            length : int
-                The length of the new branch.
-            downstream : bool, default=True
-                If `True` will create a branch that goes forwards in time otherwise backwards.
-            pos : np.ndarray, optional
-                The new position of the branch. Defaults to None.
+        node : int
+            Id of the successor (predecessor if `downstream==False`)
+        length : int
+            The length of the new branch.
+        downstream : bool, default=True
+            If `True` will create a branch that goes forwards in time otherwise backwards.
+        pos : np.ndarray, optional
+            The new position of the branch. Defaults to None.
 
         Returns
         -------
-            int
-                Id of the first node of the sublineage.
+        int
+            Id of the first node of the sublineage.
         """
         if length == 0:
             return node
@@ -162,13 +161,13 @@ class lineageTree:
 
         Parameters
         ----------
-            root : int
-                The id of the node, which will be cut.
+        root : int
+            The id of the node, which will be cut.
 
         Returns
         -------
-            int
-                The id of the new tree
+        int
+            The id of the new tree
         """
         cycle = self.get_successors(root)
         last_cell = cycle[-1]
@@ -199,23 +198,23 @@ class lineageTree:
 
         Parameters
         ----------
-            l1_root : int
-                Id of the first root
-            l2_root : int
-                Id of the second root
-            length_l1 : int, default=0
-                The length of the branch that will be added on top of the first lineage.
-                Defaults to 0, which means only one node will be added.
-            length_l2 : int, default=0
-                The length of the branch that will be added on top of the second lineage.
-                Defaults to 0, which means only one node will be added.
-            length : int, default=1
-                The length of the branch that will be added on top of the resulting lineage.
+        l1_root : int
+            Id of the first root
+        l2_root : int
+            Id of the second root
+        length_l1 : int, default=0
+            The length of the branch that will be added on top of the first lineage.
+            Defaults to 0, which means only one node will be added.
+        length_l2 : int, default=0
+            The length of the branch that will be added on top of the second lineage.
+            Defaults to 0, which means only one node will be added.
+        length : int, default=1
+            The length of the branch that will be added on top of the resulting lineage.
 
         Returns
         -------
-            int
-                The id of the root of the new lineage.
+        int
+            The id of the root of the new lineage.
         """
         if self.predecessor.get(l1_root) or self.predecessor.get(l2_root):
             raise ValueError("Please select 2 roots.")
@@ -245,13 +244,13 @@ class lineageTree:
 
         Parameters
         ----------
-            root : int
-                The root of the tree to be copied
+        root : int
+            The root of the tree to be copied
 
         Returns
         -------
-            int
-                The id of the root of the new tree.
+        int
+            The id of the root of the new tree.
         """
         new_nodes = {
             old_node: self.get_next_id()
@@ -277,9 +276,12 @@ class lineageTree:
     def add_root(self, t: int, pos: list = None):
         """Adds a root to a specific timepoint.
 
-        Args:
-            t (int): The timepoint the node is going to be added.
-            pos (list): The position of the new node.
+        Parameters
+        ----------
+        t :int
+            The timepoint the node is going to be added.
+        pos : list
+            The position of the new node.
         """
         C_next = self.get_next_id()
         self._successor[C_next] = ()
@@ -301,20 +303,20 @@ class lineageTree:
 
         Parameters
         ----------
-            succ : list
-                list of ids of the nodes the new node is a successor to
-            pred : list
-                list of ids of the nodes the new node is a predecessor to
-            pos : np.ndarray, optional
-                position of the new node
-            nid : int, optional
-                id value of the new node, to be used carefully,
-                if None is provided the new id is automatically computed.
+        succ : list
+            list of ids of the nodes the new node is a successor to
+        pred : list
+            list of ids of the nodes the new node is a predecessor to
+        pos : np.ndarray, optional
+            position of the new node
+        nid : int, optional
+            id value of the new node, to be used carefully,
+            if None is provided the new id is automatically computed.
 
         Returns
         -------
-            int
-                id of the new node.
+        int
+            id of the new node.
         """
         if not succ and not pred:
             raise Warning(
@@ -344,8 +346,8 @@ class lineageTree:
 
         Parameters
         ----------
-            group : set of int or list of int or int
-                One or more nodes that are to be removed.
+        group : set of int or list of int or int
+            One or more nodes that are to be removed.
         """
         if isinstance(group, int | float):
             group = {group}
@@ -382,10 +384,10 @@ class lineageTree:
 
         Parameters
         ----------
-            node : int
-                Any node of the branch to be modified
-            new_length : int
-                The new length of the tree.
+        node : int
+            Any node of the branch to be modified
+        new_length : int
+            The new length of the tree.
         """
         if new_length < 1:
             raise Warning(
@@ -571,15 +573,15 @@ class lineageTree:
 
         Parameters
         ----------
-            c : int
-                id of a cell in a lineage tree from which the height will be computed from
-            done : dict mapping int to list of two int
-                a dictionary that maps a cell id to its vertical and horizontal position
+        c : int
+            id of a cell in a lineage tree from which the height will be computed from
+        done : dict mapping int to list of two int
+            a dictionary that maps a cell id to its vertical and horizontal position
 
         Returns
         -------
-            float
-                the height of the cell `c`
+        float
+            the height of the cell `c`
         """
         if c in done:
             return done[c][0]
@@ -612,43 +614,43 @@ class lineageTree:
 
         Parameters
         ----------
-            file_name : str
-                filesystem filename valid for `open()`
-            roots : list of int, defaults to `self.roots`
-                list of node ids to be drawn. If `None` all the nodes will be drawn. Default `None`
-            draw_nodes : bool, default True
-                wether to print the nodes or not
-            draw_edges : bool, default True
-                wether to print the edges or not
-            order_key : Callable, optional
-                function that would work for the attribute `key=` for the `sort`/`sorted` function
-            vert_space_factor : float, default=0.5
-                the vertical position of a node is its time. `vert_space_factor` is a
-                multiplier to space more or less nodes in time
-            horizontal_space : float, default=1
-                space between two consecutive nodes
-            node_size : Callable or str, optional
-                a function that maps a node id to a `float` value that will determine the
-                radius of the node. The default function return the constant value `vertical_space_factor/2.1`
-                If a string is given instead and it is a property of the tree,
-                the the size will be mapped according to the property
-            stroke_width : Callable, optional
-                a function that maps a node id to a `float` value that will determine the
-                width of the daughter edge.  The default function return the constant value `vertical_space_factor/2.1`
-            factor : float, default=1.0
-                scaling factor for nodes positions, default 1
-            node_color : Callable or str, optional
-                a function that maps a node id to a triplet between 0 and 255.
-                The triplet will determine the color of the node. If a string is given instead and it is a property
-                of the tree, the the color will be mapped according to the property
-            node_color_map : Callable or str, optional
-                the name of the colormap to use to color the nodes, or a colormap function
-            stroke_color : Callable, optional
-                a function that maps a node id to a triplet between 0 and 255.
-                The triplet will determine the color of the stroke of the inward edge.
-            positions : dict mapping int to list of two float, optional
-                dictionary that maps a node id to a 2D position.
-                Default `None`. If provided it will be used to position the nodes.
+        file_name : str
+            filesystem filename valid for `open()`
+        roots : list of int, defaults to `self.roots`
+            list of node ids to be drawn. If `None` all the nodes will be drawn. Default `None`
+        draw_nodes : bool, default True
+            wether to print the nodes or not
+        draw_edges : bool, default True
+            wether to print the edges or not
+        order_key : Callable, optional
+            function that would work for the attribute `key=` for the `sort`/`sorted` function
+        vert_space_factor : float, default=0.5
+            the vertical position of a node is its time. `vert_space_factor` is a
+            multiplier to space more or less nodes in time
+        horizontal_space : float, default=1
+            space between two consecutive nodes
+        node_size : Callable or str, optional
+            a function that maps a node id to a `float` value that will determine the
+            radius of the node. The default function return the constant value `vertical_space_factor/2.1`
+            If a string is given instead and it is a property of the tree,
+            the the size will be mapped according to the property
+        stroke_width : Callable, optional
+            a function that maps a node id to a `float` value that will determine the
+            width of the daughter edge.  The default function return the constant value `vertical_space_factor/2.1`
+        factor : float, default=1.0
+            scaling factor for nodes positions, default 1
+        node_color : Callable or str, optional
+            a function that maps a node id to a triplet between 0 and 255.
+            The triplet will determine the color of the node. If a string is given instead and it is a property
+            of the tree, the the color will be mapped according to the property
+        node_color_map : Callable or str, optional
+            the name of the colormap to use to color the nodes, or a colormap function
+        stroke_color : Callable, optional
+            a function that maps a node id to a triplet between 0 and 255.
+            The triplet will determine the color of the stroke of the inward edge.
+        positions : dict mapping int to list of two float, optional
+            dictionary that maps a node id to a 2D position.
+            Default `None`. If provided it will be used to position the nodes.
         """
 
         def normalize_values(v, nodes, _range, shift, mult):
@@ -837,36 +839,36 @@ class lineageTree:
 
         Parameters
         ----------
-            fname : str
-                path to the tulip file to create
-            t_min : int, default=-1
-                minimum time to consider
-            t_max : int, default=np.inf
-                maximum time to consider
-            nodes_to_use : list of int, optional
-                list of nodes to show in the graph,
-                if `None` then self.nodes is used
-                (taking into account `t_min` and `t_max`)
-            temporal : bool, default=True
-                True if the temporal links should be printed
-            spatial : str, optional
-                Build spatial edges from a spatial neighbourhood graph.
-                The graph has to be computed before running this function
-                'ball': neighbours at a given distance,
-                'kn': k-nearest neighbours,
-                'GG': gabriel graph,
-                None: no spatial edges are writen.
-                Default None
-            write_layout : bool, default=True
-                write the spatial position as layout if True
-                do not write spatial position otherwise
-            node_properties : dict mapping str to list of dict of properties and its default value, optional
-                a dictionary of properties to write
-                To a key representing the name of the property is
-                paired a dictionary that maps a cell id to a property
-                and a default value for this property
-            Names : bool, default=True
-                Only works with ASTEC outputs, True to sort the cells by their names
+        fname : str
+            path to the tulip file to create
+        t_min : int, default=-1
+            minimum time to consider
+        t_max : int, default=np.inf
+            maximum time to consider
+        nodes_to_use : list of int, optional
+            list of nodes to show in the graph,
+            if `None` then self.nodes is used
+            (taking into account `t_min` and `t_max`)
+        temporal : bool, default=True
+            True if the temporal links should be printed
+        spatial : str, optional
+            Build spatial edges from a spatial neighbourhood graph.
+            The graph has to be computed before running this function
+            'ball': neighbours at a given distance,
+            'kn': k-nearest neighbours,
+            'GG': gabriel graph,
+            None: no spatial edges are writen.
+            Default None
+        write_layout : bool, default=True
+            write the spatial position as layout if True
+            do not write spatial position otherwise
+        node_properties : dict mapping str to list of dict of properties and its default value, optional
+            a dictionary of properties to write
+            To a key representing the name of the property is
+            paired a dictionary that maps a cell id to a property
+            and a default value for this property
+        Names : bool, default=True
+            Only works with ASTEC outputs, True to sort the cells by their names
         """
 
         def format_names(names_which_matter):
@@ -1053,11 +1055,11 @@ class lineageTree:
 
         Parameters
         ----------
-            fname : str
-                name of the binary file
-            starting_points : list of int, optional
-                list of the roots to be written.
-                If `None`, all roots are written, default value, None
+        fname : str
+            name of the binary file
+        starting_points : list of int, optional
+            list of the roots to be written.
+            If `None`, all roots are written, default value, None
         """
         if starting_points is None:
             starting_points = list(self.roots)
@@ -1102,8 +1104,8 @@ class lineageTree:
 
         Parameters
         ----------
-            fname : str
-                path to and name of the file to save
+        fname : str
+            path to and name of the file to save
         """
         if os.path.splitext(fname)[-1] != ".lT":
             fname = os.path.extsep.join((fname, "lT"))
@@ -1118,13 +1120,13 @@ class lineageTree:
 
         Parameters
         ----------
-            fname : str
-                path to and name of the file to read
+        fname : str
+            path to and name of the file to read
 
         Returns
         -------
-            LineageTree
-                loaded file
+        LineageTree
+            loaded file
         """
         with open(fname, "br") as f:
             lT = pkl.load(f)
@@ -1141,7 +1143,7 @@ class lineageTree:
                 not in ["successor", "predecessor", "time", "pos"]
                 and set(prop).symmetric_difference(lT.nodes) == set()
             }
-            lT = lineageTreeDicts(
+            lT = lineageTree(
                 successor=lT._successor,
                 time=lT._time,
                 pos=lT.pos,
@@ -1160,17 +1162,17 @@ class lineageTree:
 
         Parameters
         ----------
-            t : int
-                time
+        t : int
+            time
 
         Returns
         -------
-            KDTree
-                The KDTree corresponding to the lineage tree at time `t`
-            np.ndarray
-                The correspondancy list in the KDTree.
-                If the query in the kdtree gives you the value `i`,
-                then it corresponds to the id in the tree `to_check_self[i]`
+        KDTree
+            The KDTree corresponding to the lineage tree at time `t`
+        np.ndarray
+            The correspondancy list in the KDTree.
+            If the query in the kdtree gives you the value `i`,
+            then it corresponds to the id in the tree `to_check_self[i]`
         """
         to_check_self = list(self.nodes_at_t(t=t))
         if t not in self.kdtrees:
@@ -1193,13 +1195,13 @@ class lineageTree:
 
         Parameters
         ----------
-            t : int
-                time
+        t : int
+            time
 
         Returns
         -------
-            dict of int to set of int
-                A dictionary that maps a node to the set of its neighbors
+        dict of int to set of int
+            A dictionary that maps a node to the set of its neighbors
         """
         if not hasattr(self, "Gabriel_graph"):
             self.Gabriel_graph = {}
@@ -1253,15 +1255,15 @@ class lineageTree:
 
         Parameters
         ----------
-            x : int
-                id of the node to compute
-            depth : int
-                maximum number of predecessors to return
+        x : int
+            id of the node to compute
+        depth : int
+            maximum number of predecessors to return
 
         Returns
         -------
-            list of int
-                list of ids, the last id is `x`
+        list of int
+            list of ids, the last id is `x`
         """
         if not start_time:
             start_time = self.t_b
@@ -1303,17 +1305,17 @@ class lineageTree:
 
         Parameters
         ----------
-            x : int
-                id of the node to compute
-            depth : int, optional
-                maximum number of predecessors to return
-            end_time : int, optional
-                maximum time to consider
+        x : int
+            id of the node to compute
+        depth : int, optional
+            maximum number of predecessors to return
+        end_time : int, optional
+            maximum time to consider
 
         Returns
         -------
-            list of int
-                list of ids, the first id is `x`
+        list of int
+            list of ids, the first id is `x`
         """
         if end_time is None:
             end_time = self.t_e
@@ -1346,19 +1348,19 @@ class lineageTree:
 
         Parameters
         ----------
-            x : int
-                id of the node to compute
-            depth : int, optional
-                maximum number of predecessors and successor to return
-            depth_pred : int, optional
-                maximum number of predecessors to return
-            depth_succ : int, optional
-                maximum number of successors to return
+        x : int
+            id of the node to compute
+        depth : int, optional
+            maximum number of predecessors and successor to return
+        depth_pred : int, optional
+            maximum number of predecessors to return
+        depth_succ : int, optional
+            maximum number of successors to return
 
         Returns
         -------
-            list of int
-                list of ids
+        list of int
+            list of ids
         """
         if end_time is None:
             end_time = self.t_e
@@ -1382,15 +1384,15 @@ class lineageTree:
 
         Parameters
         ----------
-            node : int
-                The node from which we want to get its branches.
-            end_time : int, optional
-                The time at which we want to stop the branches.
+        node : int
+            The node from which we want to get its branches.
+        end_time : int, optional
+            The time at which we want to stop the branches.
 
         Returns
         -------
-            list of list of int
-                list of lists containing track cell ids
+        list of list of int
+            list of lists containing track cell ids
         """
         if not end_time:
             end_time = self.t_e
@@ -1411,8 +1413,8 @@ class lineageTree:
 
         Returns
         -------
-            list of list of int
-                list of lists containing track cell ids
+        list of list of int
+            list of lists containing track cell ids
         """
         if not hasattr(self, "_all_tracks") or force_recompute:
             self._all_tracks = []
@@ -1429,13 +1431,13 @@ class lineageTree:
 
         Parameters
         ----------
-            roots : list, optional
-                list of ids of the roots to be computed, if `None` all roots are used
+        roots : list, optional
+            list of ids of the roots to be computed, if `None` all roots are used
 
         Returns
         -------
-            list of list of int
-                list of lists containing track cell ids
+        list of list of int
+            list of lists containing track cell ids
         """
         if roots is None:
             return self.get_all_tracks(force_recompute=True)
@@ -1454,13 +1456,13 @@ class lineageTree:
 
         Parameters
         ----------
-            roots : int or Iterable
-                The roots of the trees spawning the leaves
+        roots : int or Iterable
+            The roots of the trees spawning the leaves
 
         Returns
         -------
-            set
-                The leaves of one or more trees.
+        set
+            The leaves of one or more trees.
         """
         if not isinstance(roots, Iterable):
             to_do = [roots]
@@ -1488,15 +1490,15 @@ class lineageTree:
 
         Parameters
         ----------
-            x : int
-                id of root node
-            preorder : bool, default=False
-                if True the output preorder is DFT
+        x : int
+            id of root node
+        preorder : bool, default=False
+            if True the output preorder is DFT
 
         Returns
         -------
-            list of int
-                the ordered list of node ids
+        list of int
+            the ordered list of node ids
         """
         if not end_time:
             end_time = self.t_e
@@ -1527,17 +1529,17 @@ class lineageTree:
 
         Parameters
         ----------
-            t_b : int, optional
-                starting time to look at, default first time point
-            t_e : int, optional
-                ending time to look at, default last time point
-            th : float, default=50
-                size of the neighbourhood
+        t_b : int, optional
+            starting time to look at, default first time point
+        t_e : int, optional
+            ending time to look at, default last time point
+        th : float, default=50
+            size of the neighbourhood
 
         Returns
         -------
-            dict of int to float
-                dictionary that maps a cell id to its spatial density
+        dict of int to float
+            dictionary that maps a cell id to its spatial density
         """
         s_vol = 4 / 3.0 * np.pi * th**3
         time_range = set(range(self.t_b, self.t_e)).intersection(
@@ -1559,14 +1561,14 @@ class lineageTree:
 
         Parameters
         ----------
-            k : float
-                number of nearest neighours
+        k : float
+            number of nearest neighours
 
         Returns
         -------
-            dict of int to set of int
-                dictionary that maps
-                a cell id to its `k` nearest neighbors
+        dict of int to set of int
+            dictionary that maps
+            a cell id to its `k` nearest neighbors
         """
         self.kn_graph = {}
         for t in set(self._time.values()):
@@ -1588,13 +1590,13 @@ class lineageTree:
 
         Parameters
         ----------
-            th : float, default=50
-                distance to consider neighbors
+        th : float, default=50
+            distance to consider neighbors
 
         Returns
         -------
-            dict of int to set of int
-                dictionary that maps a cell id to its neighbors at a distance `th`
+        dict of int to set of int
+            dictionary that maps a cell id to its neighbors at a distance `th`
         """
         self.th_edges = {}
         for t in set(self._time.values()):
@@ -1615,17 +1617,17 @@ class lineageTree:
 
         Parameters
         ----------
-            time : int, optional
-                The timepoint to find the main axes.
-                If `None` will find the timepoint
-                with the largest number of cells.
+        time : int, optional
+            The timepoint to find the main axes.
+            If `None` will find the timepoint
+            with the largest number of cells.
 
         Returns
         -------
-            np.ndarray of shape (3,)
-                sorted eigenvalues
-            np.ndarray
-                sorted eigenvectors (3,)
+        np.ndarray of shape (3,)
+            sorted eigenvalues
+        np.ndarray
+            sorted eigenvectors (3,)
         """
         time_nodes = {
             t: len(self.nodes_at_t(t)) for t in range(self.t_b, self._te)
@@ -1645,13 +1647,13 @@ class lineageTree:
 
         Parameters
         ----------
-            scale : int, default=1000
-                The resulting scale you want to achieve. Defaults to 1000.
+        scale : int, default=1000
+            The resulting scale you want to achieve. Defaults to 1000.
 
         Returns
         -------
-            float
-                The scale factor.
+        float
+            The scale factor.
         """
         eig = self.main_axes()[0]
         return scale / (np.sqrt(eig[0]))
@@ -1667,14 +1669,14 @@ class lineageTree:
 
         Parameters
         ----------
-            vector1 : Iterable or np.array
-                The vector that should be rotated to be aligned to the second vector
-            vector2 : Iterable or np.array, default=(0, 1, 0) The second vector. Defaults to [1,0,0].
+        vector1 : Iterable or np.array
+            The vector that should be rotated to be aligned to the second vector
+        vector2 : Iterable or np.array, default=(0, 1, 0) The second vector. Defaults to [1,0,0].
 
         Returns
         -------
-            np.ndarray of shape (3, 3)
-                The rotation matrix.
+        np.ndarray of shape (3, 3)
+            The rotation matrix.
         """
         vector1 = vector1 / np.linalg.norm(vector1)
         vector2 = vector2 / np.linalg.norm(vector2)
@@ -1703,18 +1705,18 @@ class lineageTree:
 
         Parameters
         ----------
-            n : int
-                node for which to look the ancestor
-            time : int, optional
-                time at which the ancestor has to be found.
-                If `None` the ancestor at the first time point
-                will be found (default `None`)
+        n : int
+            node for which to look the ancestor
+        time : int, optional
+            time at which the ancestor has to be found.
+            If `None` the ancestor at the first time point
+            will be found (default `None`)
 
         Returns
         -------
-            int
-                the id of the ancestor at time `time`,
-                `-1` if it does not exist
+        int
+            the id of the ancestor at time `time`,
+            `-1` if it does not exist
         """
         if n not in self.nodes:
             return
@@ -1730,13 +1732,13 @@ class lineageTree:
 
         Parameters
         ----------
-            node : int
-                The id of the node
+        node : int
+            The id of the node
 
         Returns
         -------
-            None or int
-                Returns the first ancestor found that has a label otherwise `None`.
+        None or int
+            Returns the first ancestor found that has a label otherwise `None`.
         """
         if node not in self.nodes:
             return None
@@ -1765,25 +1767,25 @@ class lineageTree:
 
         Parameters
         ----------
-            t : int
-                time to look at
-            end_time : int
-                The final time point the comparison algorithm will take into account.
-                If None all nodes will be taken into account.
-            style : {"simple", "full", "downsampled"}, default="simple"
-                Which tree approximation is going to be used for the comparisons.
-            downsample : int, default=2
-                The downsample factor for the downsampled tree approximation.
-                Used only when `style="downsampled"`.
-            norm : {"max", "sum"}, default="max"
-                The normalization method to use.
-            recompute : bool, default=False
-                If True, forces to recompute the distances
+        t : int
+            time to look at
+        end_time : int
+            The final time point the comparison algorithm will take into account.
+            If None all nodes will be taken into account.
+        style : {"simple", "full", "downsampled"}, default="simple"
+            Which tree approximation is going to be used for the comparisons.
+        downsample : int, default=2
+            The downsample factor for the downsampled tree approximation.
+            Used only when `style="downsampled"`.
+        norm : {"max", "sum"}, default="max"
+            The normalization method to use.
+        recompute : bool, default=False
+            If True, forces to recompute the distances
 
         Returns
         -------
-            dict of tuple of int to float
-                a dictionary that maps a pair of cell ids at time `t` to their unordered tree edit distance
+        dict of tuple of int to float
+            a dictionary that maps a pair of cell ids at time `t` to their unordered tree edit distance
         """
         if not hasattr(self, "uted"):
             self.uted = {}
@@ -1821,25 +1823,25 @@ class lineageTree:
 
         Parameters
         ----------
-            n1 : int
-                id of the first node to compare
-            n2 : int
-                id of the second node to compare
-            end_time : int
-                The final time point the comparison algorithm will take into account.
-                If None all nodes will be taken into account.
-            norm : {"max", "sum"}, default="max"
-                The normalization method to use.
-            style : {"simple", "full", "downsampled"}, default="simple"
-                Which tree approximation is going to be used for the comparisons.
-            downsample : int, default=2
-                The downsample factor for the downsampled tree approximation.
-                Used only when `style="downsampled"`.
+        n1 : int
+            id of the first node to compare
+        n2 : int
+            id of the second node to compare
+        end_time : int
+            The final time point the comparison algorithm will take into account.
+            If None all nodes will be taken into account.
+        norm : {"max", "sum"}, default="max"
+            The normalization method to use.
+        style : {"simple", "full", "downsampled"}, default="simple"
+            Which tree approximation is going to be used for the comparisons.
+        downsample : int, default=2
+            The downsample factor for the downsampled tree approximation.
+            Used only when `style="downsampled"`.
 
         Returns
         -------
-            float
-                The normed unordered tree edit distance between `n1` and `n2`
+        float
+            The normed unordered tree edit distance between `n1` and `n2`
         """
 
         tree = tree_style[style].value
@@ -1966,33 +1968,33 @@ class lineageTree:
 
         Parameters
         ----------
-            hier : dict mapping int to tuple of int
-                Dictinary that contains the positions of all nodes.
-            lnks_tms : dict, dict
-                2 dictionaries: 1 contains all links from start of life cycle to end of life cycle and
-                the succesors of each cell.
-                1 contains the length of each life cycle.
-            selected_nodes : list or set, optional
-                Which cells are to be selected (Painted with a different color)
-            selected_edges : list or set, optional
-                Which edges are to be selected (Painted with a different color)
-            color_of_nodes : str, default="magenta"
-                Color of selected nodes
-            color_of_edges : str, optional
-                Color of selected edges
-            size : int, default=10
-                Size of the nodes
-            ax : plt.Axes, optional
-                Plot the graph on existing ax. Defaults to None.
-            default_color : str, default="black"
-                Default color of nodes
+        hier : dict mapping int to tuple of int
+            Dictinary that contains the positions of all nodes.
+        lnks_tms : dict, dict
+            2 dictionaries: 1 contains all links from start of life cycle to end of life cycle and
+            the succesors of each cell.
+            1 contains the length of each life cycle.
+        selected_nodes : list or set, optional
+            Which cells are to be selected (Painted with a different color)
+        selected_edges : list or set, optional
+            Which edges are to be selected (Painted with a different color)
+        color_of_nodes : str, default="magenta"
+            Color of selected nodes
+        color_of_edges : str, optional
+            Color of selected edges
+        size : int, default=10
+            Size of the nodes
+        ax : plt.Axes, optional
+            Plot the graph on existing ax. Defaults to None.
+        default_color : str, default="black"
+            Default color of nodes
 
         Returns
         -------
-            plt.Figure
-                The matplotlib figure
-            plt.Axes
-                The matplotlib ax.
+        plt.Figure
+            The matplotlib figure
+        plt.Axes
+            The matplotlib ax.
         """
         if selected_nodes is None:
             selected_nodes = []
@@ -2038,16 +2040,16 @@ class lineageTree:
 
         Parameters
         ----------
-            node : int, optional
-                The id of the node/nodes to produce the simple graphs
-            start_time : int, optional
-                Important only if there are no nodes it will produce the graph of every
-                root that starts before or at start time. Defaults to None.
+        node : int, optional
+            The id of the node/nodes to produce the simple graphs
+        start_time : int, optional
+            Important only if there are no nodes it will produce the graph of every
+            root that starts before or at start time. Defaults to None.
 
         Returns
         -------
-            dict of int to dict
-                The keys are just index values 0-n and the values are the graphs produced.
+        dict of int to dict
+            The keys are just index values 0-n and the values are the graphs produced.
         """
         if start_time is None:
             start_time = self.t_b
@@ -2078,36 +2080,36 @@ class lineageTree:
 
         Parameters
         ----------
-            nodes : list, optional
-                The nodes spawning the graphs to be plotted.
-            last_time_point_to_consider : int, optional
-                Which timepoints and upwards are the graphs to be plotted.
-                For example if start_time is 10, then all trees that begin
-                on tp 10 or before are calculated. Defaults to None, where
-                it will plot all the roots that exist on `self.t_b`.
-            nrows : int
-                How many rows of plots should be printed.
-            figsize : tuple, default=(10, 15)
-                The size of the figure.
-            dpi : int, default=100
-                The dpi of the figure.
-            fontsize : int, default=15
-                The fontsize of the labels.
-            axes : plt.Axes, optional
-                The axes to plot the graphs on.
-            vert_gap : int, default=1
-                space between the nodes.
-            **kwargs:
-                args accepted by matplotlib
+        nodes : list, optional
+            The nodes spawning the graphs to be plotted.
+        last_time_point_to_consider : int, optional
+            Which timepoints and upwards are the graphs to be plotted.
+            For example if start_time is 10, then all trees that begin
+            on tp 10 or before are calculated. Defaults to None, where
+            it will plot all the roots that exist on `self.t_b`.
+        nrows : int
+            How many rows of plots should be printed.
+        figsize : tuple, default=(10, 15)
+            The size of the figure.
+        dpi : int, default=100
+            The dpi of the figure.
+        fontsize : int, default=15
+            The fontsize of the labels.
+        axes : plt.Axes, optional
+            The axes to plot the graphs on.
+        vert_gap : int, default=1
+            space between the nodes.
+        **kwargs:
+            args accepted by matplotlib
 
         Returns
         -------
-            plt.Figure
-                The figure
-            plt.Axes
-                The axes
-            dict of plt.Axes to int
-                A dictionary that maps the axes to the root of the tree.
+        plt.Figure
+            The figure
+        plt.Axes
+            The axes
+        dict of plt.Axes to int
+            A dictionary that maps the axes to the root of the tree.
         """
         nrows = int(nrows)
         if last_time_point_to_consider is None:
@@ -2267,15 +2269,15 @@ class lineageTree:
 
         Parameters
         ----------
-                r : int or list of int
-                    id or list of ids of the spawning node
-                t : int, optional
-                    target time, if `None` goes as far as possible
+            r : int or list of int
+                id or list of ids of the spawning node
+            t : int, optional
+                target time, if `None` goes as far as possible
 
         Returns
         -------
-            list
-                list of nodes at time `t` spawned by `r`
+        list
+            list of nodes at time `t` spawned by `r`
         """
         if not r and r != 0:
             r = self.roots
@@ -2303,15 +2305,15 @@ class lineageTree:
 
         Parameters
         ----------
-            dist_mat : np.ndarray
-                distance matrix obtained by the function calculate_dtw
+        dist_mat : np.ndarray
+            distance matrix obtained by the function calculate_dtw
 
         Returns
         -------
-            float
-                The slope of the curve
-            float
-                The intercept of the curve
+        float
+            The slope of the curve
+        float
+            The intercept of the curve
         """
         i, j = dist_mat.shape
         x1 = max(0, i - j) / 2
@@ -2337,27 +2339,27 @@ class lineageTree:
 
         Parameters
         ----------
-            dist_mat : np.ndarray
-                distance matrix obtained by the function calculate_dtw
-            start_d : int, default=0
-                start delay
-            back_d : int, default=0
-                end delay
-            fast : bool, default=False
-                if `True`, the algorithm will use a faster version but might not find the optimal alignment
-            w : int, default=0
-                window constrain
-            centered_band : bool, default=True
-                if `True`, the band will be centered around the diagonal
+        dist_mat : np.ndarray
+            distance matrix obtained by the function calculate_dtw
+        start_d : int, default=0
+            start delay
+        back_d : int, default=0
+            end delay
+        fast : bool, default=False
+            if `True`, the algorithm will use a faster version but might not find the optimal alignment
+        w : int, default=0
+            window constrain
+        centered_band : bool, default=True
+            if `True`, the band will be centered around the diagonal
 
             Returns
             -------
-                tuple of tuples of int
-                    Aligment path
-                np.ndarray
-                    cost matrix
-                float
-                    optimal cost
+            tuple of tuples of int
+                Aligment path
+            np.ndarray
+                cost matrix
+            float
+                optimal cost
         """
         N, M = dist_mat.shape
         w_limit = max(w, abs(N - M))  # Calculate the Sakoe-Chiba band width
@@ -2493,19 +2495,19 @@ class lineageTree:
 
         Parameters
         ----------
-            track1 : list of int
-                list of nodes of the first cell cycle to compare
-            track2 : list of int
-                list of nodes of the second cell cycle to compare
-            threshold : int
-                set a maximum number of points a track can have
+        track1 : list of int
+            list of nodes of the first cell cycle to compare
+        track2 : list of int
+            list of nodes of the second cell cycle to compare
+        threshold : int
+            set a maximum number of points a track can have
 
         Returns
         -------
-            list of np.ndarray
-                `x`, `y`, `z` postions for `track1`
-            list of np.ndarray
-                `x`, `y`, `z` postions for `track2`
+        list of np.ndarray
+            `x`, `y`, `z` postions for `track1`
+        list of np.ndarray
+            `x`, `y`, `z` postions for `track2`
         """
         inter1_pos = []
         inter2_pos = []
@@ -2560,39 +2562,39 @@ class lineageTree:
 
         Parameters
         ----------
-            nodes1 : int
-                node to compare distance
-            nodes2 : int
-                node to compare distance
-            threshold : int, default=1000
-                set a maximum number of points a track can have
-            regist : bool, default=True
-                Rotate and translate trajectories
-            start_d : int, default=0
-                start delay
-            back_d : int, default=0
-                end delay
-            fast : bool, default=False
-                if `True`, the algorithm will use a faster version but might not find the optimal alignment
-            w : int, default=0
-                window size
-            centered_band : bool, default=True
-                when running the fast algorithm, `True` if the windown is centered
-            cost_mat_p : bool, default=False
-                True if print the not normalized cost matrix
+        nodes1 : int
+            node to compare distance
+        nodes2 : int
+            node to compare distance
+        threshold : int, default=1000
+            set a maximum number of points a track can have
+        regist : bool, default=True
+            Rotate and translate trajectories
+        start_d : int, default=0
+            start delay
+        back_d : int, default=0
+            end delay
+        fast : bool, default=False
+            if `True`, the algorithm will use a faster version but might not find the optimal alignment
+        w : int, default=0
+            window size
+        centered_band : bool, default=True
+            when running the fast algorithm, `True` if the windown is centered
+        cost_mat_p : bool, default=False
+            True if print the not normalized cost matrix
 
         Returns
         -------
-            float
-                DTW distance
-            tuple of tuples
-                Aligment path
-            matrix
-                Cost matrix
-            list of lists
-                rotated and translated trajectories positions
-            list of lists
-                rotated and translated trajectories positions
+        float
+            DTW distance
+        tuple of tuples
+            Aligment path
+        matrix
+            Cost matrix
+        list of lists
+            rotated and translated trajectories positions
+        list of lists
+            rotated and translated trajectories positions
         """
         nodes1_cycle = self.get_cycle(nodes1)
         nodes2_cycle = self.get_cycle(nodes2)
@@ -2644,31 +2646,31 @@ class lineageTree:
 
         Parameters
         ----------
-            nodes1 : int
-                node to compare distance
-            nodes2 : int
-                node to compare distance
-            threshold : int, default=1000
-                set a maximum number of points a track can have
-            regist : bool, default=True
-                Rotate and translate trajectories
-            start_d : int, default=0
-                start delay
-            back_d : int, default=0
-                end delay
-            fast : bool, default=False
-                if `True`, the algorithm will use a faster version but might not find the optimal alignment
-            w : int, default=0
-                window size
-            centered_band : bool, default=True
-                when running the fast algorithm, `True` if the windown is centered
+        nodes1 : int
+            node to compare distance
+        nodes2 : int
+            node to compare distance
+        threshold : int, default=1000
+            set a maximum number of points a track can have
+        regist : bool, default=True
+            Rotate and translate trajectories
+        start_d : int, default=0
+            start delay
+        back_d : int, default=0
+            end delay
+        fast : bool, default=False
+            if `True`, the algorithm will use a faster version but might not find the optimal alignment
+        w : int, default=0
+            window size
+        centered_band : bool, default=True
+            when running the fast algorithm, `True` if the windown is centered
 
         Returns
         -------
-            float
-                DTW distance
-            figure
-                Heatmap of cost matrix with opitimal path
+        float
+            DTW distance
+        figure
+            Heatmap of cost matrix with opitimal path
         """
         cost, path, cost_mat, pos_cycle1, pos_cycle2 = self.calculate_dtw(
             nodes1,
@@ -2743,40 +2745,40 @@ class lineageTree:
 
         Parameters
         ----------
-            nodes1 : int
-                node to compare distance
-            nodes2 : int
-                node to compare distance
-            threshold : int, default=1000
-                set a maximum number of points a track can have
-            regist : bool, default=True
-                Rotate and translate trajectories
-            start_d : int, default=0
-                start delay
-            back_d : int, default=0
-                end delay
-            w : int, default=0
-                window size
-            fast : bool, default=False
-                True if the user wants to run the fast algorithm with window restrains
-            centered_band : bool, default=True
-                if running the fast algorithm, True if the windown is centered
-            projection : {"3d", "xy", "xz", "yz", "pca"}, optional
-                specify which 2D to plot ->
-                "3d" : for the 3d visualization
-                "xy" or None (default) : 2D projection of axis x and y
-                "xz" : 2D projection of axis x and z
-                "yz" : 2D projection of axis y and z
-                "pca" : PCA projection
-            alig : bool
-                True to show alignment on plot
+        nodes1 : int
+            node to compare distance
+        nodes2 : int
+            node to compare distance
+        threshold : int, default=1000
+            set a maximum number of points a track can have
+        regist : bool, default=True
+            Rotate and translate trajectories
+        start_d : int, default=0
+            start delay
+        back_d : int, default=0
+            end delay
+        w : int, default=0
+            window size
+        fast : bool, default=False
+            True if the user wants to run the fast algorithm with window restrains
+        centered_band : bool, default=True
+            if running the fast algorithm, True if the windown is centered
+        projection : {"3d", "xy", "xz", "yz", "pca"}, optional
+            specify which 2D to plot ->
+            "3d" : for the 3d visualization
+            "xy" or None (default) : 2D projection of axis x and y
+            "xz" : 2D projection of axis x and z
+            "yz" : 2D projection of axis y and z
+            "pca" : PCA projection
+        alig : bool
+            True to show alignment on plot
 
         Returns
         -------
-            float
-                DTW distance
-            figue
-                Trajectories Plot
+        float
+            DTW distance
+        figue
+            Trajectories Plot
         """
         (
             distance,
@@ -2941,185 +2943,46 @@ class lineageTree:
 
     def __init__(
         self,
-        file_format: str = None,
-        tb: int = None,
-        te: int = None,
-        z_mult: float = 1.0,
-        file_type: str = "",
-        delim: str = ",",
-        eigen: bool = False,
-        shape: tuple = None,
-        raw_size: tuple = None,
-        reorder: bool = False,
-        xml_attributes: tuple = None,
-        name: str = None,
-        time_resolution: int | None = None,
-    ):
-        """
-        TODO: complete the doc
-        Main library to build tree graph representation of lineage tree data
-        It can read TGMM, ASTEC, SVF, MaMuT and TrackMate outputs.
-
-        Parameters
-        ----------
-            file_format (str): either - path format to TGMM xmls
-                                      - path to the MaMuT xml
-                                      - path to the binary file
-            tb (int, optional):first time point (necessary for TGMM xmls only)
-            te (int, optional): last time point (necessary for TGMM xmls only)
-            z_mult (float, optional):z aspect ratio if necessary (usually only for TGMM xmls)
-            file_type (str, optional):type of input file. Accepts:
-                'TGMM, 'ASTEC', MaMuT', 'TrackMate', 'csv', 'celegans', 'binary'
-                default is 'binary'
-            delim (str, optional): _description_. Defaults to ",".
-            eigen (bool, optional): _description_. Defaults to False.
-            shape (tuple, optional): _description_. Defaults to None.
-            raw_size (tuple, optional): _description_. Defaults to None.
-            reorder (bool, optional): _description_. Defaults to False.
-            xml_attributes (tuple, optional): _description_. Defaults to None.
-            name (str, optional): The name of the dataset. Defaults to None.
-            time_resolution (int | None, optional): Time resolution in mins (If time resolution is smaller than one minute input the time in ms). Defaults to None.
-        """
-
-        self.name = name
-        self._time_edges = {}
-        self.max_id = -1
-        self.next_id = []
-        self._successor = {}
-        self._time = {}
-        self._predecessor = {}
-        self.time_flag = True
-        self.pos = {}
-        self._time_id = {}
-        if time_resolution is not None:
-            self._time_resolution = time_resolution
-        self.kdtrees = {}
-        self.spatial_density = {}
-        if file_type and file_format:
-            if xml_attributes is None:
-                self.xml_attributes = []
-            else:
-                self.xml_attributes = xml_attributes
-            file_type = file_type.lower()
-            if file_type == "tgmm":
-                self.read_tgmm_xml(file_format, tb, te, z_mult)
-            elif file_type == "mamut" or file_type == "trackmate":
-                self.read_from_mamut_xml(file_format)
-            elif file_type == "celegans":
-                self.read_from_txt_for_celegans(file_format)
-            elif file_type == "celegans_cao":
-                self.read_from_txt_for_celegans_CAO(
-                    file_format,
-                    reorder=reorder,
-                    shape=shape,
-                    raw_size=raw_size,
-                )
-            elif file_type == "mastodon":
-                if isinstance(file_format, list) and len(file_format) == 2:
-                    self.read_from_mastodon_csv(file_format)
-                else:
-                    if isinstance(file_format, list):
-                        file_format = file_format[0]
-                    self.read_from_mastodon(file_format, name)
-            elif file_type == "astec":
-                self.read_from_ASTEC(file_format, eigen)
-            elif file_type == "csv":
-                self.read_from_csv(file_format, z_mult, link=1, delim=delim)
-            elif file_type == "bao":
-                self.read_C_elegans_bao(file_format)
-            elif file_format and file_format.endswith(".lT"):
-                with open(file_format, "br") as f:
-                    tmp = pkl.load(f)
-                    f.close()
-                self.__dict__.update(tmp.__dict__)
-            elif file_format is not None:
-                self.read_from_binary(file_format)
-            if self.name is None:
-                try:
-                    self.name = Path(file_format).stem
-                except TypeError:
-                    self.name = Path(file_format[0]).stem
-        for k, v in self._successor.items():
-            self._successor[k] = tuple(v)
-        for k, v in self._predecessor.items():
-            self._predecessor[k] = tuple(v)
-        for node in set(self._successor).difference(self._predecessor):
-            self._predecessor[node] = ()
-        for node in set(self._predecessor).difference(self._successor):
-            self._successor[node] = ()
-
-
-class lineageTreeDicts(lineageTree):
-    """Placeholder class to give a proof of concept of what the lineageTree init method would look like."""
-
-    @classmethod
-    def load(clf, fname: str):
-        """
-        Loading a lineage tree from a ".lT" file.
-
-        Parameters
-        ----------
-            fname (str): path to and name of the file to read
-
-        Returns
-        -------
-            (lineageTree): loaded file
-        """
-        with open(fname, "br") as f:
-            lT = pkl.load(f)
-            f.close()
-        if not hasattr(lT, "__version__") or Version(lT.__version__) < Version(
-            "2.0.0"
-        ):
-            properties = {
-                prop_name: prop
-                for prop_name, prop in lT.__dict__.items()
-                if isinstance(prop, dict)
-                and prop_name
-                not in ["successor", "predecessor", "time", "pos"]
-                and set(prop).symmetric_difference(lT.nodes) == set()
-            }
-            lT = lineageTreeDicts(
-                successor=lT._successor,
-                time=lT._time,
-                pos=lT.pos,
-                name=lT.name if hasattr(lT, "name") else None,
-                **properties,
-            )
-        if not hasattr(lT, "time_resolution"):
-            lT.time_resolution = None
-
-        return lT
-
-    def __init__(
-        self,
         *,
-        successor: dict[int, tuple] = None,
-        predecessor: dict[int, tuple] = None,
-        time: dict[int, tuple] = None,
-        starting_time: float = 0,
+        successor: dict[int, Iterable] = None,
+        predecessor: dict[int, int | Iterable] = None,
+        time: dict[int | float, tuple] = None,
+        starting_time: int | float = 0,
         pos: dict[int, Iterable] = None,
         name: str = None,
+        root_leaf_value: Iterable = None,
         **kwargs,
     ):
-        """Creates a lineageTree object from minimal information, without reading from a file.
+        """Create a lineageTree object from minimal information, without reading from a file.
         Either `successor` or `predecessor` should be specified.
 
         Parameters
         ----------
-            successor (dict[int, tuple]): Dictionary assigning nodes to their successors.
-            predecessor (dict[int, tuple]): Dictionary assigning nodes to their predecessors.
-            time (dict[int, float], optional): Dictionary assigning nodes to the time point they were recorded to.  Defaults to None, in which case all times are set to `starting_time`.
-            starting_time (float, optional): Starting time of the lineage tree. Defaults to 0.
-            pos (dict[int, Iterable], optional): Dictionary assigning nodes to their positions. Defaults to None.
-            name (str, optional): Name of the lineage tree. Defaults to None.
-            **Parameters
-        ---------- Supported keyword arguments are dictionaries assigning nodes to any custom property.
-        The property must be specified for every node, and named differently from lineageTree's own attributes.
+        successor : dict mapping int to Iterable
+            Dictionary assigning nodes to their successors.
+        predecessor : dict mapping int to int or Iterable
+            Dictionary assigning nodes to their predecessors.
+        time : dict mapping int to int or float, optional
+            Dictionary assigning nodes to the time point they were recorded to.
+            Defaults to None, in which case all times are set to `starting_time`.
+        starting_time : int or float, optional
+            Starting time of the lineage tree. Defaults to 0.
+        pos : dict mapping int to Iterable, optional
+            Dictionary assigning nodes to their positions. Defaults to None.
+        name : str, optional
+            Name of the lineage tree. Defaults to None.
+        root_leaf_value : Iterable, optional
+            Iterable of values of roots' predecessors and leaves' successors in the successor and predecessor dictionaries.
+            Defaults are `[None, (), [], set()]`.
+        **kwargs:
+            Supported keyword arguments are dictionaries assigning nodes to any custom property.
+            The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
         self.__version__ = importlib.metadata.version("LineageTree")
         self._initialise_properties()
 
+        self.max_id = -1
+        self.next_id = []
         self.name = name
         if successor is not None and predecessor is not None:
             raise ValueError(
@@ -3127,36 +2990,70 @@ class lineageTreeDicts(lineageTree):
             )
         self._changed_roots = True
         self._changed_leaves = True
+
+        if root_leaf_value is None:
+            root_leaf_value = [None, (), [], set()]
+        elif not isinstance(root_leaf_value, Iterable):
+            raise TypeError(
+                f"root_leaf_value is of type {type(root_leaf_value)}, expected Iterable."
+            )
+        elif len(root_leaf_value) < 1:
+            raise ValueError(
+                "root_leaf_value should have at least one element."
+            )
+
         if successor is not None:
-            self._successor = successor
+            self._successor = {}
             self._predecessor = {}
-            for pred, succ in successor.items():
-                for s in succ:
-                    if s in self._predecessor:
-                        raise ValueError(
-                            "Node can have at most one predecessor."
+            for pred, succs in successor.items():
+                if succs in root_leaf_value:
+                    self._predecessor[succs] = ()
+                else:
+                    if not isinstance(succs, Iterable):
+                        raise TypeError(
+                            f"Successors should be Iterable, got {type(succs)}."
                         )
-                    self._predecessor[s] = (pred,)
+                    if len(succs) == 0:
+                        raise ValueError(
+                            f"{succs} was not declared as a leaf but was found as a successor.\n"
+                            "Please lift the ambiguity."
+                        )
+                    self._successor[pred] = tuple(succs)
+                    for succ in succs:
+                        if succ in self._predecessor:
+                            raise ValueError(
+                                "Node can have at most one predecessor."
+                            )
+                        self._predecessor[succ] = (pred,)
         elif predecessor is not None:
             self._successor = {}
-            self._predecessor = predecessor
+            self._predecessor = {}
             for succ, pred in predecessor.items():
-                if isinstance(pred, Iterable):
-                    if 1 < len(pred):
-                        raise ValueError(
-                            "Node can have at most one predecessor."
-                        )
+                if pred in root_leaf_value:
+                    self._predecessor[succ] = ()
+                else:
+                    if isinstance(pred, Iterable):
+                        if len(pred) == 0:
+                            raise ValueError(
+                                f"{pred} was not declared as a leaf but was found as a successor.\n"
+                                "Please lift the ambiguity."
+                            )
+                        if 1 < len(pred):
+                            raise ValueError(
+                                "Node can have at most one predecessor."
+                            )
                     pred = pred[0]
-                successor.setdefault(pred, ())
-                successor[pred] += (succ,)
+                    self._predecessor[succ] = (pred,)
+                    self._successor.setdefault(pred, ())
+                    self._successor[pred] += (succ,)
         else:
             warnings.warn(
                 "Both successor and predecessor attributes are empty.",
                 stacklevel=2,
             )
-        for root in set(self.successor).difference(self.predecessor):
+        for root in set(self._successor).difference(self._predecessor):
             self._predecessor[root] = ()
-        for leaf in set(self.predecessor).difference(self.successor):
+        for leaf in set(self._predecessor).difference(self._successor):
             self._successor[leaf] = ()
 
         if pos is None:
@@ -3171,14 +3068,14 @@ class lineageTreeDicts(lineageTree):
             queue = list(self.roots)
             for node in queue:
                 for succ in self._successor[node]:
-                    self._time[succ] = self._time[node] + 1
+                    self._time[succ] = self.time[node] + 1
                     queue.append(succ)
         else:
             self._time = time
-            if self.nodes.difference(self._time) != set():
+            if self.nodes.difference(self.time) != set():
                 raise ValueError("Please provide the time of all nodes.")
             if not all(
-                self._time[node] < self._time[s]
+                self.time[node] < self.time[s]
                 for node, succ in self._successor.items()
                 for s in succ
             ):

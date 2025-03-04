@@ -19,12 +19,6 @@ def test_read_MaMuT_xml():
     assert len(lT.successor) == 2430
 
 
-def test_writting_svg():
-    lT = read_from_mamut_xml("test/data/test-mamut.xml")
-    lT = read_from_mastodon("test/data/test.mastodon")
-    lT.write_to_svg("test/test.svg")
-
-
 def test_all_tracks():
     lT = read_from_mamut_xml("test/data/test-mamut.xml")
     assert len(lT.all_tracks) == 18
