@@ -10,7 +10,6 @@ import struct
 import warnings
 from collections.abc import Callable, Iterable
 from functools import partial
-from matplotlib.collections import LineCollection
 from itertools import combinations
 from numbers import Number
 from pathlib import Path
@@ -18,6 +17,7 @@ from types import MappingProxyType
 from typing import Literal
 
 import svgwrite
+from matplotlib.collections import LineCollection
 from packaging.version import Version
 
 from .tree_styles import tree_style
@@ -141,6 +141,7 @@ class lineageTree:
                 # else:
                 #     self.pos[node] = pos
         self._changed_leaves = True
+        self.time_flag = True
         return node
 
     ###TODO
@@ -2085,9 +2086,6 @@ class lineageTree:
             dict of plt.Axes to int
                 A dictionary that maps the axes to the root of the tree.
         """
-        import time
-
-        t = time.time()
         nrows = int(nrows)
         if last_time_point_to_consider is None:
             last_time_point_to_consider = self.t_b
@@ -2102,9 +2100,6 @@ class lineageTree:
             graphs = self.to_simple_graph(
                 start_time=last_time_point_to_consider
             )
-        print(time.time() - t)
-        t = time.time()
-
         pos = {
             i: hierarchical_pos(
                 g,
@@ -2114,8 +2109,6 @@ class lineageTree:
             )
             for i, g in graphs.items()
         }
-        print(time.time() - t)
-
         if axes is None:
             ncols = int(len(graphs) // nrows) + (+np.sign(len(graphs) % nrows))
             figure, axes = plt.subplots(
