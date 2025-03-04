@@ -1888,9 +1888,11 @@ class lineageTree:
         c = []
         if selected_edges.intersection(lnks_tms["links"]):
             selected_lnks_tms = {
-                k: v for k, v in lnks_tms["links"] if k in selected_edges
+                k: v
+                for k, v in lnks_tms["links"].items()
+                if k in selected_edges
             }
-            for pred, succs in selected_lnks_tms["links"].items():
+            for pred, succs in selected_lnks_tms.items():
                 for succ in succs:
                     if pred in selected_edges and succ in selected_edges:
                         lines.append(
@@ -1911,8 +1913,8 @@ class lineageTree:
         self,
         hier: dict[int : tuple[int, int]],
         lnks_tms: dict,
-        selected_nodes: list | set | NotImplementedError = None,
-        selected_edges: list | set | NotImplementedError = None,
+        selected_nodes: list | set | None = None,
+        selected_edges: list | set | None = None,
         color_of_nodes: str = "magenta",
         color_of_edges: str = "magenta",
         size: int = 10,
