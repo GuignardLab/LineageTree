@@ -269,7 +269,7 @@ class downsample_tree(abstract_trees):
             self.times[current] = 1  # self.downsample
         return self.out_dict, self.times
 
-    def get_norm(self) -> int:
+    def get_norm(self) -> float:
         return len(self.times.values()) * self.downsample / self.time_scale
 
     def delta(self, x, y, corres1, corres2, times1, times2):
@@ -311,28 +311,34 @@ class full_tree(abstract_trees):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.edist[2].update(self.corres_added_nodes)
 
     def get_tree(self) -> tuple[dict, dict]:
         self.out_dict = {}
         self.times = {}
+        self.corres_added_nodes = {}
         to_do = [self.root]
         while to_do:
             current = to_do.pop()
             _next = list(self.lT.successor[current])
             if _next and self.lT.time[_next[0]] <= self.end_time:
                 if self.time_scale > 1:
+                    tmp_cur = current
                     for _ in range(self.time_scale - 1):
                         next_id = self.get_next_id()
                         self.out_dict[current] = [next_id]
                         current = int(next_id)
+                        self.corres_added_nodes[current] = tmp_cur
                 self.out_dict[current] = _next
                 to_do.extend(_next)
             else:
                 if self.time_scale > 1:
+                    tmp_cur = current
                     for _ in range(self.time_scale - 1):
                         next_id = self.get_next_id()
                         self.out_dict[current] = [next_id]
                         current = int(next_id)
+                        self.corres_added_nodes[current] = tmp_cur
                 self.out_dict[current] = []
         self.times = {n_id: 1 for n_id in self.out_dict}
         return self.out_dict, self.times
