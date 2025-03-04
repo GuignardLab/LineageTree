@@ -2906,157 +2906,6 @@ class lineageTree:
 
     def __init__(
         self,
-        file_format: str = None,
-        tb: int = None,
-        te: int = None,
-        z_mult: float = 1.0,
-        file_type: str = "",
-        delim: str = ",",
-        eigen: bool = False,
-        shape: tuple = None,
-        raw_size: tuple = None,
-        reorder: bool = False,
-        xml_attributes: tuple = None,
-        name: str = None,
-        time_resolution: int | None = None,
-    ):
-        """
-        TODO: complete the doc
-        Main library to build tree graph representation of lineage tree data
-        It can read TGMM, ASTEC, SVF, MaMuT and TrackMate outputs.
-
-        Parameters
-        ----------
-            file_format (str): either - path format to TGMM xmls
-                                      - path to the MaMuT xml
-                                      - path to the binary file
-            tb (int, optional):first time point (necessary for TGMM xmls only)
-            te (int, optional): last time point (necessary for TGMM xmls only)
-            z_mult (float, optional):z aspect ratio if necessary (usually only for TGMM xmls)
-            file_type (str, optional):type of input file. Accepts:
-                'TGMM, 'ASTEC', MaMuT', 'TrackMate', 'csv', 'celegans', 'binary'
-                default is 'binary'
-            delim (str, optional): _description_. Defaults to ",".
-            eigen (bool, optional): _description_. Defaults to False.
-            shape (tuple, optional): _description_. Defaults to None.
-            raw_size (tuple, optional): _description_. Defaults to None.
-            reorder (bool, optional): _description_. Defaults to False.
-            xml_attributes (tuple, optional): _description_. Defaults to None.
-            name (str, optional): The name of the dataset. Defaults to None.
-            time_resolution (int | None, optional): Time resolution in mins (If time resolution is smaller than one minute input the time in ms). Defaults to None.
-        """
-
-        self.name = name
-        self.time_edges = {}
-        self.max_id = -1
-        self.next_id = []
-        self._successor = {}
-        self._time = {}
-        self._predecessor = {}
-        self.pos = {}
-        self.time_id = {}
-        if time_resolution is not None:
-            self._time_resolution = time_resolution
-        self.kdtrees = {}
-        self.spatial_density = {}
-        if file_type and file_format:
-            if xml_attributes is None:
-                self.xml_attributes = []
-            else:
-                self.xml_attributes = xml_attributes
-            file_type = file_type.lower()
-            if file_type == "tgmm":
-                self.read_tgmm_xml(file_format, tb, te, z_mult)
-            elif file_type == "mamut" or file_type == "trackmate":
-                self.read_from_mamut_xml(file_format)
-            elif file_type == "celegans":
-                self.read_from_txt_for_celegans(file_format)
-            elif file_type == "celegans_cao":
-                self.read_from_txt_for_celegans_CAO(
-                    file_format,
-                    reorder=reorder,
-                    shape=shape,
-                    raw_size=raw_size,
-                )
-            elif file_type == "mastodon":
-                if isinstance(file_format, list) and len(file_format) == 2:
-                    self.read_from_mastodon_csv(file_format)
-                else:
-                    if isinstance(file_format, list):
-                        file_format = file_format[0]
-                    self.read_from_mastodon(file_format, name)
-            elif file_type == "astec":
-                self.read_from_ASTEC(file_format, eigen)
-            elif file_type == "csv":
-                self.read_from_csv(file_format, z_mult, link=1, delim=delim)
-            elif file_type == "bao":
-                self.read_C_elegans_bao(file_format)
-            elif file_format and file_format.endswith(".lT"):
-                with open(file_format, "br") as f:
-                    tmp = pkl.load(f)
-                    f.close()
-                self.__dict__.update(tmp.__dict__)
-            elif file_format is not None:
-                self.read_from_binary(file_format)
-            if self.name is None:
-                try:
-                    self.name = Path(file_format).stem
-                except TypeError:
-                    self.name = Path(file_format[0]).stem
-        for k, v in self._successor.items():
-            self._successor[k] = tuple(v)
-        for k, v in self._predecessor.items():
-            self._predecessor[k] = tuple(v)
-        for node in set(self._successor).difference(self._predecessor):
-            self._predecessor[node] = ()
-        for node in set(self._predecessor).difference(self._successor):
-            self._successor[node] = ()
-
-
-class lineageTreeDicts(lineageTree):
-    """Placeholder class to give a proof of concept of what the lineageTree init method would look like."""
-
-    @classmethod
-    def load(clf, fname: str):
-        """
-        Loading a lineage tree from a ".lT" file.
-
-        Parameters
-        ----------
-            fname (str): path to and name of the file to read
-
-        Returns
-        -------
-            (lineageTree): loaded file
-        """
-        with open(fname, "br") as f:
-            lT = pkl.load(f)
-            f.close()
-        if not hasattr(lT, "__version__") or Version(lT.__version__) < Version(
-            "2.0.0"
-        ):
-            properties = {
-                prop_name: prop
-                for prop_name, prop in lT.__dict__.items()
-                if isinstance(prop, dict)
-                and prop_name
-                not in ["successor", "predecessor", "time", "pos"]
-                and set(prop).symmetric_difference(lT.nodes) == set()
-            }
-            lT = lineageTreeDicts(
-                successor=lT._successor,
-                time=lT._time,
-                pos=lT.pos,
-                name=lT.name if hasattr(lT, "name") else None,
-                **properties,
-            )
-        if not hasattr(lT, "time_resolution"):
-            lT.time_resolution = None
-
-        return lT
-
-    def __init__(
-        self,
         *,
         successor: dict[int, Iterable] = None,
         predecessor: dict[int, int | Iterable] = None,
@@ -3181,14 +3030,14 @@ class lineageTreeDicts(lineageTree):
             queue = list(self.roots)
             for node in queue:
                 for succ in self._successor[node]:
-                    self._time[succ] = self._time[node] + 1
+                    self._time[succ] = self.time[node] + 1
                     queue.append(succ)
         else:
             self._time = time
-            if self.nodes.difference(self._time) != set():
+            if self.nodes.difference(self.time) != set():
                 raise ValueError("Please provide the time of all nodes.")
             if not all(
-                self._time[node] < self._time[s]
+                self.time[node] < self.time[s]
                 for node, succ in self._successor.items()
                 for s in succ
             ):
