@@ -41,7 +41,6 @@ from .utils import (
 
 
 class lineageTree:
-
     def modifying(func):
         @wraps(func)
         def raising_flag(self, *args, **kwargs):
