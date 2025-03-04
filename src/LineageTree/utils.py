@@ -91,10 +91,10 @@ def create_links_and_cycles(lT: lineageTree, roots=None):
         last = cyc[-1]
         times[curr] = len(cyc)
         if last != curr:
-            links[curr] = [cyc[-1]]
+            links[curr] = [last]
         else:
             links[curr] = []
-        succ = lT.successor.get(last)
+        succ = lT._successor.get(last)
         if succ:
             times[cyc[-1]] = 0
             to_do.update(succ)

@@ -81,7 +81,7 @@ class lineageTree:
         for leaf in specfific_nodes:
             self.add_branch(
                 leaf,
-                (self.t_e - self.time[leaf]),
+                (self.t_e - self._time[leaf]),
                 downstream=True,
             )
 
@@ -120,7 +120,7 @@ class lineageTree:
             for _ in range(length):
                 old_node = node
                 node = self._add_node(pred=[old_node])
-                self._time[node] = self.time[old_node] + 1
+                self._time[node] = self._time[old_node] + 1
                 # if not pos:
                 #     self.pos[node] = self.pos[old_node]
                 # else:
@@ -128,14 +128,14 @@ class lineageTree:
         else:
             if self._predecessor[node]:
                 raise Warning("The node already has a predecessor.")
-            if self.time[node] - length < self.t_b:
+            if self._time[node] - length < self.t_b:
                 raise Warning(
                     "A node cannot created outside the lower bound of the dataset. (It is possible to change it by lT.t_b = int(...))"
                 )
             for _ in range(length):
                 old_node = node
                 node = self._add_node(succ=[old_node])
-                self._time[node] = self.time[old_node] - 1
+                self._time[node] = self._time[old_node] - 1
                 # if not pos:
                 #     self.pos[node] = self.pos[old_node]
                 # else:
@@ -206,7 +206,7 @@ class lineageTree:
         """
         if self.predecessor.get(l1_root) or self.predecessor.get(l2_root):
             raise ValueError("Please select 2 roots.")
-        if self.time[l1_root] != self.time[l2_root]:
+        if self._time[l1_root] != self._time[l2_root]:
             warnings.warn(
                 "Using lineagetrees that do not exist in the same timepoint. The operation will continue",
                 stacklevel=2,
@@ -245,7 +245,7 @@ class lineageTree:
         }
         self.nodes.update(new_nodes.values())
         for old_node, new_node in new_nodes.items():
-            self.time[new_node] = self.time[old_node]
+            self._time[new_node] = self._time[old_node]
             succ = self._successor.get(old_node)
             if succ:
                 self._successor[new_node] = [new_nodes[n] for n in succ]
@@ -255,7 +255,7 @@ class lineageTree:
             self.pos[new_node] = self.pos[old_node] + 0.5
         new_root = new_nodes[root]
         self.labels[new_root] = f"Copy of {root}"
-        if self.time[new_root] == 0:
+        if self._time[new_root] == 0:
             self.roots.add(new_root)
         return new_root
 
@@ -399,12 +399,28 @@ class lineageTree:
     @property
     def t_b(self) -> int:
         """The first timepoint of the tree."""
-        return min(self.time.values())
+        if not hasattr(self, "_t_b") or self.time_flag:
+            self._t_b = min(self._time.values())
+            self._t_e = max(self._time.values())
+            self.time_flag = False
+        return self._t_b
 
     @property
     def t_e(self) -> int:
         """The last timepoint of the tree."""
-        return max(self.time.values())
+        if not hasattr(self, "_t_e") or self.time_flag:
+            self._t_e = max(self._time.values())
+            self._t_b = min(self._time.values())
+            self.time_flag = False
+        return self._t_e
+
+    @t_e.setter
+    def t_e(self, other_value):
+        raise Warning("t_e and t_b change automatically")
+
+    @t_b.setter
+    def t_b(self, other_value):
+        raise Warning("t_e and t_b change automatically")
 
     @property
     def nodes(self) -> frozenset[int]:
@@ -484,7 +500,7 @@ class lineageTree:
                     root: "Unlabeled"
                     for root in self.roots
                     for leaf in self.find_leaves(root)
-                    if abs(self.time[leaf] - self.time[root])
+                    if abs(self._time[leaf] - self._time[root])
                     >= abs(self.t_e - self.t_b) / 4
                 }
         return self._labels
@@ -492,7 +508,7 @@ class lineageTree:
     @property
     def time_resolution(self) -> float:
         if not hasattr(self, "_time_resolution"):
-            self.time_resolution = 0
+            self._time_resolution = 0
         return self._time_resolution / 10
 
     @time_resolution.setter
@@ -534,7 +550,7 @@ class lineageTree:
             P = np.mean(
                 [self._get_height(di, done) for di in self._successor[c]]
             )
-            done[c] = [P, self.vert_space_factor * self.time[c]]
+            done[c] = [P, self.vert_space_factor * self._time[c]]
             return P
 
     def write_to_svg(
@@ -704,7 +720,7 @@ class lineageTree:
             r_pos = {
                 leave: [
                     prev_x + horizontal_space * (1 + j),
-                    self.vert_space_factor * self.time[leave],
+                    self.vert_space_factor * self._time[leave],
                 ]
                 for j, leave in enumerate(r_leaves)
             }
@@ -851,20 +867,20 @@ class lineageTree:
             if not nodes_to_use:
                 if t_max != np.inf or t_min > -1:
                     nodes_to_use = [
-                        n for n in self.nodes if t_min < self.time[n] <= t_max
+                        n for n in self.nodes if t_min < self._time[n] <= t_max
                     ]
                     edges_to_use = []
                     if temporal:
                         edges_to_use += [
                             e
                             for e in self.edges
-                            if t_min < self.time[e[0]] < t_max
+                            if t_min < self._time[e[0]] < t_max
                         ]
                     if spatial:
                         edges_to_use += [
                             e
                             for e in s_edges
-                            if t_min < self.time[e[0]] < t_max
+                            if t_min < self._time[e[0]] < t_max
                         ]
                 else:
                     nodes_to_use = list(self.nodes)
@@ -883,7 +899,7 @@ class lineageTree:
                                 edges_to_use.append((n, d))
                 if spatial:
                     edges_to_use += [
-                        e for e in s_edges if t_min < self.time[e[0]] < t_max
+                        e for e in s_edges if t_min < self._time[e[0]] < t_max
                     ]
             nodes_to_use = set(nodes_to_use)
             if Names:
@@ -906,7 +922,7 @@ class lineageTree:
                             )
                         )
                         != 1
-                        or self.time[k] == t_min + 1
+                        or self._time[k] == t_min + 1
                     ):
                         tmp_names[k] = v
                 node_properties[Names][0] = tmp_names
@@ -936,7 +952,7 @@ class lineageTree:
             f.write('\t(default "0" "0")\n')
             for n in nodes_to_use:
                 f.write(
-                    "\t(node " + str(n) + ' "' + str(self.time[n]) + '")\n'
+                    "\t(node " + str(n) + ' "' + str(self._time[n]) + '")\n'
                 )
             f.write(")\n")
 
@@ -1012,7 +1028,7 @@ class lineageTree:
         pos_sequence = []
         time_sequence = []
         for c in starting_points:
-            time_sequence.append(self.time.get(c, 0))
+            time_sequence.append(self._time.get(c, 0))
             to_treat = [c]
             while to_treat:
                 curr_c = to_treat.pop()
@@ -1028,7 +1044,7 @@ class lineageTree:
         remaining_nodes = set(self.nodes) - set(number_sequence)
 
         for c in remaining_nodes:
-            time_sequence.append(self.time.get(c, 0))
+            time_sequence.append(self._time.get(c, 0))
             number_sequence.append(c)
             pos_sequence += list(self.pos[c])
             number_sequence.append(-1)
@@ -1214,11 +1230,11 @@ class lineageTree:
         if not end_time:
             end_time = self.t_e
         unconstrained_cycle = [x]
-        cycle = [x] if start_time <= self.time[x] <= end_time else []
+        cycle = [x] if start_time <= self._time[x] <= end_time else []
         acc = 0
         while (
             acc != depth
-            and start_time < self.time[unconstrained_cycle[0]]
+            and start_time < self._time[unconstrained_cycle[0]]
             and (
                 self._predecessor[unconstrained_cycle[0]] != ()
                 and (  # Please dont change very important even if it looks weird.
@@ -1235,7 +1251,7 @@ class lineageTree:
                 0, self._predecessor[unconstrained_cycle[0]][0]
             )
             acc += 1
-            if start_time <= self.time[unconstrained_cycle[0]] <= end_time:
+            if start_time <= self._time[unconstrained_cycle[0]] <= end_time:
                 cycle.insert(0, unconstrained_cycle[0])
 
         return cycle
@@ -1268,7 +1284,7 @@ class lineageTree:
         while (
             len(self._successor[cycle[-1]]) == 1
             and acc != depth
-            and self.time[cycle[-1]] < end_time
+            and self._time[cycle[-1]] < end_time
         ):
             cycle += self._successor[cycle[-1]]
             acc += 1
@@ -1345,8 +1361,8 @@ class lineageTree:
         while to_do:
             current = to_do.pop()
             track = self.get_successors(current, end_time=end_time)
-            # if len(track) != 1 or self.time[current] <= end_time:
-            if self.time[track[-1]] <= end_time:
+            # if len(track) != 1 or self._time[current] <= end_time:
+            if self._time[track[-1]] <= end_time:
                 branches += [track]
                 to_do += self._successor[track[-1]]
         return branches
@@ -1454,7 +1470,7 @@ class lineageTree:
         while to_do:
             curr = to_do.pop()
             succ = self._successor[curr]
-            if succ and end_time < self.time.get(curr, end_time):
+            if succ and end_time < self._time.get(curr, end_time):
                 succ = []
                 continue
             if preorder:
@@ -1487,7 +1503,7 @@ class lineageTree:
         """
         s_vol = 4 / 3.0 * np.pi * th**3
         time_range = set(range(self.t_b, self.t_e)).intersection(
-            self.time.values()
+            self._time.values()
         )
         for t in time_range:
             idx3d, nodes = self.get_idx3d(t)
@@ -1515,7 +1531,7 @@ class lineageTree:
                 a cell id to its `k` nearest neighbors
         """
         self.kn_graph = {}
-        for t in set(self.time.values()):
+        for t in set(self._time.values()):
             nodes = self.nodes_at_t(t)
             use_k = k if k < len(nodes) else len(nodes)
             idx3d, nodes = self.get_idx3d(t)
@@ -1543,7 +1559,7 @@ class lineageTree:
                 dictionary that maps a cell id to its neighbors at a distance `th`
         """
         self.th_edges = {}
-        for t in set(self.time.values()):
+        for t in set(self._time.values()):
             nodes = self.nodes_at_t(t)
             idx3d, nodes = self.get_idx3d(t)
             neighbs = idx3d.query_ball_tree(idx3d, th)
@@ -1667,7 +1683,7 @@ class lineageTree:
         if time is None:
             time = self.t_b
         ancestor = n
-        while time < self.time.get(ancestor, self.t_b - 1):
+        while time < self._time.get(ancestor, self.t_b - 1):
             ancestor = self._predecessor.get(ancestor, [-1])[0]
         return ancestor
 
@@ -1688,7 +1704,7 @@ class lineageTree:
             return None
         ancestor = node
         while (
-            self.t_b <= self.time.get(ancestor, self.t_b - 1)
+            self.t_b <= self._time.get(ancestor, self.t_b - 1)
             and ancestor != -1
         ):
             if ancestor in self.labels:
@@ -2013,7 +2029,7 @@ class lineageTree:
             start_time = self.t_b
         if node is None:
             mothers = [
-                root for root in self.roots if self.time[root] <= start_time
+                root for root in self.roots if self._time[root] <= start_time
             ]
         else:
             mothers = node if isinstance(node, list | set) else [node]
@@ -2069,7 +2085,9 @@ class lineageTree:
             dict of plt.Axes to int
                 A dictionary that maps the axes to the root of the tree.
         """
+        import time
 
+        t = time.time()
         nrows = int(nrows)
         if last_time_point_to_consider is None:
             last_time_point_to_consider = self.t_b
@@ -2084,15 +2102,20 @@ class lineageTree:
             graphs = self.to_simple_graph(
                 start_time=last_time_point_to_consider
             )
+        print(time.time() - t)
+        t = time.time()
+
         pos = {
             i: hierarchical_pos(
                 g,
                 g["root"],
-                ycenter=-int(self.time[g["root"]]),
+                ycenter=-int(self._time[g["root"]]),
                 vert_gap=vert_gap,
             )
             for i, g in graphs.items()
         }
+        print(time.time() - t)
+
         if axes is None:
             ncols = int(len(graphs) // nrows) + (+np.sign(len(graphs) % nrows))
             figure, axes = plt.subplots(
@@ -2205,7 +2228,7 @@ class lineageTree:
                 graph,
                 graph["root"],
                 vert_gap=vert_gap,
-                ycenter=-int(self.time[node]),
+                ycenter=-int(self._time[node]),
             ),
             selected_edges=selected_edges,
             selected_nodes=selected_nodes,
@@ -2249,9 +2272,9 @@ class lineageTree:
         while len(to_do) > 0:
             curr = to_do.pop()
             for _next in self._successor[curr]:
-                if self.time[_next] < t:
+                if self._time[_next] < t:
                     to_do.append(_next)
-                elif self.time[_next] == t:
+                elif self._time[_next] == t:
                     final_nodes.append(_next)
         if not final_nodes:
             return list(r)
@@ -2943,14 +2966,15 @@ class lineageTree:
         """
 
         self.name = name
-        self.time_edges = {}
+        self._time_edges = {}
         self.max_id = -1
         self.next_id = []
         self._successor = {}
         self._time = {}
         self._predecessor = {}
+        self.time_flag = True
         self.pos = {}
-        self.time_id = {}
+        self._time_id = {}
         if time_resolution is not None:
             self._time_resolution = time_resolution
         self.kdtrees = {}
@@ -3130,14 +3154,14 @@ class lineageTreeDicts(lineageTree):
             queue = list(self.roots)
             for node in queue:
                 for succ in self._successor[node]:
-                    self._time[succ] = self.time[node] + 1
+                    self._time[succ] = self._time[node] + 1
                     queue.append(succ)
         else:
             self._time = time
-            if self.nodes.difference(self.time) != set():
+            if self.nodes.difference(self._time) != set():
                 raise ValueError("Please provide the time of all nodes.")
             if not all(
-                self.time[node] < self.time[s]
+                self._time[node] < self._time[s]
                 for node, succ in self._successor.items()
                 for s in succ
             ):
