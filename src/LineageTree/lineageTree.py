@@ -1917,7 +1917,7 @@ class lineageTree:
         selected_edges: list | set | None = None,
         color_of_nodes: str = "magenta",
         color_of_edges: str = "magenta",
-        size: int = 10,
+        size: int | float = 10,
         ax: plt.Axes | None = None,
         default_color: str = "black",
         **kwargs,
@@ -2153,7 +2153,7 @@ class lineageTree:
         selected_edges: list | None = None,
         color_of_nodes: str = "magenta",
         color_of_edges: str = "magenta",
-        size: int = 10,
+        size: int | float = 10,
         default_color: str = "black",
         ax: plt.Axes | None = None,
     ) -> tuple[plt.Figure, plt.Axes]:  # type: ignore
