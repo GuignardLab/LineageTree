@@ -10,6 +10,7 @@ import struct
 import warnings
 from collections.abc import Callable, Iterable
 from functools import partial
+from matplotlib.collections import LineCollection
 from itertools import combinations
 from numbers import Number
 from pathlib import Path
@@ -1850,35 +1851,23 @@ class lineageTree:
         """
         Private method that plots the nodes of the tree.
         """
-        hier_unselected = np.array(
-            [v for k, v in hier.items() if k not in selected_nodes]
-        )
-        if hier_unselected.any():
-            ax.scatter(
-                *hier_unselected.T,
-                s=size,
-                zorder=10,
-                color=default_color,
-                **kwargs,
-            )
-        if selected_nodes.intersection(hier.keys()):
-            hier_selected = np.array(
-                [v for k, v in hier.items() if k in selected_nodes]
-            )
-            if isinstance(color, dict):
-                color = [
-                    color[node] for node in hier if node in selected_nodes
-                ]
-            ax.scatter(
-                *hier_selected.T, s=size, zorder=10, color=color, **kwargs
-            )
+
+        if isinstance(color, dict):
+            color = [color.get(k, default_color) for k in hier]
+        if isinstance(color, str):
+            color = [
+                color if node in selected_nodes else default_color
+                for node in hier
+            ]
+        hier_pos = np.array(list(hier.values()))
+        ax.scatter(*hier_pos.T, s=size, zorder=10, color=color, **kwargs)
 
     @staticmethod
     def __plot_edges(
         hier: dict,
         lnks_tms: dict,
         selected_edges: set,
-        color: str | list,
+        color: str | dict,
         ax: plt.Axes,
         default_color: str = "black",
         **kwargs,
@@ -1893,24 +1882,39 @@ class lineageTree:
                     x.extend((hier[succ][0], hier[pred][0], None))
                     y.extend((hier[succ][1], hier[pred][1], None))
         ax.plot(x, y, linewidth=0.3, zorder=0.1, c=default_color, **kwargs)
+
         x, y = [], []
-        for pred, succs in lnks_tms["links"].items():
-            for succ in succs:
-                if pred in selected_edges and succ in selected_edges:
-                    x.extend((hier[succ][0], hier[pred][0], None))
-                    y.extend((hier[succ][1], hier[pred][1], None))
-        if isinstance(color, dict):
-            color = [color[node] for node in hier if node in selected_edges]
-        ax.plot(x, y, linewidth=0.3, zorder=0.2, c=color, **kwargs)
+        lines = []
+        c = []
+        if selected_edges.intersection(lnks_tms["links"]):
+            selected_lnks_tms = {
+                k: v for k, v in lnks_tms["links"] if k in selected_edges
+            }
+            for pred, succs in selected_lnks_tms["links"].items():
+                for succ in succs:
+                    if pred in selected_edges and succ in selected_edges:
+                        lines.append(
+                            [
+                                [hier[succ][0], hier[succ][1]],
+                                [hier[pred][0], hier[pred][1]],
+                            ]
+                        )
+                        if isinstance(color, str):
+                            c.append(color)
+                        if isinstance(color, dict):
+                            c.append(color[pred])
+
+            lc = LineCollection(lines, colors=c, linewidth=0.3, **kwargs)
+            ax.add_collection(lc)
 
     def draw_tree_graph(
         self,
         hier: dict[int : tuple[int, int]],
         lnks_tms: dict,
-        selected_nodes: list | set = None,
-        selected_edges: list | set = None,
+        selected_nodes: list | set | NotImplementedError = None,
+        selected_edges: list | set | NotImplementedError = None,
         color_of_nodes: str = "magenta",
-        color_of_edges: str = None,
+        color_of_edges: str = "magenta",
         size: int = 10,
         ax: plt.Axes | None = None,
         default_color: str = "black",
@@ -2140,42 +2144,57 @@ class lineageTree:
     def plot_node(
         self,
         node: int,
-        figsize: tuple[int, int] = (4, 7),
+        figsize: tuple[int, int] = (4, 7),  # type: ignore
         dpi: int = 150,
         vert_gap: int = 2,
-        selected_nodes: list = None,
-        selected_edges: list = None,
+        selected_nodes: list | None = None,
+        selected_edges: list | None = None,
         color_of_nodes: str = "magenta",
-        color_of_edges: str = None,
+        color_of_edges: str = "magenta",
         size: int = 10,
         default_color: str = "black",
-        ax: plt.Axes = None,
-    ) -> tuple[plt.Figure, plt.Axes]:
+        ax: plt.Axes | None = None,
+    ) -> tuple[plt.Figure, plt.Axes]:  # type: ignore
         """Plots the subtree spawn by a node.
 
         Parameters
         ----------
-            node : int
+        node : int
                 The id of the node that is going to be plotted.
-            figsize : tuple, default=(4, 7)
-                The size of the figure.
-            dpi : int, default=150
-                The dpi of the figure.
-            vert_gap : int, default=2
-                The space between the nodes.
-            ax : plt.Axes, optional
-                The axes to plot the graph on.
+        figsize : tuple[int, int], optional
+                The size of the figure, by deafult (4,7).
+        vert_gap : int, optional
+            The dpi of the figure, by default 2
+        selected_nodes : list | None, optional
+            The nodes that are going to be colored, that do not have the default color, by default None
+        selected_edges : list | None, optional
+            The edges that are going to be colored, that do not have the default color, by default None
+        color_of_nodes : str, optional
+            The color of the nodes to be colored, except the default colored ones, by default "magenta"
+        color_of_edges : str, optional
+            The color of the edges to be colored, except the default colored ones,, by default "magenta"
+        size : int, optional
+            The size of the nodes, by default 10
+        default_color : str, optional
+            The default color of nodes and edges, by default "black"
+        ax : plt.Axes | None, optional
+            The ax where the plot is going to be applied, by default None
 
         Returns
         -------
-            plt.Figure
-                The figure
-            plt.Axes
-                The axes
+        tuple[plt.Figure, plt.Axes]
+            _description_
+
+        Raises
+        ------
+        Warning
+            If more than one nodes are received
         """
         graph = self.to_simple_graph(node)
         if len(graph) > 1:
-            raise Warning("Please enter only one node")
+            raise Warning(
+                "Please use lT.plot_all_lineages(nodes) for plotting multiple nodes."
+            )
         graph = graph[0]
         if not ax:
             _, ax = plt.subplots(nrows=1, ncols=1, figsize=figsize, dpi=dpi)

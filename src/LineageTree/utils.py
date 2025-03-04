@@ -116,7 +116,8 @@ def hierarchical_pos(
         ycenter (int, optional): Where the root will be placed on the y axis. Defaults to 0.
 
     Returns:
-        _type_: _description_
+        dict[int, list[int]]: Provides a dictionary that contains the id of each node as keys and its position on the
+                                tree graph as values.
     """
     to_do = [root]
     if root not in lnks_tms["times"]:
