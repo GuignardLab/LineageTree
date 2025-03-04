@@ -2981,8 +2981,6 @@ class lineageTree:
         self.__version__ = importlib.metadata.version("LineageTree")
         self._initialise_properties()
 
-        self.max_id = -1
-        self.next_id = []
         self.name = name
         if successor is not None and predecessor is not None:
             raise ValueError(
