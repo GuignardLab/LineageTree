@@ -1892,39 +1892,25 @@ class lineageTree:
         """
         Private method that plots the edges of the tree.
         """
-        x, y = [], []
-        for pred, succs in lnks_tms["links"].items():
-            for succ in succs:
-                if pred not in selected_edges or succ not in selected_edges:
-                    x.extend((hier[succ][0], hier[pred][0], None))
-                    y.extend((hier[succ][1], hier[pred][1], None))
-        ax.plot(x, y, linewidth=0.3, zorder=0.1, c=default_color, **kwargs)
-
-        x, y = [], []
         lines = []
         c = []
-        if selected_edges.intersection(lnks_tms["links"]):
-            selected_lnks_tms = {
-                k: v
-                for k, v in lnks_tms["links"].items()
-                if k in selected_edges
-            }
-            for pred, succs in selected_lnks_tms.items():
-                for succ in succs:
-                    if pred in selected_edges and succ in selected_edges:
-                        lines.append(
-                            [
-                                [hier[succ][0], hier[succ][1]],
-                                [hier[pred][0], hier[pred][1]],
-                            ]
-                        )
-                        if isinstance(color, str):
-                            c.append(color)
-                        if isinstance(color, dict):
-                            c.append(color[pred])
-
-            lc = LineCollection(lines, colors=c, linewidth=0.3, **kwargs)
-            ax.add_collection(lc)
+        for pred, succs in lnks_tms["links"].items():
+            for suc in succs:
+                lines.append(
+                    [
+                        [hier[suc][0], hier[suc][1]],
+                        [hier[pred][0], hier[pred][1]],
+                    ]
+                )
+                if pred in selected_edges:
+                    if isinstance(color, str):
+                        c.append(color)
+                    elif isinstance(color, dict):
+                        c.append(color[pred])
+                else:
+                    c.append(default_color)
+        lc = LineCollection(lines, colors=c, linewidth=0.3, **kwargs)
+        ax.add_collection(lc)
 
     def draw_tree_graph(
         self,
