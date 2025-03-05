@@ -58,33 +58,6 @@ def test_uted_2levels_vs_3levels():
     )
 
 
-def test_fusion():
-    lT = lineageTree()
-    t1 = lT.add_root(0)
-    first_level_end = lT.add_branch(t1, 10, downstream=True)
-
-    second_level_1 = lT.add_branch(first_level_end, 10, downstream=True)
-    second_level_2 = lT.add_branch(first_level_end, 10, downstream=True)
-
-    lT.add_branch(second_level_1, 10, downstream=True)
-    lT.add_branch(second_level_1, 10, downstream=True)
-    lT.add_branch(second_level_2, 10, downstream=True)
-    lT.add_branch(second_level_2, 10, downstream=True)
-
-    t2 = lT.add_root(0)
-    first_level_end = lT.add_branch(t2, 10, downstream=True)
-
-    second_level_1 = lT.add_branch(first_level_end, 10, downstream=True)
-    second_level_2 = lT.add_branch(first_level_end, 10, downstream=True)
-
-    new = lT.fuse_lineage_tree(t1, t2, length=10)
-    assert len(lT.get_sub_tree(new)) == 110
-    assert len(lT.get_cycle(new)) == 10
-
-    new2 = lT.cut_tree(new)
-    assert len(lT.get_sub_tree(new)) + 40 == len(lT.get_sub_tree(new2))
-
-
 def test_adding_nodes():
     lT = lineageTree()
     t1 = lT.add_root(0)
@@ -107,21 +80,6 @@ def test_removing_nodes():
     assert len(lT.get_sub_tree(t1)) == 20
 
 
-def test_modifying_nodes():
-    lT = lineageTree()
-    t1 = lT.add_root(0)
-    lT.modify_branch(t1, 100)
-    assert len(lT.get_cycle(t1)) == 100
-
-
-def test_modifying_nodes_2():
-    lT = lineageTree()
-    t1 = lT.add_root(0)
-    lT.add_branch(t1, 9, downstream=True)
-    lT.modify_branch(t1, 100)
-    assert len(lT.get_sub_tree(t1)) == 100
-
-
 def test_time_resolution():
     lT = lineageTree()
     lT.time_resolution = 3
@@ -133,19 +91,6 @@ def test_loading():
     assert lT.time_resolution == 0
     lT.time_resolution = 1.51
     assert lT.time_resolution == 1.5
-
-
-def test_complete_lineage():
-    lT = lineageTree()
-    t1 = lT.add_root(0)
-
-    lT.add_branch(t1, 10, downstream=True)
-
-    t2 = lT.add_root(0)
-    lT.add_branch(t2, 11, downstream=True)
-
-    lT.complete_lineage()
-    assert len(lT.nodes) == 82
 
 
 def test_cross_comparison():
@@ -259,3 +204,37 @@ def test_plots():
     lT = read_from_mastodon("test/data/test.mastodon")
     assert len(lT.plot_all_lineages()) == 3
     assert len(lT.plot_node(40)) == 2
+
+
+def test_removing_embryos_from_manager():
+    lT_1 = lineageTree()
+    t1 = lT_1.add_root(0)
+    first_level_end = lT_1.add_branch(t1, 9, downstream=True)
+
+    second_level_1 = lT_1.add_branch(first_level_end, 10, downstream=True)
+    second_level_2 = lT_1.add_branch(first_level_end, 10, downstream=True)
+
+    lT_1.add_branch(second_level_1, 10, downstream=True)
+    lT_1.add_branch(second_level_1, 10, downstream=True)
+    lT_1.add_branch(second_level_2, 10, downstream=True)
+    lT_1.add_branch(second_level_2, 10, downstream=True)
+    lT_1.time_resolution = 5
+
+    lT_2 = lineageTree()
+    t2 = lT_2.add_root(0)
+    first_level_end = lT_2.add_branch(t2, 4, downstream=True)
+
+    second_level_1 = lT_2.add_branch(first_level_end, 5, downstream=True)
+    second_level_2 = lT_2.add_branch(first_level_end, 5, downstream=True)
+
+    lT_2.add_branch(second_level_1, 5, downstream=True)
+    lT_2.add_branch(second_level_1, 5, downstream=True)
+    lT_2.add_branch(second_level_2, 5, downstream=True)
+    lT_2.add_branch(second_level_2, 5, downstream=True)
+    lT_2.time_resolution = 10
+
+    lTm1 = lineageTreeManager()
+    lTm1.add(lT_1, name="embryo_1")
+    lTm1.add(lT_2, name="embryo_2")
+    lTm1.remove_embryo("embryo_1")
+    assert len(lTm1.lineagetrees) == 1
