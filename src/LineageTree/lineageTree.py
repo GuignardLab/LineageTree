@@ -64,7 +64,7 @@ class lineageTree:
             next authorized id
         """
         if not hasattr(self, "max_id") or (self.max_id == -1 and self.nodes):
-            self.max_id = max(self.nodes) if len(self.nodes) else 1
+            self.max_id = max(self.nodes) if len(self.nodes) else 0
         if not hasattr(self, "next_id") or self.next_id == []:
             self.max_id += 1
             return self.max_id
@@ -1716,7 +1716,7 @@ class lineageTree:
     def __plot_nodes(
         hier: dict,
         selected_nodes: set,
-        color: str | list | dict,
+        color: str | dict,
         size: int,
         ax: plt.Axes,
         default_color: str = "black",
@@ -1775,8 +1775,8 @@ class lineageTree:
         lnks_tms: dict,
         selected_nodes: list | set | None = None,
         selected_edges: list | set | None = None,
-        color_of_nodes: str = "magenta",
-        color_of_edges: str = "magenta",
+        color_of_nodes: str | dict = "magenta",
+        color_of_edges: str | dict = "magenta",
         size: int | float = 10,
         ax: plt.Axes | None = None,
         default_color: str = "black",
@@ -2010,8 +2010,8 @@ class lineageTree:
         vert_gap: int = 2,
         selected_nodes: list | None = None,
         selected_edges: list | None = None,
-        color_of_nodes: str = "magenta",
-        color_of_edges: str = "magenta",
+        color_of_nodes: str | dict = "magenta",
+        color_of_edges: str | dict = "magenta",
         size: int | float = 10,
         default_color: str = "black",
         ax: plt.Axes | None = None,
@@ -2863,14 +2863,13 @@ class lineageTree:
                     self._successor.setdefault(pred, ())
                     self._successor[pred] += (succ,)
         else:
-            self._successor = {}
-            self._predecessor = {}
+            # self._successor = {}
+            # self._predecessor = {}
             warnings.warn(
                 "Both successor and predecessor attributes are empty.",
                 stacklevel=2,
             )
         for root in set(self._successor).difference(self._predecessor):
-            print(root)
             self._predecessor[root] = ()
         for leaf in set(self._predecessor).difference(self._successor):
             self._successor[leaf] = ()

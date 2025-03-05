@@ -25,7 +25,7 @@ def test_all_tracks():
 
 
 def test_uted_2levels_vs_3levels():
-    lT = lineageTree()
+    lT = lineageTree(successor={})
     t1 = lT.add_root(0)
     first_level_end = lT.add_branch(t1, 10, True)
 
@@ -59,7 +59,7 @@ def test_uted_2levels_vs_3levels():
 
 
 def test_adding_nodes():
-    lT = lineageTree()
+    lT = lineageTree(successor={})
     t1 = lT.add_root(0)
     first_level_end = lT.add_branch(t1, 9, downstream=True)
 
@@ -70,7 +70,7 @@ def test_adding_nodes():
 
 
 def test_removing_nodes():
-    lT = lineageTree()
+    lT = lineageTree(successor={})
     t1 = lT.add_root(0)
     first_level_end = lT.add_branch(t1, 9, downstream=True)
 
@@ -81,7 +81,7 @@ def test_removing_nodes():
 
 
 def test_time_resolution():
-    lT = lineageTree()
+    lT = lineageTree(successor={})
     lT.time_resolution = 3
     assert lT.time_resolution == 3
 
@@ -94,7 +94,7 @@ def test_loading():
 
 
 def test_cross_comparison():
-    lT_1 = lineageTree()
+    lT_1 = lineageTree(successor={})
     t1 = lT_1.add_root(0)
     first_level_end = lT_1.add_branch(t1, 9, downstream=True)
     node_1 = lT_1.get_cycle(t1)[0]
@@ -108,7 +108,7 @@ def test_cross_comparison():
     lT_1.add_branch(second_level_2, 10, downstream=True)
     lT_1.time_resolution = 5
 
-    lT_2 = lineageTree()
+    lT_2 = lineageTree(successor={})
     t2 = lT_2.add_root(0)
     first_level_end = lT_2.add_branch(t2, 4, downstream=True)
     node_2 = lT_2.get_cycle(t2)[0]
@@ -176,7 +176,7 @@ def test_cross_comparison():
         )
         == 0
     )
-    lT_3 = lineageTree()
+    lT_3 = lineageTree(successor={})
     t1 = lT_3.add_root(0)
     first_level_end = lT_3.add_branch(t1, 4, downstream=True)
     node_3 = lT_3.get_cycle(t1)[0]
@@ -207,7 +207,7 @@ def test_plots():
 
 
 def test_removing_embryos_from_manager():
-    lT_1 = lineageTree()
+    lT_1 = lineageTree(successor={})
     t1 = lT_1.add_root(0)
     first_level_end = lT_1.add_branch(t1, 9, downstream=True)
     node_1 = lT_1.get_cycle(t1)[0]
@@ -221,7 +221,7 @@ def test_removing_embryos_from_manager():
     lT_1.add_branch(second_level_2, 10, downstream=True)
     lT_1.time_resolution = 5
 
-    lT_2 = lineageTree()
+    lT_2 = lineageTree(successor={})
     t2 = lT_2.add_root(0)
     first_level_end = lT_2.add_branch(t2, 4, downstream=True)
     node_2 = lT_2.get_cycle(t2)[0]
