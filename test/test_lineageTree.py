@@ -238,3 +238,29 @@ def test_removing_embryos_from_manager():
     lTm1.add(lT_2, name="embryo_2")
     lTm1.remove_embryo("embryo_1")
     assert len(lTm1.lineagetrees) == 1
+
+
+def test_uted_2levels_vs_3levels():
+    lT = lineageTree()
+    t1 = lT.add_root(0)
+    first_level_end = lT.add_branch(t1, 10, True)
+
+    second_level_1 = lT.add_branch(first_level_end, 10, downstream=True)
+    second_level_2 = lT.add_branch(first_level_end, 10, downstream=True)
+
+    lT.add_branch(second_level_1, 10, downstream=True)
+    lT.add_branch(second_level_1, 10, downstream=True)
+    lT.add_branch(second_level_2, 10, downstream=True)
+    lT.add_branch(second_level_2, 10, downstream=True)
+
+    t2 = lT.add_root(0)
+    first_level_end = lT.add_branch(t2, 10, downstream=True)
+
+    second_level_1 = lT.add_branch(first_level_end, 10, downstream=True)
+    second_level_2 = lT.add_branch(first_level_end, 10, downstream=True)
+
+    assert lT.plot_tree_distance_graphs(t1, t2, style="simple", norm=None)
+    assert lT.plot_tree_distance_graphs(
+        t1, t2, style="normalized_simple", norm=None
+    )
+    assert lT.plot_tree_distance_graphs(t1, t2, style="full", norm=None)
