@@ -41,12 +41,13 @@ from .utils import (
 
 
 class lineageTree:
-    def modifying(func):
+    def modifier(func):
         @wraps(func)
         def raising_flag(self, *args, **kwargs):
+            out_func = func(self, *args, **kwargs)
             for prop in self._dependent_properties:
                 self.__dict__[prop] = None
-            return func(self, *args, **kwargs)
+            return out_func
 
         return raising_flag
 
@@ -72,7 +73,7 @@ class lineageTree:
             return self.next_id.pop()
 
     ###TODO make lT longer.
-    @modifying
+    @modifier
     def complete_lineage(self, nodes: int | set = None) -> None:
         """Makes all leaf branches longer so that they reach the last timepoint (self.t_e), useful
         for tree edit distance algorithms.
@@ -95,7 +96,7 @@ class lineageTree:
             )
 
     ###TODO pos can be callable and stay motionless (copy the position of the succ node, use something like optical flow)
-    @modifying
+    @modifier
     def add_branch(
         self,
         node: int,
@@ -153,7 +154,7 @@ class lineageTree:
         return node
 
     ###TODO
-    @modifying
+    @modifier
     def cut_tree(self, root: int) -> int:
         """It transforms a lineage that has at least 2 divisions into 2 independent lineages,
         that spawn from the time point of the first node. (splits a tree into 2)
@@ -183,7 +184,7 @@ class lineageTree:
             raise Warning("No division of the branch")
 
     ###TODO
-    @modifying
+    @modifier
     def fuse_lineage_tree(
         self,
         l1_root: int,
@@ -236,7 +237,7 @@ class lineageTree:
         return new_branch
 
     ###TODO
-    @modifying
+    @modifier
     def copy_lineage(self, root: int) -> int:
         """Copies the structure of a tree and makes a new with new nodes.
         Warning does not take into account the predecessor of the root node.
@@ -271,7 +272,7 @@ class lineageTree:
             self.roots.add(new_root)
         return new_root
 
-    @modifying
+    @modifier
     def add_root(self, t: int, pos: list = None):
         """Adds a root to a specific timepoint.
 
@@ -339,7 +340,7 @@ class lineageTree:
             self.pos[C_next] = pos
         return C_next
 
-    @modifying
+    @modifier
     def remove_nodes(self, group: int | set | list) -> None:
         """Removes a group of nodes from the LineageTree
 
@@ -376,7 +377,7 @@ class lineageTree:
             self._successor.pop(node, ())
 
     # TODO
-    @modifying
+    @modifier
     def modify_branch(self, node: int, new_length: int) -> None:
         """Changes the length of a branch, so it adds or removes nodes
         to make the correct length of the cycle.
@@ -3051,7 +3052,6 @@ class lineageTree:
                 stacklevel=2,
             )
         for root in set(self._successor).difference(self._predecessor):
-            print(root)
             self._predecessor[root] = ()
         for leaf in set(self._predecessor).difference(self._successor):
             self._successor[leaf] = ()
