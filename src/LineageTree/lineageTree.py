@@ -2823,7 +2823,7 @@ class lineageTree:
             self._predecessor = {}
             for pred, succs in successor.items():
                 if succs in root_leaf_value:
-                    self._predecessor[succs] = ()
+                    self._predecessor[pred] = ()
                 else:
                     if not isinstance(succs, Iterable):
                         raise TypeError(
@@ -2858,7 +2858,7 @@ class lineageTree:
                             raise ValueError(
                                 "Node can have at most one predecessor."
                             )
-                    pred = pred[0]
+                        pred = pred[0]
                     self._predecessor[succ] = (pred,)
                     self._successor.setdefault(pred, ())
                     self._successor[pred] += (succ,)
