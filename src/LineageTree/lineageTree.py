@@ -2817,10 +2817,9 @@ class lineageTree:
             raise ValueError(
                 "root_leaf_value should have at least one element."
             )
-
+        self._successor = {}
+        self._predecessor = {}
         if successor is not None:
-            self._successor = {}
-            self._predecessor = {}
             for pred, succs in successor.items():
                 if succs in root_leaf_value:
                     self._successor[pred] = ()
@@ -2842,8 +2841,6 @@ class lineageTree:
                             )
                         self._predecessor[succ] = (pred,)
         elif predecessor is not None:
-            self._successor = {}
-            self._predecessor = {}
             for succ, pred in predecessor.items():
                 if pred in root_leaf_value:
                     self._predecessor[succ] = ()
