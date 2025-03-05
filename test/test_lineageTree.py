@@ -210,7 +210,6 @@ def test_removing_embryos_from_manager():
     lT_1 = lineageTree()
     t1 = lT_1.add_root(0)
     first_level_end = lT_1.add_branch(t1, 9, downstream=True)
-    node_1 = lT_1.get_cycle(t1)[0]
 
     second_level_1 = lT_1.add_branch(first_level_end, 10, downstream=True)
     second_level_2 = lT_1.add_branch(first_level_end, 10, downstream=True)
@@ -224,7 +223,6 @@ def test_removing_embryos_from_manager():
     lT_2 = lineageTree()
     t2 = lT_2.add_root(0)
     first_level_end = lT_2.add_branch(t2, 4, downstream=True)
-    node_2 = lT_2.get_cycle(t2)[0]
 
     second_level_1 = lT_2.add_branch(first_level_end, 5, downstream=True)
     second_level_2 = lT_2.add_branch(first_level_end, 5, downstream=True)

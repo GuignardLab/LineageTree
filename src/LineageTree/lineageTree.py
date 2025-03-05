@@ -2860,8 +2860,6 @@ class lineageTree:
                     self._successor.setdefault(pred, ())
                     self._successor[pred] += (succ,)
         else:
-            # self._successor = {}
-            # self._predecessor = {}
             warnings.warn(
                 "Both successor and predecessor attributes are empty.",
                 stacklevel=2,

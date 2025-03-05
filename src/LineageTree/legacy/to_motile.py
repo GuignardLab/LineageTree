@@ -1,3 +1,5 @@
+import warnings
+
 from ..lineageTree import lineageTree
 
 try:

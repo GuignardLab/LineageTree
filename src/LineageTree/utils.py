@@ -1,5 +1,3 @@
-import csv
-import warnings
 
 from LineageTree import lineageTree
 
