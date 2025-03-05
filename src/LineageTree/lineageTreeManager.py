@@ -12,7 +12,7 @@ except ImportError:
         "No edist installed therefore you will not be able to compute the tree edit distance.",
         stacklevel=2,
     )
-import LineageTree
+from LineageTree import lineageTree
 
 from .tree_styles import tree_style
 
@@ -36,7 +36,7 @@ class lineageTreeManager:
             ]
             return np.gcd.reduce(all_time_res)
 
-    def add(self, other_tree: LineageTree.lineageTree, name: str = ""):
+    def add(self, other_tree: lineageTree, name: str = ""):
         """Function that adds a new lineagetree object to the class.
         Can be added either by .add or by using the + operator. If a name is
         specified it will also add it as this specific name, otherwise it will
@@ -50,10 +50,7 @@ class lineageTreeManager:
                 Then name of the lineagetree to be added.
 
         """
-        if (
-            isinstance(other_tree, LineageTree.lineageTree)
-            and other_tree.time_resolution
-        ):
+        if isinstance(other_tree, lineageTree) and other_tree.time_resolution:
             for tree in self.lineagetrees.values():
                 if tree == other_tree:
                     return False

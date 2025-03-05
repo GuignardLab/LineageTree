@@ -65,7 +65,7 @@ class lineageTree:
             next authorized id
         """
         if not hasattr(self, "max_id") or (self.max_id == -1 and self.nodes):
-            self.max_id = max(self.nodes) if len(self.nodes) else 1
+            self.max_id = max(self.nodes) if len(self.nodes) else 0
         if not hasattr(self, "next_id") or self.next_id == []:
             self.max_id += 1
             return self.max_id
@@ -420,24 +420,22 @@ class lineageTree:
         """The first timepoint of the tree."""
         if self._t_b is None:
             self._t_b = min(self._time.values())
-            self._t_e = max(self._time.values())
-        return self._t_b
+        return self._t_b  # type: ignore
+
+    @t_b.setter
+    def t_b(self, other_value):
+        raise TypeError("t_b cannot be changed manually")
 
     @property
     def t_e(self) -> int:
         """The last timepoint of the tree."""
         if self._t_e is None:
             self._t_e = max(self._time.values())
-            self._t_b = min(self._time.values())
-        return self._t_e
+        return self._t_e  # type: ignore
 
     @t_e.setter
     def t_e(self, other_value):
         raise TypeError("t_e cannot be changed manually")
-
-    @t_b.setter
-    def t_b(self, other_value):
-        raise TypeError("t_b cannot be changed manually")
 
     @property
     def nodes(self) -> frozenset[int]:
@@ -446,20 +444,44 @@ class lineageTree:
             self._nodes = frozenset(self._successor.keys())
         return self._nodes
 
+    @nodes.setter
+    def nodes(self, other):
+        raise AttributeError(
+            "You cannot change the nodes this way, please use add_root/add_branch"
+        )
+
     @property
     def time(self) -> MappingProxyType[dict]:
         """Mapping of nodes to the timepoint they belong to"""
         return MappingProxyType(self._time)
+
+    @time.setter
+    def time(self, other):
+        raise AttributeError(
+            "You cannot change the time dictionary, please consider using the functions remove_nodes/add_root/add_branch"
+        )
 
     @property
     def successor(self) -> MappingProxyType[dict]:
         """Mapping of nodes to the tuple of its successors"""
         return MappingProxyType(self._successor)
 
+    @successor.setter
+    def successor(self, other):
+        raise AttributeError(
+            "You cannot change the successor dictionary explicitly, please consider using the functions remove_nodes/add_root/add_branch"
+        )
+
     @property
     def predecessor(self) -> MappingProxyType[dict]:
         """Mapping of nodes to the tuple of its predecessor"""
         return MappingProxyType(self._predecessor)
+
+    @predecessor.setter
+    def predecessor(self, other):
+        raise AttributeError(
+            "You cannot change the predecessor dictionary explicitly, please consider using the functions remove_nodes/add_root/add_branch"
+        )
 
     @property
     def depth(self) -> dict[int, int]:
@@ -488,14 +510,11 @@ class lineageTree:
             )
         return self._roots
 
-    @property
-    def edges(self) -> frozenset[tuple[int]]:
-        """Set of all edges"""
-        if self._edges is None:
-            self._edges = frozenset(
-                {(k, vi) for k, v in self._successor.items() for vi in v}
-            )
-        return self._edges
+    @roots.setter
+    def roots(self, other):
+        raise AttributeError(
+            "You cannot change the roots explicitly, please consider using the function add_root"
+        )
 
     @property
     def leaves(self) -> frozenset[int]:
@@ -505,6 +524,12 @@ class lineageTree:
                 {p for p, s in self._successor.items() if s == ()}
             )
         return self._leaves
+
+    @leaves.setter
+    def leaves(self, other):
+        raise AttributeError(
+            "You cannot change the leaves explicitly, please consider using the functions remove_nodes/add_branch"
+        )
 
     @property
     def labels(self) -> dict[int, str]:
@@ -523,6 +548,12 @@ class lineageTree:
                     >= abs(self.t_e - self.t_b) / 4
                 }
         return self._labels
+
+    @labels.setter
+    def labels(self, other):
+        raise AttributeError(
+            "You cannot change the labels, please use label[node]=..."
+        )
 
     def _initialise_properties(self):
         self._labels = None
@@ -1898,7 +1929,7 @@ class lineageTree:
     def __plot_nodes(
         hier: dict,
         selected_nodes: set,
-        color: str | list | dict,
+        color: str | dict,
         size: int,
         ax: plt.Axes,
         default_color: str = "black",
@@ -1957,8 +1988,8 @@ class lineageTree:
         lnks_tms: dict,
         selected_nodes: list | set | None = None,
         selected_edges: list | set | None = None,
-        color_of_nodes: str = "magenta",
-        color_of_edges: str = "magenta",
+        color_of_nodes: str | dict = "magenta",
+        color_of_edges: str | dict = "magenta",
         size: int | float = 10,
         ax: plt.Axes | None = None,
         default_color: str = "black",
@@ -2192,8 +2223,8 @@ class lineageTree:
         vert_gap: int = 2,
         selected_nodes: list | None = None,
         selected_edges: list | None = None,
-        color_of_nodes: str = "magenta",
-        color_of_edges: str = "magenta",
+        color_of_nodes: str | dict = "magenta",
+        color_of_edges: str | dict = "magenta",
         size: int | float = 10,
         default_color: str = "black",
         ax: plt.Axes | None = None,
@@ -2999,13 +3030,12 @@ class lineageTree:
             raise ValueError(
                 "root_leaf_value should have at least one element."
             )
-
+        self._successor = {}
+        self._predecessor = {}
         if successor is not None:
-            self._successor = {}
-            self._predecessor = {}
             for pred, succs in successor.items():
                 if succs in root_leaf_value:
-                    self._predecessor[succs] = ()
+                    self._successor[pred] = ()
                 else:
                     if not isinstance(succs, Iterable):
                         raise TypeError(
@@ -3024,8 +3054,6 @@ class lineageTree:
                             )
                         self._predecessor[succ] = (pred,)
         elif predecessor is not None:
-            self._successor = {}
-            self._predecessor = {}
             for succ, pred in predecessor.items():
                 if pred in root_leaf_value:
                     self._predecessor[succ] = ()
@@ -3040,13 +3068,11 @@ class lineageTree:
                             raise ValueError(
                                 "Node can have at most one predecessor."
                             )
-                    pred = pred[0]
+                        pred = pred[0]
                     self._predecessor[succ] = (pred,)
                     self._successor.setdefault(pred, ())
                     self._successor[pred] += (succ,)
         else:
-            self._successor = {}
-            self._predecessor = {}
             warnings.warn(
                 "Both successor and predecessor attributes are empty.",
                 stacklevel=2,
