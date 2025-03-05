@@ -3,68 +3,6 @@ import warnings
 
 from LineageTree import lineageTree
 
-try:
-    import motile
-except ImportError:
-    warnings.warn(
-        "No motile installed therefore you will not be able to produce links with motile.",
-        stacklevel=2,
-    )
-
-
-def to_motile(
-    lT: lineageTree, crop: int = None, max_dist=200, max_skip_frames=1
-):
-    try:
-        import networkx as nx
-    except ImportError:
-        raise Warning("Please install networkx")  # noqa: B904
-
-    fmt = nx.DiGraph()
-    if not crop:
-        crop = lT.t_e
-    for time in range(crop):
-        for time_node in lT.time_nodes[time]:
-            fmt.add_node(
-                time_node,
-                t=lT.time[time_node],
-                pos=lT.pos[time_node],
-                score=1,
-            )
-
-    motile.add_cand_edges(fmt, max_dist, max_skip_frames=max_skip_frames)
-
-    return fmt
-
-
-def write_csv_from_lT_to_lineaja(
-    lT, path_to, start: int = 0, finish: int = 300
-):
-    csv_dict = {}
-    for time in range(start, finish):
-        for node in lT.time_nodes[time]:
-            csv_dict[node] = {"pos": lT.pos[node], "t": time}
-    with open(path_to, "w", newline="\n") as file:
-        fieldnames = [
-            "time",
-            "positions_x",
-            "positions_y",
-            "positions_z",
-            "id",
-        ]
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
-        writer.writeheader()
-        for node in csv_dict:
-            writer.writerow(
-                {
-                    "time": csv_dict[node]["t"],
-                    "positions_z": csv_dict[node]["pos"][0],
-                    "positions_y": csv_dict[node]["pos"][1],
-                    "positions_x": csv_dict[node]["pos"][2],
-                    "id": node,
-                }
-            )
-
 
 def create_links_and_cycles(lT: lineageTree, roots=None) -> dict[str, dict]:
     """Generates a dictionary containing all the edges (from start of lifetime to end not the intermediate timepoints)

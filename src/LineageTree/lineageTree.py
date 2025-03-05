@@ -71,29 +71,6 @@ class lineageTree:
         else:
             return self.next_id.pop()
 
-    ###TODO make lT longer.
-    @modifying
-    def complete_lineage(self, nodes: int | set = None) -> None:
-        """Makes all leaf branches longer so that they reach the last timepoint (self.t_e), useful
-        for tree edit distance algorithms.
-
-        Parameters
-        ----------
-        nodes : int or set of int, optional
-            Which trees should be "completed", if left empty it will complete the whole dataset.
-        """
-        if nodes is None:
-            nodes = set(self.roots)
-        elif isinstance(nodes, int):
-            nodes = {nodes}
-        specfific_nodes = self.find_leaves(nodes)
-        for leaf in specfific_nodes:
-            self.add_branch(
-                leaf,
-                (self.t_e - self._time[leaf]),
-                downstream=True,
-            )
-
     ###TODO pos can be callable and stay motionless (copy the position of the succ node, use something like optical flow)
     @modifying
     def add_branch(
@@ -151,125 +128,6 @@ class lineageTree:
                 # else:
                 #     self.pos[node] = pos
         return node
-
-    ###TODO
-    @modifying
-    def cut_tree(self, root: int) -> int:
-        """It transforms a lineage that has at least 2 divisions into 2 independent lineages,
-        that spawn from the time point of the first node. (splits a tree into 2)
-
-        Parameters
-        ----------
-        root : int
-            The id of the node, which will be cut.
-
-        Returns
-        -------
-        int
-            The id of the new tree
-        """
-        cycle = self.get_successors(root)
-        last_cell = cycle[-1]
-        if last_cell in self._successor:
-            new_lT = self._successor[last_cell].pop()
-            self._predecessor.pop(new_lT)
-            label_of_root = self.labels.get(cycle[0], cycle[0])
-            self.labels[cycle[0]] = f"L-Split {label_of_root}"
-            new_tr = self.add_branch(new_lT, len(cycle), downstream=False)
-            self.roots.add(new_tr)
-            self.labels[new_tr] = f"R-Split {label_of_root}"
-            return new_tr
-        else:
-            raise Warning("No division of the branch")
-
-    ###TODO
-    @modifying
-    def fuse_lineage_tree(
-        self,
-        l1_root: int,
-        l2_root: int,
-        length_l1: int = 0,
-        length_l2: int = 0,
-        length: int = 1,
-    ) -> int:
-        """Fuses 2 lineages from the lineagetree object. The 2 lineages that are to be fused can have a longer
-        first node and the node of the resulting lineage can also be longer.
-
-        Parameters
-        ----------
-        l1_root : int
-            Id of the first root
-        l2_root : int
-            Id of the second root
-        length_l1 : int, default=0
-            The length of the branch that will be added on top of the first lineage.
-            Defaults to 0, which means only one node will be added.
-        length_l2 : int, default=0
-            The length of the branch that will be added on top of the second lineage.
-            Defaults to 0, which means only one node will be added.
-        length : int, default=1
-            The length of the branch that will be added on top of the resulting lineage.
-
-        Returns
-        -------
-        int
-            The id of the root of the new lineage.
-        """
-        if self.predecessor.get(l1_root) or self.predecessor.get(l2_root):
-            raise ValueError("Please select 2 roots.")
-        if self._time[l1_root] != self._time[l2_root]:
-            warnings.warn(
-                "Using lineagetrees that do not exist in the same timepoint. The operation will continue",
-                stacklevel=2,
-            )
-        new_root1 = self.add_branch(l1_root, length_l1)
-        new_root2 = self.add_branch(l2_root, length_l2)
-        next_root1 = self[new_root1][0]
-        self.remove_nodes(new_root1)
-        self.successor[new_root2].append(next_root1)
-        self.predecessor[next_root1] = [new_root2]
-        new_branch = self.add_branch(
-            new_root2,
-            length - 1,
-        )
-        self.labels[new_branch] = f"Fusion of {new_root1} and {new_root2}"
-        return new_branch
-
-    ###TODO
-    @modifying
-    def copy_lineage(self, root: int) -> int:
-        """Copies the structure of a tree and makes a new with new nodes.
-        Warning does not take into account the predecessor of the root node.
-
-        Parameters
-        ----------
-        root : int
-            The root of the tree to be copied
-
-        Returns
-        -------
-        int
-            The id of the root of the new tree.
-        """
-        new_nodes = {
-            old_node: self.get_next_id()
-            for old_node in self.get_sub_tree(root)
-        }
-        self.nodes.update(new_nodes.values())
-        for old_node, new_node in new_nodes.items():
-            self._time[new_node] = self._time[old_node]
-            succ = self._successor.get(old_node)
-            if succ:
-                self._successor[new_node] = [new_nodes[n] for n in succ]
-            pred = self._predecessor.get(old_node)
-            if pred:
-                self._predecessor[new_node] = [new_nodes[n] for n in pred]
-            self.pos[new_node] = self.pos[old_node] + 0.5
-        new_root = new_nodes[root]
-        self.labels[new_root] = f"Copy of {root}"
-        if self._time[new_root] == 0:
-            self.roots.add(new_root)
-        return new_root
 
     @modifying
     def add_root(self, t: int, pos: list = None):
@@ -374,45 +232,6 @@ class lineageTree:
                 self._predecessor[p_node] = ()
             self._predecessor.pop(node, ())
             self._successor.pop(node, ())
-
-    # TODO
-    @modifying
-    def modify_branch(self, node: int, new_length: int) -> None:
-        """Changes the length of a branch, so it adds or removes nodes
-        to make the correct length of the cycle.
-
-        Parameters
-        ----------
-        node : int
-            Any node of the branch to be modified
-        new_length : int
-            The new length of the tree.
-        """
-        if new_length < 1:
-            raise Warning(
-                "New length should be >0, I f you want to remove a branch call remove_nodes"
-            )
-        cycle = self.get_cycle(node)
-        length = len(cycle)
-        if length == new_length:
-            return
-        successors = self._successor.get(cycle[-1])
-        if length < new_length:
-            nodes_to_change_time_vals = set(self.get_sub_tree(node))
-            for _ in range(new_length - length):
-                old_node = node
-                node = self._add_node(
-                    succ=self._successor[old_node],
-                    pred=self._predecessor[old_node],
-                )
-        if new_length < length:
-            self.remove_nodes(cycle[0 : length - new_length - 1])
-            for _ in range(new_length):
-                old_node = node
-                node = self._add_node(
-                    succ=self._successor[old_node],
-                    pred=self._predecessor[old_node],
-                )
 
     @property
     def t_b(self) -> int:
