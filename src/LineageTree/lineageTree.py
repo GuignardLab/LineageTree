@@ -1699,8 +1699,8 @@ class lineageTree:
             times1=times1,
             times2=times2,
         )
-        norm1 = tree1.get_norm()
-        norm2 = tree2.get_norm()
+        norm1 = tree1.get_norm
+        norm2 = tree2.get_norm
         norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
         if norm is None:
             norm = "None"
@@ -1710,7 +1710,7 @@ class lineageTree:
             )
         return uted.uted(
             nodes1, adj1, nodes2, adj2, delta=delta_tmp
-        ) / norm_dict[norm]([norm1, norm2])
+        ) / norm_dict[norm]([norm1(n1), norm2(n2)])
 
     @staticmethod
     def __plot_nodes(
