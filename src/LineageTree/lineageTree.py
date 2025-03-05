@@ -2928,7 +2928,7 @@ class lineageTree:
             self._predecessor = {}
             for pred, succs in successor.items():
                 if succs in root_leaf_value:
-                    self._predecessor[pred] = ()
+                    self._successor[pred] = ()
                 else:
                     if not isinstance(succs, Iterable):
                         raise TypeError(
