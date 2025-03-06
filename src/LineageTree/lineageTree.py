@@ -25,7 +25,10 @@ try:
     from edist import uted
 except ImportError:
     warnings.warn(
-        "No edist installed therefore you will not be able to compute the tree edit distance.",
+        (
+            "No edist installed therefore you will not be able"
+            "to compute the tree edit distance."
+        ),
         stacklevel=2,
     )
 import matplotlib.pyplot as plt
@@ -58,10 +61,10 @@ class dynamic_property(property):
         setattr(owner, self.protected_name, None)
 
     def __get__(self, instance, owner):
-        if owner.__dict__[self.protected_name] is None:
+        if getattr(instance, self.protected_name, None) is None:
             return super().__get__(instance, owner)
         else:
-            return owner.__dict__[self.protected_name]
+            return instance.__dict__[self.protected_name]
 
 
 class lineageTree:
@@ -449,27 +452,6 @@ class lineageTree:
                     succ=self._successor[old_node],
                     pred=self._predecessor[old_node],
                 )
-
-    # @property
-    # def time(self) -> MappingProxyType[dict]:
-    #     """Mapping of nodes to the timepoint they belong to"""
-    #     if not hasattr(self, "__time"):
-    #         self.__time = MappingProxyType(self._time)
-    #     return self.__time
-
-    # @property
-    # def successor(self) -> MappingProxyType[dict]:
-    #     """Mapping of nodes to the tuple of its successors"""
-    #     if not hasattr(self, "__successor"):
-    #         self.__successor = MappingProxyType(self._successor)
-    #     return self.__successor
-
-    # @property
-    # def predecessor(self) -> MappingProxyType[dict]:
-    #     """Mapping of nodes to the tuple of its predecessor"""
-    #     if not hasattr(self, "__predecessor"):
-    #         self.__predecessor = MappingProxyType(self._predecessor)
-    #     return self.__predecessor
 
     @dynamic_property
     def t_b(self) -> int:
@@ -2287,7 +2269,7 @@ class lineageTree:
         list
             list of nodes at time `t` spawned by `r`
         """
-        if not r and r != 0:
+        if r is None or (not r and r != 0):
             r = self.roots
         if isinstance(r, int):
             r = [r]
