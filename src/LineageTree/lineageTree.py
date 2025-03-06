@@ -1140,7 +1140,15 @@ class lineageTree:
                 for prop_name, prop in lT.__dict__.items()
                 if isinstance(prop, dict)
                 and prop_name
-                not in ["successor", "predecessor", "time", "pos"]
+                not in [
+                    "successor",
+                    "predecessor",
+                    "time",
+                    "_successor",
+                    "_predecessor",
+                    "_time",
+                    "pos",
+                ]
                 and set(prop).symmetric_difference(lT._successor) == set()
             }
             lT = lineageTree(
@@ -3038,11 +3046,7 @@ class lineageTree:
                     self._predecessor[succ] = (pred,)
                     self._successor.setdefault(pred, ())
                     self._successor[pred] += (succ,)
-        else:
-            warnings.warn(
-                "Both successor and predecessor attributes are empty.",
-                stacklevel=2,
-            )
+
         for root in set(self._successor).difference(self._predecessor):
             self._predecessor[root] = ()
         for leaf in set(self._predecessor).difference(self._successor):
