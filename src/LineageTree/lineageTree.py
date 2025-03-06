@@ -40,7 +40,29 @@ from .utils import (
 )
 
 
+class protected_property(property):
+    def __set__(self, obj, value):
+        raise AttributeError(
+            f"attribute '{self.name}' of '{self.owner.__name__}' objects is not writable"
+        )
+
+    def __set_name__(self, owner, name):
+        self.owner = owner
+        self.name = name
+        if not hasattr(owner, "_dependent_properties"):
+            owner._dependent_properties = []
+        owner._dependent_properties.append(f"_{name}")
+        setattr(owner, f"_{name}", None)
+
+    # def __get__(self, instance, owner):
+
+    #     if instance is not None:
+    #         return self
+    #     return super().__get__(instance, owner)
+
+
 class lineageTree:
+
     def modifier(func):
         @wraps(func)
         def raising_flag(self, *args, **kwargs):
@@ -415,82 +437,80 @@ class lineageTree:
                     pred=self._predecessor[old_node],
                 )
 
-    @property
+    @protected_property
     def t_b(self) -> int:
         """The first timepoint of the tree."""
         if self._t_b is None:
             self._t_b = min(self._time.values())
-        return self._t_b  # type: ignore
+        return self._t_b
 
-    @t_b.setter
-    def t_b(self, other_value):
-        raise TypeError("t_b cannot be changed manually")
-
-    @property
+    @protected_property
     def t_e(self) -> int:
         """The last timepoint of the tree."""
         if self._t_e is None:
             self._t_e = max(self._time.values())
-        return self._t_e  # type: ignore
+        return self._t_e
 
-    @t_e.setter
-    def t_e(self, other_value):
-        raise TypeError("t_e cannot be changed manually")
+    # @t_e.setter
+    # def t_e(self, other_value):
+    #     raise AttributeError(
+    #         "attribute 't_e' of 'lineagetree.LineageTree' objects is not writable"
+    #     )
 
-    @property
+    @protected_property
     def nodes(self) -> frozenset[int]:
         """Nodes of the tree"""
         if self._nodes is None:
             self._nodes = frozenset(self._successor.keys())
         return self._nodes
 
-    @nodes.setter
-    def nodes(self, other):
-        raise AttributeError(
-            "You cannot change the nodes this way, please use add_root/add_branch"
-        )
+    # @nodes.setter
+    # def nodes(self, other):
+    #     raise AttributeError(
+    #         "attribute 'nodes' of 'lineagetree.LineageTree' objects is not writable"
+    #     )
 
     @property
     def time(self) -> MappingProxyType[dict]:
         """Mapping of nodes to the timepoint they belong to"""
         return MappingProxyType(self._time)
 
-    @time.setter
-    def time(self, other):
-        raise AttributeError(
-            "You cannot change the time dictionary, please consider using the functions remove_nodes/add_root/add_branch"
-        )
+    # @time.setter
+    # def time(self, other):
+    #     raise AttributeError(
+    #         "attribute 'time' of 'lineagetree.LineageTree' objects is not writable"
+    #     )
 
     @property
     def successor(self) -> MappingProxyType[dict]:
         """Mapping of nodes to the tuple of its successors"""
         return MappingProxyType(self._successor)
 
-    @successor.setter
-    def successor(self, other):
-        raise AttributeError(
-            "You cannot change the successor dictionary explicitly, please consider using the functions remove_nodes/add_root/add_branch"
-        )
+    # @successor.setter
+    # def successor(self, other):
+    #     raise AttributeError(
+    #         "attribute 'successor' of 'lineagetree.LineageTree' objects is not writable"
+    #     )
 
     @property
     def predecessor(self) -> MappingProxyType[dict]:
         """Mapping of nodes to the tuple of its predecessor"""
         return MappingProxyType(self._predecessor)
 
-    @predecessor.setter
-    def predecessor(self, other):
-        raise AttributeError(
-            "You cannot change the predecessor dictionary explicitly, please consider using the functions remove_nodes/add_root/add_branch"
-        )
+    # @predecessor.setter
+    # def predecessor(self, other):
+    #     raise AttributeError(
+    #         "attribute 'predecessor' of 'lineagetree.LineageTree' objects is not writable"
+    #     )
 
-    @property
+    @protected_property
     def depth(self) -> dict[int, int]:
         """The depth of each node in the tree."""
         if self._depth is None:
             self._depth = {}
             for leaf in self.leaves:
                 self._depth[leaf] = 1
-                while leaf in self._predecessor:
+                while leaf in self._predecessor and self._predecessor[leaf]:
                     parent = self._predecessor[leaf][0]
                     current_depth = self._depth.get(parent, 0)
                     self._depth[parent] = max(
@@ -501,7 +521,13 @@ class lineageTree:
                 self._depth[root] = 1
         return self._depth
 
-    @property
+    # @depth.setter
+    # def depth(self, other):
+    #     raise AttributeError(
+    #         "attribute 'depth' of 'lineagetree.LineageTree' objects is not writable"
+    #     )
+
+    @protected_property
     def roots(self) -> frozenset[int]:
         """Set of roots of the tree"""
         if self._roots is None:
@@ -510,13 +536,13 @@ class lineageTree:
             )
         return self._roots
 
-    @roots.setter
-    def roots(self, other):
-        raise AttributeError(
-            "You cannot change the roots explicitly, please consider using the function add_root"
-        )
+    # @roots.setter
+    # def roots(self, other):
+    #     raise AttributeError(
+    #         "attribute 'roots' of 'lineagetree.LineageTree' objects is not writable"
+    #     )
 
-    @property
+    @protected_property
     def leaves(self) -> frozenset[int]:
         """Set of leaves"""
         if self._leaves is None:
@@ -525,13 +551,13 @@ class lineageTree:
             )
         return self._leaves
 
-    @leaves.setter
-    def leaves(self, other):
-        raise AttributeError(
-            "You cannot change the leaves explicitly, please consider using the functions remove_nodes/add_branch"
-        )
+    # @leaves.setter
+    # def leaves(self, other):
+    #     raise AttributeError(
+    #         "attribute 'leaves' of 'lineagetree.LineageTree' objects is not writable"
+    #     )
 
-    @property
+    @protected_property
     def labels(self) -> dict[int, str]:
         """The labels of the nodes."""
         if self._labels is None:
@@ -549,11 +575,11 @@ class lineageTree:
                 }
         return self._labels
 
-    @labels.setter
-    def labels(self, other):
-        raise AttributeError(
-            "You cannot change the labels, please use label[node]=..."
-        )
+    # @labels.setter
+    # def labels(self, other):
+    #     raise AttributeError(
+    #         "attribute 'labels' of 'lineagetree.LineageTree' objects is not writable"
+    #     )
 
     def _initialise_properties(self):
         self._labels = None
@@ -3010,7 +3036,8 @@ class lineageTree:
             The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
         self.__version__ = importlib.metadata.version("LineageTree")
-        self._initialise_properties()
+        # self._initialise_properties()
+        # self._dependent_properties = []
 
         self.name = name
         if successor is not None and predecessor is not None:
