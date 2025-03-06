@@ -15,10 +15,10 @@ from numbers import Number
 from types import MappingProxyType
 from typing import Literal
 
-import svgwrite
-from matplotlib.collections import LineCollection
-from matplotlib import colormaps
 import matplotlib.colors as mcolors
+import svgwrite
+from matplotlib import colormaps
+from matplotlib.collections import LineCollection
 from packaging.version import Version
 
 from .tree_styles import tree_style
@@ -1481,7 +1481,7 @@ class lineageTree:
             sorted eigenvectors (3,)
         """
         time_nodes = {
-            t: len(self.nodes_at_t(t)) for t in range(self.t_b, self._te)
+            t: len(self.nodes_at_t(t)) for t in range(self.t_b, self.t_e)
         }
         if time is None:
             time = max(time_nodes, key=lambda x: len(time_nodes[x]))
@@ -1731,9 +1731,9 @@ class lineageTree:
             if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
         }
 
-        if len(self._comparisons) > 20:
+        if len(self._comparisons) > 100:
             warnings.warn(
-                "More than 20 comparisons are saved, use clear_comparisons() to delete them.",
+                "More than 100 comparisons are saved, use clear_comparisons() to delete them.",
                 stacklevel=2,
             )
         tree = tree_style[style].value
@@ -3275,11 +3275,11 @@ class lineageTree:
                     self._predecessor[succ] = (pred,)
                     self._successor.setdefault(pred, ())
                     self._successor[pred] += (succ,)
-        else:
-            warnings.warn(
-                "Both successor and predecessor attributes are empty.",
-                stacklevel=2,
-            )
+        # else:
+        #     warnings.warn(
+        #         "Both successor and predecessor attributes are empty.", # I got sick from getting this wanring 10000 times
+        #         stacklevel=2,
+        #     )
         for root in set(self._successor).difference(self._predecessor):
             self._predecessor[root] = ()
         for leaf in set(self._predecessor).difference(self._successor):
