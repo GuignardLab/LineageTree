@@ -40,35 +40,48 @@ from .utils import (
 )
 
 
-class protected_property(property):
-    def __set__(self, obj, value):
-        raise AttributeError(
-            f"attribute '{self.name}' of '{self.owner.__name__}' objects is not writable"
-        )
+class dynamic_property(property):
+    def __init__(
+        self, fget=None, fset=None, fdel=None, doc=None, protected_name=None
+    ):
+        super().__init__(fget, fset, fdel, doc)
+        self.protected_name = protected_name
 
     def __set_name__(self, owner, name):
         self.owner = owner
         self.name = name
+        if self.protected_name is None:
+            self.protected_name = f"_{name}"
         if not hasattr(owner, "_dependent_properties"):
             owner._dependent_properties = []
-        owner._dependent_properties.append(f"_{name}")
-        setattr(owner, f"_{name}", None)
+        owner._dependent_properties.append(self.protected_name)
+        setattr(owner, self.protected_name, None)
 
-    # def __get__(self, instance, owner):
-
-    #     if instance is not None:
-    #         return self
-    #     return super().__get__(instance, owner)
+    def __get__(self, instance, owner):
+        if owner.__dict__[self.protected_name] is None:
+            return super().__get__(instance, owner)
+        else:
+            return owner.__dict__[self.protected_name]
 
 
 class lineageTree:
 
-    def modifier(func):
-        @wraps(func)
+    def modifier(wrapped_func):
+        @wraps(wrapped_func)
         def raising_flag(self, *args, **kwargs):
-            out_func = func(self, *args, **kwargs)
-            for prop in self._dependent_properties:
-                self.__dict__[prop] = None
+            if (
+                not hasattr(self, "_already_changing")
+                or not self._already_changing
+            ):
+                self._already_changing = True
+                should_reset = True
+            else:
+                should_reset = False
+            out_func = wrapped_func(self, *args, **kwargs)
+            if should_reset:
+                for prop in self._dependent_properties:
+                    self.__dict__[prop] = None
+                self._already_changing = False
             return out_func
 
         return raising_flag
@@ -437,169 +450,100 @@ class lineageTree:
                     pred=self._predecessor[old_node],
                 )
 
-    @protected_property
+    # @property
+    # def time(self) -> MappingProxyType[dict]:
+    #     """Mapping of nodes to the timepoint they belong to"""
+    #     if not hasattr(self, "__time"):
+    #         self.__time = MappingProxyType(self._time)
+    #     return self.__time
+
+    # @property
+    # def successor(self) -> MappingProxyType[dict]:
+    #     """Mapping of nodes to the tuple of its successors"""
+    #     if not hasattr(self, "__successor"):
+    #         self.__successor = MappingProxyType(self._successor)
+    #     return self.__successor
+
+    # @property
+    # def predecessor(self) -> MappingProxyType[dict]:
+    #     """Mapping of nodes to the tuple of its predecessor"""
+    #     if not hasattr(self, "__predecessor"):
+    #         self.__predecessor = MappingProxyType(self._predecessor)
+    #     return self.__predecessor
+
+    @dynamic_property
     def t_b(self) -> int:
         """The first timepoint of the tree."""
-        if self._t_b is None:
-            self._t_b = min(self._time.values())
+        self._t_b = min(self._time.values())
         return self._t_b
 
-    @protected_property
+    @dynamic_property
     def t_e(self) -> int:
         """The last timepoint of the tree."""
-        if self._t_e is None:
-            self._t_e = max(self._time.values())
+        self._t_e = max(self._time.values())
         return self._t_e
 
-    # @t_e.setter
-    # def t_e(self, other_value):
-    #     raise AttributeError(
-    #         "attribute 't_e' of 'lineagetree.LineageTree' objects is not writable"
-    #     )
-
-    @protected_property
+    @dynamic_property
     def nodes(self) -> frozenset[int]:
         """Nodes of the tree"""
-        if self._nodes is None:
-            self._nodes = frozenset(self._successor.keys())
+        self._nodes = frozenset(self._successor.keys())
         return self._nodes
 
-    # @nodes.setter
-    # def nodes(self, other):
-    #     raise AttributeError(
-    #         "attribute 'nodes' of 'lineagetree.LineageTree' objects is not writable"
-    #     )
-
-    @property
-    def time(self) -> MappingProxyType[dict]:
-        """Mapping of nodes to the timepoint they belong to"""
-        return MappingProxyType(self._time)
-
-    # @time.setter
-    # def time(self, other):
-    #     raise AttributeError(
-    #         "attribute 'time' of 'lineagetree.LineageTree' objects is not writable"
-    #     )
-
-    @property
-    def successor(self) -> MappingProxyType[dict]:
-        """Mapping of nodes to the tuple of its successors"""
-        return MappingProxyType(self._successor)
-
-    # @successor.setter
-    # def successor(self, other):
-    #     raise AttributeError(
-    #         "attribute 'successor' of 'lineagetree.LineageTree' objects is not writable"
-    #     )
-
-    @property
-    def predecessor(self) -> MappingProxyType[dict]:
-        """Mapping of nodes to the tuple of its predecessor"""
-        return MappingProxyType(self._predecessor)
-
-    # @predecessor.setter
-    # def predecessor(self, other):
-    #     raise AttributeError(
-    #         "attribute 'predecessor' of 'lineagetree.LineageTree' objects is not writable"
-    #     )
-
-    @protected_property
+    @dynamic_property
     def depth(self) -> dict[int, int]:
         """The depth of each node in the tree."""
-        if self._depth is None:
-            self._depth = {}
-            for leaf in self.leaves:
-                self._depth[leaf] = 1
-                while leaf in self._predecessor and self._predecessor[leaf]:
-                    parent = self._predecessor[leaf][0]
-                    current_depth = self._depth.get(parent, 0)
-                    self._depth[parent] = max(
-                        self._depth[leaf] + 1, current_depth
-                    )
-                    leaf = parent
-            for root in self.roots - set(self._depth):
-                self._depth[root] = 1
+        self._depth = {}
+        for leaf in self.leaves:
+            self._depth[leaf] = 1
+            while leaf in self._predecessor and self._predecessor[leaf]:
+                parent = self._predecessor[leaf][0]
+                current_depth = self._depth.get(parent, 0)
+                self._depth[parent] = max(self._depth[leaf] + 1, current_depth)
+                leaf = parent
+        for root in self.roots - set(self._depth):
+            self._depth[root] = 1
         return self._depth
 
-    # @depth.setter
-    # def depth(self, other):
-    #     raise AttributeError(
-    #         "attribute 'depth' of 'lineagetree.LineageTree' objects is not writable"
-    #     )
-
-    @protected_property
+    @dynamic_property
     def roots(self) -> frozenset[int]:
         """Set of roots of the tree"""
-        if self._roots is None:
-            self._roots = frozenset(
-                {s for s, p in self._predecessor.items() if p == ()}
-            )
+        self._roots = frozenset(
+            {s for s, p in self._predecessor.items() if p == ()}
+        )
         return self._roots
 
-    # @roots.setter
-    # def roots(self, other):
-    #     raise AttributeError(
-    #         "attribute 'roots' of 'lineagetree.LineageTree' objects is not writable"
-    #     )
-
-    @protected_property
+    @dynamic_property
     def leaves(self) -> frozenset[int]:
         """Set of leaves"""
-        if self._leaves is None:
-            self._leaves = frozenset(
-                {p for p, s in self._successor.items() if s == ()}
-            )
+        self._leaves = frozenset(
+            {p for p, s in self._successor.items() if s == ()}
+        )
         return self._leaves
 
-    # @leaves.setter
-    # def leaves(self, other):
-    #     raise AttributeError(
-    #         "attribute 'leaves' of 'lineagetree.LineageTree' objects is not writable"
-    #     )
+    @dynamic_property
+    def edges(self) -> tuple[tuple[int, int]]:
+        """Set of edges"""
+        self._edges = tuple(
+            (p, si) for p, s in self._successor.items() for si in s
+        )
+        return self._edges
 
-    @protected_property
+    @property
     def labels(self) -> dict[int, str]:
         """The labels of the nodes."""
-        if self._labels is None:
-            if hasattr(self, "cell_name"):
-                self._labels = {
-                    i: self.cell_name.get(i, "Unlabeled") for i in self.roots
-                }
-            else:
-                self._labels = {
-                    root: "Unlabeled"
-                    for root in self.roots
-                    for leaf in self.find_leaves(root)
-                    if abs(self._time[leaf] - self._time[root])
-                    >= abs(self.t_e - self.t_b) / 4
-                }
+        if hasattr(self, "cell_name"):
+            self._labels = {
+                i: self.cell_name.get(i, "Unlabeled") for i in self.roots
+            }
+        else:
+            self._labels = {
+                root: "Unlabeled"
+                for root in self.roots
+                for leaf in self.find_leaves(root)
+                if abs(self._time[leaf] - self._time[root])
+                >= abs(self.t_e - self.t_b) / 4
+            }
         return self._labels
-
-    # @labels.setter
-    # def labels(self, other):
-    #     raise AttributeError(
-    #         "attribute 'labels' of 'lineagetree.LineageTree' objects is not writable"
-    #     )
-
-    def _initialise_properties(self):
-        self._labels = None
-        self._leaves = None
-        self._edges = None
-        self._roots = None
-        self._depth = None
-        self._nodes = None
-        self._t_b = None
-        self._t_e = None
-        self._dependent_properties = [
-            "_labels",
-            "_leaves",
-            "_edges",
-            "_roots",
-            "_depth",
-            "_nodes",
-            "_t_b",
-            "_t_e",
-        ]
 
     @property
     def time_resolution(self) -> float:
@@ -1191,14 +1135,13 @@ class lineageTree:
         if not hasattr(lT, "__version__") or Version(lT.__version__) < Version(
             "2.0.0"
         ):
-            lT._initialise_properties()
             properties = {
                 prop_name: prop
                 for prop_name, prop in lT.__dict__.items()
                 if isinstance(prop, dict)
                 and prop_name
                 not in ["successor", "predecessor", "time", "pos"]
-                and set(prop).symmetric_difference(lT.nodes) == set()
+                and set(prop).symmetric_difference(lT._successor) == set()
             }
             lT = lineageTree(
                 successor=lT._successor,
@@ -3036,16 +2979,12 @@ class lineageTree:
             The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
         self.__version__ = importlib.metadata.version("LineageTree")
-        # self._initialise_properties()
-        # self._dependent_properties = []
 
         self.name = name
         if successor is not None and predecessor is not None:
             raise ValueError(
                 "You cannot have both successors and predecessors."
             )
-        self._changed_roots = True
-        self._changed_leaves = True
 
         if root_leaf_value is None:
             root_leaf_value = [None, (), [], set()]
@@ -3125,10 +3064,10 @@ class lineageTree:
                     queue.append(succ)
         else:
             self._time = time
-            if self.nodes.difference(self.time) != set():
+            if self.nodes.difference(self._time) != set():
                 raise ValueError("Please provide the time of all nodes.")
             if not all(
-                self.time[node] < self.time[s]
+                self._time[node] < self._time[s]
                 for node, succ in self._successor.items()
                 for s in succ
             ):
@@ -3148,3 +3087,7 @@ class lineageTree:
                 )
                 continue
             setattr(self, name, d)
+
+        self.successor = MappingProxyType(self._successor)
+        self.predecessor = MappingProxyType(self._predecessor)
+        self.time = MappingProxyType(self._time)
