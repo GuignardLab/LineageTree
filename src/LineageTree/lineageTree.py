@@ -450,27 +450,6 @@ class lineageTree:
                     pred=self._predecessor[old_node],
                 )
 
-    # @property
-    # def time(self) -> MappingProxyType[dict]:
-    #     """Mapping of nodes to the timepoint they belong to"""
-    #     if not hasattr(self, "__time"):
-    #         self.__time = MappingProxyType(self._time)
-    #     return self.__time
-
-    # @property
-    # def successor(self) -> MappingProxyType[dict]:
-    #     """Mapping of nodes to the tuple of its successors"""
-    #     if not hasattr(self, "__successor"):
-    #         self.__successor = MappingProxyType(self._successor)
-    #     return self.__successor
-
-    # @property
-    # def predecessor(self) -> MappingProxyType[dict]:
-    #     """Mapping of nodes to the tuple of its predecessor"""
-    #     if not hasattr(self, "__predecessor"):
-    #         self.__predecessor = MappingProxyType(self._predecessor)
-    #     return self.__predecessor
-
     @dynamic_property
     def t_b(self) -> int:
         """The first timepoint of the tree."""
