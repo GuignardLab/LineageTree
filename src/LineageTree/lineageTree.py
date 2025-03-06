@@ -1724,14 +1724,18 @@ class lineageTree:
         tuple(tree,2)
             The two trees that have been mapped to each other.
         """
-        parameters = dict(locals())
-        parameters.pop("self")
+
+        parameters = {
+            k: v
+            for k, v in locals().items()
+            if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
+        }
+
         if len(self._comparisons) > 20:
             warnings.warn(
                 "More than 20 comparisons are saved, use clear_comparisons() to delete them.",
                 stacklevel=2,
             )
-        print("search here", parameters)
         tree = tree_style[style].value
         tree1 = tree(
             lT=self,
@@ -1823,13 +1827,12 @@ class lineageTree:
 
         if ax:
             assert len(ax) == 2
-        parameters = dict(locals())
-        parameters.pop("self")
-        parameters.pop("ax")
-        parameters.pop("colormap")
-        parameters.pop("default_color")
-        parameters.pop("size")
-        if parameters.values() in self._comparisons:
+        parameters = {
+            k: v
+            for k, v in locals().items()
+            if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
+        }
+        if hash(frozenset(parameters.values())) in self._comparisons:
             tmp = self._comparisons[hash(frozenset(parameters.values()))]
         else:
             tmp = self.__unordereded_backtrace(**parameters)
@@ -1967,9 +1970,13 @@ class lineageTree:
         Alignment
             The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
         """
-        parameters = dict(locals())
-        parameters.pop("self")
-        if parameters.values() in self._comparisons:
+        parameters = {
+            k: v
+            for k, v in locals().items()
+            if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
+        }
+
+        if hash(frozenset(parameters.values())) in self._comparisons:
             tmp = self._comparisons[hash(frozenset(parameters.values()))]
         else:
             tmp = self.__unordereded_backtrace(**parameters)
@@ -2080,9 +2087,12 @@ class lineageTree:
         float
             The normed unordered tree edit distance between `n1` and `n2`
         """
-        parameters = dict(locals())
-        parameters.pop("self")
-        if parameters.values() in self._comparisons:
+        parameters = {
+            k: v
+            for k, v in locals().items()
+            if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
+        }
+        if hash(frozenset(parameters.values())) in self._comparisons:
             tmp = self._comparisons[hash(frozenset(parameters.values()))]
         else:
             tmp = self.__unordereded_backtrace(**parameters)
