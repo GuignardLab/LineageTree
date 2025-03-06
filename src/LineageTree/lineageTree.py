@@ -25,7 +25,10 @@ try:
     from edist import uted
 except ImportError:
     warnings.warn(
-        "No edist installed therefore you will not be able to compute the tree edit distance.",
+        (
+            "No edist installed therefore you will not be able"
+            "to compute the tree edit distance."
+        ),
         stacklevel=2,
     )
 import matplotlib.pyplot as plt
@@ -58,10 +61,10 @@ class dynamic_property(property):
         setattr(owner, self.protected_name, None)
 
     def __get__(self, instance, owner):
-        if owner.__dict__[self.protected_name] is None:
+        if getattr(instance, self.protected_name, None) is None:
             return super().__get__(instance, owner)
         else:
-            return owner.__dict__[self.protected_name]
+            return instance.__dict__[self.protected_name]
 
 
 class lineageTree:
@@ -2266,7 +2269,7 @@ class lineageTree:
         list
             list of nodes at time `t` spawned by `r`
         """
-        if not r and r != 0:
+        if r is None or (not r and r != 0):
             r = self.roots
         if isinstance(r, int):
             r = [r]
