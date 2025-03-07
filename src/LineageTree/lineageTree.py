@@ -42,13 +42,49 @@ from .utils import (
 )
 
 
+class dynamic_property(property):
+    def __init__(
+        self, fget=None, fset=None, fdel=None, doc=None, protected_name=None
+    ):
+        super().__init__(fget, fset, fdel, doc)
+        self.protected_name = protected_name
+
+    def __set_name__(self, owner, name):
+        self.owner = owner
+        self.name = name
+        if self.protected_name is None:
+            self.protected_name = f"_{name}"
+        if not hasattr(owner, "_dependent_properties"):
+            owner._dependent_properties = []
+        owner._dependent_properties.append(self.protected_name)
+        setattr(owner, self.protected_name, None)
+
+    def __get__(self, instance, owner):
+        if owner.__dict__[self.protected_name] is None:
+            return super().__get__(instance, owner)
+        else:
+            return owner.__dict__[self.protected_name]
+
+
 class lineageTree:
-    def modifying(func):
-        @wraps(func)
+
+    def modifier(wrapped_func):
+        @wraps(wrapped_func)
         def raising_flag(self, *args, **kwargs):
-            for prop in self._dependent_properties:
-                self.__dict__[prop] = None
-            return func(self, *args, **kwargs)
+            if (
+                not hasattr(self, "_already_changing")
+                or not self._already_changing
+            ):
+                self._already_changing = True
+                should_reset = True
+            else:
+                should_reset = False
+            out_func = wrapped_func(self, *args, **kwargs)
+            if should_reset:
+                for prop in self._dependent_properties:
+                    self.__dict__[prop] = None
+                self._already_changing = False
+            return out_func
 
         return raising_flag
 
@@ -73,8 +109,31 @@ class lineageTree:
         else:
             return self.next_id.pop()
 
+    ###TODO make lT longer.
+    @modifier
+    def complete_lineage(self, nodes: int | set = None) -> None:
+        """Makes all leaf branches longer so that they reach the last timepoint (self.t_e), useful
+        for tree edit distance algorithms.
+
+        Parameters
+        ----------
+        nodes : int or set of int, optional
+            Which trees should be "completed", if left empty it will complete the whole dataset.
+        """
+        if nodes is None:
+            nodes = set(self.roots)
+        elif isinstance(nodes, int):
+            nodes = {nodes}
+        specfific_nodes = self.find_leaves(nodes)
+        for leaf in specfific_nodes:
+            self.add_branch(
+                leaf,
+                (self.t_e - self._time[leaf]),
+                downstream=True,
+            )
+
     ###TODO pos can be callable and stay motionless (copy the position of the succ node, use something like optical flow)
-    @modifying
+    @modifier
     def add_branch(
         self,
         node: int,
@@ -131,7 +190,126 @@ class lineageTree:
                 #     self.pos[node] = pos
         return node
 
-    @modifying
+    ###TODO
+    @modifier
+    def cut_tree(self, root: int) -> int:
+        """It transforms a lineage that has at least 2 divisions into 2 independent lineages,
+        that spawn from the time point of the first node. (splits a tree into 2)
+
+        Parameters
+        ----------
+        root : int
+            The id of the node, which will be cut.
+
+        Returns
+        -------
+        int
+            The id of the new tree
+        """
+        cycle = self.get_successors(root)
+        last_cell = cycle[-1]
+        if last_cell in self._successor:
+            new_lT = self._successor[last_cell].pop()
+            self._predecessor.pop(new_lT)
+            label_of_root = self.labels.get(cycle[0], cycle[0])
+            self.labels[cycle[0]] = f"L-Split {label_of_root}"
+            new_tr = self.add_branch(new_lT, len(cycle), downstream=False)
+            self.roots.add(new_tr)
+            self.labels[new_tr] = f"R-Split {label_of_root}"
+            return new_tr
+        else:
+            raise Warning("No division of the branch")
+
+    ###TODO
+    @modifier
+    def fuse_lineage_tree(
+        self,
+        l1_root: int,
+        l2_root: int,
+        length_l1: int = 0,
+        length_l2: int = 0,
+        length: int = 1,
+    ) -> int:
+        """Fuses 2 lineages from the lineagetree object. The 2 lineages that are to be fused can have a longer
+        first node and the node of the resulting lineage can also be longer.
+
+        Parameters
+        ----------
+        l1_root : int
+            Id of the first root
+        l2_root : int
+            Id of the second root
+        length_l1 : int, default=0
+            The length of the branch that will be added on top of the first lineage.
+            Defaults to 0, which means only one node will be added.
+        length_l2 : int, default=0
+            The length of the branch that will be added on top of the second lineage.
+            Defaults to 0, which means only one node will be added.
+        length : int, default=1
+            The length of the branch that will be added on top of the resulting lineage.
+
+        Returns
+        -------
+        int
+            The id of the root of the new lineage.
+        """
+        if self.predecessor.get(l1_root) or self.predecessor.get(l2_root):
+            raise ValueError("Please select 2 roots.")
+        if self._time[l1_root] != self._time[l2_root]:
+            warnings.warn(
+                "Using lineagetrees that do not exist in the same timepoint. The operation will continue",
+                stacklevel=2,
+            )
+        new_root1 = self.add_branch(l1_root, length_l1)
+        new_root2 = self.add_branch(l2_root, length_l2)
+        next_root1 = self[new_root1][0]
+        self.remove_nodes(new_root1)
+        self.successor[new_root2].append(next_root1)
+        self.predecessor[next_root1] = [new_root2]
+        new_branch = self.add_branch(
+            new_root2,
+            length - 1,
+        )
+        self.labels[new_branch] = f"Fusion of {new_root1} and {new_root2}"
+        return new_branch
+
+    ###TODO
+    @modifier
+    def copy_lineage(self, root: int) -> int:
+        """Copies the structure of a tree and makes a new with new nodes.
+        Warning does not take into account the predecessor of the root node.
+
+        Parameters
+        ----------
+        root : int
+            The root of the tree to be copied
+
+        Returns
+        -------
+        int
+            The id of the root of the new tree.
+        """
+        new_nodes = {
+            old_node: self.get_next_id()
+            for old_node in self.get_sub_tree(root)
+        }
+        self.nodes.update(new_nodes.values())
+        for old_node, new_node in new_nodes.items():
+            self._time[new_node] = self._time[old_node]
+            succ = self._successor.get(old_node)
+            if succ:
+                self._successor[new_node] = [new_nodes[n] for n in succ]
+            pred = self._predecessor.get(old_node)
+            if pred:
+                self._predecessor[new_node] = [new_nodes[n] for n in pred]
+            self.pos[new_node] = self.pos[old_node] + 0.5
+        new_root = new_nodes[root]
+        self.labels[new_root] = f"Copy of {root}"
+        if self._time[new_root] == 0:
+            self.roots.add(new_root)
+        return new_root
+
+    @modifier
     def add_root(self, t: int, pos: list = None):
         """Adds a root to a specific timepoint.
 
@@ -199,7 +377,7 @@ class lineageTree:
             self.pos[C_next] = pos
         return C_next
 
-    @modifying
+    @modifier
     def remove_nodes(self, group: int | set | list) -> None:
         """Removes a group of nodes from the LineageTree
 
@@ -235,165 +413,139 @@ class lineageTree:
             self._predecessor.pop(node, ())
             self._successor.pop(node, ())
 
-    @property
+    # TODO
+    @modifier
+    def modify_branch(self, node: int, new_length: int) -> None:
+        """Changes the length of a branch, so it adds or removes nodes
+        to make the correct length of the cycle.
+
+        Parameters
+        ----------
+        node : int
+            Any node of the branch to be modified
+        new_length : int
+            The new length of the tree.
+        """
+        if new_length < 1:
+            raise Warning(
+                "New length should be >0, I f you want to remove a branch call remove_nodes"
+            )
+        cycle = self.get_cycle(node)
+        length = len(cycle)
+        if length == new_length:
+            return
+        successors = self._successor.get(cycle[-1])
+        if length < new_length:
+            nodes_to_change_time_vals = set(self.get_sub_tree(node))
+            for _ in range(new_length - length):
+                old_node = node
+                node = self._add_node(
+                    succ=self._successor[old_node],
+                    pred=self._predecessor[old_node],
+                )
+        if new_length < length:
+            self.remove_nodes(cycle[0 : length - new_length - 1])
+            for _ in range(new_length):
+                old_node = node
+                node = self._add_node(
+                    succ=self._successor[old_node],
+                    pred=self._predecessor[old_node],
+                )
+
+    # @property
+    # def time(self) -> MappingProxyType[dict]:
+    #     """Mapping of nodes to the timepoint they belong to"""
+    #     if not hasattr(self, "__time"):
+    #         self.__time = MappingProxyType(self._time)
+    #     return self.__time
+
+    # @property
+    # def successor(self) -> MappingProxyType[dict]:
+    #     """Mapping of nodes to the tuple of its successors"""
+    #     if not hasattr(self, "__successor"):
+    #         self.__successor = MappingProxyType(self._successor)
+    #     return self.__successor
+
+    # @property
+    # def predecessor(self) -> MappingProxyType[dict]:
+    #     """Mapping of nodes to the tuple of its predecessor"""
+    #     if not hasattr(self, "__predecessor"):
+    #         self.__predecessor = MappingProxyType(self._predecessor)
+    #     return self.__predecessor
+
+    @dynamic_property
     def t_b(self) -> int:
         """The first timepoint of the tree."""
-        if self._t_b is None:
-            self._t_b = min(self._time.values())
-        return self._t_b  # type: ignore
+        self._t_b = min(self._time.values())
+        return self._t_b
 
-    @t_b.setter
-    def t_b(self, other_value):
-        raise TypeError("t_b cannot be changed manually")
-
-    @property
+    @dynamic_property
     def t_e(self) -> int:
         """The last timepoint of the tree."""
-        if self._t_e is None:
-            self._t_e = max(self._time.values())
-        return self._t_e  # type: ignore
+        self._t_e = max(self._time.values())
+        return self._t_e
 
-    @t_e.setter
-    def t_e(self, other_value):
-        raise TypeError("t_e cannot be changed manually")
-
-    @property
+    @dynamic_property
     def nodes(self) -> frozenset[int]:
         """Nodes of the tree"""
-        if self._nodes is None:
-            self._nodes = frozenset(self._successor.keys())
+        self._nodes = frozenset(self._successor.keys())
         return self._nodes
 
-    @nodes.setter
-    def nodes(self, other):
-        raise AttributeError(
-            "You cannot change the nodes this way, please use add_root/add_branch"
-        )
-
-    @property
-    def time(self) -> MappingProxyType[dict]:
-        """Mapping of nodes to the timepoint they belong to"""
-        return MappingProxyType(self._time)
-
-    @time.setter
-    def time(self, other):
-        raise AttributeError(
-            "You cannot change the time dictionary, please consider using the functions remove_nodes/add_root/add_branch"
-        )
-
-    @property
-    def successor(self) -> MappingProxyType[dict]:
-        """Mapping of nodes to the tuple of its successors"""
-        return MappingProxyType(self._successor)
-
-    @successor.setter
-    def successor(self, other):
-        raise AttributeError(
-            "You cannot change the successor dictionary explicitly, please consider using the functions remove_nodes/add_root/add_branch"
-        )
-
-    @property
-    def predecessor(self) -> MappingProxyType[dict]:
-        """Mapping of nodes to the tuple of its predecessor"""
-        return MappingProxyType(self._predecessor)
-
-    @predecessor.setter
-    def predecessor(self, other):
-        raise AttributeError(
-            "You cannot change the predecessor dictionary explicitly, please consider using the functions remove_nodes/add_root/add_branch"
-        )
-
-    @property
+    @dynamic_property
     def depth(self) -> dict[int, int]:
         """The depth of each node in the tree."""
-        if self._depth is None:
-            self._depth = {}
-            for leaf in self.leaves:
-                self._depth[leaf] = 1
-                while leaf in self._predecessor:
-                    parent = self._predecessor[leaf][0]
-                    current_depth = self._depth.get(parent, 0)
-                    self._depth[parent] = max(
-                        self._depth[leaf] + 1, current_depth
-                    )
-                    leaf = parent
-            for root in self.roots - set(self._depth):
-                self._depth[root] = 1
+        self._depth = {}
+        for leaf in self.leaves:
+            self._depth[leaf] = 1
+            while leaf in self._predecessor and self._predecessor[leaf]:
+                parent = self._predecessor[leaf][0]
+                current_depth = self._depth.get(parent, 0)
+                self._depth[parent] = max(self._depth[leaf] + 1, current_depth)
+                leaf = parent
+        for root in self.roots - set(self._depth):
+            self._depth[root] = 1
         return self._depth
 
-    @property
+    @dynamic_property
     def roots(self) -> frozenset[int]:
         """Set of roots of the tree"""
-        if self._roots is None:
-            self._roots = frozenset(
-                {s for s, p in self._predecessor.items() if p == ()}
-            )
+        self._roots = frozenset(
+            {s for s, p in self._predecessor.items() if p == ()}
+        )
         return self._roots
 
-    @roots.setter
-    def roots(self, other):
-        raise AttributeError(
-            "You cannot change the roots explicitly, please consider using the function add_root"
-        )
-
-    @property
+    @dynamic_property
     def leaves(self) -> frozenset[int]:
         """Set of leaves"""
-        if self._leaves is None:
-            self._leaves = frozenset(
-                {p for p, s in self._successor.items() if s == ()}
-            )
+        self._leaves = frozenset(
+            {p for p, s in self._successor.items() if s == ()}
+        )
         return self._leaves
 
-    @leaves.setter
-    def leaves(self, other):
-        raise AttributeError(
-            "You cannot change the leaves explicitly, please consider using the functions remove_nodes/add_branch"
+    @dynamic_property
+    def edges(self) -> tuple[tuple[int, int]]:
+        """Set of edges"""
+        self._edges = tuple(
+            (p, si) for p, s in self._successor.items() for si in s
         )
+        return self._edges
 
     @property
     def labels(self) -> dict[int, str]:
         """The labels of the nodes."""
-        if self._labels is None:
-            if hasattr(self, "cell_name"):
-                self._labels = {
-                    i: self.cell_name.get(i, "Unlabeled") for i in self.roots
-                }
-            else:
-                self._labels = {
-                    root: "Unlabeled"
-                    for root in self.roots
-                    for leaf in self.find_leaves(root)
-                    if abs(self._time[leaf] - self._time[root])
-                    >= abs(self.t_e - self.t_b) / 4
-                }
+        if hasattr(self, "cell_name"):
+            self._labels = {
+                i: self.cell_name.get(i, "Unlabeled") for i in self.roots
+            }
+        else:
+            self._labels = {
+                root: "Unlabeled"
+                for root in self.roots
+                for leaf in self.find_leaves(root)
+                if abs(self._time[leaf] - self._time[root])
+                >= abs(self.t_e - self.t_b) / 4
+            }
         return self._labels
-
-    @labels.setter
-    def labels(self, other):
-        raise AttributeError(
-            "You cannot change the labels, please use label[node]=..."
-        )
-
-    def _initialise_properties(self):
-        self._labels = None
-        self._leaves = None
-        self._edges = None
-        self._roots = None
-        self._depth = None
-        self._nodes = None
-        self._t_b = None
-        self._t_e = None
-        self._dependent_properties = [
-            "_labels",
-            "_leaves",
-            "_edges",
-            "_roots",
-            "_depth",
-            "_nodes",
-            "_t_b",
-            "_t_e",
-        ]
 
     @property
     def time_resolution(self) -> float:
@@ -985,14 +1137,21 @@ class lineageTree:
         if not hasattr(lT, "__version__") or Version(lT.__version__) < Version(
             "2.0.0"
         ):
-            lT._initialise_properties()
             properties = {
                 prop_name: prop
                 for prop_name, prop in lT.__dict__.items()
                 if isinstance(prop, dict)
                 and prop_name
-                not in ["successor", "predecessor", "time", "pos"]
-                and set(prop).symmetric_difference(lT.nodes) == set()
+                not in [
+                    "successor",
+                    "predecessor",
+                    "time",
+                    "_successor",
+                    "_predecessor",
+                    "_time",
+                    "pos",
+                ]
+                and set(prop).symmetric_difference(lT._successor) == set()
             }
             lT = lineageTree(
                 successor=lT._successor,
@@ -3261,15 +3420,12 @@ class lineageTree:
             The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
         self.__version__ = importlib.metadata.version("LineageTree")
-        self._initialise_properties()
         self._comparisons = {}
         self.name = name
         if successor is not None and predecessor is not None:
             raise ValueError(
                 "You cannot have both successors and predecessors."
             )
-        self._changed_roots = True
-        self._changed_leaves = True
 
         if root_leaf_value is None:
             root_leaf_value = [None, (), [], set()]
@@ -3349,10 +3505,10 @@ class lineageTree:
                     queue.append(succ)
         else:
             self._time = time
-            if self.nodes.difference(self.time) != set():
+            if self.nodes.difference(self._time) != set():
                 raise ValueError("Please provide the time of all nodes.")
             if not all(
-                self.time[node] < self.time[s]
+                self._time[node] < self._time[s]
                 for node, succ in self._successor.items()
                 for s in succ
             ):
@@ -3372,3 +3528,7 @@ class lineageTree:
                 )
                 continue
             setattr(self, name, d)
+
+        self.successor = MappingProxyType(self._successor)
+        self.predecessor = MappingProxyType(self._predecessor)
+        self.time = MappingProxyType(self._time)
