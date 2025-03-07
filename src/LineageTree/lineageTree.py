@@ -1866,48 +1866,90 @@ class lineageTree:
         matched_left = []
         unmatched_node = []
         colors = {}
-        for m in btrc:
-            if m._left != -1 and m._right != -1:
-                cyc1 = self.get_cycle(corres1[m._left])
-                if len(cyc1) > 1:
-                    node_1, *_, l_node_1 = cyc1
-                    matched_left.append(node_1)
-                    matched_left.append(l_node_1)
-                elif len(cyc1) == 1:
-                    node_1 = l_node_1 = cyc1.pop()
-                    matched_left.append(node_1)
+        if style not in ("full", "downsampled"):
+            for m in btrc:
+                if m._left != -1 and m._right != -1:
+                    cyc1 = self.get_cycle(corres1[m._left])
+                    if len(cyc1) > 1:
+                        node_1, *_, l_node_1 = cyc1
+                        matched_left.append(node_1)
+                        matched_left.append(l_node_1)
+                    elif len(cyc1) == 1:
+                        node_1 = l_node_1 = cyc1.pop()
+                        matched_left.append(node_1)
 
-                cyc2 = self.get_cycle(corres2[m._right])
-                if len(cyc2) > 1:
-                    node_2, *_, l_node_2 = cyc2
-                    matched_right.append(node_2)
-                    matched_right.append(l_node_2)
+                    cyc2 = self.get_cycle(corres2[m._right])
+                    if len(cyc2) > 1:
+                        node_2, *_, l_node_2 = cyc2
+                        matched_right.append(node_2)
+                        matched_right.append(l_node_2)
 
-                elif len(cyc2) == 1:
-                    node_2 = l_node_2 = cyc2.pop()
-                    matched_right.append(node_2)
+                    elif len(cyc2) == 1:
+                        node_2 = l_node_2 = cyc2.pop()
+                        matched_right.append(node_2)
 
-                colors[node_1] = self.__calculate_distance_of_sub_tree(
-                    node_1,
-                    node_2,
-                    btrc,
-                    corres1,
-                    corres2,
-                    delta_tmp,
-                    norm_dict[norm],
-                    tree1.get_norm(node_1),
-                    tree2.get_norm(node_2),
-                )
-                colors[node_2] = colors[node_1]
-                colors[l_node_1] = colors[node_1]
-                colors[l_node_2] = colors[node_2]
+                    colors[node_1] = self.__calculate_distance_of_sub_tree(
+                        node_1,
+                        node_2,
+                        btrc,
+                        corres1,
+                        corres2,
+                        delta_tmp,
+                        norm_dict[norm],
+                        tree1.get_norm(node_1),
+                        tree2.get_norm(node_2),
+                    )
+                    colors[node_2] = colors[node_1]
+                    colors[l_node_1] = colors[node_1]
+                    colors[l_node_2] = colors[node_2]
 
-            else:
-                if m._left != -1:
-                    node_1 = self.get_cycle(corres1.get(m._left, "-"))[0]
                 else:
-                    node_1 = self.get_cycle(corres2.get(m._right, "-"))[0]
-                unmatched_node.append(node_1)
+                    if m._left != -1:
+                        node_1 = self.get_cycle(corres1.get(m._left, "-"))[0]
+                    else:
+                        node_1 = self.get_cycle(corres2.get(m._right, "-"))[0]
+                    unmatched_node.append(node_1)
+        else:
+            for m in btrc:
+                if m._left != -1 and m._right != -1:
+                    node_1 = corres1[m._left]
+                    node_2 = corres2[m._right]
+                    matched_left.append(node_1)
+                    matched_right.append(node_2)
+                    colors[node_1] = self.__calculate_distance_of_sub_tree(
+                        node_1,
+                        node_2,
+                        btrc,
+                        corres1,
+                        corres2,
+                        delta_tmp,
+                        norm_dict[norm],
+                        tree1.get_norm(node_1),
+                        tree2.get_norm(node_2),
+                    )
+                    colors[node_2] = colors[node_1]
+
+                else:
+                    if m._left != -1:
+                        node_1 = self.get_cycle(corres1.get(m._left, "-"))[0]
+                    else:
+                        node_1 = self.get_cycle(corres2.get(m._right, "-"))[0]
+                    unmatched_node.append(node_1)
+                for br in self.get_all_branches_of_node(n1):
+                    col = [colors[node] for node in br if node in colors]
+                    if col:
+                        colors[br[0]] = np.average(col)
+                        matched_left.append(br[0])
+                        colors[br[-1]] = np.average(col)
+                        matched_left.append(br[-1])
+
+                for br in self.get_all_branches_of_node(n2):
+                    col = [colors[node] for node in br if node in colors]
+                    if col:
+                        colors[br[0]] = np.average(col)
+                        matched_right.append(br[0])
+                        colors[br[-1]] = colors[br[0]]
+                        matched_right.append(br[-1])
         if ax is None:
             fig, ax = plt.subplots(nrows=1, ncols=2)
         cmap = colormaps[colormap]
@@ -2013,40 +2055,58 @@ class lineageTree:
         unmatched_node = []
         matched = []
         unmatched = []
-        for m in btrc:
-            if m._left != -1 and m._right != -1:
-                cyc1 = self.get_cycle(corres1[m._left])
-                if len(cyc1) > 1:
-                    node_1, *_, l_node_1 = cyc1
-                    matched_left.append(node_1)
-                    matched_left.append(l_node_1)
-                elif len(cyc1) == 1:
-                    node_1 = l_node_1 = cyc1.pop()
-                    matched_left.append(node_1)
+        if style not in ("full", "downsampled"):
+            for m in btrc:
+                if m._left != -1 and m._right != -1:
+                    cyc1 = self.get_cycle(corres1[m._left])
+                    if len(cyc1) > 1:
+                        node_1, *_, l_node_1 = cyc1
+                        matched_left.append(node_1)
+                        matched_left.append(l_node_1)
+                    elif len(cyc1) == 1:
+                        node_1 = l_node_1 = cyc1.pop()
+                        matched_left.append(node_1)
 
-                cyc2 = self.get_cycle(corres2[m._right])
-                if len(cyc2) > 1:
-                    node_2, *_, l_node_2 = cyc2
-                    matched_right.append(node_2)
-                    matched_right.append(l_node_2)
+                    cyc2 = self.get_cycle(corres2[m._right])
+                    if len(cyc2) > 1:
+                        node_2, *_, l_node_2 = cyc2
+                        matched_right.append(node_2)
+                        matched_right.append(l_node_2)
 
-                elif len(cyc2) == 1:
-                    node_2 = l_node_2 = cyc2.pop()
-                    matched_right.append(node_2)
-                matched.append(
-                    (
-                        self.labels.get(node_1, node_1),
-                        self.labels.get(node_2, node_2),
+                    elif len(cyc2) == 1:
+                        node_2 = l_node_2 = cyc2.pop()
+                        matched_right.append(node_2)
+                    matched.append(
+                        (
+                            self.labels.get(node_1, node_1),
+                            self.labels.get(node_2, node_2),
+                        )
                     )
-                )
 
-            else:
-                if m._left != -1:
-                    node_1 = self.get_cycle(corres1.get(m._left, "-"))[0]
                 else:
-                    node_1 = self.get_cycle(corres2.get(m._right, "-"))[0]
-                unmatched_node.append(node_1)
-                unmatched.append(self.labels.get(node_1, node_1))
+                    if m._left != -1:
+                        node_1 = self.get_cycle(corres1.get(m._left, "-"))[0]
+                    else:
+                        node_1 = self.get_cycle(corres2.get(m._right, "-"))[0]
+                    unmatched_node.append(node_1)
+                    unmatched.append(self.labels.get(node_1, node_1))
+        else:
+            for m in btrc:
+                if m._left != -1 and m._right != -1:
+                    node_1 = corres1[m._left]
+                    node_2 = corres2[m._right]
+                    matched.append(
+                        (
+                            self.labels.get(node_1, node_1),
+                            self.labels.get(node_2, node_2),
+                        )
+                    )
+                else:
+                    if m._left != -1:
+                        node_1 = corres1[m._left]
+                    else:
+                        node_1 = corres2[m._right]
+                    unmatched.append(self.labels.get(node_1, node_1))
         return {"matched": matched, "unmatched": unmatched}
 
     def unordered_tree_edit_distance(

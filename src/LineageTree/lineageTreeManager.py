@@ -1,9 +1,27 @@
 import os
 import pickle as pkl
 import warnings
+from collections.abc import Callable
 from functools import partial
+from itertools import combinations
+from typing import Callable, Literal
 
+import matplotlib.colors as mcolors
 import numpy as np
+from matplotlib import colormaps
+
+from .tree_styles import tree_style
+
+try:
+    from edist import uted
+except ImportError:
+    warnings.warn(
+        "No edist installed therefore you will not be able to compute the tree edit distance.",
+        stacklevel=2,
+    )
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 try:
     from edist import uted
@@ -22,6 +40,7 @@ class lineageTreeManager:
         self.lineagetrees = {}
         self.lineageTree_counter = 0
         self.registered = {}
+        self._comparisons = {}
 
     def __next__(self):
         self.lineageTree_counter += 1
@@ -156,7 +175,22 @@ class lineageTreeManager:
             registration : _type_, default=None
                 _description_. Defaults to None.
         """
-
+        parameters = {
+            k: v
+            for k, v in locals().items()
+            if k
+            in (
+                "n1",
+                "n2",
+                "end_time1",
+                "end_time2",
+                "embryo_1",
+                "embryo_2",
+                "norm",
+                "style",
+                "downsample",
+            )
+        }
         tree = tree_style[style].value
         lcm = (
             self.lineagetrees[embryo_1]._time_resolution
@@ -203,7 +237,11 @@ class lineageTreeManager:
         nodes1, adj1, corres1 = tree1.edist
         nodes2, adj2, corres2 = tree2.edist
         if len(nodes1) == len(nodes2) == 0:
-            return 0
+            self._comparisons[hash(frozenset(parameters.values()))] = {
+                "alignment": (),
+                "trees": (),
+            }
+            return self._comparisons[hash(frozenset(parameters.values()))]
         delta_tmp = partial(
             delta,
             corres1=corres1,
@@ -211,6 +249,482 @@ class lineageTreeManager:
             corres2=corres2,
             times2=times2,
         )
-        return uted.uted(nodes1, adj1, nodes2, adj2, delta=delta_tmp) / max(
-            tree1.get_norm(n1), tree2.get_norm(n2)
+        btrc = uted.uted_backtrace(nodes1, adj1, nodes2, adj2, delta=delta_tmp)
+
+        self._comparisons[hash(frozenset(parameters.values()))] = {
+            "alignment": btrc,
+            "trees": (tree1, tree2),
+        }
+        return self._comparisons[hash(frozenset(parameters.values()))]
+
+    def __calculate_distance_of_sub_tree(
+        self,
+        node1,
+        node2,
+        alignment,
+        corres1,
+        corres2,
+        delta_tmp,
+        norm: Callable,
+        norm1,
+        norm2,
+    ):
+        """Private method that calculates the distance of all subtrees in a specific mapping."""
+        sub_tree_1 = set(self.get_sub_tree(node1))
+        sub_tree_2 = set(self.get_sub_tree(node2))
+        res = 0
+        for m in alignment:
+            if (
+                corres1.get(m._left, -1) in sub_tree_1
+                or corres2.get(m._right, -1) in sub_tree_2
+            ):
+                res += delta_tmp(
+                    m._left if m._left != -1 else None,
+                    m._right if m._right != -1 else None,
+                )
+        return res / norm([norm1, norm2])
+
+    def clear_comparisons(self):
+        self._comparisons.clear()
+
+    def __cross_unordereded_backtrace(
+        self,
+        n1: int,
+        n2: int,
+        end_time: int = None,
+        norm: Literal["max", "sum"] | None = "max",
+        style="simple",
+        downsample: int = 2,
+    ) -> float:
+        """
+        Compute the unordered tree edit backtrace from Zhang 1996 between the trees spawned
+        by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
+        cost is given by the function delta (see edist doc for more information).
+
+        Parameters
+        ----------
+        n1 : int
+            id of the first node to compare
+        n2 : int
+            id of the second node to compare
+        end_time : int
+            The final time point the comparison algorithm will take into account.
+            If None all nodes will be taken into account.
+        norm : {"max", "sum"}, default="max"
+            The normalization method to use.
+        style : {"simple", "full", "downsampled"}, default="simple"
+            Which tree approximation is going to be used for the comparisons.
+        downsample : int, default=2
+            The downsample factor for the downsampled tree approximation.
+            Used only when `style="downsampled"`.
+
+        Returns
+        -------
+        Alignment
+            The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
+        tuple(tree,2)
+            The two trees that have been mapped to each other.
+        """
+
+        parameters = {
+            k: v
+            for k, v in locals().items()
+            if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
+        }
+
+        if len(self._comparisons) > 100:
+            warnings.warn(
+                "More than 100 comparisons are saved, use clear_comparisons() to delete them.",
+                stacklevel=2,
+            )
+        tree = tree_style[style].value
+        tree1 = tree(
+            lT=self,
+            downsample=downsample,
+            end_time=end_time,
+            root=n1,
+            time_scale=1,
+        )
+        tree2 = tree(
+            lT=self,
+            downsample=downsample,
+            end_time=end_time,
+            root=n2,
+            time_scale=1,
+        )
+        delta = tree1.delta
+        _, times1 = tree1.tree
+        _, times2 = tree2.tree
+        (
+            nodes1,
+            adj1,
+            corres1,
+        ) = tree1.edist
+        (
+            nodes2,
+            adj2,
+            corres2,
+        ) = tree2.edist
+        if len(nodes1) == len(nodes2) == 0:
+            self._comparisons[hash(frozenset(parameters.values()))] = {
+                "alignment": (),
+                "trees": (),
+            }
+            return self._comparisons[hash(frozenset(parameters.values()))]
+        delta_tmp = partial(
+            delta,
+            corres1=corres1,
+            corres2=corres2,
+            times1=times1,
+            times2=times2,
+        )
+        btrc = uted.uted_backtrace(nodes1, adj1, nodes2, adj2, delta=delta_tmp)
+
+        self._comparisons[hash(frozenset(parameters.values()))] = {
+            "alignment": btrc,
+            "trees": (tree1, tree2),
+        }
+        return self._comparisons[hash(frozenset(parameters.values()))]
+
+    def plot_tree_distance_graphs(
+        self,
+        n1: int,
+        n2: int,
+        end_time: int = None,
+        norm: Literal["max", "sum"] | None = "max",
+        style="simple",
+        downsample: int = 2,
+        colormap: str = "cool",
+        default_color: str = "black",
+        size: float = 10,
+        ax: list[plt.Axes, plt.Axes] = None,
+    ) -> tuple[plt.figure, plt.Axes]:
+        """
+        Plots the distance graphs of 2 nodes compared.
+        !!!TODO make documentation!!!
+
+        Parameters
+        ----------
+        n1 : int
+            id of the first node to compare
+        n2 : int
+            id of the second node to compare
+        end_time : int
+            The final time point the comparison algorithm will take into account.
+            If None all nodes will be taken into account.
+        norm : {"max", "sum"}, default="max"
+            The normalization method to use.
+        style : {"simple", "full", "downsampled"}, default="simple"
+            Which tree approximation is going to be used for the comparisons.
+        downsample : int, default=2
+            The downsample factor for the downsampled tree approximation.
+            Used only when `style="downsampled"`.
+
+        Returns
+        -------
+        Alignment
+            The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
+        """
+
+        if ax:
+            assert len(ax) == 2
+        parameters = {
+            k: v
+            for k, v in locals().items()
+            if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
+        }
+        if hash(frozenset(parameters.values())) in self._comparisons:
+            tmp = self._comparisons[hash(frozenset(parameters.values()))]
+        else:
+            tmp = self.__unordereded_backtrace(**parameters)
+        btrc = tmp["alignment"]
+        tree1, tree2 = tmp["trees"]
+        _, times1 = tree1.tree
+        _, times2 = tree2.tree
+        (
+            *_,
+            corres1,
+        ) = tree1.edist
+        (
+            *_,
+            corres2,
+        ) = tree2.edist
+        delta_tmp = partial(
+            tree1.delta,
+            corres1=corres1,
+            corres2=corres2,
+            times1=times1,
+            times2=times2,
+        )
+        norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
+        if norm is None:
+            norm = "None"
+        if norm not in norm_dict:
+            raise Warning(
+                "Select a viable normalization method (max, sum, None)"
+            )
+        matched_right = []
+        matched_left = []
+        unmatched_node = []
+        colors = {}
+        for m in btrc:
+            if m._left != -1 and m._right != -1:
+                cyc1 = self.get_cycle(corres1[m._left])
+                if len(cyc1) > 1:
+                    node_1, *_, l_node_1 = cyc1
+                    matched_left.append(node_1)
+                    matched_left.append(l_node_1)
+                elif len(cyc1) == 1:
+                    node_1 = l_node_1 = cyc1.pop()
+                    matched_left.append(node_1)
+
+                cyc2 = self.get_cycle(corres2[m._right])
+                if len(cyc2) > 1:
+                    node_2, *_, l_node_2 = cyc2
+                    matched_right.append(node_2)
+                    matched_right.append(l_node_2)
+
+                elif len(cyc2) == 1:
+                    node_2 = l_node_2 = cyc2.pop()
+                    matched_right.append(node_2)
+
+                colors[node_1] = self.__calculate_distance_of_sub_tree(
+                    node_1,
+                    node_2,
+                    btrc,
+                    corres1,
+                    corres2,
+                    delta_tmp,
+                    norm_dict[norm],
+                    tree1.get_norm(node_1),
+                    tree2.get_norm(node_2),
+                )
+                colors[node_2] = colors[node_1]
+                colors[l_node_1] = colors[node_1]
+                colors[l_node_2] = colors[node_2]
+
+            else:
+                if m._left != -1:
+                    node_1 = self.get_cycle(corres1.get(m._left, "-"))[0]
+                else:
+                    node_1 = self.get_cycle(corres2.get(m._right, "-"))[0]
+                unmatched_node.append(node_1)
+        if ax is None:
+            fig, ax = plt.subplots(nrows=1, ncols=2)
+        cmap = colormaps[colormap]
+        c_norm = mcolors.Normalize(0, 1)
+        colors = {c: cmap(c_norm(v)) for c, v in colors.items()}
+        self.plot_node(
+            self.get_ancestor_at_t(n1),
+            size=size,
+            selected_nodes=matched_left,
+            color_of_nodes=colors,
+            selected_edges=matched_left,
+            color_of_edges=colors,
+            default_color=default_color,
+            ax=ax[0],
+        )
+        self.plot_node(
+            self.get_ancestor_at_t(n2),
+            size=size,
+            selected_nodes=matched_right,
+            color_of_nodes=colors,
+            selected_edges=matched_right,
+            color_of_edges=colors,
+            default_color=default_color,
+            ax=ax[1],
+        )
+        return ax[0].get_figure(), ax
+
+    def labelled_mappings(
+        self,
+        n1: int,
+        n2: int,
+        end_time: int = None,
+        norm: Literal["max", "sum"] | None = "max",
+        style="simple",
+        downsample: int = 2,
+    ) -> tuple[plt.figure, plt.Axes]:
+        """
+        Plots the distance graphs of 2 nodes compared.
+        !!!TODO make documentation!!!
+
+        Parameters
+        ----------
+        n1 : int
+            id of the first node to compare
+        n2 : int
+            id of the second node to compare
+        end_time : int
+            The final time point the comparison algorithm will take into account.
+            If None all nodes will be taken into account.
+        norm : {"max", "sum"}, default="max"
+            The normalization method to use.
+        style : {"simple", "full", "downsampled"}, default="simple"
+            Which tree approximation is going to be used for the comparisons.
+        downsample : int, default=2
+            The downsample factor for the downsampled tree approximation.
+            Used only when `style="downsampled"`.
+
+        Returns
+        -------
+        Alignment
+            The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
+        """
+        parameters = {
+            k: v
+            for k, v in locals().items()
+            if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
+        }
+
+        if hash(frozenset(parameters.values())) in self._comparisons:
+            tmp = self._comparisons[hash(frozenset(parameters.values()))]
+        else:
+            tmp = self.__unordereded_backtrace(**parameters)
+        btrc = tmp["alignment"]
+        tree1, tree2 = tmp["trees"]
+        _, times1 = tree1.tree
+        _, times2 = tree2.tree
+        (
+            nodes1,
+            adj1,
+            corres1,
+        ) = tree1.edist
+        (
+            nodes2,
+            adj2,
+            corres2,
+        ) = tree2.edist
+        delta_tmp = partial(
+            tree1.delta,
+            corres1=corres1,
+            corres2=corres2,
+            times1=times1,
+            times2=times2,
+        )
+        norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
+        if norm is None:
+            norm = "None"
+        if norm not in norm_dict:
+            raise Warning(
+                "Select a viable normalization method (max, sum, None)"
+            )
+        matched_right = []
+        matched_left = []
+        unmatched_node = []
+        matched = []
+        unmatched = []
+        for m in btrc:
+            if m._left != -1 and m._right != -1:
+                cyc1 = self.get_cycle(corres1[m._left])
+                if len(cyc1) > 1:
+                    node_1, *_, l_node_1 = cyc1
+                    matched_left.append(node_1)
+                    matched_left.append(l_node_1)
+                elif len(cyc1) == 1:
+                    node_1 = l_node_1 = cyc1.pop()
+                    matched_left.append(node_1)
+
+                cyc2 = self.get_cycle(corres2[m._right])
+                if len(cyc2) > 1:
+                    node_2, *_, l_node_2 = cyc2
+                    matched_right.append(node_2)
+                    matched_right.append(l_node_2)
+
+                elif len(cyc2) == 1:
+                    node_2 = l_node_2 = cyc2.pop()
+                    matched_right.append(node_2)
+                matched.append(
+                    (
+                        self.labels.get(node_1, node_1),
+                        self.labels.get(node_2, node_2),
+                    )
+                )
+
+            else:
+                if m._left != -1:
+                    node_1 = self.get_cycle(corres1.get(m._left, "-"))[0]
+                else:
+                    node_1 = self.get_cycle(corres2.get(m._right, "-"))[0]
+                unmatched_node.append(node_1)
+                unmatched.append(self.labels.get(node_1, node_1))
+        return {"matched": matched, "unmatched": unmatched}
+
+    def unordered_tree_edit_distance(
+        self,
+        n1: int,
+        n2: int,
+        end_time: int = None,
+        norm: Literal["max", "sum"] | None = "max",
+        style="simple",
+        downsample: int = 2,
+    ) -> float:
+        """
+        Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
+        by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
+        cost is given by the function delta (see edist doc for more information).
+        The distance is normed by the function norm that takes the two list of nodes
+        spawned by the trees `n1` and `n2`.
+
+        Parameters
+        ----------
+        n1 : int
+            id of the first node to compare
+        n2 : int
+            id of the second node to compare
+        end_time : int
+            The final time point the comparison algorithm will take into account.
+            If None all nodes will be taken into account.
+        norm : {"max", "sum"}, default="max"
+            The normalization method to use.
+        style : {"simple", "full", "downsampled"}, default="simple"
+            Which tree approximation is going to be used for the comparisons.
+        downsample : int, default=2
+            The downsample factor for the downsampled tree approximation.
+            Used only when `style="downsampled"`.
+
+        Returns
+        -------
+        float
+            The normed unordered tree edit distance between `n1` and `n2`
+        """
+        parameters = {
+            k: v
+            for k, v in locals().items()
+            if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
+        }
+        if hash(frozenset(parameters.values())) in self._comparisons:
+            tmp = self._comparisons[hash(frozenset(parameters.values()))]
+        else:
+            tmp = self.__unordereded_backtrace(**parameters)
+        btrc = tmp["alignment"]
+        tree1, tree2 = tmp["trees"]
+        _, times1 = tree1.tree
+        _, times2 = tree2.tree
+        (
+            nodes1,
+            adj1,
+            corres1,
+        ) = tree1.edist
+        (
+            nodes2,
+            adj2,
+            corres2,
+        ) = tree2.edist
+        delta_tmp = partial(
+            tree1.delta,
+            corres1=corres1,
+            corres2=corres2,
+            times1=times1,
+            times2=times2,
+        )
+        norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
+        if norm is None:
+            norm = "None"
+        if norm not in norm_dict:
+            raise Warning(
+                "Select a viable normalization method (max, sum, None)"
+            )
+        return btrc.cost(nodes1, nodes2, delta_tmp) / norm_dict[norm](
+            [tree1.get_norm(n1), tree2.get_norm(n2)]
         )
