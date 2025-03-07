@@ -205,6 +205,43 @@ def test_cross_comparison():
         )
         < 1
     )
+    assert lTm1.plot_tree_distance_graphs(
+            t1,
+            "embryo_1",
+            100,
+            t2,
+            "embryo_2",
+            100,
+            style="full",
+        )
+    assert lTm1.plot_tree_distance_graphs(
+            t1,
+            "embryo_1",
+            100,
+            t2,
+            "embryo_2",
+            100,
+            style="simple",
+        )
+    assert lTm1.labelled_mappings(
+            t1,
+            "embryo_1",
+            100,
+            t2,
+            "embryo_2",
+            100,
+            style="full",
+        )
+    assert lTm1.labelled_mappings(
+            t1,
+            "embryo_1",
+            100,
+            t2,
+            "embryo_2",
+            100,
+            style="simple",
+        )
+    assert lTm1.clear_comparisons() is None
 
 
 def test_plots():

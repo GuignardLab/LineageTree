@@ -1729,7 +1729,7 @@ class lineageTree:
             k: v
             for k, v in locals().items()
             if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
-        }
+        }  # the plan is to have (frozenset(n1,n2),....) so that we allow collisions of n1,n2 and not the others.
 
         if len(self._comparisons) > 100:
             warnings.warn(
@@ -1985,7 +1985,7 @@ class lineageTree:
         norm: Literal["max", "sum"] | None = "max",
         style="simple",
         downsample: int = 2,
-    ) -> tuple[plt.figure, plt.Axes]:
+    ) -> dict[str, list]:
         """
         Plots the distance graphs of 2 nodes compared.
         !!!TODO make documentation!!!
@@ -2050,9 +2050,6 @@ class lineageTree:
             raise Warning(
                 "Select a viable normalization method (max, sum, None)"
             )
-        matched_right = []
-        matched_left = []
-        unmatched_node = []
         matched = []
         unmatched = []
         if style not in ("full", "downsampled"):
@@ -2061,21 +2058,13 @@ class lineageTree:
                     cyc1 = self.get_cycle(corres1[m._left])
                     if len(cyc1) > 1:
                         node_1, *_, l_node_1 = cyc1
-                        matched_left.append(node_1)
-                        matched_left.append(l_node_1)
                     elif len(cyc1) == 1:
                         node_1 = l_node_1 = cyc1.pop()
-                        matched_left.append(node_1)
-
                     cyc2 = self.get_cycle(corres2[m._right])
                     if len(cyc2) > 1:
                         node_2, *_, l_node_2 = cyc2
-                        matched_right.append(node_2)
-                        matched_right.append(l_node_2)
-
                     elif len(cyc2) == 1:
                         node_2 = l_node_2 = cyc2.pop()
-                        matched_right.append(node_2)
                     matched.append(
                         (
                             self.labels.get(node_1, node_1),
@@ -2088,7 +2077,6 @@ class lineageTree:
                         node_1 = self.get_cycle(corres1.get(m._left, "-"))[0]
                     else:
                         node_1 = self.get_cycle(corres2.get(m._right, "-"))[0]
-                    unmatched_node.append(node_1)
                     unmatched.append(self.labels.get(node_1, node_1))
         else:
             for m in btrc:
