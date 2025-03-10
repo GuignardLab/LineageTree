@@ -3501,7 +3501,7 @@ class lineageTree:
             queue = list(self.roots)
             for node in queue:
                 for succ in self._successor[node]:
-                    self._time[succ] = self.time[node] + 1
+                    self._time[succ] = self._time[node] + 1
                     queue.append(succ)
         else:
             self._time = time
