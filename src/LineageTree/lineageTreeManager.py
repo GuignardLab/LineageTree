@@ -409,6 +409,7 @@ class lineageTreeManager:
         colormap: str = "cool",
         default_color: str = "black",
         size: float = 10,
+        lw: float=0.3,
         ax: list[plt.Axes, plt.Axes] = None,
     ) -> tuple[plt.figure, plt.Axes]:
         """
@@ -438,7 +439,7 @@ class lineageTreeManager:
             The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
         """
 
-        if ax:
+        if any(ax):
             assert len(ax) == 2
         parameters = {
             k: v
@@ -592,6 +593,7 @@ class lineageTreeManager:
             selected_edges=matched_left,
             color_of_edges=colors,
             default_color=default_color,
+            lw=lw,
             ax=ax[0],
         )
         tree2.lT.plot_node(
@@ -603,6 +605,7 @@ class lineageTreeManager:
             selected_edges=matched_right,
             color_of_edges=colors,
             default_color=default_color,
+            lw=lw,
             ax=ax[1],
         )
         return ax[0].get_figure(), ax

@@ -1968,7 +1968,7 @@ class lineageTree:
             The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
         """
 
-        if ax:
+        if any(ax):
             assert len(ax) == 2
         parameters = {
             k: v
