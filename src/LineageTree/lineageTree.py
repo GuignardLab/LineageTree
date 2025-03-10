@@ -1938,6 +1938,7 @@ class lineageTree:
         colormap: str = "cool",
         default_color: str = "black",
         size: float = 10,
+        lw:float=0.3,
         ax: list[plt.Axes, plt.Axes] = None,
     ) -> tuple[plt.figure, plt.Axes]:
         """
@@ -2106,6 +2107,7 @@ class lineageTree:
             selected_edges=matched_left,
             color_of_edges=colors,
             default_color=default_color,
+            lw=lw,
             ax=ax[0],
         )
         self.plot_node(
@@ -2117,6 +2119,7 @@ class lineageTree:
             selected_edges=matched_right,
             color_of_edges=colors,
             default_color=default_color,
+            lw=lw,
             ax=ax[1],
         )
         return ax[0].get_figure(), ax
@@ -2350,6 +2353,7 @@ class lineageTree:
         lnks_tms: dict,
         selected_edges: set,
         color: str | dict,
+        lw:float,
         ax: plt.Axes,
         default_color: str = "black",
         **kwargs,
@@ -2374,7 +2378,7 @@ class lineageTree:
                         c.append(color[pred])
                 else:
                     c.append(default_color)
-        lc = LineCollection(lines, colors=c, linewidth=0.3, **kwargs)
+        lc = LineCollection(lines, colors=c, linewidth=lw, **kwargs)
         ax.add_collection(lc)
 
     def draw_tree_graph(
@@ -2386,6 +2390,7 @@ class lineageTree:
         color_of_nodes: str | dict = "magenta",
         color_of_edges: str | dict = "magenta",
         size: int | float = 10,
+        lw: float=0.1,
         ax: plt.Axes | None = None,
         default_color: str = "black",
         **kwargs,
@@ -2410,6 +2415,8 @@ class lineageTree:
             Color of selected edges
         size : int, default=10
             Size of the nodes
+        lw : float, optional
+            The width of the edges of the tree graph, by default 0.1
         ax : plt.Axes, optional
             Plot the graph on existing ax. Defaults to None.
         default_color : str, default="black"
@@ -2450,6 +2457,7 @@ class lineageTree:
             lnks_tms,
             selected_edges,
             color_of_edges,
+            lw,
             ax,
             default_color=default_color,
             **kwargs,
@@ -2626,6 +2634,7 @@ class lineageTree:
         color_of_nodes: str | dict = "magenta",
         color_of_edges: str | dict = "magenta",
         size: int | float = 10,
+        lw:float = 0.1,
         default_color: str = "black",
         ax: plt.Axes | None = None,
     ) -> tuple[plt.Figure, plt.Axes]:  # type: ignore
@@ -2649,6 +2658,8 @@ class lineageTree:
             The color of the nodes to be colored, except the default colored ones, by default "magenta"
         color_of_edges : str, optional
             The color of the edges to be colored, except the default colored ones,, by default "magenta"
+        lw : float, optional
+            The widthe of the edges of the tree graph, by default 0.1
         size : int, optional
             The size of the nodes, by default 10
         default_color : str, optional
@@ -2687,6 +2698,7 @@ class lineageTree:
             color_of_nodes=color_of_nodes,
             default_color=default_color,
             size=size,
+            lw=lw,
             lnks_tms=graph,
             ax=ax,
         )
