@@ -140,7 +140,7 @@ class lineageTreeManager:
             f.close()
         return ltm
 
-    def __cross_lineage_edit_backtrace(
+    def cross_lineage_edit_distance(
         self,
         n1: int,
         embryo_1: str,
@@ -149,7 +149,6 @@ class lineageTreeManager:
         embryo_2: str,
         end_time2: int,
         style="simple",
-        norm: Literal["max", "sum"] | None = "max",
         downsample: int = 2,
         registration=None,  # will be added as a later feature
     ):
@@ -261,9 +260,7 @@ class lineageTreeManager:
     def __calculate_distance_of_sub_tree(
         self,
         node1,
-        lT1,
         node2,
-        lT2,
         alignment,
         corres1,
         corres2,
@@ -273,8 +270,8 @@ class lineageTreeManager:
         norm2,
     ):
         """Private method that calculates the distance of all subtrees in a specific mapping."""
-        sub_tree_1 = set(lT1.get_sub_tree(node1))
-        sub_tree_2 = set(lT2.get_sub_tree(node2))
+        sub_tree_1 = set(self.get_sub_tree(node1))
+        sub_tree_2 = set(self.get_sub_tree(node2))
         res = 0
         for m in alignment:
             if (
@@ -290,14 +287,11 @@ class lineageTreeManager:
     def clear_comparisons(self):
         self._comparisons.clear()
 
-    def cross_lineage_edit_distance(
+    def __cross_unordereded_backtrace(
         self,
         n1: int,
-        embryo_1: str,
-        end_time1: int,
         n2: int,
-        embryo_2: str,
-        end_time2: int,
+        end_time: int = None,
         norm: Literal["max", "sum"] | None = "max",
         style="simple",
         downsample: int = 2,
@@ -335,30 +329,30 @@ class lineageTreeManager:
         parameters = {
             k: v
             for k, v in locals().items()
-            if k
-            in (
-                "n1",
-                "n2",
-                "end_time1",
-                "end_time2",
-                "embryo_1",
-                "embryo_2",
-                "norm",
-                "style",
-                "downsample",
-            )
+            if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
         }
-        if hash(frozenset(parameters.values())) in self._comparisons:
-            tmp = self._comparisons[hash(frozenset(parameters.values()))]
-        else:
-            tmp = self.__cross_lineage_edit_backtrace(**parameters)
+
         if len(self._comparisons) > 100:
             warnings.warn(
                 "More than 100 comparisons are saved, use clear_comparisons() to delete them.",
                 stacklevel=2,
             )
-        btrc = tmp["alignment"]
-        tree1, tree2 = tmp["trees"]
+        tree = tree_style[style].value
+        tree1 = tree(
+            lT=self,
+            downsample=downsample,
+            end_time=end_time,
+            root=n1,
+            time_scale=1,
+        )
+        tree2 = tree(
+            lT=self,
+            downsample=downsample,
+            end_time=end_time,
+            root=n2,
+            time_scale=1,
+        )
+        delta = tree1.delta
         _, times1 = tree1.tree
         _, times2 = tree2.tree
         (
@@ -378,31 +372,25 @@ class lineageTreeManager:
             }
             return self._comparisons[hash(frozenset(parameters.values()))]
         delta_tmp = partial(
-            tree1.delta,
+            delta,
             corres1=corres1,
             corres2=corres2,
             times1=times1,
             times2=times2,
         )
-        norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
-        if norm is None:
-            norm = "None"
-        if norm not in norm_dict:
-            raise Warning(
-                "Select a viable normalization method (max, sum, None)"
-            )
-        return btrc.cost(nodes1, nodes2, delta_tmp) / norm_dict[norm](
-            tree1.get_norm(n1), tree2.get_norm(n2)
-        )
+        btrc = uted.uted_backtrace(nodes1, adj1, nodes2, adj2, delta=delta_tmp)
+
+        self._comparisons[hash(frozenset(parameters.values()))] = {
+            "alignment": btrc,
+            "trees": (tree1, tree2),
+        }
+        return self._comparisons[hash(frozenset(parameters.values()))]
 
     def plot_tree_distance_graphs(
         self,
         n1: int,
-        embryo_1,
-        end_time1,
         n2: int,
-        embryo_2,
-        end_time2,
+        end_time: int = None,
         norm: Literal["max", "sum"] | None = "max",
         style="simple",
         downsample: int = 2,
@@ -443,23 +431,12 @@ class lineageTreeManager:
         parameters = {
             k: v
             for k, v in locals().items()
-            if k
-            in (
-                "n1",
-                "n2",
-                "end_time1",
-                "end_time2",
-                "embryo_1",
-                "embryo_2",
-                "norm",
-                "style",
-                "downsample",
-            )
+            if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
         }
         if hash(frozenset(parameters.values())) in self._comparisons:
             tmp = self._comparisons[hash(frozenset(parameters.values()))]
         else:
-            tmp = self.__cross_lineage_edit_backtrace(**parameters)
+            tmp = self.__unordereded_backtrace(**parameters)
         btrc = tmp["alignment"]
         tree1, tree2 = tmp["trees"]
         _, times1 = tree1.tree
@@ -490,94 +467,48 @@ class lineageTreeManager:
         matched_left = []
         unmatched_node = []
         colors = {}
-        if style not in ("full", "downsampled"):
-            for m in btrc:
-                if m._left != -1 and m._right != -1:
-                    cyc1 = tree1.lT.get_cycle(corres1[m._left])
-                    if len(cyc1) > 1:
-                        node_1, *_, l_node_1 = cyc1
-                        matched_left.append(node_1)
-                        matched_left.append(l_node_1)
-                    elif len(cyc1) == 1:
-                        node_1 = l_node_1 = cyc1.pop()
-                        matched_left.append(node_1)
+        for m in btrc:
+            if m._left != -1 and m._right != -1:
+                cyc1 = self.get_cycle(corres1[m._left])
+                if len(cyc1) > 1:
+                    node_1, *_, l_node_1 = cyc1
+                    matched_left.append(node_1)
+                    matched_left.append(l_node_1)
+                elif len(cyc1) == 1:
+                    node_1 = l_node_1 = cyc1.pop()
+                    matched_left.append(node_1)
 
-                    cyc2 = tree2.lT.get_cycle(corres2[m._right])
-                    if len(cyc2) > 1:
-                        node_2, *_, l_node_2 = cyc2
-                        matched_right.append(node_2)
-                        matched_right.append(l_node_2)
+                cyc2 = self.get_cycle(corres2[m._right])
+                if len(cyc2) > 1:
+                    node_2, *_, l_node_2 = cyc2
+                    matched_right.append(node_2)
+                    matched_right.append(l_node_2)
 
-                    elif len(cyc2) == 1:
-                        node_2 = l_node_2 = cyc2.pop()
-                        matched_right.append(node_2)
+                elif len(cyc2) == 1:
+                    node_2 = l_node_2 = cyc2.pop()
+                    matched_right.append(node_2)
 
-                    colors[node_1] = self.__calculate_distance_of_sub_tree(
-                        node_1,
-                        tree1.lT,
-                        node_2,
-                        tree2.lT,
-                        btrc,
-                        corres1,
-                        corres2,
-                        delta_tmp,
-                        norm_dict[norm],
-                        tree1.get_norm(node_1),
-                        tree2.get_norm(node_2),
-                    )
-                    colors[node_2] = colors[node_1]
-                    colors[l_node_1] = colors[node_1]
-                    colors[l_node_2] = colors[node_2]
+                colors[node_1] = self.__calculate_distance_of_sub_tree(
+                    node_1,
+                    node_2,
+                    btrc,
+                    corres1,
+                    corres2,
+                    delta_tmp,
+                    norm_dict[norm],
+                    tree1.get_norm(node_1),
+                    tree2.get_norm(node_2),
+                )
+                colors[node_2] = colors[node_1]
+                colors[l_node_1] = colors[node_1]
+                colors[l_node_2] = colors[node_2]
 
-                else:
-                    if m._left != -1:
-                        node_1 = tree1.lT.get_cycle(corres1.get(m._left, "-"))[0]
-                    else:
-                        node_1 = tree2.lT.get_cycle(corres2.get(m._right, "-"))[0]
-                    unmatched_node.append(node_1)
             else:
-                  for m in btrc:
-                    if m._left != -1 and m._right != -1:
-                        node_1 = corres1[m._left]
-                        node_2 = corres2[m._right]
-                        matched_left.append(node_1)
-                        matched_right.append(node_2)
-                        colors[node_1] = self.__calculate_distance_of_sub_tree(
-                            node_1,
-                            tree1.lT,
-                            node_2,
-                            tree2.lT,
-                            btrc,
-                            corres1,
-                            corres2,
-                            delta_tmp,
-                            norm_dict[norm],
-                            tree1.get_norm(node_1),
-                            tree2.get_norm(node_2),
-                        )
-                        colors[node_2] = colors[node_1]
-
-                    else:
-                        if m._left != -1:
-                            node_1 = tree1.lT.get_cycle(corres1.get(m._left, "-"))[0]
-                        else:
-                            node_1 = tree2.lT.get_cycle(corres2.get(m._right, "-"))[0]
-                        unmatched_node.append(node_1)
-                    for br in tree1.lT.get_all_branches_of_node(n1):
-                        col = [colors[node] for node in br if node in colors]
-                        if col:
-                            colors[br[0]] = np.average(col)
-                            matched_left.append(br[0])
-                            colors[br[-1]] = np.average(col)
-                            matched_left.append(br[-1])
-
-                    for br in tree2.lT.get_all_branches_of_node(n2):
-                        col = [colors[node] for node in br if node in colors]
-                        if col:
-                            colors[br[0]] = np.average(col)
-                            matched_right.append(br[0])
-                            colors[br[-1]] = colors[br[0]]
-                            matched_right.append(br[-1])
+                if m._left != -1:
+                    node_1 = self.get_cycle(corres1.get(m._left, "-"))[0]
+                else:
+                    node_1 = self.get_cycle(corres2.get(m._right, "-"))[0]
+                unmatched_node.append(node_1)
         if ax is None:
             fig, ax = plt.subplots(nrows=1, ncols=2)
         cmap = colormaps[colormap]
@@ -607,23 +538,15 @@ class lineageTreeManager:
         )
         return ax[0].get_figure(), ax
 
-
     def labelled_mappings(
         self,
         n1: int,
-        embryo_1,
-        end_time1,
         n2: int,
-        embryo_2,
-        end_time2,
+        end_time: int = None,
         norm: Literal["max", "sum"] | None = "max",
         style="simple",
         downsample: int = 2,
-        colormap: str = "cool",
-        default_color: str = "black",
-        size: float = 10,
-        ax: list[plt.Axes, plt.Axes] = None,
-    ) -> dict[str, list]:
+    ) -> tuple[plt.figure, plt.Axes]:
         """
         Plots the distance graphs of 2 nodes compared.
         !!!TODO make documentation!!!
@@ -650,39 +573,28 @@ class lineageTreeManager:
         Alignment
             The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
         """
-
-        if ax:
-            assert len(ax) == 2
         parameters = {
             k: v
             for k, v in locals().items()
-            if k
-            in (
-                "n1",
-                "n2",
-                "end_time1",
-                "end_time2",
-                "embryo_1",
-                "embryo_2",
-                "norm",
-                "style",
-                "downsample",
-            )
+            if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
         }
+
         if hash(frozenset(parameters.values())) in self._comparisons:
             tmp = self._comparisons[hash(frozenset(parameters.values()))]
         else:
-            tmp = self.__cross_lineage_edit_backtrace(**parameters)
+            tmp = self.__unordereded_backtrace(**parameters)
         btrc = tmp["alignment"]
         tree1, tree2 = tmp["trees"]
         _, times1 = tree1.tree
         _, times2 = tree2.tree
         (
-            *_,
+            nodes1,
+            adj1,
             corres1,
         ) = tree1.edist
         (
-            *_,
+            nodes2,
+            adj2,
             corres2,
         ) = tree2.edist
         delta_tmp = partial(
@@ -699,49 +611,46 @@ class lineageTreeManager:
             raise Warning(
                 "Select a viable normalization method (max, sum, None)"
             )
+        matched_right = []
+        matched_left = []
+        unmatched_node = []
         matched = []
         unmatched = []
-        colors = {}
-        if style not in ("full", "downsampled"):
-            for m in btrc:
-                if m._left != -1 and m._right != -1:
-                    cyc1 = tree1.lT.get_cycle(corres1[m._left])
-                    if len(cyc1) > 1:
-                        node_1, *_, l_node_1 = cyc1
-                    elif len(cyc1) == 1:
-                        node_1 = l_node_1 = cyc1.pop()
+        for m in btrc:
+            if m._left != -1 and m._right != -1:
+                cyc1 = self.get_cycle(corres1[m._left])
+                if len(cyc1) > 1:
+                    node_1, *_, l_node_1 = cyc1
+                    matched_left.append(node_1)
+                    matched_left.append(l_node_1)
+                elif len(cyc1) == 1:
+                    node_1 = l_node_1 = cyc1.pop()
+                    matched_left.append(node_1)
 
-                    cyc2 = tree2.lT.get_cycle(corres2[m._right])
-                    if len(cyc2) > 1:
-                        node_2, *_, l_node_2 = cyc2
+                cyc2 = self.get_cycle(corres2[m._right])
+                if len(cyc2) > 1:
+                    node_2, *_, l_node_2 = cyc2
+                    matched_right.append(node_2)
+                    matched_right.append(l_node_2)
 
-                    elif len(cyc2) == 1:
-                        node_2 = l_node_2 = cyc2.pop()
+                elif len(cyc2) == 1:
+                    node_2 = l_node_2 = cyc2.pop()
+                    matched_right.append(node_2)
+                matched.append(
+                    (
+                        self.labels.get(node_1, node_1),
+                        self.labels.get(node_2, node_2),
+                    )
+                )
 
-                    matched.append((tree1.lT.labels.get(node_1,node_1),tree2.lT.labels.get(node_2,node_2)))
-                else:
-                    if m._left != -1:
-                        tmp_node = tree1.lT.get_cycle(corres1.get(m._left, "-"))[0]
-                        node_1 = tree1.lT.labels.get(tmp_node,tmp_node)
-                    else:
-                        tmp_node = tree2.lT.get_cycle(corres2.get(m._right, "-"))[0]
-                        node_1 = tree2.lT.labels.get(tmp_node, tmp_node)
-                    unmatched.append(node_1)
             else:
-                  for m in btrc:
-                    if m._left != -1 and m._right != -1:
-                        node_1 = corres1[m._left]
-                        node_2 = corres2[m._right]
-                        matched.append((tree1.lT.labels.get(node_1,node_1),
-                                        tree2.lT.labels.get(node_2,node_2)))
-                    else:
-                        if m._left != -1:
-                            tmp_node = tree1.lT.get_cycle(corres1.get(m._left, "-"))[0]
-                            node_1 = tree1.lT.labels.get(tmp_node,tmp_node)
-                        else:
-                            tmp_node = tree2.lT.get_cycle(corres2.get(m._right, "-"))[0]
-                            node_1 = tree2.lT.labels.get(tmp_node,tmp_node)
-        return {"matched":matched, "unmatched":unmatched}
+                if m._left != -1:
+                    node_1 = self.get_cycle(corres1.get(m._left, "-"))[0]
+                else:
+                    node_1 = self.get_cycle(corres2.get(m._right, "-"))[0]
+                unmatched_node.append(node_1)
+                unmatched.append(self.labels.get(node_1, node_1))
+        return {"matched": matched, "unmatched": unmatched}
 
     def unordered_tree_edit_distance(
         self,
