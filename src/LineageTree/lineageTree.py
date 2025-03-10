@@ -2023,7 +2023,7 @@ class lineageTree:
         return ax.get_figure(), ax
 
     def to_simple_graph(
-        self, node: int = None, start_time: int = None
+        self, node: int = None, start_time: int = None, end_time:int|None=None
     ) -> dict[int, dict]:
         """Generates a dictionary of graphs where the keys are the index of the graph and
         the values are the graphs themselves which are produced by `create_links_and_cycles`
@@ -2035,6 +2035,10 @@ class lineageTree:
         start_time : int, optional
             Important only if there are no nodes it will produce the graph of every
             root that starts before or at start time. Defaults to None.
+        end_time : int, None, optional
+            The last timepoint to be considered, if None the last timepoint of the 
+            dataset (t_e) is considered, by default None.
+       
 
         Returns
         -------
@@ -2050,7 +2054,7 @@ class lineageTree:
         else:
             mothers = node if isinstance(node, list | set) else [node]
         return {
-            i: create_links_and_cycles(self, mother)
+            i: create_links_and_cycles(self, mother, end_time=end_time)
             for i, mother in enumerate(mothers)
         }
 
@@ -2177,6 +2181,7 @@ class lineageTree:
     def plot_node(
         self,
         node: int,
+        end_time:int|None=None,
         figsize: tuple[int, int] = (4, 7),  # type: ignore
         dpi: int = 150,
         vert_gap: int = 2,
@@ -2194,8 +2199,10 @@ class lineageTree:
         ----------
         node : int
                 The id of the node that is going to be plotted.
+        end_time : int, None, optional
+            The last timepoint to be considered, if None the last timepoint of the dataset (t_e) is considered, by default None.
         figsize : tuple[int, int], optional
-                The size of the figure, by deafult (4,7).
+            The size of the figure, by deafult (4,7).
         vert_gap : int, optional
             The dpi of the figure, by default 2
         selected_nodes : list | None, optional
@@ -2223,7 +2230,7 @@ class lineageTree:
         Warning
             If more than one nodes are received
         """
-        graph = self.to_simple_graph(node)
+        graph = self.to_simple_graph(node, end_time=end_time)
         if len(graph) > 1:
             raise Warning(
                 "Please use lT.plot_all_lineages(nodes) for plotting multiple nodes."

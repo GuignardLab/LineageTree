@@ -2,7 +2,7 @@
 from LineageTree import lineageTree
 
 
-def create_links_and_cycles(lT: lineageTree, roots=None) -> dict[str, dict]:
+def create_links_and_cycles(lT: lineageTree, roots=None,end_time:int|None=None) -> dict[str, dict]:
     """Generates a dictionary containing all the edges (from start of lifetime to end not the intermediate timepoints)
       of a subtree spawned by node/s and their duration
 
@@ -11,8 +11,10 @@ def create_links_and_cycles(lT: lineageTree, roots=None) -> dict[str, dict]:
     ----------
     lT : lineageTree
         The lineagetree that the user is working on
-    roots : _type_, optional
+    roots : int | Iterable, optional
         The root/s from which the tree/s will be generated, by default None
+    end_time : int, None, optional
+        The last timepoint to be considered, if None the last timepoint of the dataset (t_e) is considered, by default None.
 
     Returns
     -------
@@ -30,17 +32,18 @@ def create_links_and_cycles(lT: lineageTree, roots=None) -> dict[str, dict]:
     links = {}
     while to_do:
         curr = to_do.pop()
-        cyc = lT.get_successors(curr)
-        last = cyc[-1]
-        times[curr] = len(cyc)
-        if last != curr:
-            links[curr] = [last]
-        else:
-            links[curr] = []
-        succ = lT._successor.get(last)
-        if succ:
-            times[cyc[-1]] = 0
-            to_do.update(succ)
+        cyc = lT.get_successors(curr, end_time=end_time)
+        if  cyc[-1] !=curr:
+            last = cyc[-1]
+            times[curr] = len(cyc)
+            if last != curr:
+                links[curr] = [last]
+            else:
+                links[curr] = []
+            succ = lT._successor.get(last)
+            if succ:
+                times[cyc[-1]] = 0
+                to_do.update(succ)
             links[last] = succ
     return {"links": links, "times": times, "root": roots}
 
