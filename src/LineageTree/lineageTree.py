@@ -15,9 +15,10 @@ from numbers import Number
 from types import MappingProxyType
 from typing import Literal
 
-import matplotlib.colors as mcolors
 import svgwrite
 from matplotlib.collections import LineCollection
+from matplotlib import colormaps
+import matplotlib.colors as mcolors
 from packaging.version import Version
 
 from .tree_styles import tree_style
@@ -1621,7 +1622,7 @@ class lineageTree:
             sorted eigenvectors (3,)
         """
         time_nodes = {
-            t: len(self.nodes_at_t(t)) for t in range(self.t_b, self.t_e)
+            t: len(self.nodes_at_t(t)) for t in range(self.t_b, self._te)
         }
         if time is None:
             time = max(time_nodes, key=lambda x: len(time_nodes[x]))
@@ -3037,11 +3038,11 @@ class lineageTree:
                     self._predecessor[succ] = (pred,)
                     self._successor.setdefault(pred, ())
                     self._successor[pred] += (succ,)
-        # else:
-        #     warnings.warn(
-        #         "Both successor and predecessor attributes are empty.", # I got sick from getting this wanring 10000 times
-        #         stacklevel=2,
-        #     )
+        else:
+            warnings.warn(
+                "Both successor and predecessor attributes are empty.",
+                stacklevel=2,
+            )
         for root in set(self._successor).difference(self._predecessor):
             self._predecessor[root] = ()
         for leaf in set(self._predecessor).difference(self._successor):
