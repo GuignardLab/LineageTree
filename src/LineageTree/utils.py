@@ -28,12 +28,14 @@ def create_links_and_cycles(lT: lineageTree, roots=None,end_time:int|None=None) 
         to_do = set(roots)
     else:
         to_do = {int(roots)}
+    if end_time is None:
+        end_time = lT.t_e
     times = {}
     links = {}
     while to_do:
         curr = to_do.pop()
         cyc = lT.get_successors(curr, end_time=end_time)
-        if  cyc[-1] !=curr:
+        if cyc[-1] !=curr or lT.time[cyc[-1]] <=  end_time:
             last = cyc[-1]
             times[curr] = len(cyc)
             if last != curr:

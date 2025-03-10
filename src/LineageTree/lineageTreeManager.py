@@ -585,6 +585,7 @@ class lineageTreeManager:
         colors = {c: cmap(c_norm(v)) for c, v in colors.items()}
         tree1.lT.plot_node(
             tree1.lT.get_ancestor_at_t(n1),
+            end_time=end_time1,
             size=size,
             selected_nodes=matched_left,
             color_of_nodes=colors,
@@ -595,6 +596,7 @@ class lineageTreeManager:
         )
         tree2.lT.plot_node(
             tree2.lT.get_ancestor_at_t(n2),
+            end_time=end_time2,
             size=size,
             selected_nodes=matched_right,
             color_of_nodes=colors,

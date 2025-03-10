@@ -2098,6 +2098,7 @@ class lineageTree:
         colors = {c: cmap(c_norm(v)) for c, v in colors.items()}
         self.plot_node(
             self.get_ancestor_at_t(n1),
+            end_time=end_time,
             size=size,
             selected_nodes=matched_left,
             color_of_nodes=colors,
@@ -2108,6 +2109,7 @@ class lineageTree:
         )
         self.plot_node(
             self.get_ancestor_at_t(n2),
+            end_time=end_time,
             size=size,
             selected_nodes=matched_right,
             color_of_nodes=colors,
