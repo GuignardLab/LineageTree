@@ -722,10 +722,10 @@ class lineageTreeManager:
                 else:
                     if m._left != -1:
                         tmp_node = tree1.lT.get_cycle(corres1.get(m._left, "-"))[0]
-                        node_1 = tree1.lT.labels.get(tmp_node,tmp_node)
+                        node_1 =( tree1.lT.labels.get(tmp_node,tmp_node), tree1.lT.name)
                     else:
                         tmp_node = tree2.lT.get_cycle(corres2.get(m._right, "-"))[0]
-                        node_1 = tree2.lT.labels.get(tmp_node, tmp_node)
+                        node_1 = (tree2.lT.labels.get(tmp_node,tmp_node), tree2.lT.name)
                     unmatched.append(node_1)
             else:
                   for m in btrc:
@@ -737,10 +737,11 @@ class lineageTreeManager:
                     else:
                         if m._left != -1:
                             tmp_node = tree1.lT.get_cycle(corres1.get(m._left, "-"))[0]
-                            node_1 = tree1.lT.labels.get(tmp_node,tmp_node)
+                            node_1 =( tree1.lT.labels.get(tmp_node,tmp_node), tree1.lT.name)
                         else:
                             tmp_node = tree2.lT.get_cycle(corres2.get(m._right, "-"))[0]
-                            node_1 = tree2.lT.labels.get(tmp_node,tmp_node)
+                            node_1 = (tree2.lT.labels.get(tmp_node,tmp_node), tree2.lT.name)
+                        unmatched.append(node_1)
         return {"matched":matched, "unmatched":unmatched}
 
     def unordered_tree_edit_distance(

@@ -515,18 +515,19 @@ class lineageTree:
     @property
     def labels(self) -> dict[int, str]:
         """The labels of the nodes."""
-        if hasattr(self, "cell_name"):
-            self._labels = {
-                i: self.cell_name.get(i, "Unlabeled") for i in self.roots
-            }
-        else:
-            self._labels = {
-                root: "Unlabeled"
-                for root in self.roots
-                for leaf in self.find_leaves(root)
-                if abs(self._time[leaf] - self._time[root])
-                >= abs(self.t_e - self.t_b) / 4
-            }
+        if not hasattr(self, "_labels"):
+            if hasattr(self, "cell_name"):
+                self._labels = {
+                    i: self.cell_name.get(i, "Unlabeled") for i in self.roots
+                }
+            else:
+                self._labels = {
+                    root: "Unlabeled"
+                    for root in self.roots
+                    for leaf in self.find_leaves(root)
+                    if abs(self._time[leaf] - self._time[root])
+                    >= abs(self.t_e - self.t_b) / 4
+                }
         return self._labels
 
     @property
