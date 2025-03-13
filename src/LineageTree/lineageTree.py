@@ -1994,7 +1994,7 @@ class lineageTree:
     def plot_node(
         self,
         node: int,
-        figsize: tuple[int, int] = (4, 7),  # type: ignore
+        figsize: tuple[int, int] = (4, 7),
         dpi: int = 150,
         vert_gap: int = 2,
         selected_nodes: list | None = None,
@@ -2004,7 +2004,7 @@ class lineageTree:
         size: int | float = 10,
         default_color: str = "black",
         ax: plt.Axes | None = None,
-    ) -> tuple[plt.Figure, plt.Axes]:  # type: ignore
+    ) -> tuple[plt.Figure, plt.Axes]:
         """Plots the subtree spawn by a node.
 
         Parameters
