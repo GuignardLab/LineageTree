@@ -1968,8 +1968,6 @@ class lineageTree:
             The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
         """
 
-        if any(ax):
-            assert len(ax) == 2
         parameters = {
             k: v
             for k, v in locals().items()
@@ -2327,7 +2325,7 @@ class lineageTree:
     def __plot_nodes(
         hier: dict,
         selected_nodes: set,
-        color: str | dict,
+        color: str | dict|list,
         size: int,
         ax: plt.Axes,
         default_color: str = "black",
@@ -2339,7 +2337,7 @@ class lineageTree:
 
         if isinstance(color, dict):
             color = [color.get(k, default_color) for k in hier]
-        elif isinstance(color, str):
+        elif isinstance(color, str|list):
             color = [
                 color if node in selected_nodes else default_color
                 for node in hier
@@ -2352,7 +2350,7 @@ class lineageTree:
         hier: dict,
         lnks_tms: dict,
         selected_edges: set,
-        color: str | dict,
+        color: str | dict|list,
         lw:float,
         ax: plt.Axes,
         default_color: str = "black",
@@ -2372,7 +2370,7 @@ class lineageTree:
                     ]
                 )
                 if pred in selected_edges:
-                    if isinstance(color, str):
+                    if isinstance(color, str|list):
                         c.append(color)
                     elif isinstance(color, dict):
                         c.append(color[pred])
@@ -2390,7 +2388,7 @@ class lineageTree:
         color_of_nodes: str | dict = "magenta",
         color_of_edges: str | dict = "magenta",
         size: int | float = 10,
-        lw: float=0.1,
+        lw: float=0.3,
         ax: plt.Axes | None = None,
         default_color: str = "black",
         **kwargs,

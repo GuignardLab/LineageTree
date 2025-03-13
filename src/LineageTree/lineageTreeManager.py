@@ -392,7 +392,7 @@ class lineageTreeManager:
                 "Select a viable normalization method (max, sum, None)"
             )
         return btrc.cost(nodes1, nodes2, delta_tmp) / norm_dict[norm](
-            tree1.get_norm(n1), tree2.get_norm(n2)
+            [tree1.get_norm(n1), tree2.get_norm(n2)]
         )
 
     def plot_tree_distance_graphs(
@@ -439,8 +439,6 @@ class lineageTreeManager:
             The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
         """
 
-        if any(ax):
-            assert len(ax) == 2
         parameters = {
             k: v
             for k, v in locals().items()
@@ -536,49 +534,49 @@ class lineageTreeManager:
                     else:
                         node_1 = tree2.lT.get_cycle(corres2.get(m._right, "-"))[0]
                     unmatched_node.append(node_1)
-            else:
-                  for m in btrc:
-                    if m._left != -1 and m._right != -1:
-                        node_1 = corres1[m._left]
-                        node_2 = corres2[m._right]
-                        matched_left.append(node_1)
-                        matched_right.append(node_2)
-                        colors[node_1] = self.__calculate_distance_of_sub_tree(
-                            node_1,
-                            tree1.lT,
-                            node_2,
-                            tree2.lT,
-                            btrc,
-                            corres1,
-                            corres2,
-                            delta_tmp,
-                            norm_dict[norm],
-                            tree1.get_norm(node_1),
-                            tree2.get_norm(node_2),
-                        )
-                        colors[node_2] = colors[node_1]
+        else:
+            for m in btrc:
+                if m._left != -1 and m._right != -1:
+                    node_1 = corres1[m._left]
+                    node_2 = corres2[m._right]
+                    matched_left.append(node_1)
+                    matched_right.append(node_2)
+                    colors[node_1] = self.__calculate_distance_of_sub_tree(
+                        node_1,
+                        tree1.lT,
+                        node_2,
+                        tree2.lT,
+                        btrc,
+                        corres1,
+                        corres2,
+                        delta_tmp,
+                        norm_dict[norm],
+                        tree1.get_norm(node_1),
+                        tree2.get_norm(node_2),
+                    )
+                    colors[node_2] = colors[node_1]
 
+                else:
+                    if m._left != -1:
+                        node_1 = tree1.lT.get_cycle(corres1.get(m._left, "-"))[0]
                     else:
-                        if m._left != -1:
-                            node_1 = tree1.lT.get_cycle(corres1.get(m._left, "-"))[0]
-                        else:
-                            node_1 = tree2.lT.get_cycle(corres2.get(m._right, "-"))[0]
-                        unmatched_node.append(node_1)
-                    for br in tree1.lT.get_all_branches_of_node(n1):
-                        col = [colors[node] for node in br if node in colors]
-                        if col:
-                            colors[br[0]] = np.average(col)
-                            matched_left.append(br[0])
-                            colors[br[-1]] = np.average(col)
-                            matched_left.append(br[-1])
+                        node_1 = tree2.lT.get_cycle(corres2.get(m._right, "-"))[0]
+                    unmatched_node.append(node_1)
+                for br in tree1.lT.get_all_branches_of_node(n1):
+                    col = [colors[node] for node in br if node in colors]
+                    if col:
+                        colors[br[0]] = np.average(col)
+                        matched_left.append(br[0])
+                        colors[br[-1]] = np.average(col)
+                        matched_left.append(br[-1])
 
-                    for br in tree2.lT.get_all_branches_of_node(n2):
-                        col = [colors[node] for node in br if node in colors]
-                        if col:
-                            colors[br[0]] = np.average(col)
-                            matched_right.append(br[0])
-                            colors[br[-1]] = colors[br[0]]
-                            matched_right.append(br[-1])
+                for br in tree2.lT.get_all_branches_of_node(n2):
+                    col = [colors[node] for node in br if node in colors]
+                    if col:
+                        colors[br[0]] = np.average(col)
+                        matched_right.append(br[0])
+                        colors[br[-1]] = colors[br[0]]
+                        matched_right.append(br[-1])
         if ax is None:
             fig, ax = plt.subplots(nrows=1, ncols=2)
         cmap = colormaps[colormap]
@@ -730,7 +728,7 @@ class lineageTreeManager:
                         tmp_node = tree2.lT.get_cycle(corres2.get(m._right, "-"))[0]
                         node_1 = (tree2.lT.labels.get(tmp_node,tmp_node), tree2.lT.name)
                     unmatched.append(node_1)
-            else:
+        else:
                   for m in btrc:
                     if m._left != -1 and m._right != -1:
                         node_1 = corres1[m._left]
@@ -747,81 +745,4 @@ class lineageTreeManager:
                         unmatched.append(node_1)
         return {"matched":matched, "unmatched":unmatched}
 
-    def unordered_tree_edit_distance(
-        self,
-        n1: int,
-        n2: int,
-        end_time: int = None,
-        norm: Literal["max", "sum"] | None = "max",
-        style="simple",
-        downsample: int = 2,
-    ) -> float:
-        """
-        Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
-        by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
-        cost is given by the function delta (see edist doc for more information).
-        The distance is normed by the function norm that takes the two list of nodes
-        spawned by the trees `n1` and `n2`.
-
-        Parameters
-        ----------
-        n1 : int
-            id of the first node to compare
-        n2 : int
-            id of the second node to compare
-        end_time : int
-            The final time point the comparison algorithm will take into account.
-            If None all nodes will be taken into account.
-        norm : {"max", "sum"}, default="max"
-            The normalization method to use.
-        style : {"simple", "full", "downsampled"}, default="simple"
-            Which tree approximation is going to be used for the comparisons.
-        downsample : int, default=2
-            The downsample factor for the downsampled tree approximation.
-            Used only when `style="downsampled"`.
-
-        Returns
-        -------
-        float
-            The normed unordered tree edit distance between `n1` and `n2`
-        """
-        parameters = {
-            k: v
-            for k, v in locals().items()
-            if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
-        }
-        if hash(frozenset(parameters.values())) in self._comparisons:
-            tmp = self._comparisons[hash(frozenset(parameters.values()))]
-        else:
-            tmp = self.__unordereded_backtrace(**parameters)
-        btrc = tmp["alignment"]
-        tree1, tree2 = tmp["trees"]
-        _, times1 = tree1.tree
-        _, times2 = tree2.tree
-        (
-            nodes1,
-            adj1,
-            corres1,
-        ) = tree1.edist
-        (
-            nodes2,
-            adj2,
-            corres2,
-        ) = tree2.edist
-        delta_tmp = partial(
-            tree1.delta,
-            corres1=corres1,
-            corres2=corres2,
-            times1=times1,
-            times2=times2,
-        )
-        norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
-        if norm is None:
-            norm = "None"
-        if norm not in norm_dict:
-            raise Warning(
-                "Select a viable normalization method (max, sum, None)"
-            )
-        return btrc.cost(nodes1, nodes2, delta_tmp) / norm_dict[norm](
-            [tree1.get_norm(n1), tree2.get_norm(n2)]
-        )
+ 
