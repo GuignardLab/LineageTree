@@ -2034,9 +2034,10 @@ class lineageTree:
 
         Returns
         -------
-        tuple[plt.Figure, plt.Axes]
-            _description_
-
+        plt.Figure
+                The figure
+        plt.Axes
+            The axes
         Raises
         ------
         Warning
