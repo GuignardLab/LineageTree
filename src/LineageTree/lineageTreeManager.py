@@ -45,6 +45,17 @@ class lineageTreeManager:
     def __next__(self):
         self.lineageTree_counter += 1
         return self.lineageTree_counter - 1
+    def __len__(self):
+        return len(self.lineagetrees)
+    
+    def __iter__(self,):
+        yield from self.lineagetrees.items()
+
+    def __getitem__(self,key):
+        if key in self.lineagetrees:
+            return self.lineagetrees
+        else:
+            raise KeyError(f"'{key}' not foun in the manager")
 
     @property
     def gcd(self):
