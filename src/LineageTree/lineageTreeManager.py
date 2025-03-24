@@ -446,8 +446,10 @@ class lineageTreeManager:
 
         Returns
         -------
-        Alignment
-            The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
+        plt.figure
+            The figure of the tree distance graph
+        plt.Axes
+            The axes of the tree distance graph
         """
 
         parameters = {
@@ -566,7 +568,6 @@ class lineageTreeManager:
                         tree2.get_norm(node_2),
                     )
                     colors[node_2] = colors[node_1]
-
                 else:
                     if m._left != -1:
                         node_1 = tree1.lT.get_cycle(corres1.get(m._left, "-"))[0]

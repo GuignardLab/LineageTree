@@ -205,15 +205,15 @@ def test_cross_comparison():
         )
         < 1
     )
-    # assert lTm1.plot_tree_distance_graphs(
-    #         t1,
-    #         "embryo_1",
-    #         100,
-    #         t2,
-    #         "embryo_2",
-    #         100,
-    #         style="full",
-    #     )
+    assert lTm1.plot_tree_distance_graphs(
+            t1,
+            "embryo_1",
+            100,
+            t2,
+            "embryo_2",
+            100,
+            style="full",
+        )
     assert lTm1.plot_tree_distance_graphs(
             t1,
             "embryo_1",

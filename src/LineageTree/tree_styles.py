@@ -311,7 +311,46 @@ class full_tree(abstract_trees):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.edist[2].update(self.corres_added_nodes)
+
+    def _edist_format(self, adj_dict: dict):
+        """Formating the custom tree style to the format needed by edist.
+        .. warning:: Modifying this function might break your code.
+
+        Parameters
+        ----------
+            adj_dict : dict
+                _description_
+
+        Returns
+        -------
+            _type_
+                _description_
+        """
+        inv_adj = {vi: k for k, v in adj_dict.items() for vi in v}
+        roots = set(adj_dict).difference(inv_adj)
+        nid2list = {}
+        list2nid = {}
+        nodes = []
+        adj_list = []
+        curr_id = 0
+        to_update={}
+        for r in roots:
+            to_do = [r]
+            while to_do:
+                curr = to_do.pop(0)
+                nid2list[curr] = curr_id
+                list2nid[curr_id] = curr
+                if curr in self.corres_added_nodes:
+                    to_update[curr_id] = self.corres_added_nodes[curr]
+                nodes.append(curr_id)
+                to_do = adj_dict.get(curr, []) + to_do
+                curr_id += 1
+            adj_list = [
+                [nid2list[d] for d in adj_dict.get(list2nid[_id], [])]
+                for _id in nodes
+            ]
+            list2nid.update(to_update)
+        return nodes, adj_list, list2nid
 
     def get_tree(self) -> tuple[dict, dict]:
         self.out_dict = {}
@@ -340,7 +379,7 @@ class full_tree(abstract_trees):
                         current = int(next_id)
                         self.corres_added_nodes[current] = tmp_cur
                 self.out_dict[current] = []
-        self.times = {n_id: 1 for n_id in self.out_dict}
+        # self.times = {n_id: 1 for n_id in self.out_dict}
         return self.out_dict, self.times
 
     def get_norm(self, root) -> int:
