@@ -2297,9 +2297,8 @@ class lineageTree:
             Important only if there are no nodes it will produce the graph of every
             root that starts before or at start time. Defaults to None.
         end_time : int, None, optional
-            The last timepoint to be considered, if None the last timepoint of the 
+            The last timepoint to be considered, if None the last timepoint of the
             dataset (t_e) is considered, by default None.
-       
 
         Returns
         -------

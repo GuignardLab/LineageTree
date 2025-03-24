@@ -283,6 +283,6 @@ def test_removing_embryos_from_manager():
     lTm1.add(lT_2, name="embryo_2")
     lTm1.remove_embryo("embryo_1")
     assert len(lTm1.lineagetrees) == 1
-    for k,e in lTm1:
+    for k,_e in lTm1:
         assert k == "embryo_2"
     assert lTm1["embryo_2"]

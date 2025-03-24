@@ -3,8 +3,7 @@ import pickle as pkl
 import warnings
 from collections.abc import Callable
 from functools import partial
-from itertools import combinations
-from typing import Callable, Literal
+from typing import Literal
 
 import matplotlib.colors as mcolors
 import numpy as np
@@ -20,8 +19,6 @@ except ImportError:
         stacklevel=2,
     )
 import matplotlib.pyplot as plt
-import numpy as np
-
 
 try:
     from edist import uted
@@ -31,8 +28,6 @@ except ImportError:
         stacklevel=2,
     )
 from LineageTree import lineageTree
-
-from .tree_styles import tree_style
 
 
 class lineageTreeManager:
@@ -47,7 +42,7 @@ class lineageTreeManager:
         return self.lineageTree_counter - 1
     def __len__(self):
         return len(self.lineagetrees)
-    
+
     def __iter__(self,):
         yield from self.lineagetrees.items()
 
@@ -757,4 +752,3 @@ class lineageTreeManager:
                         unmatched.append(node_1)
         return {"matched":matched, "unmatched":unmatched}
 
- 

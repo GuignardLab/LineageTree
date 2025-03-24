@@ -379,7 +379,6 @@ class full_tree(abstract_trees):
                         current = int(next_id)
                         self.corres_added_nodes[current] = tmp_cur
                 self.out_dict[current] = []
-        # self.times = {n_id: 1 for n_id in self.out_dict}
         return self.out_dict, self.times
 
     def get_norm(self, root) -> int:
