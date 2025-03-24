@@ -1,7 +1,9 @@
 from LineageTree import lineageTree
 
 
-def create_links_and_cycles(lT: lineageTree, roots=None,end_time:int|None=None) -> dict[str, dict]:
+def create_links_and_cycles(
+    lT: lineageTree, roots=None, end_time: int | None = None
+) -> dict[str, dict]:
     """Generates a dictionary containing all the edges (from start of lifetime to end not the intermediate timepoints)
       of a subtree spawned by node/s and their duration
 
@@ -34,7 +36,7 @@ def create_links_and_cycles(lT: lineageTree, roots=None,end_time:int|None=None) 
     while to_do:
         curr = to_do.pop()
         cyc = lT.get_successors(curr, end_time=end_time)
-        if cyc[-1] !=curr or lT.time[cyc[-1]] <=  end_time:
+        if cyc[-1] != curr or lT.time[cyc[-1]] <= end_time:
             last = cyc[-1]
             times[curr] = len(cyc)
             if last != curr:

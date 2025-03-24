@@ -206,43 +206,43 @@ def test_cross_comparison():
         < 1
     )
     assert lTm1.plot_tree_distance_graphs(
-            t1,
-            "embryo_1",
-            100,
-            t2,
-            "embryo_2",
-            100,
-            style="full",
-        )
+        t1,
+        "embryo_1",
+        100,
+        t2,
+        "embryo_2",
+        100,
+        style="full",
+    )
     assert lTm1.plot_tree_distance_graphs(
-            t1,
-            "embryo_1",
-            100,
-            t2,
-            "embryo_2",
-            100,
-            style="simple",
-        )
+        t1,
+        "embryo_1",
+        100,
+        t2,
+        "embryo_2",
+        100,
+        style="simple",
+    )
     assert lTm1.labelled_mappings(
-            t1,
-            "embryo_1",
-            100,
-            t2,
-            "embryo_2",
-            100,
-            style="full",
-        )
+        t1,
+        "embryo_1",
+        100,
+        t2,
+        "embryo_2",
+        100,
+        style="full",
+    )
     assert lTm1.labelled_mappings(
-            t1,
-            "embryo_1",
-            100,
-            t2,
-            "embryo_2",
-            100,
-            style="simple",
-        )
+        t1,
+        "embryo_1",
+        100,
+        t2,
+        "embryo_2",
+        100,
+        style="simple",
+    )
     lTm1.clear_comparisons()
-    assert  lTm1._comparisons == {}
+    assert lTm1._comparisons == {}
 
 
 def test_plots():
@@ -283,6 +283,6 @@ def test_removing_embryos_from_manager():
     lTm1.add(lT_2, name="embryo_2")
     lTm1.remove_embryo("embryo_1")
     assert len(lTm1.lineagetrees) == 1
-    for k,_e in lTm1:
+    for k, _e in lTm1:
         assert k == "embryo_2"
     assert lTm1["embryo_2"]

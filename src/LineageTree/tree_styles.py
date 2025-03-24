@@ -270,7 +270,15 @@ class downsample_tree(abstract_trees):
         return self.out_dict, self.times
 
     def get_norm(self, root) -> float:  ###Temporary###
-        return len(downsample_tree(lT=self.lT,root=root,downsample=self.downsample,end_time=self.end_time,time_scale=self.time_scale).out_dict)
+        return len(
+            downsample_tree(
+                lT=self.lT,
+                root=root,
+                downsample=self.downsample,
+                end_time=self.end_time,
+                time_scale=self.time_scale,
+            ).out_dict
+        )
 
     def delta(self, x, y, corres1, corres2, times1, times2):
         if x is None and y is None:
@@ -333,7 +341,7 @@ class full_tree(abstract_trees):
         nodes = []
         adj_list = []
         curr_id = 0
-        to_update={}
+        to_update = {}
         for r in roots:
             to_do = [r]
             while to_do:

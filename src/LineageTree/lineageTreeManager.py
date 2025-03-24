@@ -40,13 +40,16 @@ class lineageTreeManager:
     def __next__(self):
         self.lineageTree_counter += 1
         return self.lineageTree_counter - 1
+
     def __len__(self):
         return len(self.lineagetrees)
 
-    def __iter__(self,):
+    def __iter__(
+        self,
+    ):
         yield from self.lineagetrees.items()
 
-    def __getitem__(self,key):
+    def __getitem__(self, key):
         if key in self.lineagetrees:
             return self.lineagetrees
         else:
@@ -415,7 +418,7 @@ class lineageTreeManager:
         colormap: str = "cool",
         default_color: str = "black",
         size: float = 10,
-        lw: float=0.3,
+        lw: float = 0.3,
         ax: list[plt.Axes, plt.Axes] = None,
     ) -> tuple[plt.figure, plt.Axes]:
         """
@@ -538,9 +541,13 @@ class lineageTreeManager:
 
                 else:
                     if m._left != -1:
-                        node_1 = tree1.lT.get_cycle(corres1.get(m._left, "-"))[0]
+                        node_1 = tree1.lT.get_cycle(corres1.get(m._left, "-"))[
+                            0
+                        ]
                     else:
-                        node_1 = tree2.lT.get_cycle(corres2.get(m._right, "-"))[0]
+                        node_1 = tree2.lT.get_cycle(
+                            corres2.get(m._right, "-")
+                        )[0]
                     unmatched_node.append(node_1)
         else:
             for m in btrc:
@@ -565,9 +572,13 @@ class lineageTreeManager:
                     colors[node_2] = colors[node_1]
                 else:
                     if m._left != -1:
-                        node_1 = tree1.lT.get_cycle(corres1.get(m._left, "-"))[0]
+                        node_1 = tree1.lT.get_cycle(corres1.get(m._left, "-"))[
+                            0
+                        ]
                     else:
-                        node_1 = tree2.lT.get_cycle(corres2.get(m._right, "-"))[0]
+                        node_1 = tree2.lT.get_cycle(
+                            corres2.get(m._right, "-")
+                        )[0]
                     unmatched_node.append(node_1)
                 for br in tree1.lT.get_all_branches_of_node(n1):
                     col = [colors[node] for node in br if node in colors]
@@ -614,7 +625,6 @@ class lineageTreeManager:
             ax=ax[1],
         )
         return ax[0].get_figure(), ax
-
 
     def labelled_mappings(
         self,
@@ -726,29 +736,57 @@ class lineageTreeManager:
                     elif len(cyc2) == 1:
                         node_2 = l_node_2 = cyc2.pop()
 
-                    matched.append((tree1.lT.labels.get(node_1,node_1),tree2.lT.labels.get(node_2,node_2)))
+                    matched.append(
+                        (
+                            tree1.lT.labels.get(node_1, node_1),
+                            tree2.lT.labels.get(node_2, node_2),
+                        )
+                    )
                 else:
                     if m._left != -1:
-                        tmp_node = tree1.lT.get_cycle(corres1.get(m._left, "-"))[0]
-                        node_1 =( tree1.lT.labels.get(tmp_node,tmp_node), tree1.lT.name)
+                        tmp_node = tree1.lT.get_cycle(
+                            corres1.get(m._left, "-")
+                        )[0]
+                        node_1 = (
+                            tree1.lT.labels.get(tmp_node, tmp_node),
+                            tree1.lT.name,
+                        )
                     else:
-                        tmp_node = tree2.lT.get_cycle(corres2.get(m._right, "-"))[0]
-                        node_1 = (tree2.lT.labels.get(tmp_node,tmp_node), tree2.lT.name)
+                        tmp_node = tree2.lT.get_cycle(
+                            corres2.get(m._right, "-")
+                        )[0]
+                        node_1 = (
+                            tree2.lT.labels.get(tmp_node, tmp_node),
+                            tree2.lT.name,
+                        )
                     unmatched.append(node_1)
         else:
-                  for m in btrc:
-                    if m._left != -1 and m._right != -1:
-                        node_1 = corres1[m._left]
-                        node_2 = corres2[m._right]
-                        matched.append((tree1.lT.labels.get(node_1,node_1),
-                                        tree2.lT.labels.get(node_2,node_2)))
+            for m in btrc:
+                if m._left != -1 and m._right != -1:
+                    node_1 = corres1[m._left]
+                    node_2 = corres2[m._right]
+                    matched.append(
+                        (
+                            tree1.lT.labels.get(node_1, node_1),
+                            tree2.lT.labels.get(node_2, node_2),
+                        )
+                    )
+                else:
+                    if m._left != -1:
+                        tmp_node = tree1.lT.get_cycle(
+                            corres1.get(m._left, "-")
+                        )[0]
+                        node_1 = (
+                            tree1.lT.labels.get(tmp_node, tmp_node),
+                            tree1.lT.name,
+                        )
                     else:
-                        if m._left != -1:
-                            tmp_node = tree1.lT.get_cycle(corres1.get(m._left, "-"))[0]
-                            node_1 =( tree1.lT.labels.get(tmp_node,tmp_node), tree1.lT.name)
-                        else:
-                            tmp_node = tree2.lT.get_cycle(corres2.get(m._right, "-"))[0]
-                            node_1 = (tree2.lT.labels.get(tmp_node,tmp_node), tree2.lT.name)
-                        unmatched.append(node_1)
-        return {"matched":matched, "unmatched":unmatched}
-
+                        tmp_node = tree2.lT.get_cycle(
+                            corres2.get(m._right, "-")
+                        )[0]
+                        node_1 = (
+                            tree2.lT.labels.get(tmp_node, tmp_node),
+                            tree2.lT.name,
+                        )
+                    unmatched.append(node_1)
+        return {"matched": matched, "unmatched": unmatched}

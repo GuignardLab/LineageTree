@@ -70,7 +70,6 @@ class dynamic_property(property):
 
 
 class lineageTree:
-
     def modifier(wrapped_func):
         @wraps(wrapped_func)
         def raising_flag(self, *args, **kwargs):
@@ -1757,7 +1756,7 @@ class lineageTree:
         colormap: str = "cool",
         default_color: str = "black",
         size: float = 10,
-        lw:float=0.3,
+        lw: float = 0.3,
         ax: list[plt.Axes, plt.Axes] = None,
     ) -> tuple[plt.figure, plt.Axes]:
         """
@@ -2144,7 +2143,7 @@ class lineageTree:
     def __plot_nodes(
         hier: dict,
         selected_nodes: set,
-        color: str | dict|list,
+        color: str | dict | list,
         size: int,
         ax: plt.Axes,
         default_color: str = "black",
@@ -2156,7 +2155,7 @@ class lineageTree:
 
         if isinstance(color, dict):
             color = [color.get(k, default_color) for k in hier]
-        elif isinstance(color, str|list):
+        elif isinstance(color, str | list):
             color = [
                 color if node in selected_nodes else default_color
                 for node in hier
@@ -2169,8 +2168,8 @@ class lineageTree:
         hier: dict,
         lnks_tms: dict,
         selected_edges: set,
-        color: str | dict|list,
-        lw:float,
+        color: str | dict | list,
+        lw: float,
         ax: plt.Axes,
         default_color: str = "black",
         **kwargs,
@@ -2189,7 +2188,7 @@ class lineageTree:
                     ]
                 )
                 if pred in selected_edges:
-                    if isinstance(color, str|list):
+                    if isinstance(color, str | list):
                         c.append(color)
                     elif isinstance(color, dict):
                         c.append(color[pred])
@@ -2207,7 +2206,7 @@ class lineageTree:
         color_of_nodes: str | dict = "magenta",
         color_of_edges: str | dict = "magenta",
         size: int | float = 10,
-        lw: float=0.3,
+        lw: float = 0.3,
         ax: plt.Axes | None = None,
         default_color: str = "black",
         **kwargs,
@@ -2284,7 +2283,10 @@ class lineageTree:
         return ax.get_figure(), ax
 
     def to_simple_graph(
-        self, node: int = None, start_time: int = None, end_time:int|None=None
+        self,
+        node: int = None,
+        start_time: int = None,
+        end_time: int | None = None,
     ) -> dict[int, dict]:
         """Generates a dictionary of graphs where the keys are the index of the graph and
         the values are the graphs themselves which are produced by `create_links_and_cycles`
@@ -2441,7 +2443,7 @@ class lineageTree:
     def plot_node(
         self,
         node: int,
-        end_time:int|None=None,
+        end_time: int | None = None,
         figsize: tuple[int, int] = (4, 7),  # type: ignore
         dpi: int = 150,
         vert_gap: int = 2,
@@ -2450,7 +2452,7 @@ class lineageTree:
         color_of_nodes: str | dict = "magenta",
         color_of_edges: str | dict = "magenta",
         size: int | float = 10,
-        lw:float = 0.1,
+        lw: float = 0.1,
         default_color: str = "black",
         ax: plt.Axes | None = None,
     ) -> tuple[plt.Figure, plt.Axes]:
