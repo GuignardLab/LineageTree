@@ -671,6 +671,7 @@ class lineageTreeManager:
 
         if ax:
             assert len(ax) == 2
+            assert isinstance(ax[0], plt.Axes)
         parameters = {
             k: v
             for k, v in locals().items()

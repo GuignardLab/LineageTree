@@ -193,14 +193,14 @@ def test_cross_comparison():
     lT_3.time_resolution = 10
     lTm1.add(lT_3, "embryo_3")
     assert (
-        lTm1.cross_lineage_edit_distance(
+        0 < lTm1.cross_lineage_edit_distance(
             node_1,
             "embryo_1",
             100,
             node_3,
-            "embryo_2",
+            "embryo_3",
             100,
-            style="downsampled",
+            style="simple",
             downsample=20,
         )
         < 1

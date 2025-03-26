@@ -2144,7 +2144,7 @@ class lineageTree:
         hier: dict,
         selected_nodes: set,
         color: str | dict | list,
-        size: int,
+        size: int | float,
         ax: plt.Axes,
         default_color: str = "black",
         **kwargs,
