@@ -2068,7 +2068,8 @@ class lineageTree:
         norm: Literal["max", "sum"] | None = "max",
         style="simple",
         downsample: int = 2,
-    ) -> float:
+        return_norms: bool = False
+    ) -> float | tuple[float, tuple[float, float]]:
         """
         Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
         by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
@@ -2128,16 +2129,14 @@ class lineageTree:
             times1=times1,
             times2=times2,
         )
-        norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
-        if norm is None:
-            norm = "None"
+        norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
         if norm not in norm_dict:
-            raise Warning(
-                "Select a viable normalization method (max, sum, None)"
-            )
-        return btrc.cost(nodes1, nodes2, delta_tmp) / norm_dict[norm](
-            [tree1.get_norm(n1), tree2.get_norm(n2)]
-        )
+            raise ValueError("Select a viable normalization method (max, sum, None)")
+        cost = btrc.cost(nodes1, nodes2, delta_tmp)
+        norm_values = (tree1.get_norm(n1), tree2.get_norm(n2))
+        if return_norms:
+            return cost, norm_values
+        return cost / norm_dict[norm](norm_values)
 
     @staticmethod
     def __plot_nodes(
@@ -2257,15 +2256,16 @@ class lineageTree:
             selected_nodes = set(selected_nodes)
         if not isinstance(selected_edges, set):
             selected_edges = set(selected_edges)
-        self.__plot_nodes(
-            hier,
-            selected_nodes,
-            color_of_nodes,
-            size=size,
-            ax=ax,
-            default_color=default_color,
-            **kwargs,
-        )
+        if size>0:
+            self.__plot_nodes(
+                hier,
+                selected_nodes,
+                color_of_nodes,
+                size=size,
+                ax=ax,
+                default_color=default_color,
+                **kwargs,
+            )
         if not color_of_edges:
             color_of_edges = color_of_nodes
         self.__plot_edges(

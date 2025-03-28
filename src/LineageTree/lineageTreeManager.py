@@ -3,7 +3,7 @@ import pickle as pkl
 import warnings
 from collections.abc import Callable
 from functools import partial
-from typing import Literal
+from typing import Literal, Union
 
 import matplotlib.colors as mcolors
 import numpy as np
@@ -51,9 +51,9 @@ class lineageTreeManager:
 
     def __getitem__(self, key):
         if key in self.lineagetrees:
-            return self.lineagetrees
+            return self.lineagetrees[key]
         else:
-            raise KeyError(f"'{key}' not foun in the manager")
+            raise KeyError(f"'{key}' not found in the manager")
 
     @property
     def gcd(self):
@@ -307,10 +307,11 @@ class lineageTreeManager:
         n2: int,
         embryo_2: str,
         end_time2: int,
-        norm: Literal["max", "sum"] | None = "max",
+        norm: tuple["max", "sum","None"] | None = "max",
         style="simple",
         downsample: int = 2,
-    ) -> float:
+        return_norms:bool = False
+    ) -> float | tuple[float, tuple[float, float]]:
         """
         Compute the unordered tree edit backtrace from Zhang 1996 between the trees spawned
         by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
@@ -393,16 +394,15 @@ class lineageTreeManager:
             times1=times1,
             times2=times2,
         )
-        norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
-        if norm is None:
-            norm = "None"
+        norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
         if norm not in norm_dict:
-            raise Warning(
-                "Select a viable normalization method (max, sum, None)"
-            )
-        return btrc.cost(nodes1, nodes2, delta_tmp) / norm_dict[norm](
-            [tree1.get_norm(n1), tree2.get_norm(n2)]
-        )
+            raise ValueError("Select a viable normalization method (max, sum, None)")
+        cost = btrc.cost(nodes1, nodes2, delta_tmp)
+        norm_values = (tree1.get_norm(n1), tree2.get_norm(n2))
+        if return_norms:
+            return cost, norm_values
+        return cost / norm_dict[norm](norm_values)
+
 
     def plot_tree_distance_graphs(
         self,
