@@ -61,6 +61,7 @@ def test_uted_2levels_vs_3levels():
         t1, t2, style="normalized_simple", norm=None
     )
     assert lT.plot_tree_distance_graphs(t1, t2, style="full", norm=None)
+    assert lT.plot_tree_distance_graphs(t1, t2, style="downsampled", norm=None)
     assert lT.unordered_tree_edit_distances_at_time_t(10)
     assert lT.labelled_mappings(t1, t2)
 
@@ -222,6 +223,16 @@ def test_cross_comparison():
         "embryo_2",
         100,
         style="simple",
+    )
+    assert lTm1.plot_tree_distance_graphs(
+        t1,
+        "embryo_1",
+        100,
+        t2,
+        "embryo_2",
+        100,
+        style="downsampled",
+        downsample=10
     )
     assert lTm1.labelled_mappings(
         t1,

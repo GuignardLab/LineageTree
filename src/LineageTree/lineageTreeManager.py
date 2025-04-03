@@ -552,24 +552,32 @@ class lineageTreeManager:
         else:
             for m in btrc:
                 if m._left != -1 and m._right != -1:
-                    node_1 = corres1[m._left]
-                    node_2 = corres2[m._right]
-                    matched_left.append(node_1)
-                    matched_right.append(node_2)
-                    colors[node_1] = self.__calculate_distance_of_sub_tree(
-                        node_1,
-                        tree1.lT,
-                        node_2,
-                        tree2.lT,
-                        btrc,
-                        corres1,
-                        corres2,
-                        delta_tmp,
-                        norm_dict[norm],
-                        tree1.get_norm(node_1),
-                        tree2.get_norm(node_2),
-                    )
-                    colors[node_2] = colors[node_1]
+                    node_1 = tree1.lT.get_cycle(corres1[m._left])[0]
+                    node_2 = tree2.lT.get_cycle(corres2[m._right])[0]
+                    if tree1.lT.get_cycle(node_1)[0] == node_1 or  tree2.lT.get_cycle(node_2)[0] == node_2 or node_1 not in colors:
+                            matched_left.append(node_1)
+                            matched_right.append(node_2)
+                            colors[node_1] = self.__calculate_distance_of_sub_tree(
+                                node_1,
+                                tree1.lT,
+                                node_2,
+                                tree2.lT,
+                                btrc,
+                                corres1,
+                                corres2,
+                                delta_tmp,
+                                norm_dict[norm],
+                                tree1.get_norm(node_1),
+                                tree2.get_norm(node_2),
+                            )
+                            colors[node_2] = colors[node_1]
+                            colors[tree1.lT.get_cycle(node_1)[-1]] = colors[node_1]
+                            colors[tree2.lT.get_cycle(node_2)[-1]] = colors[node_2]
+
+                            if tree1.lT.get_cycle(node_1)[-1]!=node_1:
+                                matched_left.append( tree1.lT.get_cycle(node_1)[-1])
+                            if tree2.lT.get_cycle(node_2)[-1]!=node_2:
+                                matched_right.append( tree2.lT.get_cycle(node_2)[-1])
                 else:
                     if m._left != -1:
                         node_1 = tree1.lT.get_cycle(corres1.get(m._left, "-"))[
@@ -580,21 +588,21 @@ class lineageTreeManager:
                             corres2.get(m._right, "-")
                         )[0]
                     unmatched_node.append(node_1)
-                for br in tree1.lT.get_all_branches_of_node(n1):
-                    col = [colors[node] for node in br if node in colors]
-                    if col:
-                        colors[br[0]] = np.average(col)
-                        matched_left.append(br[0])
-                        colors[br[-1]] = np.average(col)
-                        matched_left.append(br[-1])
+                # for br in tree1.lT.get_all_branches_of_node(n1):
+                #     col = [colors[node] for node in br if node in colors]
+                #     if col:
+                #         colors[br[0]] = np.average(col)
+                #         matched_left.append(br[0])
+                #         colors[br[-1]] = np.average(col)
+                #         matched_left.append(br[-1])
 
-                for br in tree2.lT.get_all_branches_of_node(n2):
-                    col = [colors[node] for node in br if node in colors]
-                    if col:
-                        colors[br[0]] = np.average(col)
-                        matched_right.append(br[0])
-                        colors[br[-1]] = colors[br[0]]
-                        matched_right.append(br[-1])
+                # for br in tree2.lT.get_all_branches_of_node(n2):
+                #     col = [colors[node] for node in br if node in colors]
+                #     if col:
+                #         colors[br[0]] = np.average(col)
+                #         matched_right.append(br[0])
+                #         colors[br[-1]] = colors[br[0]]
+                #         matched_right.append(br[-1])
         if ax is None:
             fig, ax = plt.subplots(nrows=1, ncols=2)
         cmap = colormaps[colormap]

@@ -317,9 +317,6 @@ class full_tree(abstract_trees):
 
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def _edist_format(self, adj_dict: dict):
         """Formating the custom tree style to the format needed by edist.
         .. warning:: Modifying this function might break your code.
