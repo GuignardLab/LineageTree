@@ -3,7 +3,7 @@ import pickle as pkl
 import warnings
 from collections.abc import Callable
 from functools import partial
-from typing import Literal, Union
+from typing import Literal
 
 import matplotlib.colors as mcolors
 import numpy as np
@@ -588,21 +588,6 @@ class lineageTreeManager:
                             corres2.get(m._right, "-")
                         )[0]
                     unmatched_node.append(node_1)
-                # for br in tree1.lT.get_all_branches_of_node(n1):
-                #     col = [colors[node] for node in br if node in colors]
-                #     if col:
-                #         colors[br[0]] = np.average(col)
-                #         matched_left.append(br[0])
-                #         colors[br[-1]] = np.average(col)
-                #         matched_left.append(br[-1])
-
-                # for br in tree2.lT.get_all_branches_of_node(n2):
-                #     col = [colors[node] for node in br if node in colors]
-                #     if col:
-                #         colors[br[0]] = np.average(col)
-                #         matched_right.append(br[0])
-                #         colors[br[-1]] = colors[br[0]]
-                #         matched_right.append(br[-1])
         if ax is None:
             fig, ax = plt.subplots(nrows=1, ncols=2)
         cmap = colormaps[colormap]

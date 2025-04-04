@@ -40,6 +40,7 @@ from scipy.spatial import Delaunay, distance
 from scipy.spatial import cKDTree as KDTree
 
 from .utils import (
+    convert_style_to_number,
     create_links_and_cycles,
     hierarchical_pos,
 )
@@ -1684,13 +1685,9 @@ class lineageTree:
         tuple(tree,2)
             The two trees that have been mapped to each other.
         """
-
-        parameters = {
-            k: v
-            for k, v in locals().items()
-            if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
-        }  # the plan is to have (frozenset(n1,n2),....) so that we allow collisions of n1,n2 and not the others.
-
+        parameters = (end_time,convert_style_to_number(style=style, downsample=downsample))
+        n1,n2 = sorted([n1,n2])
+        self._comparisons.setdefault(parameters,{})
         if len(self._comparisons) > 100:
             warnings.warn(
                 "More than 100 comparisons are saved, use clear_comparisons() to delete them.",
@@ -1725,11 +1722,11 @@ class lineageTree:
             corres2,
         ) = tree2.edist
         if len(nodes1) == len(nodes2) == 0:
-            self._comparisons[hash(frozenset(parameters.values()))] = {
+            self._comparisons[parameters][(n1,n2)] = {
                 "alignment": (),
                 "trees": (),
             }
-            return self._comparisons[hash(frozenset(parameters.values()))]
+            return self._comparisons[parameters][(n1,n2)]
         delta_tmp = partial(
             delta,
             corres1=corres1,
@@ -1739,11 +1736,11 @@ class lineageTree:
         )
         btrc = uted.uted_backtrace(nodes1, adj1, nodes2, adj2, delta=delta_tmp)
 
-        self._comparisons[hash(frozenset(parameters.values()))] = {
+        self._comparisons[parameters][(n1,n2)] = {
             "alignment": btrc,
             "trees": (tree1, tree2),
         }
-        return self._comparisons[hash(frozenset(parameters.values()))]
+        return self._comparisons[parameters][(n1,n2)]
 
     def plot_tree_distance_graphs(
         self,
@@ -1785,16 +1782,13 @@ class lineageTree:
         Alignment
             The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
         """
-
-        parameters = {
-            k: v
-            for k, v in locals().items()
-            if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
-        }
-        if hash(frozenset(parameters.values())) in self._comparisons:
-            tmp = self._comparisons[hash(frozenset(parameters.values()))]
+        parameters = (end_time,convert_style_to_number(style=style, downsample=downsample))
+        n1,n2 = sorted([n1,n2])
+        self._comparisons.setdefault(parameters, {})
+        if  self._comparisons[parameters].get((n1,n2)):
+            tmp = self._comparisons[parameters][(n1,n2)]
         else:
-            tmp = self.__unordereded_backtrace(**parameters)
+            tmp = self.__unordereded_backtrace(n1,n2,end_time, norm, style, downsample)
         btrc = tmp["alignment"]
         tree1, tree2 = tmp["trees"]
         _, times1 = tree1.tree
@@ -1964,16 +1958,13 @@ class lineageTree:
         Alignment
             The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
         """
-        parameters = {
-            k: v
-            for k, v in locals().items()
-            if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
-        }
-
-        if hash(frozenset(parameters.values())) in self._comparisons:
-            tmp = self._comparisons[hash(frozenset(parameters.values()))]
+        parameters = (end_time,convert_style_to_number(style=style, downsample=downsample))
+        n1,n2 = sorted([n1,n2])
+        self._comparisons.setdefault(parameters,{})
+        if  self._comparisons[parameters].get((n1,n2)):
+            tmp = self._comparisons[parameters][(n1,n2)]
         else:
-            tmp = self.__unordereded_backtrace(**parameters)
+            tmp = self.__unordereded_backtrace(n1,n2,end_time, norm, style, downsample)
         btrc = tmp["alignment"]
         tree1, tree2 = tmp["trees"]
         _, times1 = tree1.tree
@@ -2088,15 +2079,13 @@ class lineageTree:
         float
             The normed unordered tree edit distance between `n1` and `n2`
         """
-        parameters = {
-            k: v
-            for k, v in locals().items()
-            if k in ("n1", "n2", "end_time", "norm", "style", "downsample")
-        }
-        if hash(frozenset(parameters.values())) in self._comparisons:
-            tmp = self._comparisons[hash(frozenset(parameters.values()))]
+        parameters = (end_time,convert_style_to_number(style=style, downsample=downsample))
+        n1,n2 = sorted([n1,n2])
+        self._comparisons.setdefault(parameters, {})
+        if  self._comparisons[parameters].get((n1,n2)):
+            tmp = self._comparisons[parameters][(n1,n2)]
         else:
-            tmp = self.__unordereded_backtrace(**parameters)
+            tmp = self.__unordereded_backtrace(n1,n2,end_time, norm, style, downsample)
         btrc = tmp["alignment"]
         tree1, tree2 = tmp["trees"]
         _, times1 = tree1.tree
