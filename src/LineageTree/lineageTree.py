@@ -1979,13 +1979,6 @@ class lineageTree:
             adj2,
             corres2,
         ) = tree2.edist
-        delta_tmp = partial(
-            tree1.delta,
-            corres1=corres1,
-            corres2=corres2,
-            times1=times1,
-            times2=times2,
-        )
         norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
         if norm is None:
             norm = "None"
@@ -2000,14 +1993,14 @@ class lineageTree:
                 if m._left != -1 and m._right != -1:
                     cyc1 = self.get_cycle(corres1[m._left])
                     if len(cyc1) > 1:
-                        node_1, *_, l_node_1 = cyc1
+                        node_1, *_ = cyc1
                     elif len(cyc1) == 1:
-                        node_1 = l_node_1 = cyc1.pop()
+                        node_1 = cyc1.pop()
                     cyc2 = self.get_cycle(corres2[m._right])
                     if len(cyc2) > 1:
-                        node_2, *_, l_node_2 = cyc2
+                        node_2, *_ = cyc2
                     elif len(cyc2) == 1:
-                        node_2 = l_node_2 = cyc2.pop()
+                        node_2 = cyc2.pop()
                     matched.append(
                         (
                             self.labels.get(node_1, node_1),
@@ -3285,11 +3278,6 @@ class lineageTree:
                     self._predecessor[succ] = (pred,)
                     self._successor.setdefault(pred, ())
                     self._successor[pred] += (succ,)
-        # else:
-        #     warnings.warn(
-        #         "Both successor and predecessor attributes are empty.", # I got sick from getting this wanring 10000 times
-        #         stacklevel=2,
-        #     )
         for root in set(self._successor).difference(self._predecessor):
             self._predecessor[root] = ()
         for leaf in set(self._predecessor).difference(self._successor):

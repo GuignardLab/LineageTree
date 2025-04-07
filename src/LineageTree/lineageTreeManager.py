@@ -29,6 +29,8 @@ except ImportError:
     )
 from LineageTree import lineageTree
 
+from .utils import convert_style_to_number
+
 
 class lineageTreeManager:
     def __init__(self):
@@ -185,22 +187,9 @@ class lineageTreeManager:
             registration : _type_, default=None
                 _description_. Defaults to None.
         """
-        parameters = {
-            k: v
-            for k, v in locals().items()
-            if k
-            in (
-                "n1",
-                "n2",
-                "end_time1",
-                "end_time2",
-                "embryo_1",
-                "embryo_2",
-                "norm",
-                "style",
-                "downsample",
-            )
-        }
+        parameters = ((end_time1, end_time2), convert_style_to_number(style,downsample))
+        n1_embryo, n2_embryo = sorted(((n1,embryo_1),(n2,embryo_2)), key= lambda x: x[0])
+        self._comparisons.setdefault(parameters, {})
         tree = tree_style[style].value
         lcm = (
             self.lineagetrees[embryo_1]._time_resolution
@@ -247,11 +236,11 @@ class lineageTreeManager:
         nodes1, adj1, corres1 = tree1.edist
         nodes2, adj2, corres2 = tree2.edist
         if len(nodes1) == len(nodes2) == 0:
-            self._comparisons[hash(frozenset(parameters.values()))] = {
+            self._comparisons[parameters][(n1_embryo,n2_embryo)] = {
                 "alignment": (),
                 "trees": (),
             }
-            return self._comparisons[hash(frozenset(parameters.values()))]
+            return self._comparisons[parameters][(n1_embryo,n2_embryo)]
         delta_tmp = partial(
             delta,
             corres1=corres1,
@@ -261,11 +250,11 @@ class lineageTreeManager:
         )
         btrc = uted.uted_backtrace(nodes1, adj1, nodes2, adj2, delta=delta_tmp)
 
-        self._comparisons[hash(frozenset(parameters.values()))] = {
+        self._comparisons[parameters][(n1_embryo,n2_embryo)] = {
             "alignment": btrc,
             "trees": (tree1, tree2),
         }
-        return self._comparisons[hash(frozenset(parameters.values()))]
+        return self._comparisons[parameters][(n1_embryo,n2_embryo)]
 
     def __calculate_distance_of_sub_tree(
         self,
@@ -342,26 +331,13 @@ class lineageTreeManager:
             The two trees that have been mapped to each other.
         """
 
-        parameters = {
-            k: v
-            for k, v in locals().items()
-            if k
-            in (
-                "n1",
-                "n2",
-                "end_time1",
-                "end_time2",
-                "embryo_1",
-                "embryo_2",
-                "norm",
-                "style",
-                "downsample",
-            )
-        }
-        if hash(frozenset(parameters.values())) in self._comparisons:
-            tmp = self._comparisons[hash(frozenset(parameters.values()))]
+        parameters = ((end_time1, end_time2), convert_style_to_number(style,downsample))
+        n1_embryo, n2_embryo = sorted(((n1,embryo_1),(n2,embryo_2)), key= lambda x: x[0])
+        self._comparisons.setdefault(parameters, {})
+        if self._comparisons[parameters].get((n1,n2)):
+            tmp = self._comparisons[parameters][(n1_embryo,n2_embryo)]
         else:
-            tmp = self.__cross_lineage_edit_backtrace(**parameters)
+            tmp = self.__cross_lineage_edit_backtrace(n1,embryo_1,end_time1, n2,embryo_2,end_time2,style, norm, downsample)
         if len(self._comparisons) > 100:
             warnings.warn(
                 "More than 100 comparisons are saved, use clear_comparisons() to delete them.",
@@ -450,26 +426,13 @@ class lineageTreeManager:
             The axes of the tree distance graph
         """
 
-        parameters = {
-            k: v
-            for k, v in locals().items()
-            if k
-            in (
-                "n1",
-                "n2",
-                "end_time1",
-                "end_time2",
-                "embryo_1",
-                "embryo_2",
-                "norm",
-                "style",
-                "downsample",
-            )
-        }
-        if hash(frozenset(parameters.values())) in self._comparisons:
-            tmp = self._comparisons[hash(frozenset(parameters.values()))]
+        parameters = ((end_time1, end_time2), convert_style_to_number(style,downsample))
+        n1_embryo, n2_embryo = sorted(((n1,embryo_1),(n2,embryo_2)), key= lambda x: x[0])
+        self._comparisons.setdefault(parameters, {})
+        if self._comparisons[parameters].get((n1,n2)):
+            tmp = self._comparisons[parameters][(n1_embryo,n2_embryo)]
         else:
-            tmp = self.__cross_lineage_edit_backtrace(**parameters)
+            tmp = self.__cross_lineage_edit_backtrace(n1,embryo_1,end_time1, n2,embryo_2,end_time2,style, norm, downsample)
         btrc = tmp["alignment"]
         tree1, tree2 = tmp["trees"]
         _, times1 = tree1.tree
@@ -665,26 +628,13 @@ class lineageTreeManager:
         if ax:
             assert len(ax) == 2
             assert isinstance(ax[0], plt.Axes)
-        parameters = {
-            k: v
-            for k, v in locals().items()
-            if k
-            in (
-                "n1",
-                "n2",
-                "end_time1",
-                "end_time2",
-                "embryo_1",
-                "embryo_2",
-                "norm",
-                "style",
-                "downsample",
-            )
-        }
-        if hash(frozenset(parameters.values())) in self._comparisons:
-            tmp = self._comparisons[hash(frozenset(parameters.values()))]
+        parameters = ((end_time1, end_time2), convert_style_to_number(style,downsample))
+        n1_embryo, n2_embryo = sorted(((n1,embryo_1),(n2,embryo_2)), key= lambda x: x[0])
+        self._comparisons.setdefault(parameters, {})
+        if self._comparisons[parameters].get((n1,n2)):
+            tmp = self._comparisons[parameters][(n1_embryo,n2_embryo)]
         else:
-            tmp = self.__cross_lineage_edit_backtrace(**parameters)
+            tmp = self.__cross_lineage_edit_backtrace(n1,embryo_1,end_time1, n2,embryo_2,end_time2,style, norm, downsample)
         btrc = tmp["alignment"]
         tree1, tree2 = tmp["trees"]
         _, times1 = tree1.tree
@@ -697,13 +647,6 @@ class lineageTreeManager:
             *_,
             corres2,
         ) = tree2.edist
-        delta_tmp = partial(
-            tree1.delta,
-            corres1=corres1,
-            corres2=corres2,
-            times1=times1,
-            times2=times2,
-        )
         norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
         if norm is None:
             norm = "None"
@@ -713,22 +656,21 @@ class lineageTreeManager:
             )
         matched = []
         unmatched = []
-        colors = {}
         if style not in ("full", "downsampled"):
             for m in btrc:
                 if m._left != -1 and m._right != -1:
                     cyc1 = tree1.lT.get_cycle(corres1[m._left])
                     if len(cyc1) > 1:
-                        node_1, *_, l_node_1 = cyc1
+                        node_1, *_  = cyc1
                     elif len(cyc1) == 1:
-                        node_1 = l_node_1 = cyc1.pop()
+                        node_1  = cyc1.pop()
 
                     cyc2 = tree2.lT.get_cycle(corres2[m._right])
                     if len(cyc2) > 1:
-                        node_2, *_, l_node_2 = cyc2
+                        node_2, *_ = cyc2
 
                     elif len(cyc2) == 1:
-                        node_2 = l_node_2 = cyc2.pop()
+                        node_2  = cyc2.pop()
 
                     matched.append(
                         (
