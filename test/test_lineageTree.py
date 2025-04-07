@@ -76,7 +76,7 @@ def test_removing_nodes():
 
     second_level_1 = lT.add_branch(first_level_end, 10, downstream=True)
     lT.add_branch(first_level_end, 10, downstream=True)
-    lT.remove_nodes(lT.get_cycle(second_level_1))
+    lT.remove_nodes(lT.get_cell_cycle(second_level_1))
     assert len(lT.get_sub_tree(t1)) == 20
 
 
@@ -97,7 +97,7 @@ def test_cross_comparison():
     lT_1 = lineageTree()
     t1 = lT_1.add_root(0)
     first_level_end = lT_1.add_branch(t1, 9, downstream=True)
-    node_1 = lT_1.get_cycle(t1)[0]
+    node_1 = lT_1.get_cell_cycle(t1)[0]
 
     second_level_1 = lT_1.add_branch(first_level_end, 10, downstream=True)
     second_level_2 = lT_1.add_branch(first_level_end, 10, downstream=True)
@@ -111,7 +111,7 @@ def test_cross_comparison():
     lT_2 = lineageTree()
     t2 = lT_2.add_root(0)
     first_level_end = lT_2.add_branch(t2, 4, downstream=True)
-    node_2 = lT_2.get_cycle(t2)[0]
+    node_2 = lT_2.get_cell_cycle(t2)[0]
 
     second_level_1 = lT_2.add_branch(first_level_end, 5, downstream=True)
     second_level_2 = lT_2.add_branch(first_level_end, 5, downstream=True)
@@ -179,7 +179,7 @@ def test_cross_comparison():
     lT_3 = lineageTree()
     t1 = lT_3.add_root(0)
     first_level_end = lT_3.add_branch(t1, 4, downstream=True)
-    node_3 = lT_3.get_cycle(t1)[0]
+    node_3 = lT_3.get_cell_cycle(t1)[0]
 
     second_level_1 = lT_3.add_branch(first_level_end, 5, downstream=True)
     second_level_2 = lT_3.add_branch(first_level_end, 5, downstream=True)

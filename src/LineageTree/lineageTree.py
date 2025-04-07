@@ -86,10 +86,61 @@ class lineageTree:
 
         return raising_flag
 
+    def __check_cc_cycles(self, n) -> tuple[bool, set[int]]:
+        """Check if the connected component of a given node `n` has a cycle.
+
+        Returns
+        -------
+        bool
+            True if the tree has cycles, False otherwise.
+        set[int]
+            The set of nodes that have been checked.
+        """
+        to_do = [n]
+        no_cycle = True
+        already_done = set()
+        while to_do and no_cycle:
+            current = to_do.pop(-1)
+            if current not in already_done:
+                already_done.add(current)
+            else:
+                no_cycle = False
+            to_do.extend(self._successor[current])
+        to_do = list(self._predecessor[n])
+        while to_do and no_cycle:
+            current = to_do.pop(-1)
+            if current not in already_done:
+                already_done.add(current)
+            else:
+                no_cycle = False
+            to_do.extend(self._predecessor[current])
+        return not no_cycle, already_done
+
+    def __check_for_cycles(self) -> bool:
+        """Check if the tree has cycles.
+
+        Returns
+        -------
+        bool
+            True if the tree has cycles, False otherwise.
+        """
+        to_do = set(self.nodes)
+        found_cycle = False
+        while to_do and not found_cycle:
+            current = to_do.pop()
+            found_cycle, done = self.__check_cc_cycles(current)
+            to_do.difference_update(done)
+        return found_cycle
+
     def __eq__(self, other) -> bool:
         if isinstance(other, lineageTree):
-            return other.successor == self._successor
-        return False
+            return (
+                other._successor == self._successor
+                and other._predecessor == self._predecessor
+                and other._time == self._time
+            )
+        else:
+            return False
 
     def get_next_id(self) -> int:
         """Computes the next authorized id.
@@ -268,6 +319,27 @@ class lineageTree:
                 self._predecessor[p_node] = ()
             self._predecessor.pop(node, ())
             self._successor.pop(node, ())
+
+    @property
+    def successor(self) -> MappingProxyType[int, tuple[int]]:
+        """The successor of the tree."""
+        if not hasattr(self, "_protected_successor"):
+            self._protected_successor = MappingProxyType(self._successor)
+        return self._protected_successor
+
+    @property
+    def predecessor(self) -> MappingProxyType[int, tuple[int]]:
+        """The predecessor of the tree."""
+        if not hasattr(self, "_protected_predecessor"):
+            self._protected_predecessor = MappingProxyType(self._predecessor)
+        return self._protected_predecessor
+
+    @property
+    def time(self) -> MappingProxyType[int, int]:
+        """The time of the tree."""
+        if not hasattr(self, "_protected_time"):
+            self._protected_time = MappingProxyType(self._time)
+        return self._protected_time
 
     @dynamic_property
     def t_b(self) -> int:
@@ -577,7 +649,7 @@ class lineageTree:
             to_do = set(treated_cells)
             while len(to_do) > 0:
                 curr = to_do.pop()
-                c_cycle = self.get_cycle(curr)
+                c_cycle = self.get_cell_cycle(curr)
                 x1, y1 = positions[c_cycle[0]]
                 x2, y2 = positions[c_cycle[-1]]
                 dwg.add(
@@ -1138,7 +1210,7 @@ class lineageTree:
 
         return cycle
 
-    def get_cycle(
+    def get_cell_cycle(
         self,
         x: int,
         depth: int = None,
@@ -1228,7 +1300,7 @@ class lineageTree:
             to_do = list(self.roots)
             while len(to_do) != 0:
                 current = to_do.pop()
-                track = self.get_cycle(current)
+                track = self.get_cell_cycle(current)
                 self._all_tracks += [track]
                 to_do.extend(self._successor[track[-1]])
         return self._all_tracks
@@ -1253,7 +1325,7 @@ class lineageTree:
             to_do = list(roots)
             while len(to_do) != 0:
                 current = to_do.pop()
-                track = self.get_cycle(current)
+                track = self.get_cell_cycle(current)
                 tracks.append(track)
                 to_do.extend(self._successor[track[-1]])
             return tracks
@@ -2406,8 +2478,8 @@ class lineageTree:
         list of lists
             rotated and translated trajectories positions
         """
-        nodes1_cycle = self.get_cycle(nodes1)
-        nodes2_cycle = self.get_cycle(nodes2)
+        nodes1_cycle = self.get_cell_cycle(nodes1)
+        nodes2_cycle = self.get_cell_cycle(nodes2)
 
         interp_cycle1, interp_cycle2 = self.__interpolate(
             nodes1_cycle, nodes2_cycle, threshold
@@ -2756,7 +2828,7 @@ class lineageTree:
         *,
         successor: dict[int, Iterable] = None,
         predecessor: dict[int, int | Iterable] = None,
-        time: dict[int | float, tuple] = None,
+        time: dict[int, int] = None,
         starting_time: int | float = 0,
         pos: dict[int, Iterable] = None,
         name: str = None,
@@ -2790,7 +2862,7 @@ class lineageTree:
         """
         self.__version__ = importlib.metadata.version("LineageTree")
 
-        self.name = name
+        self.name = str(name)
         if successor is not None and predecessor is not None:
             raise ValueError(
                 "You cannot have both successors and predecessors."
@@ -2854,6 +2926,11 @@ class lineageTree:
         for leaf in set(self._predecessor).difference(self._successor):
             self._successor[leaf] = ()
 
+        if self.__check_for_cycles():
+            raise ValueError(
+                "Cycles were found in the tree, there should not be any."
+            )
+
         if pos is None:
             self.pos = {}
         else:
@@ -2862,16 +2939,36 @@ class lineageTree:
             self.pos = pos
 
         if time is None:
+            if not isinstance(starting_time, int):
+                warnings.warn(
+                    f"Attribute `starting_time` was a `{type(starting_time)}`, has been casted as an `int`.",
+                    stacklevel=2,
+                )
             self._time = {node: starting_time for node in self.roots}
             queue = list(self.roots)
             for node in queue:
                 for succ in self._successor[node]:
-                    self._time[succ] = self.time[node] + 1
+                    self._time[succ] = self._time[node] + 1
                     queue.append(succ)
         else:
-            self._time = time
-            if self.nodes.difference(self._time) != set():
-                raise ValueError("Please provide the time of all nodes.")
+            self._time = {n: int(time[n]) for n in self.nodes}
+            if self._time != time:
+                if len(self._time) != len(time):
+                    warnings.warn(
+                        "The provided `time` dictionary had keys that were not nodes. "
+                        "They have been removed",
+                        stacklevel=2,
+                    )
+                else:
+                    warnings.warn(
+                        "The provided `time` dictionary had values that were not `int`. "
+                        "These values have been truncated and converted to `int`",
+                        stacklevel=2,
+                    )
+            if self.nodes.symmetric_difference(self._time) != set():
+                raise ValueError(
+                    "Please provide the time of all nodes and only existing nodes."
+                )
             if not all(
                 self._time[node] < self._time[s]
                 for node, succ in self._successor.items()
@@ -2887,13 +2984,4 @@ class lineageTree:
                     f"Attribute name {name} is reserved.", stacklevel=2
                 )
                 continue
-            if set(d) != self.nodes:
-                warnings.warn(
-                    f"Please specify {name} for all nodes.", stacklevel=2
-                )
-                continue
             setattr(self, name, d)
-
-        self.successor = MappingProxyType(self._successor)
-        self.predecessor = MappingProxyType(self._predecessor)
-        self.time = MappingProxyType(self._time)
