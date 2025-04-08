@@ -2862,7 +2862,7 @@ class lineageTree:
         """
         self.__version__ = importlib.metadata.version("LineageTree")
 
-        self.name = str(name)
+        self.name = str(name) if name is not None else None
         if successor is not None and predecessor is not None:
             raise ValueError(
                 "You cannot have both successors and predecessors."
