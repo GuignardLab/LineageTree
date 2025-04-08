@@ -2829,7 +2829,7 @@ class lineageTree:
         successor: dict[int, Iterable] = None,
         predecessor: dict[int, int | Iterable] = None,
         time: dict[int, int] = None,
-        starting_time: int | float = 0,
+        starting_time: int = None,
         pos: dict[int, Iterable] = None,
         name: str = None,
         root_leaf_value: Iterable = None,
@@ -2847,7 +2847,7 @@ class lineageTree:
         time : dict mapping int to int or float, optional
             Dictionary assigning nodes to the time point they were recorded to.
             Defaults to None, in which case all times are set to `starting_time`.
-        starting_time : int or float, optional
+        starting_time : int, optional
             Starting time of the lineage tree. Defaults to 0.
         pos : dict mapping int to Iterable, optional
             Dictionary assigning nodes to their positions. Defaults to None.
@@ -2939,6 +2939,8 @@ class lineageTree:
             self.pos = pos
 
         if time is None:
+            if starting_time is None:
+                starting_time = 0
             if not isinstance(starting_time, int):
                 warnings.warn(
                     f"Attribute `starting_time` was a `{type(starting_time)}`, has been casted as an `int`.",
@@ -2951,6 +2953,11 @@ class lineageTree:
                     self._time[succ] = self._time[node] + 1
                     queue.append(succ)
         else:
+            if starting_time is not None:
+                warnings.warn(
+                    f"Both `time` and `starting_time` were provided, `starting_time` was ignored.",
+                    stacklevel=2,
+                )
             self._time = {n: int(time[n]) for n in self.nodes}
             if self._time != time:
                 if len(self._time) != len(time):
