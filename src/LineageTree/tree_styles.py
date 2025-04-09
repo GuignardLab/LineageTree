@@ -22,7 +22,7 @@ class abstract_trees(ABC):
         self,
         lT: lineageTree,
         root: int,
-        downsample: int,
+        downsample: int|None =None,
         end_time: int = None,
         time_scale: int = 1,
     ):

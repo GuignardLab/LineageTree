@@ -1967,16 +1967,13 @@ class lineageTree:
             tmp = self.__unordereded_backtrace(n1,n2,end_time, norm, style, downsample)
         btrc = tmp["alignment"]
         tree1, tree2 = tmp["trees"]
-        _, times1 = tree1.tree
-        _, times2 = tree2.tree
+      
         (
-            nodes1,
-            adj1,
+           *_,
             corres1,
         ) = tree1.edist
         (
-            nodes2,
-            adj2,
+            *_,
             corres2,
         ) = tree2.edist
         norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
@@ -3291,7 +3288,7 @@ class lineageTree:
             self.pos = pos
 
         if time is None:
-            self._time = {node: starting_time for node in self.roots}
+            self._time = dict.fromkeys(self.roots, starting_time)
             queue = list(self.roots)
             for node in queue:
                 for succ in self._successor[node]:

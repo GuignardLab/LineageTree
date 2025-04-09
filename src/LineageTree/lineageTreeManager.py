@@ -310,10 +310,17 @@ class lineageTreeManager:
         ----------
         n1 : int
             id of the first node to compare
+        embryo_1 : str
+            the name of the first embryo to be used. (from lTm.lineagetrees.keys())
+        end_time_2 : int
+            The final time point the comparison algorithm will take into account for the second embryo.
+            If None all nodes will be taken into account.
         n2 : int
             id of the second node to compare
-        end_time : int
-            The final time point the comparison algorithm will take into account.
+        embryo_2 : str
+            the name of the second embryo to be used. (from lTm.lineagetrees.keys()) 
+        end_time_1 : int
+            The final time point the comparison algorithm will take into account for the first embryo.
             If None all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
@@ -322,6 +329,8 @@ class lineageTreeManager:
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
             Used only when `style="downsampled"`.
+        return_norms : bool
+            Decide if the norms will be returned explicitly (mainly used for the napari plugin)
 
         Returns
         -------
