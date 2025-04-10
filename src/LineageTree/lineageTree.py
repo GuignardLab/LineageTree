@@ -1208,8 +1208,11 @@ class lineageTree:
         """
         if not end_time:
             end_time = self.t_e
-        if end_time<self.t_b:
-            warnings.warn("Select a timepoint that is greater than self.t_b", stacklevel=2)
+        if end_time < self.t_b:
+            warnings.warn(
+                "Select a timepoint that is greater than self.t_b",
+                stacklevel=2,
+            )
             return [[]]
         branches = [self.get_successors(node, end_time=end_time)]
         to_do = list(self._successor[branches[0][-1]])
@@ -1688,9 +1691,12 @@ class lineageTree:
         tuple(tree,2)
             The two trees that have been mapped to each other.
         """
-        parameters = (end_time,convert_style_to_number(style=style, downsample=downsample))
-        n1,n2 = sorted([n1,n2])
-        self._comparisons.setdefault(parameters,{})
+        parameters = (
+            end_time,
+            convert_style_to_number(style=style, downsample=downsample),
+        )
+        n1, n2 = sorted([n1, n2])
+        self._comparisons.setdefault(parameters, {})
         if len(self._comparisons) > 100:
             warnings.warn(
                 "More than 100 comparisons are saved, use clear_comparisons() to delete them.",
@@ -1725,11 +1731,11 @@ class lineageTree:
             corres2,
         ) = tree2.edist
         if len(nodes1) == len(nodes2) == 0:
-            self._comparisons[parameters][(n1,n2)] = {
+            self._comparisons[parameters][(n1, n2)] = {
                 "alignment": (),
                 "trees": (),
             }
-            return self._comparisons[parameters][(n1,n2)]
+            return self._comparisons[parameters][(n1, n2)]
         delta_tmp = partial(
             delta,
             corres1=corres1,
@@ -1739,11 +1745,11 @@ class lineageTree:
         )
         btrc = uted.uted_backtrace(nodes1, adj1, nodes2, adj2, delta=delta_tmp)
 
-        self._comparisons[parameters][(n1,n2)] = {
+        self._comparisons[parameters][(n1, n2)] = {
             "alignment": btrc,
             "trees": (tree1, tree2),
         }
-        return self._comparisons[parameters][(n1,n2)]
+        return self._comparisons[parameters][(n1, n2)]
 
     def plot_tree_distance_graphs(
         self,
@@ -1785,13 +1791,18 @@ class lineageTree:
         Alignment
             The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
         """
-        parameters = (end_time,convert_style_to_number(style=style, downsample=downsample))
-        n1,n2 = sorted([n1,n2])
+        parameters = (
+            end_time,
+            convert_style_to_number(style=style, downsample=downsample),
+        )
+        n1, n2 = sorted([n1, n2])
         self._comparisons.setdefault(parameters, {})
-        if  self._comparisons[parameters].get((n1,n2)):
-            tmp = self._comparisons[parameters][(n1,n2)]
+        if self._comparisons[parameters].get((n1, n2)):
+            tmp = self._comparisons[parameters][(n1, n2)]
         else:
-            tmp = self.__unordereded_backtrace(n1,n2,end_time, norm, style, downsample)
+            tmp = self.__unordereded_backtrace(
+                n1, n2, end_time, norm, style, downsample
+            )
         btrc = tmp["alignment"]
         tree1, tree2 = tmp["trees"]
         _, times1 = tree1.tree
@@ -1871,7 +1882,12 @@ class lineageTree:
                     node_1 = corres1[m._left]
                     node_2 = corres2[m._right]
 
-                    if self.get_cycle(node_1)[0] == node_1 or  self.get_cycle(node_2)[0] == node_2 or node_1 not in colors or node_2 not in colors:
+                    if (
+                        self.get_cycle(node_1)[0] == node_1
+                        or self.get_cycle(node_2)[0] == node_2
+                        or node_1 not in colors
+                        or node_2 not in colors
+                    ):
                         matched_left.append(node_1)
                         matched_right.append(node_2)
                         colors[node_1] = self.__calculate_distance_of_sub_tree(
@@ -1961,18 +1977,23 @@ class lineageTree:
         Alignment
             The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
         """
-        parameters = (end_time,convert_style_to_number(style=style, downsample=downsample))
-        n1,n2 = sorted([n1,n2])
-        self._comparisons.setdefault(parameters,{})
-        if  self._comparisons[parameters].get((n1,n2)):
-            tmp = self._comparisons[parameters][(n1,n2)]
+        parameters = (
+            end_time,
+            convert_style_to_number(style=style, downsample=downsample),
+        )
+        n1, n2 = sorted([n1, n2])
+        self._comparisons.setdefault(parameters, {})
+        if self._comparisons[parameters].get((n1, n2)):
+            tmp = self._comparisons[parameters][(n1, n2)]
         else:
-            tmp = self.__unordereded_backtrace(n1,n2,end_time, norm, style, downsample)
+            tmp = self.__unordereded_backtrace(
+                n1, n2, end_time, norm, style, downsample
+            )
         btrc = tmp["alignment"]
         tree1, tree2 = tmp["trees"]
-      
+
         (
-           *_,
+            *_,
             corres1,
         ) = tree1.edist
         (
@@ -2041,7 +2062,7 @@ class lineageTree:
         norm: Literal["max", "sum"] | None = "max",
         style="simple",
         downsample: int = 2,
-        return_norms: bool = False
+        return_norms: bool = False,
     ) -> float | tuple[float, tuple[float, float]]:
         """
         Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
@@ -2072,13 +2093,18 @@ class lineageTree:
         float
             The normed unordered tree edit distance between `n1` and `n2`
         """
-        parameters = (end_time,convert_style_to_number(style=style, downsample=downsample))
-        n1,n2 = sorted([n1,n2])
+        parameters = (
+            end_time,
+            convert_style_to_number(style=style, downsample=downsample),
+        )
+        n1, n2 = sorted([n1, n2])
         self._comparisons.setdefault(parameters, {})
-        if  self._comparisons[parameters].get((n1,n2)):
-            tmp = self._comparisons[parameters][(n1,n2)]
+        if self._comparisons[parameters].get((n1, n2)):
+            tmp = self._comparisons[parameters][(n1, n2)]
         else:
-            tmp = self.__unordereded_backtrace(n1,n2,end_time, norm, style, downsample)
+            tmp = self.__unordereded_backtrace(
+                n1, n2, end_time, norm, style, downsample
+            )
         btrc = tmp["alignment"]
         tree1, tree2 = tmp["trees"]
         _, times1 = tree1.tree
@@ -2102,7 +2128,9 @@ class lineageTree:
         )
         norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
         if norm not in norm_dict:
-            raise ValueError("Select a viable normalization method (max, sum, None)")
+            raise ValueError(
+                "Select a viable normalization method (max, sum, None)"
+            )
         cost = btrc.cost(nodes1, nodes2, delta_tmp)
         norm_values = (tree1.get_norm(n1), tree2.get_norm(n2))
         if return_norms:
@@ -2227,7 +2255,7 @@ class lineageTree:
             selected_nodes = set(selected_nodes)
         if not isinstance(selected_edges, set):
             selected_edges = set(selected_edges)
-        if 0<size:
+        if 0 < size:
             self.__plot_nodes(
                 hier,
                 selected_nodes,
@@ -2348,7 +2376,8 @@ class lineageTree:
             raise Warning("Number of rows has to be at least 1")
         if nodes:
             graphs = {
-                i: self._create_dict_of_plots(node) for i, node in enumerate(nodes)
+                i: self._create_dict_of_plots(node)
+                for i, node in enumerate(nodes)
             }
         else:
             graphs = self._create_dict_of_plots(
