@@ -1208,7 +1208,10 @@ class lineageTree:
         """
         if not end_time:
             end_time = self.t_e
-        branches = [self.get_successors(node)]
+        if end_time<self.t_b:
+            warnings.warn("Select a timepoint that is greater than self.t_b", stacklevel=2)
+            return [[]]
+        branches = [self.get_successors(node, end_time=end_time)]
         to_do = list(self._successor[branches[0][-1]])
         while to_do:
             current = to_do.pop()
@@ -1868,7 +1871,7 @@ class lineageTree:
                     node_1 = corres1[m._left]
                     node_2 = corres2[m._right]
 
-                    if self.get_cycle(node_1)[0] == node_1 or  self.get_cycle(node_2)[0] == node_2 or node_1 not in colors:
+                    if self.get_cycle(node_1)[0] == node_1 or  self.get_cycle(node_2)[0] == node_2 or node_1 not in colors or node_2 not in colors:
                         matched_left.append(node_1)
                         matched_right.append(node_2)
                         colors[node_1] = self.__calculate_distance_of_sub_tree(
@@ -2252,7 +2255,7 @@ class lineageTree:
         ax.get_xaxis().set_visible(False)
         return ax.get_figure(), ax
 
-    def to_simple_graph(
+    def _create_dict_of_plots(
         self,
         node: int = None,
         start_time: int = None,
@@ -2345,10 +2348,10 @@ class lineageTree:
             raise Warning("Number of rows has to be at least 1")
         if nodes:
             graphs = {
-                i: self.to_simple_graph(node) for i, node in enumerate(nodes)
+                i: self._create_dict_of_plots(node) for i, node in enumerate(nodes)
             }
         else:
-            graphs = self.to_simple_graph(
+            graphs = self._create_dict_of_plots(
                 start_time=last_time_point_to_consider
             )
         pos = {
@@ -2469,7 +2472,7 @@ class lineageTree:
         Warning
             If more than one nodes are received
         """
-        graph = self.to_simple_graph(node, end_time=end_time)
+        graph = self._create_dict_of_plots(node, end_time=end_time)
         if len(graph) > 1:
             raise Warning(
                 "Please use lT.plot_all_lineages(nodes) for plotting multiple nodes."
@@ -2506,10 +2509,10 @@ class lineageTree:
 
         Parameters
         ----------
-            r : int or list of int
-                id or list of ids of the spawning node
             t : int, optional
                 target time, if `None` goes as far as possible
+            r : int or list of int
+                id or list of ids of the spawning node
 
         Returns
         -------
