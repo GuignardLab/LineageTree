@@ -506,8 +506,8 @@ class lineageTreeManager:
             )
         matched_right = []
         matched_left = []
-        unmatched_node = []
-        colors = {}
+        colors1 = {}
+        colors2 = {}
         if style not in ("full", "downsampled"):
             for m in btrc:
                 if m._left != -1 and m._right != -1:
@@ -530,7 +530,7 @@ class lineageTreeManager:
                         node_2 = l_node_2 = cyc2.pop()
                         matched_right.append(node_2)
 
-                    colors[node_1] = self.__calculate_distance_of_sub_tree(
+                    colors1[node_1] = self.__calculate_distance_of_sub_tree(
                         node_1,
                         tree1.lT,
                         node_2,
@@ -543,20 +543,10 @@ class lineageTreeManager:
                         tree1.get_norm(node_1),
                         tree2.get_norm(node_2),
                     )
-                    colors[node_2] = colors[node_1]
-                    colors[l_node_1] = colors[node_1]
-                    colors[l_node_2] = colors[node_2]
+                    colors2[node_2] = colors1[node_1]
+                    colors1[l_node_1] = colors1[node_1]
+                    colors2[l_node_2] = colors2[node_2]
 
-                else:
-                    if m._left != -1:
-                        node_1 = tree1.lT.get_cycle(corres1.get(m._left, "-"))[
-                            0
-                        ]
-                    else:
-                        node_1 = tree2.lT.get_cycle(
-                            corres2.get(m._right, "-")
-                        )[0]
-                    unmatched_node.append(node_1)
         else:
             for m in btrc:
                 if m._left != -1 and m._right != -1:
@@ -565,26 +555,36 @@ class lineageTreeManager:
                     if (
                         tree1.lT.get_cycle(node_1)[0] == node_1
                         or tree2.lT.get_cycle(node_2)[0] == node_2
-                        or node_1 not in colors
+                        and (node_1 not in colors1 or node_2 not in colors2)
                     ):
                         matched_left.append(node_1)
+                        l_node_1 = tree1.lT.get_cycle(node_1)[-1]
+                        matched_left.append(l_node_1)
                         matched_right.append(node_2)
-                        colors[node_1] = self.__calculate_distance_of_sub_tree(
-                            node_1,
-                            tree1.lT,
-                            node_2,
-                            tree2.lT,
-                            btrc,
-                            corres1,
-                            corres2,
-                            delta_tmp,
-                            norm_dict[norm],
-                            tree1.get_norm(node_1),
-                            tree2.get_norm(node_2),
+                        l_node_2 = tree2.lT.get_cycle(node_2)[-1]
+                        matched_right.append(l_node_2)
+                        colors1[node_1] = (
+                            self.__calculate_distance_of_sub_tree(
+                                node_1,
+                                tree1.lT,
+                                node_2,
+                                tree2.lT,
+                                btrc,
+                                corres1,
+                                corres2,
+                                delta_tmp,
+                                norm_dict[norm],
+                                tree1.get_norm(node_1),
+                                tree2.get_norm(node_2),
+                            )
                         )
-                        colors[node_2] = colors[node_1]
-                        colors[tree1.lT.get_cycle(node_1)[-1]] = colors[node_1]
-                        colors[tree2.lT.get_cycle(node_2)[-1]] = colors[node_2]
+                        colors2[node_2] = colors1[node_1]
+                        colors1[tree1.lT.get_cycle(node_1)[-1]] = colors1[
+                            node_1
+                        ]
+                        colors2[tree2.lT.get_cycle(node_2)[-1]] = colors2[
+                            node_2
+                        ]
 
                         if tree1.lT.get_cycle(node_1)[-1] != node_1:
                             matched_left.append(tree1.lT.get_cycle(node_1)[-1])
@@ -592,29 +592,20 @@ class lineageTreeManager:
                             matched_right.append(
                                 tree2.lT.get_cycle(node_2)[-1]
                             )
-                else:
-                    if m._left != -1:
-                        node_1 = tree1.lT.get_cycle(corres1.get(m._left, "-"))[
-                            0
-                        ]
-                    else:
-                        node_1 = tree2.lT.get_cycle(
-                            corres2.get(m._right, "-")
-                        )[0]
-                    unmatched_node.append(node_1)
         if ax is None:
             fig, ax = plt.subplots(nrows=1, ncols=2)
         cmap = colormaps[colormap]
         c_norm = mcolors.Normalize(0, 1)
-        colors = {c: cmap(c_norm(v)) for c, v in colors.items()}
+        colors1 = {c: cmap(c_norm(v)) for c, v in colors1.items()}
+        colors2 = {c: cmap(c_norm(v)) for c, v in colors2.items()}
         tree1.lT.plot_node(
             tree1.lT.get_ancestor_at_t(n1),
             end_time=end_time1,
             size=size,
-            selected_nodes=matched_left,
-            color_of_nodes=colors,
-            selected_edges=matched_left,
-            color_of_edges=colors,
+            # selected_nodes=matched_left,
+            color_of_nodes=colors1,
+            # selected_edges=matched_left,
+            color_of_edges=colors1,
             default_color=default_color,
             lw=lw,
             ax=ax[0],
@@ -623,10 +614,10 @@ class lineageTreeManager:
             tree2.lT.get_ancestor_at_t(n2),
             end_time=end_time2,
             size=size,
-            selected_nodes=matched_right,
-            color_of_nodes=colors,
-            selected_edges=matched_right,
-            color_of_edges=colors,
+            # selected_nodes=matched_right,
+            color_of_nodes=colors2,
+            # selected_edges=matched_right,
+            color_of_edges=colors2,
             default_color=default_color,
             lw=lw,
             ax=ax[1],

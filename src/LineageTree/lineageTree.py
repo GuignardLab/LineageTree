@@ -2168,6 +2168,8 @@ class lineageTree:
         """
         Private method that plots the edges of the tree.
         """
+        if isinstance(color, dict):
+            selected_edges = color.keys()
         lines = []
         c = []
         for pred, succs in lnks_tms["links"].items():
