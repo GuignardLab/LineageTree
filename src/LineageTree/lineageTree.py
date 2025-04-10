@@ -1213,6 +1213,11 @@ class lineageTree:
                 "Select a timepoint that is greater than self.t_b",
                 stacklevel=2,
             )
+        if end_time < self.t_b:
+            warnings.warn(
+                "Select a timepoint that is greater than self.t_b",
+                stacklevel=2,
+            )
             return [[]]
         branches = [self.get_successors(node, end_time=end_time)]
         to_do = list(self._successor[branches[0][-1]])
@@ -1831,7 +1836,6 @@ class lineageTree:
             )
         matched_right = []
         matched_left = []
-        unmatched_node = []
         colors = {}
         if style not in ("full", "downsampled"):
             for m in btrc:
@@ -1869,13 +1873,6 @@ class lineageTree:
                     colors[node_2] = colors[node_1]
                     colors[l_node_1] = colors[node_1]
                     colors[l_node_2] = colors[node_2]
-
-                else:
-                    if m._left != -1:
-                        node_1 = self.get_cycle(corres1.get(m._left, "-"))[0]
-                    else:
-                        node_1 = self.get_cycle(corres2.get(m._right, "-"))[0]
-                    unmatched_node.append(node_1)
         else:
             for m in btrc:
                 if m._left != -1 and m._right != -1:
@@ -1885,11 +1882,14 @@ class lineageTree:
                     if (
                         self.get_cycle(node_1)[0] == node_1
                         or self.get_cycle(node_2)[0] == node_2
-                        or node_1 not in colors
-                        or node_2 not in colors
+                        and (node_1 not in colors or node_2 not in colors)
                     ):
                         matched_left.append(node_1)
+                        l_node_1 = self.get_cycle(node_1)[-1]
+                        matched_left.append(l_node_1)
                         matched_right.append(node_2)
+                        l_node_2 = self.get_cycle(node_2)[-1]
+                        matched_right.append(l_node_2)
                         colors[node_1] = self.__calculate_distance_of_sub_tree(
                             node_1,
                             node_2,
@@ -1901,16 +1901,9 @@ class lineageTree:
                             tree1.get_norm(node_1),
                             tree2.get_norm(node_2),
                         )
-                        colors[self.get_cycle(node_1)[-1]] = colors[node_1]
+                        colors[l_node_1] = colors[node_1]
                         colors[node_2] = colors[node_1]
-                        colors[self.get_cycle(node_2)[-1]] = colors[node_1]
-
-                else:
-                    if m._left != -1:
-                        node_1 = self.get_cycle(corres1.get(m._left, "-"))[0]
-                    else:
-                        node_1 = self.get_cycle(corres2.get(m._right, "-"))[0]
-                    unmatched_node.append(node_1)
+                        colors[l_node_2] = colors[node_1]
         if ax is None:
             fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True)
         cmap = colormaps[colormap]

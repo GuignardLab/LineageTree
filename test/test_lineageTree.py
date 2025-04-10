@@ -194,7 +194,8 @@ def test_cross_comparison():
     lT_3.time_resolution = 10
     lTm1.add(lT_3, "embryo_3")
     assert (
-        0 < lTm1.cross_lineage_edit_distance(
+        0
+        < lTm1.cross_lineage_edit_distance(
             node_1,
             "embryo_1",
             100,
@@ -232,7 +233,7 @@ def test_cross_comparison():
         "embryo_2",
         100,
         style="downsampled",
-        downsample=10
+        downsample=10,
     )
     assert lTm1.labelled_mappings(
         t1,

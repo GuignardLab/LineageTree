@@ -112,8 +112,14 @@ def hierarchical_pos(
             )
     return pos_node
 
+
 def convert_style_to_number(style, downsample):
-    style_dict = {"full":0, "simple":-1,"normalized_simple":-2,"mini":-1000}
+    style_dict = {
+        "full": 0,
+        "simple": -1,
+        "normalized_simple": -2,
+        "mini": -1000,
+    }
     if style == "downsampled":
         return downsample
     else:
