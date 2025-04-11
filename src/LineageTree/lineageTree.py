@@ -1054,6 +1054,10 @@ class lineageTree:
             then it corresponds to the id in the tree `to_check_self[i]`
         """
         to_check_self = list(self.nodes_at_t(t=t))
+
+        if not hasattr(self, "kdtrees"):
+            self.kdtrees = {}
+
         if t not in self.kdtrees:
             data_corres = {}
             data = []
