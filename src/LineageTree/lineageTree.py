@@ -2848,7 +2848,7 @@ class lineageTree:
             Dictionary assigning nodes to their successors.
         predecessor : dict mapping int to int or Iterable
             Dictionary assigning nodes to their predecessors.
-        time : dict mapping int to int or float, optional
+        time : dict mapping int to int, optional
             Dictionary assigning nodes to the time point they were recorded to.
             Defaults to None, in which case all times are set to `starting_time`.
         starting_time : int, optional
