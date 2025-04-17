@@ -981,6 +981,12 @@ class lineageTree:
         """
         if os.path.splitext(fname)[-1] != ".lT":
             fname = os.path.extsep.join((fname, "lT"))
+        if hasattr(self, "_protected_predecessor"):
+            del self._protected_predecessor
+        if hasattr(self, "_protected_successor"):
+            del self._protected_successor
+        if hasattr(self, "_protected_time"):
+            del self._protected_time
         with open(fname, "bw") as f:
             pkl.dump(self, f)
             f.close()
