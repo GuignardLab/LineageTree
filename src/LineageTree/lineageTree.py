@@ -981,6 +981,12 @@ class lineageTree:
         """
         if os.path.splitext(fname)[-1] != ".lT":
             fname = os.path.extsep.join((fname, "lT"))
+        if hasattr(self, "_protected_predecessor"):
+            del self._protected_predecessor
+        if hasattr(self, "_protected_successor"):
+            del self._protected_successor
+        if hasattr(self, "_protected_time"):
+            del self._protected_time
         with open(fname, "bw") as f:
             pkl.dump(self, f)
             f.close()
@@ -2875,7 +2881,7 @@ class lineageTree:
             Dictionary assigning nodes to their successors.
         predecessor : dict mapping int to int or Iterable
             Dictionary assigning nodes to their predecessors.
-        time : dict mapping int to int or float, optional
+        time : dict mapping int to int, optional
             Dictionary assigning nodes to the time point they were recorded to.
             Defaults to None, in which case all times are set to `starting_time`.
         starting_time : int, optional
