@@ -1267,13 +1267,17 @@ class lineageTree:
 
     def m(self, i, j):
         if not (i, j) in self._tmp_parenting:
-            if i == j: # the distance to the node itself is 0
+            if i == j:  # the distance to the node itself is 0
                 self._tmp_parenting[(i, j)] = 0
                 self._parenting[i, j] = self._tmp_parenting[(i, j)]
-            elif not self._predecessor[j]: # j and i are note connected so the distance if inf
+            elif not self._predecessor[
+                j
+            ]:  # j and i are note connected so the distance if inf
                 self._tmp_parenting[(i, j)] = np.inf
-            else: # the distance between i and j is the distance between i and pred(j) + 1
-                self._tmp_parenting[(i, j)] = self.m(i, self._predecessor[j][0]) + 1
+            else:  # the distance between i and j is the distance between i and pred(j) + 1
+                self._tmp_parenting[(i, j)] = (
+                    self.m(i, self._predecessor[j][0]) + 1
+                )
                 self._parenting[i, j] = self._tmp_parenting[(i, j)]
                 self._parenting[j, i] = -self._tmp_parenting[(i, j)]
         return self._tmp_parenting[(i, j)]
@@ -1282,8 +1286,9 @@ class lineageTree:
     def parenting(self):
         from itertools import combinations
         from scipy.sparse import dok_array
+
         if not hasattr(self, "_parenting"):
-            self._parenting = dok_array((max(self.nodes)+1, )*2)
+            self._parenting = dok_array((max(self.nodes) + 1,) * 2)
             self._tmp_parenting = {}
             for i, j in combinations(self.nodes, 2):
                 if self._time[j] < self.time[i]:
@@ -1635,13 +1640,19 @@ class lineageTree:
             `-1` if it does not exist
         """
         if n not in self.nodes:
-            return
+            return None
         if time is None:
             time = self.t_b
         ancestor = n
-        while time < self._time.get(ancestor, self.t_b - 1):
-            ancestor = self._predecessor.get(ancestor, [-1])[0]
-        return ancestor
+        while (
+            time < self._time.get(ancestor, self.t_b - 1)
+            and self._predecessor[ancestor]
+        ):
+            ancestor = self._predecessor[ancestor][0]
+        if self._time.get(ancestor, self.t_b - 1) == time:
+            return ancestor
+        else:
+            return None
 
     def get_labelled_ancestor(self, node: int) -> int:
         """Finds the first labelled ancestor and returns its ID otherwise returns None
