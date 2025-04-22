@@ -1259,6 +1259,33 @@ class lineageTree:
             self._all_tracks = self.get_all_tracks()
         return self._all_tracks
 
+    def m(self, i, j):
+        if not (i, j) in self._tmp_parenting:
+            if i == j: # the distance to the node itself is 0
+                self._tmp_parenting[(i, j)] = 0
+                self._parenting[i, j] = self._tmp_parenting[(i, j)]
+            elif not self._predecessor[j]: # j and i are note connected so the distance if inf
+                self._tmp_parenting[(i, j)] = np.inf
+            else: # the distance between i and j is the distance between i and pred(j) + 1
+                self._tmp_parenting[(i, j)] = self.m(i, self._predecessor[j][0]) + 1
+                self._parenting[i, j] = self._tmp_parenting[(i, j)]
+                self._parenting[j, i] = -self._tmp_parenting[(i, j)]
+        return self._tmp_parenting[(i, j)]
+
+    @property
+    def parenting(self):
+        from itertools import combinations
+        from scipy.sparse import dok_array
+        if not hasattr(self, "_parenting"):
+            self._parenting = dok_array((max(self.nodes)+1, )*2)
+            self._tmp_parenting = {}
+            for i, j in combinations(self.nodes, 2):
+                if self._time[j] < self.time[i]:
+                    i, j = j, i
+                self._tmp_parenting[(i, j)] = self.m(i, j)
+            del self._tmp_parenting
+        return self._parenting
+
     def get_all_branches_of_node(
         self, node: int, end_time: int = None
     ) -> list[list[int]]:
