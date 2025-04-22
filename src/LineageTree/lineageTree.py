@@ -1542,7 +1542,7 @@ class lineageTree:
             `-1` if it does not exist
         """
         if n not in self.nodes:
-            return
+            return -1
         if time is None:
             time = self.t_b
         ancestor = n
@@ -1579,7 +1579,9 @@ class lineageTree:
         self,
         t: int,
         end_time: int = None,
-        style: Literal["simple", "full", "downsampled"] = "simple",
+        style: Literal[
+            "simple", "normalized_simple", "full", "downsampled", "mini"
+        ] = "simple",
         downsample: int = 2,
         norm: Literal["max", "sum"] | None = "max",
         recompute: bool = False,
@@ -1664,7 +1666,9 @@ class lineageTree:
         n2: int,
         end_time: int = None,
         norm: Literal["max", "sum"] | None = "max",
-        style="simple",
+        style: Literal[
+            "simple", "normalized_simple", "full", "downsampled", "mini"
+        ] = "simple",
         downsample: int = 2,
     ) -> float:
         """
@@ -1762,7 +1766,9 @@ class lineageTree:
         n2: int,
         end_time: int = None,
         norm: Literal["max", "sum"] | None = "max",
-        style="simple",
+        style: Literal[
+            "simple", "normalized_simple", "full", "downsampled", "mini"
+        ] = "simple",
         downsample: int = 2,
         colormap: str = "cool",
         default_color: str = "black",
@@ -1941,7 +1947,9 @@ class lineageTree:
         n2: int,
         end_time: int = None,
         norm: Literal["max", "sum"] | None = "max",
-        style="simple",
+        style: Literal[
+            "simple", "normalized_simple", "full", "downsampled", "mini"
+        ] = "simple",
         downsample: int = 2,
     ) -> dict[str, list]:
         """
@@ -2053,7 +2061,9 @@ class lineageTree:
         n2: int,
         end_time: int = None,
         norm: Literal["max", "sum"] | None = "max",
-        style="simple",
+        style: Literal[
+            "simple", "normalized_simple", "full", "downsampled", "mini"
+        ] = "simple",
         downsample: int = 2,
         return_norms: bool = False,
     ) -> float | tuple[float, tuple[float, float]]:
@@ -2075,7 +2085,7 @@ class lineageTree:
             If None all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
-        style : {"simple", "full", "downsampled"}, default="simple"
+        style : {"simple", "normalized_simple", "full", "downsampled", "mini"}, default="simple"
             Which tree approximation is going to be used for the comparisons.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.

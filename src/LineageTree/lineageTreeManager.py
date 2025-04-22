@@ -302,7 +302,9 @@ class lineageTreeManager:
         embryo_2: str,
         end_time2: int,
         norm: tuple["max", "sum", "None"] | None = "max",
-        style="simple",
+        style: Literal[
+            "simple", "normalized_simple", "full", "downsampled", "mini"
+        ] = "simple",
         downsample: int = 2,
         return_norms: bool = False,
     ) -> float | tuple[float, tuple[float, float]]:
@@ -419,7 +421,9 @@ class lineageTreeManager:
         embryo_2,
         end_time2,
         norm: Literal["max", "sum"] | None = "max",
-        style="simple",
+        style: Literal[
+            "simple", "normalized_simple", "full", "downsampled", "mini"
+        ] = "simple",
         downsample: int = 2,
         colormap: str = "cool",
         default_color: str = "black",
@@ -602,9 +606,7 @@ class lineageTreeManager:
             tree1.lT.get_ancestor_at_t(n1),
             end_time=end_time1,
             size=size,
-            # selected_nodes=matched_left,
             color_of_nodes=colors1,
-            # selected_edges=matched_left,
             color_of_edges=colors1,
             default_color=default_color,
             lw=lw,
@@ -614,9 +616,7 @@ class lineageTreeManager:
             tree2.lT.get_ancestor_at_t(n2),
             end_time=end_time2,
             size=size,
-            # selected_nodes=matched_right,
             color_of_nodes=colors2,
-            # selected_edges=matched_right,
             color_of_edges=colors2,
             default_color=default_color,
             lw=lw,
@@ -633,7 +633,9 @@ class lineageTreeManager:
         embryo_2,
         end_time2,
         norm: Literal["max", "sum"] | None = "max",
-        style="simple",
+        style: Literal[
+            "simple", "normalized_simple", "full", "downsampled", "mini"
+        ] = "simple",
         downsample: int = 2,
         colormap: str = "cool",
         default_color: str = "black",
