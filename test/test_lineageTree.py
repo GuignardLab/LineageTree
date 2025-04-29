@@ -243,10 +243,8 @@ def test_removing_embryos_from_manager():
 
 
 
-test_lT = lineageTree(successor={1: (2,), 2: (3, 100), 100: (101,), 0: (1,), 10: (0,), 5: (), 3: (), 4: (), 101: ()})
-
-
 def test_successor():
+    test_lT = lineageTree(successor={1: (2,), 2: (3, 100), 100: (101,), 0: (1,), 10: (0,), 5: (), 3: (), 4: (), 101: ()})
     lT = lineageTree(
         successor={1: (2,), 2: (3, 100), 100:[101,], 3: (), 4: None, 5: set(), 0: (1,), 10: (0,)}
     )
@@ -254,6 +252,7 @@ def test_successor():
 
 
 def test_predecessor():
+    test_lT = lineageTree(successor={1: (2,), 2: (3, 100), 100: (101,), 0: (1,), 10: (0,), 5: (), 3: (), 4: (), 101: ()})
     lT = lineageTree(
         predecessor={2: (1,), 3: [2], 100: 2, 101: (100,), 4: set(), 5: None, 1: 0, 0: 10}
     )
