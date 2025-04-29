@@ -468,7 +468,7 @@ def read_from_txt_for_celegans(file: str, name: None | str = None):
     with open(file) as f:
         raw = f.readlines()[1:]
         f.close()
-    label = {}
+    _labels = {}
     time_nodes = {}
     pos = {}
     time = {}
@@ -476,7 +476,7 @@ def read_from_txt_for_celegans(file: str, name: None | str = None):
 
     for unique_id, line in enumerate(raw):
         t = int(line.split("\t")[0])
-        label[unique_id] = line.split("\t")[1]
+        _labels[unique_id] = line.split("\t")[1]
         position = np.array(line.split("\t")[2:5], dtype=float)
         time_nodes.setdefault(t, set()).add(unique_id)
         pos[unique_id] = position
@@ -487,14 +487,14 @@ def read_from_txt_for_celegans(file: str, name: None | str = None):
     for t, cells in time_nodes.items():
         if t != t_b:
             prev_cells = time_nodes[t - 1]
-            name_to_id = {label[c]: c for c in prev_cells}
+            name_to_id = {_labels[c]: c for c in prev_cells}
             for c in cells:
-                if label[c] in name_to_id:
-                    p = name_to_id[label[c]]
-                elif label[c][:-1] in name_to_id:
-                    p = name_to_id[label[c][:-1]]
-                elif IMPLICIT_L_T.get(label[c]) in name_to_id:
-                    p = name_to_id[IMPLICIT_L_T.get(label[c])]
+                if _labels[c] in name_to_id:
+                    p = name_to_id[_labels[c]]
+                elif _labels[c][:-1] in name_to_id:
+                    p = name_to_id[_labels[c][:-1]]
+                elif IMPLICIT_L_T.get(_labels[c]) in name_to_id:
+                    p = name_to_id[IMPLICIT_L_T.get(_labels[c])]
                 else:
                     p = None
                 successor.setdefault(p, []).append(c)
@@ -503,9 +503,9 @@ def read_from_txt_for_celegans(file: str, name: None | str = None):
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-
+    properties = {"_labels": _labels}
     return lineageTree(
-        successor=successor, time=time, pos=pos, label=label, name=name
+        successor=successor, time=time, pos=pos, name=name, **properties
     )
 
 
