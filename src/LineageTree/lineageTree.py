@@ -402,9 +402,9 @@ class lineageTree:
     def labels(self) -> dict[int, str]:
         """The labels of the nodes."""
         if not hasattr(self, "_labels"):
-            if hasattr(self, "cell_name"):
+            if hasattr(self, "node_name"):
                 self._labels = {
-                    i: self.cell_name.get(i, "Unlabeled") for i in self.roots
+                    i: self.node_name.get(i, "Unlabeled") for i in self.roots
                 }
             else:
                 self._labels = {
@@ -440,20 +440,20 @@ class lineageTree:
         self.__dict__.update(state)
 
     def _get_height(self, c: int, done: dict) -> float:
-        """Recursively computes the height of a cell within a tree * a space factor.
+        """Recursively computes the height of a node within a tree * a space factor.
         This function is specific to the function write_to_svg.
 
         Parameters
         ----------
         c : int
-            id of a cell in a lineage tree from which the height will be computed from
+            id of a node in a lineage tree from which the height will be computed from
         done : dict mapping int to list of two int
-            a dictionary that maps a cell id to its vertical and horizontal position
+            a dictionary that maps a node id to its vertical and horizontal position
 
         Returns
         -------
         float
-            the height of the cell `c`
+            the height of the node `c`
         """
         if c in done:
             return done[c][0]
@@ -535,7 +535,7 @@ class lineageTree:
         if roots is None:
             roots = self.roots
             if hasattr(self, "image_label"):
-                roots = [cell for cell in roots if self.image_label[cell] != 1]
+                roots = [node for node in roots if self.image_label[node] != 1]
 
         if node_size is None:
 
@@ -601,7 +601,7 @@ class lineageTree:
         self.vert_space_factor = vert_space_factor
         if order_key is not None:
             roots.sort(key=order_key)
-        treated_cells = []
+        treated_nodes = []
 
         pos_given = positions is not None
         if not pos_given:
@@ -620,7 +620,7 @@ class lineageTree:
             to_do = [r]
             while len(to_do) != 0:
                 curr = to_do.pop(0)
-                treated_cells += [curr]
+                treated_nodes += [curr]
                 if not self._successor[curr]:
                     if order_key is not None:
                         to_do += sorted(self._successor[curr], key=order_key)
@@ -646,7 +646,7 @@ class lineageTree:
             size=factor * np.max(list(positions.values()), axis=0),
         )
         if draw_edges and not draw_nodes and not coloring_edges:
-            to_do = set(treated_cells)
+            to_do = set(treated_nodes)
             while len(to_do) > 0:
                 curr = to_do.pop()
                 c_cycle = self.get_cell_cycle(curr)
@@ -670,7 +670,7 @@ class lineageTree:
                     )
                 to_do.difference_update(c_cycle)
         else:
-            for c in treated_cells:
+            for c in treated_nodes:
                 x1, y1 = positions[c]
                 for si in self._successor[c]:
                     x2, y2 = positions[si]
@@ -683,7 +683,7 @@ class lineageTree:
                                 stroke_width=svgwrite.pt(stroke_width(si)),
                             )
                         )
-            for c in treated_cells:
+            for c in treated_nodes:
                 x1, y1 = positions[c]
                 if draw_nodes:
                     dwg.add(
@@ -737,14 +737,14 @@ class lineageTree:
         node_properties : dict mapping str to list of dict of properties and its default value, optional
             a dictionary of properties to write
             To a key representing the name of the property is
-            paired a dictionary that maps a cell id to a property
+            paired a dictionary that maps a node id to a property
             and a default value for this property
         Names : bool, default=True
-            Only works with ASTEC outputs, True to sort the cells by their names
+            Only works with ASTEC outputs, True to sort the nodes by their names
         """
 
         def format_names(names_which_matter):
-            """Return an ensured formated cell names"""
+            """Return an ensured formated node names"""
             tmp = {}
             for k, v in names_which_matter.items():
                 tmp[k] = (
@@ -1313,7 +1313,7 @@ class lineageTree:
         Returns
         -------
         list of list of int
-            list of lists containing track cell ids
+            list of lists containing track node ids
         """
         if not end_time:
             end_time = self.t_e
@@ -1335,7 +1335,7 @@ class lineageTree:
         Returns
         -------
         list of list of int
-            list of lists containing track cell ids
+            list of lists containing track node ids
         """
         if not hasattr(self, "_all_tracks") or force_recompute:
             self._all_tracks = []
@@ -1358,7 +1358,7 @@ class lineageTree:
         Returns
         -------
         list of list of int
-            list of lists containing track cell ids
+            list of lists containing track node ids
         """
         if roots is None:
             return self.get_all_tracks(force_recompute=True)
@@ -1404,7 +1404,7 @@ class lineageTree:
         end_time: int | None = None,
         preorder: bool = False,
     ) -> list[int]:
-        """Computes the list of cells from the subtree spawned by *x*
+        """Computes the list of nodes from the subtree spawned by *x*
         The default output order is Breadth First Traversal.
         Unless preorder is `True` in that case the order is
         Depth First Traversal (DFT) preordered.
@@ -1444,7 +1444,7 @@ class lineageTree:
     def compute_spatial_density(
         self, t_b: int = None, t_e: int = None, th: float = 50
     ) -> dict[int, float]:
-        """Computes the spatial density of cells between `t_b` and `t_e`.
+        """Computes the spatial density of nodes between `t_b` and `t_e`.
 
         The results is stored in `self.spatial_density` and returned.
 
@@ -1460,7 +1460,7 @@ class lineageTree:
         Returns
         -------
         dict of int to float
-            dictionary that maps a cell id to its spatial density
+            dictionary that maps a node id to its spatial density
         """
         s_vol = 4 / 3.0 * np.pi * th**3
         time_range = set(range(self.t_b, self.t_e)).intersection(
@@ -1489,7 +1489,7 @@ class lineageTree:
         -------
         dict of int to set of int
             dictionary that maps
-            a cell id to its `k` nearest neighbors
+            a node id to its `k` nearest neighbors
         """
         self.kn_graph = {}
         for t in set(self._time.values()):
@@ -1517,7 +1517,7 @@ class lineageTree:
         Returns
         -------
         dict of int to set of int
-            dictionary that maps a cell id to its neighbors at a distance `th`
+            dictionary that maps a node id to its neighbors at a distance `th`
         """
         self.th_edges = {}
         for t in set(self._time.values()):
@@ -1534,14 +1534,14 @@ class lineageTree:
 
     def main_axes(self, time: int = None) -> tuple[np.array, np.array]:
         """Finds the main axes for a timepoint.
-        If none will select the timepoint with the highest amound of cells.
+        If none will select the timepoint with the highest amound of nodes.
 
         Parameters
         ----------
         time : int, optional
             The timepoint to find the main axes.
             If `None` will find the timepoint
-            with the largest number of cells.
+            with the largest number of nodes.
 
         Returns
         -------
@@ -1712,7 +1712,7 @@ class lineageTree:
         Returns
         -------
         dict of tuple of int to float
-            a dictionary that maps a pair of cell ids at time `t` to their unordered tree edit distance
+            a dictionary that maps a pair of node ids at time `t` to their unordered tree edit distance
         """
         if not hasattr(self, "uted"):
             self.uted = {}
@@ -1899,10 +1899,10 @@ class lineageTree:
             Dictinary that contains the positions of all nodes.
         lnks_tms : dict, dict
             2 dictionaries: 1 contains all links from start of life cycle to end of life cycle and
-            the succesors of each cell.
+            the succesors of each node.
             1 contains the length of each life cycle.
         selected_nodes : list or set, optional
-            Which cells are to be selected (Painted with a different color)
+            Which nodes are to be selected (Painted with a different color)
         selected_edges : list or set, optional
             Which edges are to be selected (Painted with a different color)
         color_of_nodes : str, default="magenta"
@@ -2195,7 +2195,7 @@ class lineageTree:
         r: int | Iterable[int] = None,
     ) -> list:
         """
-        Returns the list of cells at time `t` that are spawn by the node(s) `r`.
+        Returns the list of nodes at time `t` that are spawn by the node(s) `r`.
 
         Parameters
         ----------
