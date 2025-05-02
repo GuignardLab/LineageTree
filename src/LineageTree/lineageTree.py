@@ -440,7 +440,7 @@ class lineageTree:
         self.__dict__.update(state)
 
     def _get_height(self, c: int, done: dict) -> float:
-        """Recursively computes the height of a node within a tree * a space factor.
+        """Recursively computes the height of a node within a tree times a space factor.
         This function is specific to the function write_to_svg.
 
         Parameters
@@ -649,7 +649,7 @@ class lineageTree:
             to_do = set(treated_nodes)
             while len(to_do) > 0:
                 curr = to_do.pop()
-                c_chain = self.get_chain(curr)
+                c_chain = self.get_node_chain(curr)
                 x1, y1 = positions[c_chain[0]]
                 x2, y2 = positions[c_chain[-1]]
                 dwg.add(
@@ -1220,7 +1220,7 @@ class lineageTree:
 
         return chain
 
-    def get_chain(
+    def get_node_chain(
         self,
         x: int,
         depth: int = None,
@@ -1259,10 +1259,10 @@ class lineageTree:
             :-1
         ] + self.get_successors(x, depth_succ, end_time=end_time)
 
-    @property
+    @dynamic_property
     def all_chains(self) -> list[list[int]]:
-        if not hasattr(self, "_all_chains"):
-            self._all_chains = self.get_all_chains()
+        """List of all chains in the tree."""
+        self._all_chains = self._compute_all_chains()
         return self._all_chains
 
     def m(self, i, j):
@@ -1297,7 +1297,7 @@ class lineageTree:
             del self._tmp_parenting
         return self._parenting
 
-    def get_all_chains_of_node(
+    def get_all_subtree_chains(
         self, node: int, end_time: int = None
     ) -> list[list[int]]:
         """Computes all the chains of the subtree spawn by a given node.
@@ -1313,7 +1313,7 @@ class lineageTree:
         Returns
         -------
         list of list of int
-            list of lists containing chain node ids
+            list of chains
         """
         if not end_time:
             end_time = self.t_e
@@ -1322,29 +1322,27 @@ class lineageTree:
         while to_do:
             current = to_do.pop()
             chain = self.get_successors(current, end_time=end_time)
-            # if len(chain) != 1 or self._time[current] <= end_time:
             if self._time[chain[-1]] <= end_time:
                 chains += [chain]
                 to_do += self._successor[chain[-1]]
         return chains
 
-    def get_all_chains(self, force_recompute: bool = False) -> list[list[int]]:
+    def _compute_all_chains(self) -> list[list[int]]:
         """Computes all the chains of a given lineage tree,
         stores it in `self.all_chains` and returns it.
 
         Returns
         -------
         list of list of int
-            list of lists containing chain node ids
+            list of chains
         """
-        if not hasattr(self, "_all_chains") or force_recompute:
-            self._all_chains = []
-            to_do = list(self.roots)
-            while len(to_do) != 0:
-                current = to_do.pop()
-                chain = self.get_chain(current)
-                self._all_chains += [chain]
-                to_do.extend(self._successor[chain[-1]])
+        self._all_chains = []
+        to_do = list(self.roots)
+        while len(to_do) != 0:
+            current = to_do.pop()
+            chain = self.get_node_chain(current)
+            self._all_chains += [chain]
+            to_do.extend(self._successor[chain[-1]])
         return self._all_chains
 
     def get_chains(self, roots: list = None) -> list[list[int]]:
@@ -1358,16 +1356,16 @@ class lineageTree:
         Returns
         -------
         list of list of int
-            list of lists containing chain node ids
+            list of chains
         """
         if roots is None:
-            return self.get_all_chains(force_recompute=True)
+            return self._all_chains
         else:
             chains = []
             to_do = list(roots)
             while len(to_do) != 0:
                 current = to_do.pop()
-                chain = self.get_chain(current)
+                chain = self.get_node_chain(current)
                 chains.append(chain)
                 to_do.extend(self._successor[chain[-1]])
             return chains
@@ -1398,7 +1396,7 @@ class lineageTree:
             to_do += succ
         return leaves
 
-    def get_sub_tree(
+    def get_sub_tree_nodes(
         self,
         x: int | Iterable,
         end_time: int | None = None,
@@ -2111,7 +2109,7 @@ class lineageTree:
         [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
         return axes.flatten()[0].get_figure(), axes, ax2root
 
-    def plot_node(
+    def plot_sub_tree(
         self,
         node: int,
         figsize: tuple[int, int] = (4, 7),
@@ -2526,8 +2524,8 @@ class lineageTree:
         list of lists
             rotated and translated trajectories positions
         """
-        nodes1_chain = self.get_chain(nodes1)
-        nodes2_chain = self.get_chain(nodes2)
+        nodes1_chain = self.get_node_chain(nodes1)
+        nodes2_chain = self.get_node_chain(nodes2)
 
         interp_chain1, interp_chain2 = self.__interpolate(
             nodes1_chain, nodes2_chain, threshold
