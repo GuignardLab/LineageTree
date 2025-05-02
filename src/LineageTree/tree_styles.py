@@ -180,7 +180,7 @@ class mini_tree(abstract_trees):
 
     def get_norm(self) -> int:
         return len(
-            self.lT.get_all_branches_of_node(self.root, end_time=self.end_time)
+            self.lT.get_all_chains_of_node(self.root, end_time=self.end_time)
         )
 
     def _edist_format(self, adj_dict: dict):
@@ -299,7 +299,7 @@ class normalized_simple_tree(simple_tree):
 
     def get_norm(self) -> int:
         return len(
-            self.lT.get_all_branches_of_node(self.root, end_time=self.end_time)
+            self.lT.get_all_chains_of_node(self.root, end_time=self.end_time)
         )
 
 

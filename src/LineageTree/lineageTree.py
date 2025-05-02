@@ -160,14 +160,14 @@ class lineageTree:
 
     ###TODO pos can be callable and stay motionless (copy the position of the succ node, use something like optical flow)
     @modifier
-    def add_branch(
+    def add_chain(
         self,
         node: int,
         length: int,
         downstream: bool,
         pos: Callable | None = None,
     ) -> int:
-        """Adds a branch of specific length to a node either as a successor or as a predecessor.
+        """Adds a chain of specific length to a node either as a successor or as a predecessor.
         If it is placed on top of a tree all the nodes will move timepoints #length down.
 
         Parameters
@@ -175,11 +175,11 @@ class lineageTree:
         node : int
             Id of the successor (predecessor if `downstream==False`)
         length : int
-            The length of the new branch.
+            The length of the new chain.
         downstream : bool, default=True
-            If `True` will create a branch that goes forwards in time otherwise backwards.
+            If `True` will create a chain that goes forwards in time otherwise backwards.
         pos : np.ndarray, optional
-            The new position of the branch. Defaults to None.
+            The new position of the chain. Defaults to None.
 
         Returns
         -------
@@ -1297,7 +1297,7 @@ class lineageTree:
             del self._tmp_parenting
         return self._parenting
 
-    def get_all_branches_of_node(
+    def get_all_chains_of_node(
         self, node: int, end_time: int = None
     ) -> list[list[int]]:
         """Computes all the chains of the subtree spawn by a given node.
@@ -1306,9 +1306,9 @@ class lineageTree:
         Parameters
         ----------
         node : int
-            The node from which we want to get its branches.
+            The node from which we want to get its chains.
         end_time : int, optional
-            The time at which we want to stop the branches.
+            The time at which we want to stop the chains.
 
         Returns
         -------
@@ -1317,16 +1317,16 @@ class lineageTree:
         """
         if not end_time:
             end_time = self.t_e
-        branches = [self.get_successors(node)]
-        to_do = list(self._successor[branches[0][-1]])
+        chains = [self.get_successors(node)]
+        to_do = list(self._successor[chains[0][-1]])
         while to_do:
             current = to_do.pop()
             chain = self.get_successors(current, end_time=end_time)
             # if len(chain) != 1 or self._time[current] <= end_time:
             if self._time[chain[-1]] <= end_time:
-                branches += [chain]
+                chains += [chain]
                 to_do += self._successor[chain[-1]]
-        return branches
+        return chains
 
     def get_all_chains(self, force_recompute: bool = False) -> list[list[int]]:
         """Computes all the chains of a given lineage tree,
