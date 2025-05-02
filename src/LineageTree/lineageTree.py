@@ -649,9 +649,9 @@ class lineageTree:
             to_do = set(treated_nodes)
             while len(to_do) > 0:
                 curr = to_do.pop()
-                c_cycle = self.get_cell_cycle(curr)
-                x1, y1 = positions[c_cycle[0]]
-                x2, y2 = positions[c_cycle[-1]]
+                c_chain = self.get_chain(curr)
+                x1, y1 = positions[c_chain[0]]
+                x2, y2 = positions[c_chain[-1]]
                 dwg.add(
                     dwg.line(
                         (factor * x1, factor * y1),
@@ -659,7 +659,7 @@ class lineageTree:
                         stroke=svgwrite.rgb(0, 0, 0),
                     )
                 )
-                for si in self._successor[c_cycle[-1]]:
+                for si in self._successor[c_chain[-1]]:
                     x3, y3 = positions[si]
                     dwg.add(
                         dwg.line(
@@ -668,7 +668,7 @@ class lineageTree:
                             stroke=svgwrite.rgb(0, 0, 0),
                         )
                     )
-                to_do.difference_update(c_cycle)
+                to_do.difference_update(c_chain)
         else:
             for c in treated_nodes:
                 x1, y1 = positions[c]
@@ -1158,32 +1158,32 @@ class lineageTree:
             start_time = self.t_b
         if not end_time:
             end_time = self.t_e
-        unconstrained_cycle = [x]
-        cycle = [x] if start_time <= self._time[x] <= end_time else []
+        unconstrained_chain = [x]
+        chain = [x] if start_time <= self._time[x] <= end_time else []
         acc = 0
         while (
             acc != depth
-            and start_time < self._time[unconstrained_cycle[0]]
+            and start_time < self._time[unconstrained_chain[0]]
             and (
-                self._predecessor[unconstrained_cycle[0]] != ()
+                self._predecessor[unconstrained_chain[0]] != ()
                 and (  # Please dont change very important even if it looks weird.
                     len(
                         self._successor[
-                            self._predecessor[unconstrained_cycle[0]][0]
+                            self._predecessor[unconstrained_chain[0]][0]
                         ]
                     )
                     == 1
                 )
             )
         ):
-            unconstrained_cycle.insert(
-                0, self._predecessor[unconstrained_cycle[0]][0]
+            unconstrained_chain.insert(
+                0, self._predecessor[unconstrained_chain[0]][0]
             )
             acc += 1
-            if start_time <= self._time[unconstrained_cycle[0]] <= end_time:
-                cycle.insert(0, unconstrained_cycle[0])
+            if start_time <= self._time[unconstrained_chain[0]] <= end_time:
+                chain.insert(0, unconstrained_chain[0])
 
-        return cycle
+        return chain
 
     def get_successors(
         self, x: int, depth: int = None, end_time: int = None
@@ -1208,19 +1208,19 @@ class lineageTree:
         """
         if end_time is None:
             end_time = self.t_e
-        cycle = [x]
+        chain = [x]
         acc = 0
         while (
-            len(self._successor[cycle[-1]]) == 1
+            len(self._successor[chain[-1]]) == 1
             and acc != depth
-            and self._time[cycle[-1]] < end_time
+            and self._time[chain[-1]] < end_time
         ):
-            cycle += self._successor[cycle[-1]]
+            chain += self._successor[chain[-1]]
             acc += 1
 
-        return cycle
+        return chain
 
-    def get_cell_cycle(
+    def get_chain(
         self,
         x: int,
         depth: int = None,
@@ -1233,7 +1233,7 @@ class lineageTree:
         If the value `depth` is provided and not None,
         `depth_pred` and `depth_succ` are overwriten by `depth`.
         The ordered list of ids is returned.
-        If all `depth` are None, the full cycle is returned.
+        If all `depth` are None, the full chain is returned.
 
         Parameters
         ----------
@@ -1342,7 +1342,7 @@ class lineageTree:
             to_do = list(self.roots)
             while len(to_do) != 0:
                 current = to_do.pop()
-                chain = self.get_cell_cycle(current)
+                chain = self.get_chain(current)
                 self._all_chains += [chain]
                 to_do.extend(self._successor[chain[-1]])
         return self._all_chains
@@ -1367,7 +1367,7 @@ class lineageTree:
             to_do = list(roots)
             while len(to_do) != 0:
                 current = to_do.pop()
-                chain = self.get_cell_cycle(current)
+                chain = self.get_chain(current)
                 chains.append(chain)
                 to_do.extend(self._successor[chain[-1]])
             return chains
@@ -2426,9 +2426,9 @@ class lineageTree:
         Parameters
         ----------
         chain1 : list of int
-            list of nodes of the first cell cycle to compare
+            list of nodes of the first chain to compare
         chain2 : list of int
-            list of nodes of the second cell cycle to compare
+            list of nodes of the second chain to compare
         threshold : int
             set a maximum number of points a chain can have
 
@@ -2488,7 +2488,7 @@ class lineageTree:
         cost_mat_p: bool = False,
     ) -> tuple[float, tuple, np.ndarray, np.ndarray, np.ndarray]:
         """
-        Calculate DTW distance between two cell cycles
+        Calculate DTW distance between two chains
 
         Parameters
         ----------
@@ -2526,23 +2526,23 @@ class lineageTree:
         list of lists
             rotated and translated trajectories positions
         """
-        nodes1_cycle = self.get_cell_cycle(nodes1)
-        nodes2_cycle = self.get_cell_cycle(nodes2)
+        nodes1_chain = self.get_chain(nodes1)
+        nodes2_chain = self.get_chain(nodes2)
 
-        interp_cycle1, interp_cycle2 = self.__interpolate(
-            nodes1_cycle, nodes2_cycle, threshold
+        interp_chain1, interp_chain2 = self.__interpolate(
+            nodes1_chain, nodes2_chain, threshold
         )
 
-        pos_cycle1 = np.array([self.pos[c_id] for c_id in nodes1_cycle])
-        pos_cycle2 = np.array([self.pos[c_id] for c_id in nodes2_cycle])
+        pos_chain1 = np.array([self.pos[c_id] for c_id in nodes1_chain])
+        pos_chain2 = np.array([self.pos[c_id] for c_id in nodes2_chain])
 
         if regist:
             R, t = self.__rigid_transform_3D(
-                np.transpose(interp_cycle1), np.transpose(interp_cycle2)
+                np.transpose(interp_chain1), np.transpose(interp_chain2)
             )
-            pos_cycle1 = np.transpose(np.dot(R, pos_cycle1.T) + t)
+            pos_chain1 = np.transpose(np.dot(R, pos_chain1.T) + t)
 
-        dist_mat = distance.cdist(pos_cycle1, pos_cycle2, "euclidean")
+        dist_mat = distance.cdist(pos_chain1, pos_chain2, "euclidean")
 
         path, cost_mat, final_cost = self.__dp(
             dist_mat,
@@ -2555,7 +2555,7 @@ class lineageTree:
         cost = final_cost / len(path)
 
         if cost_mat_p:
-            return cost, path, cost_mat, pos_cycle1, pos_cycle2
+            return cost, path, cost_mat, pos_chain1, pos_chain2
         else:
             return cost, path
 
@@ -2572,7 +2572,7 @@ class lineageTree:
         centered_band: bool = True,
     ) -> tuple[float, plt.Figure]:
         """
-        Plot DTW cost matrix between two cell cycles in heatmap format
+        Plot DTW cost matrix between two chains in heatmap format
 
         Parameters
         ----------
@@ -2602,7 +2602,7 @@ class lineageTree:
         figure
             Heatmap of cost matrix with opitimal path
         """
-        cost, path, cost_mat, pos_cycle1, pos_cycle2 = self.calculate_dtw(
+        cost, path, cost_mat, pos_chain1, pos_chain2 = self.calculate_dtw(
             nodes1,
             nodes2,
             threshold,
@@ -2631,8 +2631,8 @@ class lineageTree:
 
     @staticmethod
     def __plot_2d(
-        pos_cycle1: list[np.ndarray],
-        pos_cycle2: list[np.ndarray],
+        pos_chain1: list[np.ndarray],
+        pos_chain2: list[np.ndarray],
         nodes1: list[int],
         nodes2: list[int],
         ax: plt.Axes,
@@ -2642,14 +2642,14 @@ class lineageTree:
         y_label: str,
     ) -> None:
         ax.plot(
-            pos_cycle1[:, x_idx],
-            pos_cycle1[:, y_idx],
+            pos_chain1[:, x_idx],
+            pos_chain1[:, y_idx],
             "-",
             label=f"root = {nodes1}",
         )
         ax.plot(
-            pos_cycle2[:, x_idx],
-            pos_cycle2[:, y_idx],
+            pos_chain2[:, x_idx],
+            pos_chain2[:, y_idx],
             "-",
             label=f"root = {nodes2}",
         )
@@ -2671,7 +2671,7 @@ class lineageTree:
         alig: bool = False,
     ) -> tuple[float, plt.Figure]:
         """
-        Plots DTW trajectories aligment between two cell cycles in 2D or 3D
+        Plots DTW trajectories aligment between two chains in 2D or 3D
 
         Parameters
         ----------
@@ -2714,8 +2714,8 @@ class lineageTree:
             distance,
             alignment,
             cost_mat,
-            pos_cycle1,
-            pos_cycle2,
+            pos_chain1,
+            pos_chain2,
         ) = self.calculate_dtw(
             nodes1,
             nodes2,
@@ -2738,16 +2738,16 @@ class lineageTree:
 
         if projection == "3d":
             ax.plot(
-                pos_cycle1[:, 0],
-                pos_cycle1[:, 1],
-                pos_cycle1[:, 2],
+                pos_chain1[:, 0],
+                pos_chain1[:, 1],
+                pos_chain1[:, 2],
                 "-",
                 label=f"root = {nodes1}",
             )
             ax.plot(
-                pos_cycle2[:, 0],
-                pos_cycle2[:, 1],
-                pos_cycle2[:, 2],
+                pos_chain2[:, 0],
+                pos_chain2[:, 1],
+                pos_chain2[:, 2],
                 "-",
                 label=f"root = {nodes2}",
             )
@@ -2757,8 +2757,8 @@ class lineageTree:
         else:
             if projection == "xy" or projection == "yx" or projection is None:
                 self.__plot_2d(
-                    pos_cycle1,
-                    pos_cycle2,
+                    pos_chain1,
+                    pos_chain2,
                     nodes1,
                     nodes2,
                     ax,
@@ -2769,8 +2769,8 @@ class lineageTree:
                 )
             elif projection == "xz" or projection == "zx":
                 self.__plot_2d(
-                    pos_cycle1,
-                    pos_cycle2,
+                    pos_chain1,
+                    pos_chain2,
                     nodes1,
                     nodes2,
                     ax,
@@ -2781,8 +2781,8 @@ class lineageTree:
                 )
             elif projection == "yz" or projection == "zy":
                 self.__plot_2d(
-                    pos_cycle1,
-                    pos_cycle2,
+                    pos_chain1,
+                    pos_chain2,
                     nodes1,
                     nodes2,
                     ax,
@@ -2802,19 +2802,19 @@ class lineageTree:
 
                 # Apply PCA
                 pca = PCA(n_components=2)
-                pca.fit(np.vstack([pos_cycle1, pos_cycle2]))
-                pos_cycle1_2d = pca.transform(pos_cycle1)
-                pos_cycle2_2d = pca.transform(pos_cycle2)
+                pca.fit(np.vstack([pos_chain1, pos_chain2]))
+                pos_chain1_2d = pca.transform(pos_chain1)
+                pos_chain2_2d = pca.transform(pos_chain2)
 
                 ax.plot(
-                    pos_cycle1_2d[:, 0],
-                    pos_cycle1_2d[:, 1],
+                    pos_chain1_2d[:, 0],
+                    pos_chain1_2d[:, 1],
                     "-",
                     label=f"root = {nodes1}",
                 )
                 ax.plot(
-                    pos_cycle2_2d[:, 0],
-                    pos_cycle2_2d[:, 1],
+                    pos_chain2_2d[:, 0],
+                    pos_chain2_2d[:, 1],
                     "-",
                     label=f"root = {nodes2}",
                 )
@@ -2843,7 +2843,7 @@ class lineageTree:
                         'pca' : PCA projection"""
                 )
 
-        connections = [[pos_cycle1[i], pos_cycle2[j]] for i, j in alignment]
+        connections = [[pos_chain1[i], pos_chain2[j]] for i, j in alignment]
 
         for connection in connections:
             xyz1 = connection[0]
