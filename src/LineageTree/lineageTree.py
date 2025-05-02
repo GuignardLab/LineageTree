@@ -1260,10 +1260,10 @@ class lineageTree:
         ] + self.get_successors(x, depth_succ, end_time=end_time)
 
     @property
-    def all_tracks(self) -> list[list[int]]:
-        if not hasattr(self, "_all_tracks"):
-            self._all_tracks = self.get_all_tracks()
-        return self._all_tracks
+    def all_chains(self) -> list[list[int]]:
+        if not hasattr(self, "_all_chains"):
+            self._all_chains = self.get_all_chains()
+        return self._all_chains
 
     def m(self, i, j):
         if not (i, j) in self._tmp_parenting:
@@ -1300,8 +1300,8 @@ class lineageTree:
     def get_all_branches_of_node(
         self, node: int, end_time: int = None
     ) -> list[list[int]]:
-        """Computes all the tracks of the subtree spawn by a given node.
-        Similar to get_all_tracks().
+        """Computes all the chains of the subtree spawn by a given node.
+        Similar to get_all_chains().
 
         Parameters
         ----------
@@ -1313,7 +1313,7 @@ class lineageTree:
         Returns
         -------
         list of list of int
-            list of lists containing track node ids
+            list of lists containing chain node ids
         """
         if not end_time:
             end_time = self.t_e
@@ -1321,34 +1321,34 @@ class lineageTree:
         to_do = list(self._successor[branches[0][-1]])
         while to_do:
             current = to_do.pop()
-            track = self.get_successors(current, end_time=end_time)
-            # if len(track) != 1 or self._time[current] <= end_time:
-            if self._time[track[-1]] <= end_time:
-                branches += [track]
-                to_do += self._successor[track[-1]]
+            chain = self.get_successors(current, end_time=end_time)
+            # if len(chain) != 1 or self._time[current] <= end_time:
+            if self._time[chain[-1]] <= end_time:
+                branches += [chain]
+                to_do += self._successor[chain[-1]]
         return branches
 
-    def get_all_tracks(self, force_recompute: bool = False) -> list[list[int]]:
-        """Computes all the tracks of a given lineage tree,
-        stores it in `self.all_tracks` and returns it.
+    def get_all_chains(self, force_recompute: bool = False) -> list[list[int]]:
+        """Computes all the chains of a given lineage tree,
+        stores it in `self.all_chains` and returns it.
 
         Returns
         -------
         list of list of int
-            list of lists containing track node ids
+            list of lists containing chain node ids
         """
-        if not hasattr(self, "_all_tracks") or force_recompute:
-            self._all_tracks = []
+        if not hasattr(self, "_all_chains") or force_recompute:
+            self._all_chains = []
             to_do = list(self.roots)
             while len(to_do) != 0:
                 current = to_do.pop()
-                track = self.get_cell_cycle(current)
-                self._all_tracks += [track]
-                to_do.extend(self._successor[track[-1]])
-        return self._all_tracks
+                chain = self.get_cell_cycle(current)
+                self._all_chains += [chain]
+                to_do.extend(self._successor[chain[-1]])
+        return self._all_chains
 
-    def get_tracks(self, roots: list = None) -> list[list[int]]:
-        """Computes the tracks given by the list of nodes `roots` and returns it.
+    def get_chains(self, roots: list = None) -> list[list[int]]:
+        """Computes the chains given by the list of nodes `roots` and returns it.
 
         Parameters
         ----------
@@ -1358,19 +1358,19 @@ class lineageTree:
         Returns
         -------
         list of list of int
-            list of lists containing track node ids
+            list of lists containing chain node ids
         """
         if roots is None:
-            return self.get_all_tracks(force_recompute=True)
+            return self.get_all_chains(force_recompute=True)
         else:
-            tracks = []
+            chains = []
             to_do = list(roots)
             while len(to_do) != 0:
                 current = to_do.pop()
-                track = self.get_cell_cycle(current)
-                tracks.append(track)
-                to_do.extend(self._successor[track[-1]])
-            return tracks
+                chain = self.get_cell_cycle(current)
+                chains.append(chain)
+                to_do.extend(self._successor[chain[-1]])
+            return chains
 
     def find_leaves(self, roots: int | Iterable) -> set[int]:
         """Finds the leaves of a tree spawned by one or more nodes.
@@ -2418,59 +2418,59 @@ class lineageTree:
         return R, t
 
     def __interpolate(
-        self, track1: list, track2: list, threshold: int
+        self, chain1: list, chain2: list, threshold: int
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Interpolate two series that have different lengths
 
         Parameters
         ----------
-        track1 : list of int
+        chain1 : list of int
             list of nodes of the first cell cycle to compare
-        track2 : list of int
+        chain2 : list of int
             list of nodes of the second cell cycle to compare
         threshold : int
-            set a maximum number of points a track can have
+            set a maximum number of points a chain can have
 
         Returns
         -------
         list of np.ndarray
-            `x`, `y`, `z` postions for `track1`
+            `x`, `y`, `z` postions for `chain1`
         list of np.ndarray
-            `x`, `y`, `z` postions for `track2`
+            `x`, `y`, `z` postions for `chain2`
         """
         inter1_pos = []
         inter2_pos = []
 
-        track1_pos = np.array([self.pos[c_id] for c_id in track1])
-        track2_pos = np.array([self.pos[c_id] for c_id in track2])
+        chain1_pos = np.array([self.pos[c_id] for c_id in chain1])
+        chain2_pos = np.array([self.pos[c_id] for c_id in chain2])
 
-        # Both tracks have the same length and size below the threshold - nothing is done
-        if len(track1) == len(track2) and (
-            len(track1) <= threshold or len(track2) <= threshold
+        # Both chains have the same length and size below the threshold - nothing is done
+        if len(chain1) == len(chain2) and (
+            len(chain1) <= threshold or len(chain2) <= threshold
         ):
-            return track1_pos, track2_pos
-        # Both tracks have the same length but one or more sizes are above the threshold
-        elif len(track1) > threshold or len(track2) > threshold:
+            return chain1_pos, chain2_pos
+        # Both chains have the same length but one or more sizes are above the threshold
+        elif len(chain1) > threshold or len(chain2) > threshold:
             sampling = threshold
-        # Tracks have different lengths and the sizes are below the threshold
+        # chains have different lengths and the sizes are below the threshold
         else:
-            sampling = max(len(track1), len(track2))
+            sampling = max(len(chain1), len(chain2))
 
         for pos in range(3):
-            track1_interp = InterpolatedUnivariateSpline(
-                np.linspace(0, 1, len(track1_pos[:, pos])),
-                track1_pos[:, pos],
+            chain1_interp = InterpolatedUnivariateSpline(
+                np.linspace(0, 1, len(chain1_pos[:, pos])),
+                chain1_pos[:, pos],
                 k=1,
             )
-            inter1_pos.append(track1_interp(np.linspace(0, 1, sampling)))
+            inter1_pos.append(chain1_interp(np.linspace(0, 1, sampling)))
 
-            track2_interp = InterpolatedUnivariateSpline(
-                np.linspace(0, 1, len(track2_pos[:, pos])),
-                track2_pos[:, pos],
+            chain2_interp = InterpolatedUnivariateSpline(
+                np.linspace(0, 1, len(chain2_pos[:, pos])),
+                chain2_pos[:, pos],
                 k=1,
             )
-            inter2_pos.append(track2_interp(np.linspace(0, 1, sampling)))
+            inter2_pos.append(chain2_interp(np.linspace(0, 1, sampling)))
 
         return np.column_stack(inter1_pos), np.column_stack(inter2_pos)
 
@@ -2497,7 +2497,7 @@ class lineageTree:
         nodes2 : int
             node to compare distance
         threshold : int, default=1000
-            set a maximum number of points a track can have
+            set a maximum number of points a chain can have
         regist : bool, default=True
             Rotate and translate trajectories
         start_d : int, default=0
@@ -2581,7 +2581,7 @@ class lineageTree:
         nodes2 : int
             node to compare distance
         threshold : int, default=1000
-            set a maximum number of points a track can have
+            set a maximum number of points a chain can have
         regist : bool, default=True
             Rotate and translate trajectories
         start_d : int, default=0
@@ -2680,7 +2680,7 @@ class lineageTree:
         nodes2 : int
             node to compare distance
         threshold : int, default=1000
-            set a maximum number of points a track can have
+            set a maximum number of points a chain can have
         regist : bool, default=True
             Rotate and translate trajectories
         start_d : int, default=0

@@ -21,9 +21,9 @@ def test_read_MaMuT_xml():
     assert len(lT.successor) == 2430
 
 
-def test_all_tracks():
+def test_all_chains():
     lT = read_from_mamut_xml("test/data/test-mamut.xml")
-    assert len(lT.all_tracks) == 18
+    assert len(lT.all_chains) == 18
 
 
 def test_uted_2levels_vs_3levels():
