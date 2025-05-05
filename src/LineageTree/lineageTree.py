@@ -1337,7 +1337,7 @@ class lineageTree:
             list of chains
         """
         self._all_chains = []
-        to_do = list(self.roots)
+        to_do = sorted(list(self.roots), key=self.time.get)
         while len(to_do) != 0:
             current = to_do.pop()
             chain = self.get_node_chain(current)
@@ -1346,7 +1346,7 @@ class lineageTree:
         return self._all_chains
 
     def get_chains(self, roots: list = None) -> list[list[int]]:
-        """Computes the chains given by the list of nodes `roots` and returns it.
+        """Returns all the chains spawned by the subtrees spawned by each of the given roots.
 
         Parameters
         ----------
@@ -1358,17 +1358,29 @@ class lineageTree:
         list of list of int
             list of chains
         """
+        all_chains = self.all_chains
         if roots is None:
-            return self._all_chains
-        else:
-            chains = []
-            to_do = list(roots)
-            while len(to_do) != 0:
-                current = to_do.pop()
-                chain = self.get_node_chain(current)
-                chains.append(chain)
-                to_do.extend(self._successor[chain[-1]])
-            return chains
+            return all_chains
+        roots = list(roots)
+        output_chains = []
+        for n in roots:
+            starting_node = self.get_predecessors(n)[0]
+            found = False
+            done = False
+            starting_time = self.time[n]
+            i = 0
+            while not done and i < len(all_chains):
+                curr_found = all_chains[i][0] == starting_node
+                found = found or curr_found
+                if found:
+                    done = (self.time[all_chains[i][0]] <= starting_time) and not curr_found
+                    if not done:
+                        if curr_found:
+                            output_chains.append(self.get_successors(n))
+                        else:
+                            output_chains.append(all_chains[i])
+                i += 1
+        return output_chains
 
     def find_leaves(self, roots: int | Iterable) -> set[int]:
         """Finds the leaves of a tree spawned by one or more nodes.
