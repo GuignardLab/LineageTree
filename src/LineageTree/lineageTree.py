@@ -1396,7 +1396,7 @@ class lineageTree:
             to_do += succ
         return leaves
 
-    def get_sub_tree_nodes(
+    def get_subtree_nodes(
         self,
         x: int | Iterable,
         end_time: int | None = None,
@@ -1425,7 +1425,7 @@ class lineageTree:
             to_do = [x]
         elif isinstance(x, Iterable):
             to_do = list(x)
-        sub_tree = []
+        subtree = []
         while to_do:
             curr = to_do.pop()
             succ = self._successor[curr]
@@ -1436,8 +1436,8 @@ class lineageTree:
                 to_do = succ + to_do
             else:
                 to_do += succ
-                sub_tree += [curr]
-        return sub_tree
+                subtree += [curr]
+        return subtree
 
     def compute_spatial_density(
         self, t_b: int = None, t_e: int = None, th: float = 50
@@ -1619,7 +1619,7 @@ class lineageTree:
         at a given time `time`.
 
         If there is no ancestor, returns `-1`
-        If time is None return the root of the sub tree that spawns
+        If time is None return the root of the subtree that spawns
         the node n.
 
         Parameters
@@ -2109,7 +2109,7 @@ class lineageTree:
         [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
         return axes.flatten()[0].get_figure(), axes, ax2root
 
-    def plot_sub_tree(
+    def plot_subtree(
         self,
         node: int,
         figsize: tuple[int, int] = (4, 7),

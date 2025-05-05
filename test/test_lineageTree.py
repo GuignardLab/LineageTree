@@ -68,7 +68,7 @@ def test_adding_nodes():
     lT.add_chain(first_level_end, 10, downstream=True)
     lT.add_chain(first_level_end, 10, downstream=True)
 
-    assert len(lT.get_sub_tree_nodes(t1)) == 30
+    assert len(lT.get_subtree_nodes(t1)) == 30
 
 
 def test_removing_nodes():
@@ -79,7 +79,7 @@ def test_removing_nodes():
     second_level_1 = lT.add_chain(first_level_end, 10, downstream=True)
     lT.add_chain(first_level_end, 10, downstream=True)
     lT.remove_nodes(lT.get_node_chain(second_level_1))
-    assert len(lT.get_sub_tree_nodes(t1)) == 20
+    assert len(lT.get_subtree_nodes(t1)) == 20
 
 
 def test_time_resolution():
@@ -128,7 +128,7 @@ def test_cross_comparison():
     lTm1.add(lT_1, name="embryo_1")
     lTm1.add(lT_2, name="embryo_2")
     assert lT_2.time_resolution == lT_2._time_resolution / 10
-    assert len(lT_1.get_sub_tree_nodes(node_1)) == len(lT_2.get_sub_tree_nodes(node_2)) * 2
+    assert len(lT_1.get_subtree_nodes(node_1)) == len(lT_2.get_subtree_nodes(node_2)) * 2
     assert (
         lTm1.cross_lineage_edit_distance(
             t1,
@@ -205,7 +205,7 @@ def test_cross_comparison():
 def test_plots():
     lT = read_from_mastodon("test/data/test.mastodon")
     assert len(lT.plot_all_lineages()) == 3
-    assert len(lT.plot_sub_tree(40)) == 2
+    assert len(lT.plot_subtree(40)) == 2
 
 
 def test_removing_embryos_from_manager():
