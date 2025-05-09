@@ -1261,7 +1261,7 @@ class lineageTree:
 
     @dynamic_property
     def all_chains(self) -> list[list[int]]:
-        """List of all chains in the tree."""
+        """List of all chains in the tree, ordered in depth-first search."""
         self._all_chains = self._compute_all_chains()
         return self._all_chains
 
@@ -1336,34 +1336,35 @@ class lineageTree:
         list of list of int
             list of chains
         """
-        self._all_chains = []
-        to_do = sorted(list(self.roots), key=self.time.get)
+        all_chains = []
+        to_do = sorted(self.roots, key=self.time.get, reverse=True)
         while len(to_do) != 0:
             current = to_do.pop()
             chain = self.get_node_chain(current)
-            self._all_chains += [chain]
+            all_chains += [chain]
             to_do.extend(self._successor[chain[-1]])
-        return self._all_chains
+        return all_chains
 
-    def get_chains(self, roots: list = None) -> list[list[int]]:
-        """Returns all the chains spawned by the subtrees spawned by each of the given roots.
+    def get_chains(self, nodes: Iterable | int = None) -> dict[int, list[list[int]]]:
+        """Returns all the chains in the subtrees spawned by each of the given nodes.
 
         Parameters
         ----------
-        roots : list, optional
-            list of ids of the roots to be computed, if `None` all roots are used
+        nodes : Iterable or int, optional
+            id or Iterable of ids of the nodes to be computed, if `None` all roots are used
 
         Returns
         -------
-        list of list of int
-            list of chains
+        dict mapping int to list of list of int
+            dictionary mapping node ids to a list of chains
         """
         all_chains = self.all_chains
-        if roots is None:
+        if nodes is None:
             return all_chains
-        roots = list(roots)
+        if not isinstance(nodes, Iterable):
+            nodes = [nodes]
         output_chains = []
-        for n in roots:
+        for n in nodes:
             starting_node = self.get_predecessors(n)[0]
             found = False
             done = False
