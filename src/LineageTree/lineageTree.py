@@ -18,6 +18,7 @@ from typing import Literal
 import svgwrite
 from matplotlib.collections import LineCollection
 from packaging.version import Version
+from scipy.sparse import dok_array
 
 from .tree_styles import tree_style
 
@@ -1266,7 +1267,7 @@ class lineageTree:
         return self._all_tracks
 
     def m(self, i, j):
-        if not (i, j) in self._tmp_parenting:
+        if (i, j) not in self._tmp_parenting:
             if i == j:  # the distance to the node itself is 0
                 self._tmp_parenting[(i, j)] = 0
                 self._parenting[i, j] = self._tmp_parenting[(i, j)]
@@ -1284,8 +1285,6 @@ class lineageTree:
 
     @property
     def parenting(self):
-        from itertools import combinations
-        from scipy.sparse import dok_array
 
         if not hasattr(self, "_parenting"):
             self._parenting = dok_array((max(self.nodes) + 1,) * 2)

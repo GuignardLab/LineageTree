@@ -1,11 +1,13 @@
+import warnings
+
+import pytest
+
 from LineageTree import (
     lineageTree,
     lineageTreeManager,
     read_from_mamut_xml,
     read_from_mastodon,
 )
-import warnings
-import pytest
 
 
 def test_read_MaMuT_xml():
@@ -242,19 +244,62 @@ def test_removing_embryos_from_manager():
     assert len(lTm1.lineagetrees) == 1
 
 
-
 def test_successor():
-    test_lT = lineageTree(successor={1: (2,), 2: (3, 100), 100: (101,), 0: (1,), 10: (0,), 5: (), 3: (), 4: (), 101: ()})
+    test_lT = lineageTree(
+        successor={
+            1: (2,),
+            2: (3, 100),
+            100: (101,),
+            0: (1,),
+            10: (0,),
+            5: (),
+            3: (),
+            4: (),
+            101: (),
+        }
+    )
     lT = lineageTree(
-        successor={1: (2,), 2: (3, 100), 100:[101,], 3: (), 4: None, 5: set(), 0: (1,), 10: (0,)}
+        successor={
+            1: (2,),
+            2: (3, 100),
+            100: [
+                101,
+            ],
+            3: (),
+            4: None,
+            5: set(),
+            0: (1,),
+            10: (0,),
+        }
     )
     assert lT == test_lT
 
 
 def test_predecessor():
-    test_lT = lineageTree(successor={1: (2,), 2: (3, 100), 100: (101,), 0: (1,), 10: (0,), 5: (), 3: (), 4: (), 101: ()})
+    test_lT = lineageTree(
+        successor={
+            1: (2,),
+            2: (3, 100),
+            100: (101,),
+            0: (1,),
+            10: (0,),
+            5: (),
+            3: (),
+            4: (),
+            101: (),
+        }
+    )
     lT = lineageTree(
-        predecessor={2: (1,), 3: [2], 100: 2, 101: (100,), 4: set(), 5: None, 1: 0, 0: 10}
+        predecessor={
+            2: (1,),
+            3: [2],
+            100: 2,
+            101: (100,),
+            4: set(),
+            5: None,
+            1: 0,
+            0: 10,
+        }
     )
     assert lT == test_lT
 
@@ -264,47 +309,71 @@ def test_empty():
 
 
 def test_time_warning():
-    warnings.filterwarnings("error") # raises warnings as errors so we can catch them when expected
+    warnings.filterwarnings(
+        "error"
+    )  # raises warnings as errors so we can catch them when expected
     with pytest.raises(UserWarning) as excinfo:
-        lT = lineageTree(successor={0:(1,)}, time={0:1, 1:2}, starting_time=3)
-    assert str(excinfo.value) == "Both `time` and `starting_time` were provided, `starting_time` was ignored."
+        lT = lineageTree(
+            successor={0: (1,)}, time={0: 1, 1: 2}, starting_time=3
+        )
+    assert (
+        str(excinfo.value)
+        == "Both `time` and `starting_time` were provided, `starting_time` was ignored."
+    )
     warnings.filterwarnings("default")
 
 
 def test_bad_leaf():
     with pytest.raises(ValueError) as excinfo:
         lT = lineageTree(
-            successor={1: (2,), 2: (3, 100), 100:[101,], 3: (), 4: None, 5: set(), 0: (1,), 10: (0,)},
-            root_leaf_value=[None]
+            successor={
+                1: (2,),
+                2: (3, 100),
+                100: [
+                    101,
+                ],
+                3: (),
+                4: None,
+                5: set(),
+                0: (1,),
+                10: (0,),
+            },
+            root_leaf_value=[None],
         )
-    assert str(excinfo.value) == "() was not declared as a leaf but was found as a successor.\nPlease lift the ambiguity."
+    assert (
+        str(excinfo.value)
+        == "() was not declared as a leaf but was found as a successor.\nPlease lift the ambiguity."
+    )
 
 
 def test_multiple_predecessors():
     with pytest.raises(ValueError) as excinfo:
-        lT = lineageTree(
-            successor={2: (1,), 3: (2,), 4: (2,)}
-        )
+        lT = lineageTree(successor={2: (1,), 3: (2,), 4: (2,)})
     assert str(excinfo.value) == "Node can have at most one predecessor."
-    
+
 
 def test_bad_root_leaf_value():
     with pytest.raises(ValueError) as excinfo:
-        lT = lineageTree(
-            successor={1: (2,), 2: set()},
-            root_leaf_value=set()
-        )
-    assert str(excinfo.value) == "root_leaf_value should have at least one element."
-    
+        lT = lineageTree(successor={1: (2,), 2: set()}, root_leaf_value=set())
+    assert (
+        str(excinfo.value)
+        == "root_leaf_value should have at least one element."
+    )
+
 
 def test_successor_and_predecessor():
     with pytest.raises(ValueError) as excinfo:
-        lT = lineageTree(successor={1:(2,3)}, predecessor={2:1, 3:1})
-    assert str(excinfo.value) == "You cannot have both successors and predecessors."
-    
+        lT = lineageTree(successor={1: (2, 3)}, predecessor={2: 1, 3: 1})
+    assert (
+        str(excinfo.value)
+        == "You cannot have both successors and predecessors."
+    )
+
 
 def test_cycles():
     with pytest.raises(ValueError) as excinfo:
-        lT = lineageTree(successor={0:(1,), 1:(0,)})
-    assert str(excinfo.value) == "Cycles were found in the tree, there should not be any."
-
+        lT = lineageTree(successor={0: (1,), 1: (0,)})
+    assert (
+        str(excinfo.value)
+        == "Cycles were found in the tree, there should not be any."
+    )
