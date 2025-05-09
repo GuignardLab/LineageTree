@@ -49,7 +49,6 @@ class dynamic_property(property):
         self.protected_name = protected_name
 
     def __set_name__(self, owner, name):
-        self.owner = owner
         self.name = name
         if self.protected_name is None:
             self.protected_name = f"_{name}"
@@ -59,10 +58,13 @@ class dynamic_property(property):
         setattr(owner, self.protected_name, None)
 
     def __get__(self, instance, owner):
-        if owner.__dict__[self.protected_name] is None:
-            return super().__get__(instance, owner)
-        else:
-            return owner.__dict__[self.protected_name]
+        if instance is None:
+            return self
+        if getattr(instance, self.protected_name, None) is None:
+            value = super().__get__(instance, owner)
+            setattr(instance, self.protected_name, value)
+            return value
+        return getattr(instance, self.protected_name)
 
 
 class lineageTree:
