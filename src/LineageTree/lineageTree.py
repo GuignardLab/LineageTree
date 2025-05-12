@@ -1954,7 +1954,7 @@ class lineageTree:
         ax.get_xaxis().set_visible(False)
         return ax.get_figure(), ax
 
-    def to_simple_graph(
+    def _create_dict_of_plots(
         self, node: int = None, start_time: int = None
     ) -> dict[int, dict]:
         """Generates a dictionary of graphs where the keys are the index of the graph and
@@ -2041,10 +2041,10 @@ class lineageTree:
             raise Warning("Number of rows has to be at least 1")
         if nodes:
             graphs = {
-                i: self.to_simple_graph(node) for i, node in enumerate(nodes)
+                i: self._create_dict_of_plots(node) for i, node in enumerate(nodes)
             }
         else:
-            graphs = self.to_simple_graph(
+            graphs = self._create_dict_of_plots(
                 start_time=last_time_point_to_consider
             )
         pos = {
@@ -2158,7 +2158,7 @@ class lineageTree:
         Warning
             If more than one nodes are received
         """
-        graph = self.to_simple_graph(node)
+        graph = self._create_dict_of_plots(node)
         if len(graph) > 1:
             raise Warning(
                 "Please use lT.plot_all_lineages(nodes) for plotting multiple nodes."
