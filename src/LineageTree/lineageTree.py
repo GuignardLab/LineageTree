@@ -1297,7 +1297,7 @@ class lineageTree:
             del self._tmp_parenting
         return self._parenting
 
-    def get_all_subtree_chains(
+    def get_all_chains_of_subtree(
         self, node: int, end_time: int = None
     ) -> list[list[int]]:
         """Computes all the chains of the subtree spawn by a given node.
