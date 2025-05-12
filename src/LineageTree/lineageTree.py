@@ -1574,22 +1574,6 @@ class lineageTree:
         self.eig_val, self.eig_vec = eig_val[srt], eig_vec[:, srt]
         return eig_val[srt], eig_vec[:, srt]
 
-    def scale_embryo(self, scale=1000) -> float:
-        """Scale the embryo using their eigenvalues.
-
-        Parameters
-        ----------
-        scale : int, default=1000
-            The resulting scale you want to achieve. Defaults to 1000.
-
-        Returns
-        -------
-        float
-            The scale factor.
-        """
-        eig = self.main_axes()[0]
-        return scale / (np.sqrt(eig[0]))
-
     @staticmethod
     def __rodrigues_rotation_matrix(
         vector1: Iterable | np.ndarray,
