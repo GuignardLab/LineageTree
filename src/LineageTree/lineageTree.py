@@ -2997,7 +2997,7 @@ class lineageTree:
             if self.nodes.difference(pos) != set():
                 raise ValueError("Please provide the position of all nodes.")
             self.pos = {
-                node: np.ndarray(position) for node, position in pos.items()
+                node: np.array(position) for node, position in pos.items()
             }
 
         if time is None:
