@@ -40,6 +40,8 @@ from .utils import (
     hierarchical_pos,
 )
 
+Chain = list[int]
+
 
 class dynamic_property(property):
     def __init__(
@@ -220,7 +222,7 @@ class lineageTree:
         return node
 
     @modifier
-    def add_root(self, t: int, pos: list = None):
+    def add_root(self, t: int, pos: list | None = None):
         """Adds a root to a specific timepoint.
 
         Parameters
@@ -240,10 +242,10 @@ class lineageTree:
 
     def _add_node(
         self,
-        succ: list = None,
-        pred: list = None,
-        pos: np.ndarray = None,
-        nid: int = None,
+        succ: list | None = None,
+        pred: list | None = None,
+        pos: np.ndarray | None = None,
+        nid: int | None = None,
     ) -> int:
         """Adds a node to the LineageTree object that is either a successor or a predecessor of another node.
         Does not handle time! You cannot enter both a successor and a predecessor.
@@ -470,19 +472,19 @@ class lineageTree:
     def write_to_svg(
         self,
         file_name: str,
-        roots: list = None,
+        roots: list | None = None,
         draw_nodes: bool = True,
         draw_edges: bool = True,
-        order_key: Callable = None,
+        order_key: Callable | None = None,
         vert_space_factor: float = 0.5,
         horizontal_space: float = 1,
-        node_size: Callable | str = None,
-        stroke_width: Callable = None,
+        node_size: Callable | str | None = None,
+        stroke_width: Callable | None = None,
         factor: float = 1.0,
-        node_color: Callable | str = None,
-        stroke_color: Callable = None,
-        positions: dict = None,
-        node_color_map: Callable | str = None,
+        node_color: Callable | str | None = None,
+        stroke_color: Callable | None = None,
+        positions: dict | None = None,
+        node_color_map: Callable | str | None = None,
     ) -> None:
         """Writes the lineage tree to an SVG file.
         Node and edges coloring and size can be provided.
@@ -545,7 +547,7 @@ class lineageTree:
             def node_size(x):
                 return vert_space_factor / 2.1
 
-        elif isinstance(node_size, str) and node_size in self.__dict__:
+        else:
             values = np.array(
                 [self._successor[node_size][c] for c in self.nodes]
             )
@@ -563,13 +565,12 @@ class lineageTree:
                 return 0, 0, 0
 
         elif isinstance(node_color, str) and node_color in self.__dict__:
-            if isinstance(node_color_map, str):
-                from matplotlib import colormaps
+            from matplotlib import colormaps
 
-                if node_color_map in colormaps:
-                    node_color_map = colormaps[node_color_map]
-                else:
-                    node_color_map = colormaps["viridis"]
+            if node_color_map in colormaps:
+                node_color_map = colormaps[node_color_map]
+            else:
+                node_color_map = colormaps["viridis"]
             values = np.array(
                 [self._successor[node_color][c] for c in self.nodes]
             )
@@ -585,13 +586,12 @@ class lineageTree:
                 return 0, 0, 0
 
         elif isinstance(stroke_color, str) and stroke_color in self.__dict__:
-            if isinstance(node_color_map, str):
-                from matplotlib import colormaps
+            from matplotlib import colormaps
 
-                if node_color_map in colormaps:
-                    node_color_map = colormaps[node_color_map]
-                else:
-                    node_color_map = colormaps["viridis"]
+            if node_color_map in colormaps:
+                node_color_map = colormaps[node_color_map]
+            else:
+                node_color_map = colormaps["viridis"]
             values = np.array(
                 [self._successor[stroke_color][c] for c in self.nodes]
             )
@@ -703,11 +703,11 @@ class lineageTree:
         fname: str,
         t_min: int = -1,
         t_max: int = np.inf,
-        nodes_to_use: list = None,
+        nodes_to_use: list[int] | None = None,
         temporal: bool = True,
-        spatial: str = None,
+        spatial: str | None = None,
         write_layout: bool = True,
-        node_properties: dict = None,
+        node_properties: dict | None = None,
         Names: bool = False,
     ) -> None:
         """Write a lineage tree into an understable tulip file.
@@ -913,7 +913,9 @@ class lineageTree:
             f.write(")")
             f.close()
 
-    def to_binary(self, fname: str, starting_points: list = None) -> None:
+    def to_binary(
+        self, fname: str, starting_points: list[int] | None = None
+    ) -> None:
         """Writes the lineage tree (a forest) as a binary structure
         (assuming it is a binary tree, it would not work for *n* ary tree with 2 < *n*).
         The binary file is composed of 3 sequences of numbers and
@@ -1139,7 +1141,11 @@ class lineageTree:
         return self.Gabriel_graph[t]
 
     def get_predecessors(
-        self, x: int, depth: int = None, start_time: int = None, end_time=None
+        self,
+        x: int,
+        depth: int | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
     ) -> list[int]:
         """Computes the predecessors of the node `x` up to
         `depth` predecessors or the begining of the life of `x`.
@@ -1226,10 +1232,10 @@ class lineageTree:
     def get_node_chain(
         self,
         x: int,
-        depth: int = None,
-        depth_pred: int = None,
-        depth_succ: int = None,
-        end_time: int = None,
+        depth: int | None = None,
+        depth_pred: int | None = None,
+        depth_succ: int | None = None,
+        end_time: int | None = None,
     ) -> list[int]:
         """Computes the predecessors and successors of the node `x` up to
         `depth_pred` predecessors plus `depth_succ` successors.
@@ -1299,8 +1305,8 @@ class lineageTree:
         return self._parenting
 
     def get_all_chains_of_subtree(
-        self, node: int, end_time: int = None
-    ) -> list[list[int]]:
+        self, node: int, end_time: int | None = None
+    ) -> list[Chain]:
         """Computes all the chains of the subtree spawn by a given node.
         Similar to get_all_chains().
 
@@ -1328,7 +1334,7 @@ class lineageTree:
                 to_do += self._successor[chain[-1]]
         return chains
 
-    def _compute_all_chains(self) -> list[list[int]]:
+    def _compute_all_chains(self) -> list[Chain]:
         """Computes all the chains of a given lineage tree,
         stores it in `self.all_chains` and returns it.
 
@@ -1346,7 +1352,9 @@ class lineageTree:
             to_do.extend(self._successor[chain[-1]])
         return all_chains
 
-    def get_chains(self, nodes: Iterable | int = None) -> dict[int, list[list[int]]]:
+    def get_chains(
+        self, nodes: Iterable | int | None = None
+    ) -> dict[int, list[Chain]]:
         """Returns all the chains in the subtrees spawned by each of the given nodes.
 
         Parameters
@@ -1375,7 +1383,9 @@ class lineageTree:
                 curr_found = all_chains[i][0] == starting_node
                 found = found or curr_found
                 if found:
-                    done = (self.time[all_chains[i][0]] <= starting_time) and not curr_found
+                    done = (
+                        self.time[all_chains[i][0]] <= starting_time
+                    ) and not curr_found
                     if not done:
                         if curr_found:
                             output_chains.append(self.get_successors(n))
@@ -2042,7 +2052,8 @@ class lineageTree:
             raise Warning("Number of rows has to be at least 1")
         if nodes:
             graphs = {
-                i: self._create_dict_of_plots(node) for i, node in enumerate(nodes)
+                i: self._create_dict_of_plots(node)
+                for i, node in enumerate(nodes)
             }
         else:
             graphs = self._create_dict_of_plots(
@@ -2870,13 +2881,13 @@ class lineageTree:
     def __init__(
         self,
         *,
-        successor: dict[int, Iterable] = None,
-        predecessor: dict[int, int | Iterable] = None,
-        time: dict[int, int] = None,
-        starting_time: int = None,
-        pos: dict[int, Iterable] = None,
-        name: str = None,
-        root_leaf_value: Iterable = None,
+        successor: dict[int, Iterable] | None = None,
+        predecessor: dict[int, int | Iterable] | None = None,
+        time: dict[int, int] | None = None,
+        starting_time: int | None = None,
+        pos: dict[int, Iterable] | None = None,
+        name: str | None = None,
+        root_leaf_value: Iterable | None = None,
         **kwargs,
     ):
         """Create a lineageTree object from minimal information, without reading from a file.

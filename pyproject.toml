@@ -131,3 +131,9 @@ exclude = [
 ]
 
 target-version = "py310"
+
+[tool.ty.src]
+root = "./src"
+
+[tool.ty.rules]
+unresolved-import = "ignore"

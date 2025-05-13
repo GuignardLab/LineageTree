@@ -93,3 +93,5 @@ test.tlp
 bak_*
 
 .coverage
+
+ty_check
