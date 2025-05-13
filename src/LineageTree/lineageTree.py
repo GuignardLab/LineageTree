@@ -40,8 +40,6 @@ from .utils import (
     hierarchical_pos,
 )
 
-Chain = list[int]
-
 
 class dynamic_property(property):
     def __init__(
@@ -652,7 +650,7 @@ class lineageTree:
             to_do = set(treated_nodes)
             while len(to_do) > 0:
                 curr = to_do.pop()
-                c_chain = self.get_node_chain(curr)
+                c_chain = self.get_chain_of_node(curr)
                 x1, y1 = positions[c_chain[0]]
                 x2, y2 = positions[c_chain[-1]]
                 dwg.add(
@@ -1195,7 +1193,7 @@ class lineageTree:
         return chain
 
     def get_successors(
-        self, x: int, depth: int = None, end_time: int = None
+        self, x: int, depth: int | None = None, end_time: int | None = None
     ) -> list[int]:
         """Computes the successors of the node `x` up to
         `depth` successors or the end of the life of `x`.
@@ -1229,7 +1227,7 @@ class lineageTree:
 
         return chain
 
-    def get_node_chain(
+    def get_chain_of_node(
         self,
         x: int,
         depth: int | None = None,
@@ -1258,7 +1256,7 @@ class lineageTree:
         Returns
         -------
         list of int
-            list of ids
+            list of node ids
         """
         if end_time is None:
             end_time = self.t_e
@@ -1306,7 +1304,7 @@ class lineageTree:
 
     def get_all_chains_of_subtree(
         self, node: int, end_time: int | None = None
-    ) -> list[Chain]:
+    ) -> list[list[int]]:
         """Computes all the chains of the subtree spawn by a given node.
         Similar to get_all_chains().
 
@@ -1334,7 +1332,7 @@ class lineageTree:
                 to_do += self._successor[chain[-1]]
         return chains
 
-    def _compute_all_chains(self) -> list[Chain]:
+    def _compute_all_chains(self) -> list[list[int]]:
         """Computes all the chains of a given lineage tree,
         stores it in `self.all_chains` and returns it.
 
@@ -1347,14 +1345,14 @@ class lineageTree:
         to_do = sorted(self.roots, key=self.time.get, reverse=True)
         while len(to_do) != 0:
             current = to_do.pop()
-            chain = self.get_node_chain(current)
+            chain = self.get_chain_of_node(current)
             all_chains += [chain]
             to_do.extend(self._successor[chain[-1]])
         return all_chains
 
-    def get_chains(
+    def __get_chains(  # TODO: Probably should be removed, might be used by DTW. Might also be a @dynamic_property
         self, nodes: Iterable | int | None = None
-    ) -> dict[int, list[Chain]]:
+    ) -> dict[int, list[list[int]]]:
         """Returns all the chains in the subtrees spawned by each of the given nodes.
 
         Parameters
@@ -1558,7 +1556,7 @@ class lineageTree:
             )
         return self.th_edges
 
-    def main_axes(self, time: int = None) -> tuple[np.array, np.array]:
+    def main_axes(self, time: int | None = None) -> tuple[np.array, np.array]:
         """Finds the main axes for a timepoint.
         If none will select the timepoint with the highest amound of nodes.
 
@@ -1625,12 +1623,12 @@ class lineageTree:
         )
         return np.eye(3) + np.sin(angle) * K + (1 - np.cos(angle)) * K @ K
 
-    def get_ancestor_at_t(self, n: int, time: int = None) -> int:
+    def get_ancestor_at_t(self, n: int, time: int | None = None) -> int | None:
         """
         Find the id of the ancestor of a give node `n`
         at a given time `time`.
 
-        If there is no ancestor, returns `-1`
+        If there is no ancestor, returns `None`
         If time is None return the root of the subtree that spawns
         the node n.
 
@@ -1645,9 +1643,9 @@ class lineageTree:
 
         Returns
         -------
-        int
+        int or None
             the id of the ancestor at time `time`,
-            `-1` if it does not exist
+            `None` if it does not exist
         """
         if n not in self.nodes:
             return None
@@ -1664,7 +1662,7 @@ class lineageTree:
         else:
             return None
 
-    def get_labelled_ancestor(self, node: int) -> int:
+    def get_labelled_ancestor(self, node: int) -> int | None:
         """Finds the first labelled ancestor and returns its ID otherwise returns None
 
         Parameters
@@ -1674,7 +1672,7 @@ class lineageTree:
 
         Returns
         -------
-        None or int
+        int or None
             Returns the first ancestor found that has a label otherwise `None`.
         """
         if node not in self.nodes:
@@ -1692,7 +1690,7 @@ class lineageTree:
     def unordered_tree_edit_distances_at_time_t(
         self,
         t: int,
-        end_time: int = None,
+        end_time: int | None = None,
         style: Literal["simple", "full", "downsampled"] = "simple",
         downsample: int = 2,
         norm: Literal["max", "sum"] | None = "max",
@@ -1746,8 +1744,8 @@ class lineageTree:
         self,
         n1: int,
         n2: int,
-        end_time: int = None,
-        norm: Literal["max", "sum"] | None = "max",
+        end_time: int | None = None,
+        norm: Literal["max", "sum", None] = "max",
         style="simple",
         downsample: int = 2,
     ) -> float:
@@ -2537,8 +2535,8 @@ class lineageTree:
         list of lists
             rotated and translated trajectories positions
         """
-        nodes1_chain = self.get_node_chain(nodes1)
-        nodes2_chain = self.get_node_chain(nodes2)
+        nodes1_chain = self.get_chain_of_node(nodes1)
+        nodes2_chain = self.get_chain_of_node(nodes2)
 
         interp_chain1, interp_chain2 = self.__interpolate(
             nodes1_chain, nodes2_chain, threshold
