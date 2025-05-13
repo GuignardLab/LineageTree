@@ -1364,7 +1364,7 @@ class lineageTree:
 
         Returns
         -------
-        dict mapping int to list of list of int
+        dict mapping int to list of Chain
             dictionary mapping node ids to a list of chains
         """
         all_chains = self.all_chains
@@ -1372,13 +1372,14 @@ class lineageTree:
             return all_chains
         if not isinstance(nodes, Iterable):
             nodes = [nodes]
-        output_chains = []
+        output_chains = {}
         for n in nodes:
             starting_node = self.get_predecessors(n)[0]
             found = False
             done = False
             starting_time = self.time[n]
             i = 0
+            current_chain = []
             while not done and i < len(all_chains):
                 curr_found = all_chains[i][0] == starting_node
                 found = found or curr_found
@@ -1388,10 +1389,11 @@ class lineageTree:
                     ) and not curr_found
                     if not done:
                         if curr_found:
-                            output_chains.append(self.get_successors(n))
+                            current_chain.append(self.get_successors(n))
                         else:
-                            output_chains.append(all_chains[i])
+                            current_chain.append(all_chains[i])
                 i += 1
+            output_chains[n] = current_chain
         return output_chains
 
     def find_leaves(self, roots: int | Iterable) -> set[int]:
