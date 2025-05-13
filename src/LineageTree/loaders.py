@@ -381,6 +381,7 @@ def read_from_binary(fname: str, name: None | str = None):
     waiting_list = []
     i = 0
     done = False
+    t = 0
     if max(number_sequence[::2]) == -1:
         tmp = number_sequence[1::2]
         if len(tmp) * 3 == len(pos_sequence) == len(time_sequence) * 3:
@@ -512,9 +513,9 @@ def read_from_txt_for_celegans(file: str, name: None | str = None):
 def read_from_txt_for_celegans_CAO(
     file: str,
     reorder: bool = False,
-    raw_size: float = None,
-    shape: float = None,
-    name: None | str = None,
+    raw_size: float | None = None,
+    shape: float | None = None,
+    name: str | None = None,
 ):
     """
     Read a C. elegans lineage tree from Cao et al.

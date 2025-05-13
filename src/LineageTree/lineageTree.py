@@ -8,7 +8,7 @@ import os
 import pickle as pkl
 import struct
 import warnings
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from functools import partial, wraps
 from itertools import combinations
 from numbers import Number
@@ -2201,7 +2201,7 @@ class lineageTree:
     def nodes_at_t(
         self,
         t: int,
-        r: int | Iterable[int] = None,
+        r: int | Iterable[int] | None = None,
     ) -> list:
         """
         Returns the list of nodes at time `t` that are spawn by the node(s) `r`.
@@ -2272,7 +2272,7 @@ class lineageTree:
         fast: bool = False,
         w: int = 0,
         centered_band: bool = True,
-    ) -> tuple[tuple[int], np.ndarray, float]:
+    ) -> tuple[list[int], np.ndarray, float]:
         """
         Find DTW minimum cost between two series using dynamic programming.
 
@@ -2495,7 +2495,10 @@ class lineageTree:
         w: int = 0,
         centered_band: bool = True,
         cost_mat_p: bool = False,
-    ) -> tuple[float, tuple, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> (
+        tuple[float, tuple, np.ndarray, np.ndarray, np.ndarray]
+        | tuple[float, tuple]
+    ):
         """
         Calculate DTW distance between two chains
 
@@ -2640,8 +2643,8 @@ class lineageTree:
 
     @staticmethod
     def __plot_2d(
-        pos_chain1: list[np.ndarray],
-        pos_chain2: list[np.ndarray],
+        pos_chain1: np.ndarray,
+        pos_chain2: np.ndarray,
         nodes1: list[int],
         nodes2: list[int],
         ax: plt.Axes,
@@ -2676,7 +2679,7 @@ class lineageTree:
         fast: bool = False,
         w: int = 0,
         centered_band: bool = True,
-        projection: Literal["3d", "xy", "xz", "yz", "pca"] = None,
+        projection: Literal["3d", "xy", "xz", "yz", "pca"] | None = None,
         alig: bool = False,
     ) -> tuple[float, plt.Figure]:
         """
@@ -2883,13 +2886,13 @@ class lineageTree:
     def __init__(
         self,
         *,
-        successor: dict[int, Iterable] | None = None,
-        predecessor: dict[int, int | Iterable] | None = None,
+        successor: dict[int, Sequence] | None = None,
+        predecessor: dict[int, int | Sequence] | None = None,
         time: dict[int, int] | None = None,
         starting_time: int | None = None,
         pos: dict[int, Iterable] | None = None,
         name: str | None = None,
-        root_leaf_value: Iterable | None = None,
+        root_leaf_value: Sequence | None = None,
         **kwargs,
     ):
         """Create a lineageTree object from minimal information, without reading from a file.
@@ -2993,7 +2996,9 @@ class lineageTree:
         else:
             if self.nodes.difference(pos) != set():
                 raise ValueError("Please provide the position of all nodes.")
-            self.pos = pos
+            self.pos = {
+                node: np.ndarray(position) for node, position in pos.items()
+            }
 
         if time is None:
             if starting_time is None:
