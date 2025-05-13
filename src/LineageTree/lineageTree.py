@@ -146,7 +146,7 @@ class lineageTree:
             return False
 
     def get_next_id(self) -> int:
-        """Computes the next authorized id.
+        """Computes the next authorized id and assign it.
 
         Returns
         -------
@@ -1484,6 +1484,8 @@ class lineageTree:
         dict of int to float
             dictionary that maps a node id to its spatial density
         """
+        if not hasattr(self, "spatial_density"):
+            self.spatial_density = {}
         s_vol = 4 / 3.0 * np.pi * th**3
         if t_b is None:
             t_b = self.t_b
@@ -1518,14 +1520,22 @@ class lineageTree:
         self.kn_graph = {}
         for t in set(self._time.values()):
             nodes = self.nodes_at_t(t)
-            use_k = k if k < len(nodes) else len(nodes)
-            idx3d, nodes = self.get_idx3d(t)
-            pos = [self.pos[c] for c in nodes]
-            _, neighbs = idx3d.query(pos, use_k)
-            out = dict(
-                zip(nodes, [set(nodes[ni[1:]]) for ni in neighbs], strict=True)
-            )
-            self.kn_graph.update(out)
+            if 1 < len(nodes):
+                use_k = k if k < len(nodes) else len(nodes)
+                idx3d, nodes = self.get_idx3d(t)
+                pos = [self.pos[c] for c in nodes]
+                _, neighbs = idx3d.query(pos, use_k)
+                out = dict(
+                    zip(
+                        nodes,
+                        map(set, nodes[neighbs]),
+                        strict=True,
+                    )
+                )
+                self.kn_graph.update(out)
+            else:
+                n = nodes.pop
+                self.kn_graph.update({n: {n}})
         return self.kn_graph
 
     def compute_spatial_edges(self, th: int = 50) -> dict[int, set[int]]:
