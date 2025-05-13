@@ -1369,7 +1369,7 @@ class lineageTree:
         """
         all_chains = self.all_chains
         if nodes is None:
-            return all_chains
+            nodes = self.roots
         if not isinstance(nodes, Iterable):
             nodes = [nodes]
         output_chains = {}
@@ -1466,7 +1466,7 @@ class lineageTree:
         return subtree
 
     def compute_spatial_density(
-        self, t_b: int = None, t_e: int = None, th: float = 50
+        self, t_b: int | None = None, t_e: int | None = None, th: float = 50
     ) -> dict[int, float]:
         """Computes the spatial density of nodes between `t_b` and `t_e`.
 
@@ -1487,9 +1487,11 @@ class lineageTree:
             dictionary that maps a node id to its spatial density
         """
         s_vol = 4 / 3.0 * np.pi * th**3
-        time_range = set(range(self.t_b, self.t_e)).intersection(
-            self._time.values()
-        )
+        if t_b is None:
+            t_b = self.t_b
+        if t_e is None:
+            t_e = self.t_e
+        time_range = set(range(t_b, t_e)).intersection(self._time.values())
         for t in time_range:
             idx3d, nodes = self.get_idx3d(t)
             nb_ni = [
