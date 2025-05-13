@@ -1745,7 +1745,7 @@ class lineageTree:
         n1: int,
         n2: int,
         end_time: int | None = None,
-        norm: Literal["max", "sum", None] = "max",
+        norm: Literal["max", "sum"] | None = "max",
         style="simple",
         downsample: int = 2,
     ) -> float:
@@ -1818,9 +1818,7 @@ class lineageTree:
         )
         norm1 = tree1.get_norm()
         norm2 = tree2.get_norm()
-        norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
-        if norm is None:
-            norm = "None"
+        norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
         if norm not in norm_dict:
             raise Warning(
                 "Select a viable normalization method (max, sum, None)"
@@ -1888,7 +1886,7 @@ class lineageTree:
 
     def draw_tree_graph(
         self,
-        hier: dict[int : tuple[int, int]],
+        hier: dict[int, tuple[int, int]],
         lnks_tms: dict,
         selected_nodes: list | set | None = None,
         selected_edges: list | set | None = None,
@@ -1968,7 +1966,7 @@ class lineageTree:
         return ax.get_figure(), ax
 
     def _create_dict_of_plots(
-        self, node: int = None, start_time: int = None
+        self, node: int | None = None, start_time: int | None = None
     ) -> dict[int, dict]:
         """Generates a dictionary of graphs where the keys are the index of the graph and
         the values are the graphs themselves which are produced by `create_links_and_cycles`
@@ -1992,8 +1990,10 @@ class lineageTree:
             mothers = [
                 root for root in self.roots if self._time[root] <= start_time
             ]
+        elif isinstance(node, Iterable):
+            mothers = node
         else:
-            mothers = node if isinstance(node, list | set) else [node]
+            mothers = [node]
         return {
             i: create_links_and_cycles(self, mother)
             for i, mother in enumerate(mothers)
@@ -2001,13 +2001,13 @@ class lineageTree:
 
     def plot_all_lineages(
         self,
-        nodes: list = None,
-        last_time_point_to_consider: int = None,
+        nodes: list | None = None,
+        last_time_point_to_consider: int | None = None,
         nrows: int = 2,
         figsize: tuple[int, int] = (10, 15),
         dpi: int = 100,
         fontsize: int = 15,
-        axes: plt.Axes = None,
+        axes: plt.Axes | None = None,
         vert_gap: int = 1,
         **kwargs,
     ) -> tuple[plt.Figure, plt.Axes, dict[plt.Axes, int]]:
