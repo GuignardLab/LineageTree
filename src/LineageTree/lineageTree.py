@@ -2966,7 +2966,7 @@ class lineageTree:
                 if pred in root_leaf_value:
                     self._predecessor[succ] = ()
                 else:
-                    if isinstance(pred, Iterable):
+                    if isinstance(pred, Sequence):
                         if len(pred) == 0:
                             raise ValueError(
                                 f"{pred} was not declared as a leaf but was found as a successor.\n"
