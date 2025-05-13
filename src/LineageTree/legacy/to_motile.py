@@ -12,7 +12,7 @@ except ImportError:
 
 
 def to_motile(
-    lT: lineageTree, crop: int = None, max_dist=200, max_skip_frames=1
+    lT: lineageTree, crop: int | None = None, max_dist=200, max_skip_frames=1
 ):
     try:
         import networkx as nx
@@ -23,7 +23,7 @@ def to_motile(
     if not crop:
         crop = lT.t_e
     for time in range(crop):
-        for time_node in lT.time_nodes[time]:
+        for time_node in lT.nodes_at_t(time):
             fmt.add_node(
                 time_node,
                 t=lT.time[time_node],

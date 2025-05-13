@@ -8,7 +8,7 @@ import os
 import pickle as pkl
 import struct
 import warnings
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from functools import partial, wraps
 from itertools import combinations
 from numbers import Number
@@ -220,7 +220,7 @@ class lineageTree:
         return node
 
     @modifier
-    def add_root(self, t: int, pos: list = None):
+    def add_root(self, t: int, pos: list | None = None):
         """Adds a root to a specific timepoint.
 
         Parameters
@@ -240,10 +240,10 @@ class lineageTree:
 
     def _add_node(
         self,
-        succ: list = None,
-        pred: list = None,
-        pos: np.ndarray = None,
-        nid: int = None,
+        succ: list | None = None,
+        pred: list | None = None,
+        pos: np.ndarray | None = None,
+        nid: int | None = None,
     ) -> int:
         """Adds a node to the LineageTree object that is either a successor or a predecessor of another node.
         Does not handle time! You cannot enter both a successor and a predecessor.
@@ -470,19 +470,19 @@ class lineageTree:
     def write_to_svg(
         self,
         file_name: str,
-        roots: list = None,
+        roots: list | None = None,
         draw_nodes: bool = True,
         draw_edges: bool = True,
-        order_key: Callable = None,
+        order_key: Callable | None = None,
         vert_space_factor: float = 0.5,
         horizontal_space: float = 1,
-        node_size: Callable | str = None,
-        stroke_width: Callable = None,
+        node_size: Callable | str | None = None,
+        stroke_width: Callable | None = None,
         factor: float = 1.0,
-        node_color: Callable | str = None,
-        stroke_color: Callable = None,
-        positions: dict = None,
-        node_color_map: Callable | str = None,
+        node_color: Callable | str | None = None,
+        stroke_color: Callable | None = None,
+        positions: dict | None = None,
+        node_color_map: Callable | str | None = None,
     ) -> None:
         """Writes the lineage tree to an SVG file.
         Node and edges coloring and size can be provided.
@@ -545,7 +545,7 @@ class lineageTree:
             def node_size(x):
                 return vert_space_factor / 2.1
 
-        elif isinstance(node_size, str) and node_size in self.__dict__:
+        else:
             values = np.array(
                 [self._successor[node_size][c] for c in self.nodes]
             )
@@ -563,13 +563,12 @@ class lineageTree:
                 return 0, 0, 0
 
         elif isinstance(node_color, str) and node_color in self.__dict__:
-            if isinstance(node_color_map, str):
-                from matplotlib import colormaps
+            from matplotlib import colormaps
 
-                if node_color_map in colormaps:
-                    node_color_map = colormaps[node_color_map]
-                else:
-                    node_color_map = colormaps["viridis"]
+            if node_color_map in colormaps:
+                node_color_map = colormaps[node_color_map]
+            else:
+                node_color_map = colormaps["viridis"]
             values = np.array(
                 [self._successor[node_color][c] for c in self.nodes]
             )
@@ -585,13 +584,12 @@ class lineageTree:
                 return 0, 0, 0
 
         elif isinstance(stroke_color, str) and stroke_color in self.__dict__:
-            if isinstance(node_color_map, str):
-                from matplotlib import colormaps
+            from matplotlib import colormaps
 
-                if node_color_map in colormaps:
-                    node_color_map = colormaps[node_color_map]
-                else:
-                    node_color_map = colormaps["viridis"]
+            if node_color_map in colormaps:
+                node_color_map = colormaps[node_color_map]
+            else:
+                node_color_map = colormaps["viridis"]
             values = np.array(
                 [self._successor[stroke_color][c] for c in self.nodes]
             )
@@ -652,7 +650,7 @@ class lineageTree:
             to_do = set(treated_nodes)
             while len(to_do) > 0:
                 curr = to_do.pop()
-                c_chain = self.get_node_chain(curr)
+                c_chain = self.get_chain_of_node(curr)
                 x1, y1 = positions[c_chain[0]]
                 x2, y2 = positions[c_chain[-1]]
                 dwg.add(
@@ -703,11 +701,11 @@ class lineageTree:
         fname: str,
         t_min: int = -1,
         t_max: int = np.inf,
-        nodes_to_use: list = None,
+        nodes_to_use: list[int] | None = None,
         temporal: bool = True,
-        spatial: str = None,
+        spatial: str | None = None,
         write_layout: bool = True,
-        node_properties: dict = None,
+        node_properties: dict | None = None,
         Names: bool = False,
     ) -> None:
         """Write a lineage tree into an understable tulip file.
@@ -913,7 +911,9 @@ class lineageTree:
             f.write(")")
             f.close()
 
-    def to_binary(self, fname: str, starting_points: list = None) -> None:
+    def to_binary(
+        self, fname: str, starting_points: list[int] | None = None
+    ) -> None:
         """Writes the lineage tree (a forest) as a binary structure
         (assuming it is a binary tree, it would not work for *n* ary tree with 2 < *n*).
         The binary file is composed of 3 sequences of numbers and
@@ -1139,7 +1139,11 @@ class lineageTree:
         return self.Gabriel_graph[t]
 
     def get_predecessors(
-        self, x: int, depth: int = None, start_time: int = None, end_time=None
+        self,
+        x: int,
+        depth: int | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
     ) -> list[int]:
         """Computes the predecessors of the node `x` up to
         `depth` predecessors or the begining of the life of `x`.
@@ -1189,7 +1193,7 @@ class lineageTree:
         return chain
 
     def get_successors(
-        self, x: int, depth: int = None, end_time: int = None
+        self, x: int, depth: int | None = None, end_time: int | None = None
     ) -> list[int]:
         """Computes the successors of the node `x` up to
         `depth` successors or the end of the life of `x`.
@@ -1223,13 +1227,13 @@ class lineageTree:
 
         return chain
 
-    def get_node_chain(
+    def get_chain_of_node(
         self,
         x: int,
-        depth: int = None,
-        depth_pred: int = None,
-        depth_succ: int = None,
-        end_time: int = None,
+        depth: int | None = None,
+        depth_pred: int | None = None,
+        depth_succ: int | None = None,
+        end_time: int | None = None,
     ) -> list[int]:
         """Computes the predecessors and successors of the node `x` up to
         `depth_pred` predecessors plus `depth_succ` successors.
@@ -1252,7 +1256,7 @@ class lineageTree:
         Returns
         -------
         list of int
-            list of ids
+            list of node ids
         """
         if end_time is None:
             end_time = self.t_e
@@ -1299,7 +1303,7 @@ class lineageTree:
         return self._parenting
 
     def get_all_chains_of_subtree(
-        self, node: int, end_time: int = None
+        self, node: int, end_time: int | None = None
     ) -> list[list[int]]:
         """Computes all the chains of the subtree spawn by a given node.
         Similar to get_all_chains().
@@ -1341,12 +1345,14 @@ class lineageTree:
         to_do = sorted(self.roots, key=self.time.get, reverse=True)
         while len(to_do) != 0:
             current = to_do.pop()
-            chain = self.get_node_chain(current)
+            chain = self.get_chain_of_node(current)
             all_chains += [chain]
             to_do.extend(self._successor[chain[-1]])
         return all_chains
 
-    def get_chains(self, nodes: Iterable | int = None) -> dict[int, list[list[int]]]:
+    def __get_chains(  # TODO: Probably should be removed, might be used by DTW. Might also be a @dynamic_property
+        self, nodes: Iterable | int | None = None
+    ) -> dict[int, list[list[int]]]:
         """Returns all the chains in the subtrees spawned by each of the given nodes.
 
         Parameters
@@ -1356,32 +1362,36 @@ class lineageTree:
 
         Returns
         -------
-        dict mapping int to list of list of int
+        dict mapping int to list of Chain
             dictionary mapping node ids to a list of chains
         """
         all_chains = self.all_chains
         if nodes is None:
-            return all_chains
+            nodes = self.roots
         if not isinstance(nodes, Iterable):
             nodes = [nodes]
-        output_chains = []
+        output_chains = {}
         for n in nodes:
             starting_node = self.get_predecessors(n)[0]
             found = False
             done = False
             starting_time = self.time[n]
             i = 0
+            current_chain = []
             while not done and i < len(all_chains):
                 curr_found = all_chains[i][0] == starting_node
                 found = found or curr_found
                 if found:
-                    done = (self.time[all_chains[i][0]] <= starting_time) and not curr_found
+                    done = (
+                        self.time[all_chains[i][0]] <= starting_time
+                    ) and not curr_found
                     if not done:
                         if curr_found:
-                            output_chains.append(self.get_successors(n))
+                            current_chain.append(self.get_successors(n))
                         else:
-                            output_chains.append(all_chains[i])
+                            current_chain.append(all_chains[i])
                 i += 1
+            output_chains[n] = current_chain
         return output_chains
 
     def find_leaves(self, roots: int | Iterable) -> set[int]:
@@ -1454,7 +1464,7 @@ class lineageTree:
         return subtree
 
     def compute_spatial_density(
-        self, t_b: int = None, t_e: int = None, th: float = 50
+        self, t_b: int | None = None, t_e: int | None = None, th: float = 50
     ) -> dict[int, float]:
         """Computes the spatial density of nodes between `t_b` and `t_e`.
 
@@ -1475,9 +1485,11 @@ class lineageTree:
             dictionary that maps a node id to its spatial density
         """
         s_vol = 4 / 3.0 * np.pi * th**3
-        time_range = set(range(self.t_b, self.t_e)).intersection(
-            self._time.values()
-        )
+        if t_b is None:
+            t_b = self.t_b
+        if t_e is None:
+            t_e = self.t_e
+        time_range = set(range(t_b, t_e)).intersection(self._time.values())
         for t in time_range:
             idx3d, nodes = self.get_idx3d(t)
             nb_ni = [
@@ -1544,7 +1556,7 @@ class lineageTree:
             )
         return self.th_edges
 
-    def main_axes(self, time: int = None) -> tuple[np.array, np.array]:
+    def main_axes(self, time: int | None = None) -> tuple[np.array, np.array]:
         """Finds the main axes for a timepoint.
         If none will select the timepoint with the highest amound of nodes.
 
@@ -1611,12 +1623,12 @@ class lineageTree:
         )
         return np.eye(3) + np.sin(angle) * K + (1 - np.cos(angle)) * K @ K
 
-    def get_ancestor_at_t(self, n: int, time: int = None) -> int:
+    def get_ancestor_at_t(self, n: int, time: int | None = None) -> int | None:
         """
         Find the id of the ancestor of a give node `n`
         at a given time `time`.
 
-        If there is no ancestor, returns `-1`
+        If there is no ancestor, returns `None`
         If time is None return the root of the subtree that spawns
         the node n.
 
@@ -1631,9 +1643,9 @@ class lineageTree:
 
         Returns
         -------
-        int
+        int or None
             the id of the ancestor at time `time`,
-            `-1` if it does not exist
+            `None` if it does not exist
         """
         if n not in self.nodes:
             return None
@@ -1650,7 +1662,7 @@ class lineageTree:
         else:
             return None
 
-    def get_labelled_ancestor(self, node: int) -> int:
+    def get_labelled_ancestor(self, node: int) -> int | None:
         """Finds the first labelled ancestor and returns its ID otherwise returns None
 
         Parameters
@@ -1660,7 +1672,7 @@ class lineageTree:
 
         Returns
         -------
-        None or int
+        int or None
             Returns the first ancestor found that has a label otherwise `None`.
         """
         if node not in self.nodes:
@@ -1678,7 +1690,7 @@ class lineageTree:
     def unordered_tree_edit_distances_at_time_t(
         self,
         t: int,
-        end_time: int = None,
+        end_time: int | None = None,
         style: Literal["simple", "full", "downsampled"] = "simple",
         downsample: int = 2,
         norm: Literal["max", "sum"] | None = "max",
@@ -1732,7 +1744,7 @@ class lineageTree:
         self,
         n1: int,
         n2: int,
-        end_time: int = None,
+        end_time: int | None = None,
         norm: Literal["max", "sum"] | None = "max",
         style="simple",
         downsample: int = 2,
@@ -1806,9 +1818,7 @@ class lineageTree:
         )
         norm1 = tree1.get_norm()
         norm2 = tree2.get_norm()
-        norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
-        if norm is None:
-            norm = "None"
+        norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
         if norm not in norm_dict:
             raise Warning(
                 "Select a viable normalization method (max, sum, None)"
@@ -1876,7 +1886,7 @@ class lineageTree:
 
     def draw_tree_graph(
         self,
-        hier: dict[int : tuple[int, int]],
+        hier: dict[int, tuple[int, int]],
         lnks_tms: dict,
         selected_nodes: list | set | None = None,
         selected_edges: list | set | None = None,
@@ -1956,7 +1966,7 @@ class lineageTree:
         return ax.get_figure(), ax
 
     def _create_dict_of_plots(
-        self, node: int = None, start_time: int = None
+        self, node: int | None = None, start_time: int | None = None
     ) -> dict[int, dict]:
         """Generates a dictionary of graphs where the keys are the index of the graph and
         the values are the graphs themselves which are produced by `create_links_and_cycles`
@@ -1980,8 +1990,10 @@ class lineageTree:
             mothers = [
                 root for root in self.roots if self._time[root] <= start_time
             ]
+        elif isinstance(node, Iterable):
+            mothers = node
         else:
-            mothers = node if isinstance(node, list | set) else [node]
+            mothers = [node]
         return {
             i: create_links_and_cycles(self, mother)
             for i, mother in enumerate(mothers)
@@ -1989,13 +2001,13 @@ class lineageTree:
 
     def plot_all_lineages(
         self,
-        nodes: list = None,
-        last_time_point_to_consider: int = None,
+        nodes: list | None = None,
+        last_time_point_to_consider: int | None = None,
         nrows: int = 2,
         figsize: tuple[int, int] = (10, 15),
         dpi: int = 100,
         fontsize: int = 15,
-        axes: plt.Axes = None,
+        axes: plt.Axes | None = None,
         vert_gap: int = 1,
         **kwargs,
     ) -> tuple[plt.Figure, plt.Axes, dict[plt.Axes, int]]:
@@ -2042,7 +2054,8 @@ class lineageTree:
             raise Warning("Number of rows has to be at least 1")
         if nodes:
             graphs = {
-                i: self._create_dict_of_plots(node) for i, node in enumerate(nodes)
+                i: self._create_dict_of_plots(node)
+                for i, node in enumerate(nodes)
             }
         else:
             graphs = self._create_dict_of_plots(
@@ -2188,7 +2201,7 @@ class lineageTree:
     def nodes_at_t(
         self,
         t: int,
-        r: int | Iterable[int] = None,
+        r: int | Iterable[int] | None = None,
     ) -> list:
         """
         Returns the list of nodes at time `t` that are spawn by the node(s) `r`.
@@ -2259,7 +2272,7 @@ class lineageTree:
         fast: bool = False,
         w: int = 0,
         centered_band: bool = True,
-    ) -> tuple[tuple[int], np.ndarray, float]:
+    ) -> tuple[list[int], np.ndarray, float]:
         """
         Find DTW minimum cost between two series using dynamic programming.
 
@@ -2482,7 +2495,10 @@ class lineageTree:
         w: int = 0,
         centered_band: bool = True,
         cost_mat_p: bool = False,
-    ) -> tuple[float, tuple, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> (
+        tuple[float, tuple, np.ndarray, np.ndarray, np.ndarray]
+        | tuple[float, tuple]
+    ):
         """
         Calculate DTW distance between two chains
 
@@ -2522,8 +2538,8 @@ class lineageTree:
         list of lists
             rotated and translated trajectories positions
         """
-        nodes1_chain = self.get_node_chain(nodes1)
-        nodes2_chain = self.get_node_chain(nodes2)
+        nodes1_chain = self.get_chain_of_node(nodes1)
+        nodes2_chain = self.get_chain_of_node(nodes2)
 
         interp_chain1, interp_chain2 = self.__interpolate(
             nodes1_chain, nodes2_chain, threshold
@@ -2627,8 +2643,8 @@ class lineageTree:
 
     @staticmethod
     def __plot_2d(
-        pos_chain1: list[np.ndarray],
-        pos_chain2: list[np.ndarray],
+        pos_chain1: np.ndarray,
+        pos_chain2: np.ndarray,
         nodes1: list[int],
         nodes2: list[int],
         ax: plt.Axes,
@@ -2663,7 +2679,7 @@ class lineageTree:
         fast: bool = False,
         w: int = 0,
         centered_band: bool = True,
-        projection: Literal["3d", "xy", "xz", "yz", "pca"] = None,
+        projection: Literal["3d", "xy", "xz", "yz", "pca"] | None = None,
         alig: bool = False,
     ) -> tuple[float, plt.Figure]:
         """
@@ -2870,13 +2886,13 @@ class lineageTree:
     def __init__(
         self,
         *,
-        successor: dict[int, Iterable] = None,
-        predecessor: dict[int, int | Iterable] = None,
-        time: dict[int, int] = None,
-        starting_time: int = None,
-        pos: dict[int, Iterable] = None,
-        name: str = None,
-        root_leaf_value: Iterable = None,
+        successor: dict[int, Sequence] | None = None,
+        predecessor: dict[int, int | Sequence] | None = None,
+        time: dict[int, int] | None = None,
+        starting_time: int | None = None,
+        pos: dict[int, Iterable] | None = None,
+        name: str | None = None,
+        root_leaf_value: Sequence | None = None,
         **kwargs,
     ):
         """Create a lineageTree object from minimal information, without reading from a file.
@@ -2950,7 +2966,7 @@ class lineageTree:
                 if pred in root_leaf_value:
                     self._predecessor[succ] = ()
                 else:
-                    if isinstance(pred, Iterable):
+                    if isinstance(pred, Sequence):
                         if len(pred) == 0:
                             raise ValueError(
                                 f"{pred} was not declared as a leaf but was found as a successor.\n"
@@ -2980,7 +2996,9 @@ class lineageTree:
         else:
             if self.nodes.difference(pos) != set():
                 raise ValueError("Please provide the position of all nodes.")
-            self.pos = pos
+            self.pos = {
+                node: np.array(position) for node, position in pos.items()
+            }
 
         if time is None:
             if starting_time is None:
