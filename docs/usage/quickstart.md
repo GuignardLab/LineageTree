@@ -17,6 +17,5 @@ lT.nodes
 ## How to inspect the lifecycle of a cell n
 
 ```python
-lT.get_cycle(n)
+lT.get_cell_cycle(n)
 ```
-
