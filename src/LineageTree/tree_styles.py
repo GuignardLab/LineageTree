@@ -11,7 +11,7 @@ class abstract_trees(ABC):
     """Template class to produce different techniques to comapare lineageTrees.
     To add a new technique you need to iherit this class or one of its children
     and add them to the tree_style enum.
-    For a class to be valid you need a
+    The main products of this class are:
     - tree constructor (get_tree) that produces one dictionary that contains
     arbitary unique labels and one dictionary that contains the duration of each node.
     - delta function: A function that handles the cost of comparing nodes to each other.
@@ -33,7 +33,7 @@ class abstract_trees(ABC):
         self.end_time: int = end_time if end_time else self.lT.t_e
         self.time_scale: int = int(time_scale) if time_scale else 1
         if time_scale <= 0:
-            raise Exception("Please used a valid time_scale (Larger than 0)")
+            raise Exception("Please use a valid time_scale (Larger than 0)")
         self.tree: tuple = self.get_tree()
         self.edist = self._edist_format(self.tree[0])
 
