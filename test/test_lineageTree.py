@@ -1,11 +1,13 @@
+import warnings
+
+import pytest
+
 from LineageTree import (
     lineageTree,
     lineageTreeManager,
     read_from_mamut_xml,
     read_from_mastodon,
 )
-import warnings
-import pytest
 
 
 def test_read_MaMuT_xml():
@@ -21,29 +23,29 @@ def test_read_MaMuT_xml():
     assert len(lT.successor) == 2430
 
 
-def test_all_tracks():
+def test_all_chains():
     lT = read_from_mamut_xml("test/data/test-mamut.xml")
-    assert len(lT.all_tracks) == 18
+    assert len(lT.all_chains) == 18
 
 
 def test_uted_2levels_vs_3levels():
     lT = lineageTree()
     t1 = lT.add_root(0)
-    first_level_end = lT.add_branch(t1, 10, True)
+    first_level_end = lT.add_chain(t1, 10, True)
 
-    second_level_1 = lT.add_branch(first_level_end, 10, downstream=True)
-    second_level_2 = lT.add_branch(first_level_end, 10, downstream=True)
+    second_level_1 = lT.add_chain(first_level_end, 10, downstream=True)
+    second_level_2 = lT.add_chain(first_level_end, 10, downstream=True)
 
-    lT.add_branch(second_level_1, 10, downstream=True)
-    lT.add_branch(second_level_1, 10, downstream=True)
-    lT.add_branch(second_level_2, 10, downstream=True)
-    lT.add_branch(second_level_2, 10, downstream=True)
+    lT.add_chain(second_level_1, 10, downstream=True)
+    lT.add_chain(second_level_1, 10, downstream=True)
+    lT.add_chain(second_level_2, 10, downstream=True)
+    lT.add_chain(second_level_2, 10, downstream=True)
 
     t2 = lT.add_root(0)
-    first_level_end = lT.add_branch(t2, 10, downstream=True)
+    first_level_end = lT.add_chain(t2, 10, downstream=True)
 
-    second_level_1 = lT.add_branch(first_level_end, 10, downstream=True)
-    second_level_2 = lT.add_branch(first_level_end, 10, downstream=True)
+    second_level_1 = lT.add_chain(first_level_end, 10, downstream=True)
+    second_level_2 = lT.add_chain(first_level_end, 10, downstream=True)
 
     assert (
         lT.unordered_tree_edit_distance(t1, t2, style="simple", norm=None)
@@ -71,23 +73,23 @@ def test_uted_2levels_vs_3levels():
 def test_adding_nodes():
     lT = lineageTree()
     t1 = lT.add_root(0)
-    first_level_end = lT.add_branch(t1, 9, downstream=True)
+    first_level_end = lT.add_chain(t1, 9, downstream=True)
 
-    lT.add_branch(first_level_end, 10, downstream=True)
-    lT.add_branch(first_level_end, 10, downstream=True)
+    lT.add_chain(first_level_end, 10, downstream=True)
+    lT.add_chain(first_level_end, 10, downstream=True)
 
-    assert len(lT.get_sub_tree(t1)) == 30
+    assert len(lT.get_subtree_nodes(t1)) == 30
 
 
 def test_removing_nodes():
     lT = lineageTree()
     t1 = lT.add_root(0)
-    first_level_end = lT.add_branch(t1, 9, downstream=True)
+    first_level_end = lT.add_chain(t1, 9, downstream=True)
 
-    second_level_1 = lT.add_branch(first_level_end, 10, downstream=True)
-    lT.add_branch(first_level_end, 10, downstream=True)
-    lT.remove_nodes(lT.get_cell_cycle(second_level_1))
-    assert len(lT.get_sub_tree(t1)) == 20
+    second_level_1 = lT.add_chain(first_level_end, 10, downstream=True)
+    lT.add_chain(first_level_end, 10, downstream=True)
+    lT.remove_nodes(lT.get_chain_of_node(second_level_1))
+    assert len(lT.get_subtree_nodes(t1)) == 20
 
 
 def test_time_resolution():
@@ -106,37 +108,40 @@ def test_loading():
 def test_cross_comparison():
     lT_1 = lineageTree()
     t1 = lT_1.add_root(0)
-    first_level_end = lT_1.add_branch(t1, 9, downstream=True)
-    node_1 = lT_1.get_cell_cycle(t1)[0]
+    first_level_end = lT_1.add_chain(t1, 9, downstream=True)
+    node_1 = lT_1.get_chain_of_node(t1)[0]
 
-    second_level_1 = lT_1.add_branch(first_level_end, 10, downstream=True)
-    second_level_2 = lT_1.add_branch(first_level_end, 10, downstream=True)
+    second_level_1 = lT_1.add_chain(first_level_end, 10, downstream=True)
+    second_level_2 = lT_1.add_chain(first_level_end, 10, downstream=True)
 
-    lT_1.add_branch(second_level_1, 10, downstream=True)
-    lT_1.add_branch(second_level_1, 10, downstream=True)
-    lT_1.add_branch(second_level_2, 10, downstream=True)
-    lT_1.add_branch(second_level_2, 10, downstream=True)
+    lT_1.add_chain(second_level_1, 10, downstream=True)
+    lT_1.add_chain(second_level_1, 10, downstream=True)
+    lT_1.add_chain(second_level_2, 10, downstream=True)
+    lT_1.add_chain(second_level_2, 10, downstream=True)
     lT_1.time_resolution = 5
 
     lT_2 = lineageTree()
     t2 = lT_2.add_root(0)
-    first_level_end = lT_2.add_branch(t2, 4, downstream=True)
-    node_2 = lT_2.get_cell_cycle(t2)[0]
+    first_level_end = lT_2.add_chain(t2, 4, downstream=True)
+    node_2 = lT_2.get_chain_of_node(t2)[0]
 
-    second_level_1 = lT_2.add_branch(first_level_end, 5, downstream=True)
-    second_level_2 = lT_2.add_branch(first_level_end, 5, downstream=True)
+    second_level_1 = lT_2.add_chain(first_level_end, 5, downstream=True)
+    second_level_2 = lT_2.add_chain(first_level_end, 5, downstream=True)
 
-    lT_2.add_branch(second_level_1, 5, downstream=True)
-    lT_2.add_branch(second_level_1, 5, downstream=True)
-    lT_2.add_branch(second_level_2, 5, downstream=True)
-    lT_2.add_branch(second_level_2, 5, downstream=True)
+    lT_2.add_chain(second_level_1, 5, downstream=True)
+    lT_2.add_chain(second_level_1, 5, downstream=True)
+    lT_2.add_chain(second_level_2, 5, downstream=True)
+    lT_2.add_chain(second_level_2, 5, downstream=True)
     lT_2.time_resolution = 10
 
     lTm1 = lineageTreeManager()
     lTm1.add(lT_1, name="embryo_1")
     lTm1.add(lT_2, name="embryo_2")
     assert lT_2.time_resolution == lT_2._time_resolution / 10
-    assert len(lT_1.get_sub_tree(node_1)) == len(lT_2.get_sub_tree(node_2)) * 2
+    assert (
+        len(lT_1.get_subtree_nodes(node_1))
+        == len(lT_2.get_subtree_nodes(node_2)) * 2
+    )
     assert (
         lTm1.cross_lineage_edit_distance(
             t1,
@@ -188,11 +193,11 @@ def test_cross_comparison():
     )
     lT_3 = lineageTree()
     t1 = lT_3.add_root(0)
-    first_level_end = lT_3.add_branch(t1, 4, downstream=True)
-    node_3 = lT_3.get_cell_cycle(t1)[0]
+    first_level_end = lT_3.add_chain(t1, 4, downstream=True)
+    node_3 = lT_3.get_chain_of_node(t1)[0]
 
-    second_level_1 = lT_3.add_branch(first_level_end, 5, downstream=True)
-    second_level_2 = lT_3.add_branch(first_level_end, 5, downstream=True)
+    second_level_1 = lT_3.add_chain(first_level_end, 5, downstream=True)
+    second_level_2 = lT_3.add_chain(first_level_end, 5, downstream=True)
     lT_3.time_resolution = 10
     lTm1.add(lT_3, "embryo_3")
     assert (
@@ -262,34 +267,34 @@ def test_cross_comparison():
 def test_plots():
     lT = read_from_mastodon("test/data/test.mastodon")
     assert len(lT.plot_all_lineages()) == 3
-    assert len(lT.plot_node(40)) == 2
+    assert len(lT.plot_subtree(40)) == 2
 
 
 def test_removing_embryos_from_manager():
     lT_1 = lineageTree()
     t1 = lT_1.add_root(0)
-    first_level_end = lT_1.add_branch(t1, 9, downstream=True)
+    first_level_end = lT_1.add_chain(t1, 9, downstream=True)
 
-    second_level_1 = lT_1.add_branch(first_level_end, 10, downstream=True)
-    second_level_2 = lT_1.add_branch(first_level_end, 10, downstream=True)
+    second_level_1 = lT_1.add_chain(first_level_end, 10, downstream=True)
+    second_level_2 = lT_1.add_chain(first_level_end, 10, downstream=True)
 
-    lT_1.add_branch(second_level_1, 10, downstream=True)
-    lT_1.add_branch(second_level_1, 10, downstream=True)
-    lT_1.add_branch(second_level_2, 10, downstream=True)
-    lT_1.add_branch(second_level_2, 10, downstream=True)
+    lT_1.add_chain(second_level_1, 10, downstream=True)
+    lT_1.add_chain(second_level_1, 10, downstream=True)
+    lT_1.add_chain(second_level_2, 10, downstream=True)
+    lT_1.add_chain(second_level_2, 10, downstream=True)
     lT_1.time_resolution = 5
 
     lT_2 = lineageTree()
     t2 = lT_2.add_root(0)
-    first_level_end = lT_2.add_branch(t2, 4, downstream=True)
+    first_level_end = lT_2.add_chain(t2, 4, downstream=True)
 
-    second_level_1 = lT_2.add_branch(first_level_end, 5, downstream=True)
-    second_level_2 = lT_2.add_branch(first_level_end, 5, downstream=True)
+    second_level_1 = lT_2.add_chain(first_level_end, 5, downstream=True)
+    second_level_2 = lT_2.add_chain(first_level_end, 5, downstream=True)
 
-    lT_2.add_branch(second_level_1, 5, downstream=True)
-    lT_2.add_branch(second_level_1, 5, downstream=True)
-    lT_2.add_branch(second_level_2, 5, downstream=True)
-    lT_2.add_branch(second_level_2, 5, downstream=True)
+    lT_2.add_chain(second_level_1, 5, downstream=True)
+    lT_2.add_chain(second_level_1, 5, downstream=True)
+    lT_2.add_chain(second_level_2, 5, downstream=True)
+    lT_2.add_chain(second_level_2, 5, downstream=True)
     lT_2.time_resolution = 10
 
     lTm1 = lineageTreeManager()
@@ -300,7 +305,6 @@ def test_removing_embryos_from_manager():
     for k, _e in lTm1:
         assert k == "embryo_2"
     assert lTm1["embryo_2"]
-
 
 def test_successor():
     test_lT = lineageTree(

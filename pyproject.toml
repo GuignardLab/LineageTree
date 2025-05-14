@@ -70,7 +70,7 @@ profile = "black"
 line_length = 79
 
 [tool.bumpver]
-current_version = "1.7.0"
+current_version = "2.0.0"
 version_pattern = "MAJOR.MINOR.PATCH[-TAG]"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
@@ -131,3 +131,9 @@ exclude = [
 ]
 
 target-version = "py310"
+
+[tool.ty.src]
+root = "./src"
+
+[tool.ty.rules]
+unresolved-import = "ignore"

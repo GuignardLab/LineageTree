@@ -52,8 +52,8 @@ def create_links_and_cycles(
 
 
 def hierarchical_pos(
-    lnks_tms: dict, root, width=1000, vert_gap=1, xcenter=0, ycenter=0
-) -> dict[int, list[int]]:
+    lnks_tms: dict, root, width=1000, vert_gap=2, xcenter=0, ycenter=0
+) -> dict[int, list[int]] | None:
     """Calculates the position of each node on the tree graph.
 
     Parameters
@@ -73,9 +73,10 @@ def hierarchical_pos(
 
     Returns
     -------
-    dict[int, list[int]]
+    dict[int, list[int]] or None
         Provides a dictionary that contains the id of each node as keys and its 2-d position on the
-                                tree graph as values.
+        tree graph as values.
+        If the root requested does not exists, None is then returned
     """
     to_do = [root]
     if root not in lnks_tms["times"]:
