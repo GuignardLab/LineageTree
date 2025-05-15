@@ -276,8 +276,8 @@ class lineageTreeManager:
         norm2,
     ):
         """Private method that calculates the distance of all subtrees in a specific mapping."""
-        sub_tree_1 = set(lT1.get_sub_tree(node1))
-        sub_tree_2 = set(lT2.get_sub_tree(node2))
+        sub_tree_1 = set(lT1.get_subtree_nodes(node1))
+        sub_tree_2 = set(lT2.get_subtree_nodes(node2))
         res = 0
         for m in alignment:
             if (
@@ -515,7 +515,7 @@ class lineageTreeManager:
         if style not in ("full", "downsampled"):
             for m in btrc:
                 if m._left != -1 and m._right != -1:
-                    cyc1 = tree1.lT.get_cell_cycle(corres1[m._left])
+                    cyc1 = tree1.lT.get_chain_of_node(corres1[m._left])
                     if len(cyc1) > 1:
                         node_1, *_, l_node_1 = cyc1
                         matched_left.append(node_1)
@@ -524,7 +524,7 @@ class lineageTreeManager:
                         node_1 = l_node_1 = cyc1.pop()
                         matched_left.append(node_1)
 
-                    cyc2 = tree2.lT.get_cell_cycle(corres2[m._right])
+                    cyc2 = tree2.lT.get_chain_of_node(corres2[m._right])
                     if len(cyc2) > 1:
                         node_2, *_, l_node_2 = cyc2
                         matched_right.append(node_2)
@@ -554,18 +554,18 @@ class lineageTreeManager:
         else:
             for m in btrc:
                 if m._left != -1 and m._right != -1:
-                    node_1 = tree1.lT.get_cell_cycle(corres1[m._left])[0]
-                    node_2 = tree2.lT.get_cell_cycle(corres2[m._right])[0]
+                    node_1 = tree1.lT.get_chain_of_node(corres1[m._left])[0]
+                    node_2 = tree2.lT.get_chain_of_node(corres2[m._right])[0]
                     if (
-                        tree1.lT.get_cell_cycle(node_1)[0] == node_1
-                        or tree2.lT.get_cell_cycle(node_2)[0] == node_2
+                        tree1.lT.get_chain_of_node(node_1)[0] == node_1
+                        or tree2.lT.get_chain_of_node(node_2)[0] == node_2
                         and (node_1 not in colors1 or node_2 not in colors2)
                     ):
                         matched_left.append(node_1)
-                        l_node_1 = tree1.lT.get_cell_cycle(node_1)[-1]
+                        l_node_1 = tree1.lT.get_chain_of_node(node_1)[-1]
                         matched_left.append(l_node_1)
                         matched_right.append(node_2)
-                        l_node_2 = tree2.lT.get_cell_cycle(node_2)[-1]
+                        l_node_2 = tree2.lT.get_chain_of_node(node_2)[-1]
                         matched_right.append(l_node_2)
                         colors1[node_1] = (
                             self.__calculate_distance_of_sub_tree(
@@ -583,20 +583,20 @@ class lineageTreeManager:
                             )
                         )
                         colors2[node_2] = colors1[node_1]
-                        colors1[tree1.lT.get_cell_cycle(node_1)[-1]] = colors1[
+                        colors1[tree1.lT.get_chain_of_node(node_1)[-1]] = colors1[
                             node_1
                         ]
-                        colors2[tree2.lT.get_cell_cycle(node_2)[-1]] = colors2[
+                        colors2[tree2.lT.get_chain_of_node(node_2)[-1]] = colors2[
                             node_2
                         ]
 
-                        if tree1.lT.get_cell_cycle(node_1)[-1] != node_1:
+                        if tree1.lT.get_chain_of_node(node_1)[-1] != node_1:
                             matched_left.append(
-                                tree1.lT.get_cell_cycle(node_1)[-1]
+                                tree1.lT.get_chain_of_node(node_1)[-1]
                             )
-                        if tree2.lT.get_cell_cycle(node_2)[-1] != node_2:
+                        if tree2.lT.get_chain_of_node(node_2)[-1] != node_2:
                             matched_right.append(
-                                tree2.lT.get_cell_cycle(node_2)[-1]
+                                tree2.lT.get_chain_of_node(node_2)[-1]
                             )
         if ax is None:
             fig, ax = plt.subplots(nrows=1, ncols=2)
@@ -604,7 +604,7 @@ class lineageTreeManager:
         c_norm = mcolors.Normalize(0, 1)
         colors1 = {c: cmap(c_norm(v)) for c, v in colors1.items()}
         colors2 = {c: cmap(c_norm(v)) for c, v in colors2.items()}
-        tree1.lT.plot_node(
+        tree1.lT.plot_subtree(
             tree1.lT.get_ancestor_at_t(n1),
             end_time=end_time1,
             size=size,
@@ -614,7 +614,7 @@ class lineageTreeManager:
             lw=lw,
             ax=ax[0],
         )
-        tree2.lT.plot_node(
+        tree2.lT.plot_subtree(
             tree2.lT.get_ancestor_at_t(n2),
             end_time=end_time2,
             size=size,
@@ -720,13 +720,13 @@ class lineageTreeManager:
         if style not in ("full", "downsampled"):
             for m in btrc:
                 if m._left != -1 and m._right != -1:
-                    cyc1 = tree1.lT.get_cell_cycle(corres1[m._left])
+                    cyc1 = tree1.lT.get_chain_of_node(corres1[m._left])
                     if len(cyc1) > 1:
                         node_1, *_ = cyc1
                     elif len(cyc1) == 1:
                         node_1 = cyc1.pop()
 
-                    cyc2 = tree2.lT.get_cell_cycle(corres2[m._right])
+                    cyc2 = tree2.lT.get_chain_of_node(corres2[m._right])
                     if len(cyc2) > 1:
                         node_2, *_ = cyc2
 
@@ -741,7 +741,7 @@ class lineageTreeManager:
                     )
                 else:
                     if m._left != -1:
-                        tmp_node = tree1.lT.get_cell_cycle(
+                        tmp_node = tree1.lT.get_chain_of_node(
                             corres1.get(m._left, "-")
                         )[0]
                         node_1 = (
@@ -749,7 +749,7 @@ class lineageTreeManager:
                             tree1.lT.name,
                         )
                     else:
-                        tmp_node = tree2.lT.get_cell_cycle(
+                        tmp_node = tree2.lT.get_chain_of_node(
                             corres2.get(m._right, "-")
                         )[0]
                         node_1 = (
@@ -770,7 +770,7 @@ class lineageTreeManager:
                     )
                 else:
                     if m._left != -1:
-                        tmp_node = tree1.lT.get_cell_cycle(
+                        tmp_node = tree1.lT.get_chain_of_node(
                             corres1.get(m._left, "-")
                         )[0]
                         node_1 = (
@@ -778,7 +778,7 @@ class lineageTreeManager:
                             tree1.lT.name,
                         )
                     else:
-                        tmp_node = tree2.lT.get_cell_cycle(
+                        tmp_node = tree2.lT.get_chain_of_node(
                             corres2.get(m._right, "-")
                         )[0]
                         node_1 = (

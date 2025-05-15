@@ -1758,8 +1758,8 @@ class lineageTree:
         norm2,
     ):
         """Private method that calculates the distance of all subtrees in a specific mapping."""
-        sub_tree_1 = set(self.get_sub_tree(node1))
-        sub_tree_2 = set(self.get_sub_tree(node2))
+        sub_tree_1 = set(self.get_subtree_nodes(node1))
+        sub_tree_2 = set(self.get_subtree_nodes(node2))
         res = 0
         for m in alignment:
             if (
@@ -1961,7 +1961,7 @@ class lineageTree:
         if style not in ("full", "downsampled"):
             for m in btrc:
                 if m._left != -1 and m._right != -1:
-                    cyc1 = self.get_cell_cycle(corres1[m._left])
+                    cyc1 = self.get_chain_of_node(corres1[m._left])
                     if len(cyc1) > 1:
                         node_1, *_, l_node_1 = cyc1
                         matched_left.append(node_1)
@@ -1970,7 +1970,7 @@ class lineageTree:
                         node_1 = l_node_1 = cyc1.pop()
                         matched_left.append(node_1)
 
-                    cyc2 = self.get_cell_cycle(corres2[m._right])
+                    cyc2 = self.get_chain_of_node(corres2[m._right])
                     if len(cyc2) > 1:
                         node_2, *_, l_node_2 = cyc2
                         matched_right.append(node_2)
@@ -2001,15 +2001,15 @@ class lineageTree:
                     node_2 = corres2[m._right]
 
                     if (
-                        self.get_cell_cycle(node_1)[0] == node_1
-                        or self.get_cell_cycle(node_2)[0] == node_2
+                        self.get_chain_of_node(node_1)[0] == node_1
+                        or self.get_chain_of_node(node_2)[0] == node_2
                         and (node_1 not in colors or node_2 not in colors)
                     ):
                         matched_left.append(node_1)
-                        l_node_1 = self.get_cell_cycle(node_1)[-1]
+                        l_node_1 = self.get_chain_of_node(node_1)[-1]
                         matched_left.append(l_node_1)
                         matched_right.append(node_2)
-                        l_node_2 = self.get_cell_cycle(node_2)[-1]
+                        l_node_2 = self.get_chain_of_node(node_2)[-1]
                         matched_right.append(l_node_2)
                         colors[node_1] = self.__calculate_distance_of_sub_tree(
                             node_1,
@@ -2030,7 +2030,7 @@ class lineageTree:
         cmap = colormaps[colormap]
         c_norm = mcolors.Normalize(0, 1)
         colors = {c: cmap(c_norm(v)) for c, v in colors.items()}
-        self.plot_node(
+        self.plot_subtree(
             self.get_ancestor_at_t(n1),
             end_time=end_time,
             size=size,
@@ -2042,7 +2042,7 @@ class lineageTree:
             lw=lw,
             ax=ax[0],
         )
-        self.plot_node(
+        self.plot_subtree(
             self.get_ancestor_at_t(n2),
             end_time=end_time,
             size=size,
@@ -2128,12 +2128,12 @@ class lineageTree:
         if style not in ("full", "downsampled"):
             for m in btrc:
                 if m._left != -1 and m._right != -1:
-                    cyc1 = self.get_cell_cycle(corres1[m._left])
+                    cyc1 = self.get_chain_of_node(corres1[m._left])
                     if len(cyc1) > 1:
                         node_1, *_ = cyc1
                     elif len(cyc1) == 1:
                         node_1 = cyc1.pop()
-                    cyc2 = self.get_cell_cycle(corres2[m._right])
+                    cyc2 = self.get_chain_of_node(corres2[m._right])
                     if len(cyc2) > 1:
                         node_2, *_ = cyc2
                     elif len(cyc2) == 1:
@@ -2147,11 +2147,11 @@ class lineageTree:
 
                 else:
                     if m._left != -1:
-                        node_1 = self.get_cell_cycle(
+                        node_1 = self.get_chain_of_node(
                             corres1.get(m._left, "-")
                         )[0]
                     else:
-                        node_1 = self.get_cell_cycle(
+                        node_1 = self.get_chain_of_node(
                             corres2.get(m._right, "-")
                         )[0]
                     unmatched.append(self.labels.get(node_1, node_1))
@@ -2408,7 +2408,10 @@ class lineageTree:
         return ax.get_figure(), ax
 
     def _create_dict_of_plots(
-        self, node: int | None = None, start_time: int | None = None
+        self,
+        node: int | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
     ) -> dict[int, dict]:
         """Generates a dictionary of graphs where the keys are the index of the graph and
         the values are the graphs themselves which are produced by `create_links_and_cycles`
@@ -2431,6 +2434,8 @@ class lineageTree:
         """
         if start_time is None:
             start_time = self.t_b
+        if end_time is None:
+            end_time = self.t_e
         if node is None:
             mothers = [
                 root for root in self.roots if self._time[root] <= start_time

@@ -392,7 +392,7 @@ class full_tree(abstract_trees):
 
     def get_norm(self, root) -> int:
         return (
-            len(self.lT.get_sub_tree(root, end_time=self.end_time))
+            len(self.lT.get_subtree_nodes(root, end_time=self.end_time))
             * self.time_scale
         )
 
