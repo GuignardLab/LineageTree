@@ -85,12 +85,13 @@ venv/
 
 # specific ingores
 *.svg
-*.xml
+# *.xml
 *.png
 lineageTree2Treex.py
 test.tlp
-*.mastodon
+# *.mastodon
 bak_*
+data/*
 
 .coverage
 
