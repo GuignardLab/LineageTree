@@ -308,7 +308,7 @@ def test_predecessor():
 
 
 def test_empty():
-    lT = lineageTree()
+    lineageTree()
 
 
 def test_time_warning():
@@ -316,9 +316,7 @@ def test_time_warning():
         "error"
     )  # raises warnings as errors so we can catch them when expected
     with pytest.raises(UserWarning) as excinfo:
-        lT = lineageTree(
-            successor={0: (1,)}, time={0: 1, 1: 2}, starting_time=3
-        )
+        lineageTree(successor={0: (1,)}, time={0: 1, 1: 2}, starting_time=3)
     assert (
         str(excinfo.value)
         == "Both `time` and `starting_time` were provided, `starting_time` was ignored."
@@ -328,7 +326,7 @@ def test_time_warning():
 
 def test_bad_leaf():
     with pytest.raises(ValueError) as excinfo:
-        lT = lineageTree(
+        lineageTree(
             successor={
                 1: (2,),
                 2: (3, 100),
@@ -351,13 +349,13 @@ def test_bad_leaf():
 
 def test_multiple_predecessors():
     with pytest.raises(ValueError) as excinfo:
-        lT = lineageTree(successor={2: (1,), 3: (2,), 4: (2,)})
+        lineageTree(successor={2: (1,), 3: (2,), 4: (2,)})
     assert str(excinfo.value) == "Node can have at most one predecessor."
 
 
 def test_bad_root_leaf_value():
     with pytest.raises(ValueError) as excinfo:
-        lT = lineageTree(successor={1: (2,), 2: set()}, root_leaf_value=set())
+        lineageTree(successor={1: (2,), 2: set()}, root_leaf_value=set())
     assert (
         str(excinfo.value)
         == "root_leaf_value should have at least one element."
@@ -366,7 +364,7 @@ def test_bad_root_leaf_value():
 
 def test_successor_and_predecessor():
     with pytest.raises(ValueError) as excinfo:
-        lT = lineageTree(successor={1: (2, 3)}, predecessor={2: 1, 3: 1})
+        lineageTree(successor={1: (2, 3)}, predecessor={2: 1, 3: 1})
     assert (
         str(excinfo.value)
         == "You cannot have both successors and predecessors."
@@ -375,7 +373,7 @@ def test_successor_and_predecessor():
 
 def test_cycles():
     with pytest.raises(ValueError) as excinfo:
-        lT = lineageTree(successor={0: (1,), 1: (0,)})
+        lineageTree(successor={0: (1,), 1: (0,)})
     assert (
         str(excinfo.value)
         == "Cycles were found in the tree, there should not be any."
@@ -482,7 +480,6 @@ def test_unordered_tree_edit_distance():
 
 
 def test_non_return_functions():
-    # lT1.draw_tree_graph()
     lT1.plot_all_lineages()
     lT1.plot_subtree(110832)
     lT1.plot_dtw_heatmap(110832, 132129)
