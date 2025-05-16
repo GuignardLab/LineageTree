@@ -15,26 +15,17 @@ from numbers import Number
 from types import MappingProxyType
 from typing import Literal
 
-import svgwrite
-from matplotlib.collections import LineCollection
-from packaging.version import Version
-from scipy.sparse import dok_array
-
-from .tree_styles import tree_style
-
-try:
-    from edist import uted
-except ImportError:
-    warnings.warn(
-        "No edist installed therefore you will not be able to compute the tree edit distance.",
-        stacklevel=2,
-    )
 import matplotlib.pyplot as plt
 import numpy as np
+import svgwrite
+from edist import uted
+from matplotlib.collections import LineCollection
+from packaging.version import Version
 from scipy.interpolate import InterpolatedUnivariateSpline
-from scipy.spatial import Delaunay, distance
-from scipy.spatial import cKDTree as KDTree
+from scipy.sparse import dok_array
+from scipy.spatial import Delaunay, KDTree, distance
 
+from .tree_styles import tree_style
 from .utils import (
     create_links_and_cycles,
     hierarchical_pos,
@@ -198,10 +189,6 @@ class lineageTree:
                 old_node = node
                 node = self._add_node(pred=[old_node])
                 self._time[node] = self._time[old_node] + 1
-                # if not pos:
-                #     self.pos[node] = self.pos[old_node]
-                # else:
-                #     self.pos[node] = pos
         else:
             if self._predecessor[node]:
                 raise Warning("The node already has a predecessor.")
@@ -213,10 +200,6 @@ class lineageTree:
                 old_node = node
                 node = self._add_node(succ=[old_node])
                 self._time[node] = self._time[old_node] - 1
-                # if not pos:
-                #     self.pos[node] = self.pos[old_node]
-                # else:
-                #     self.pos[node] = pos
         return node
 
     @modifier
@@ -3027,7 +3010,7 @@ class lineageTree:
         else:
             if starting_time is not None:
                 warnings.warn(
-                    f"Both `time` and `starting_time` were provided, `starting_time` was ignored.",
+                    "Both `time` and `starting_time` were provided, `starting_time` was ignored.",
                     stacklevel=2,
                 )
             self._time = {n: int(time[n]) for n in self.nodes}

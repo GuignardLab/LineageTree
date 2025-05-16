@@ -91,7 +91,7 @@ lineageTree2Treex.py
 test.tlp
 # *.mastodon
 bak_*
-data/*
+# data/*
 
 .coverage
 
