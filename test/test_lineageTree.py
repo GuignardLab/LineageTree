@@ -404,7 +404,8 @@ def test_dynamic_property():
 
 def test_idx3d():
     kdtree, idxs = lT1.get_idx3d(0)
-    assert kdtree.query((0, 0, 0)) == (1131.2352660153383, 4)
+    assert np.isclose(kdtree.query((0, 0, 0))[0], 1131.2352660153383)
+    assert kdtree.query((0, 0, 0))[1] == 4
     assert idxs[kdtree.query((1000, 2000, 1000))[1]] == 132063
 
 
@@ -500,4 +501,4 @@ def test_nodes_at_t():
 
 
 def test_calculate_dtw():
-    assert lT1.calculate_dtw(110832, 132129)[0] == 25.550036305019194
+    assert np.isclose(lT1.calculate_dtw(110832, 132129)[0], 25.550036305019194)
