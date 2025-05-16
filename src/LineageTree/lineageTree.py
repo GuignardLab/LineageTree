@@ -89,7 +89,7 @@ class lineageTree:
 
         return raising_flag
 
-    def __check_cc_cycles(self, n) -> tuple[bool, set[int]]:
+    def __check_cc_cycles(self, n: int) -> tuple[bool, set[int]]:
         """Check if the connected component of a given node `n` has a cycle.
 
         Returns
@@ -566,16 +566,16 @@ class lineageTree:
             from matplotlib import colormaps
 
             if node_color_map in colormaps:
-                node_color_map = colormaps[node_color_map]
+                cmap = colormaps[node_color_map]
             else:
-                node_color_map = colormaps["viridis"]
+                cmap = colormaps["viridis"]
             values = np.array(
                 [self._successor[node_color][c] for c in self.nodes]
             )
             normed_vals = normalize_values(values, self.nodes, 1, 0, 1)
 
             def node_color(x):
-                return [k * 255 for k in node_color_map(normed_vals(x))[:-1]]
+                return [k * 255 for k in cmap(normed_vals(x))[:-1]]
 
         coloring_edges = stroke_color is not None
         if not coloring_edges:
@@ -587,16 +587,16 @@ class lineageTree:
             from matplotlib import colormaps
 
             if node_color_map in colormaps:
-                node_color_map = colormaps[node_color_map]
+                cmap = colormaps[node_color_map]
             else:
-                node_color_map = colormaps["viridis"]
+                cmap = colormaps["viridis"]
             values = np.array(
                 [self._successor[stroke_color][c] for c in self.nodes]
             )
             normed_vals = normalize_values(values, self.nodes, 1, 0, 1)
 
             def stroke_color(x):
-                return [k * 255 for k in node_color_map(normed_vals(x))[:-1]]
+                return [k * 255 for k in cmap(normed_vals(x))[:-1]]
 
         prev_x = 0
         self.vert_space_factor = vert_space_factor
@@ -1585,7 +1585,7 @@ class lineageTree:
             sorted eigenvectors (3,)
         """
         time_nodes = {
-            t: len(self.nodes_at_t(t)) for t in range(self.t_b, self._te)
+            t: len(self.nodes_at_t(t)) for t in range(self.t_b, self.t_e)
         }
         if time is None:
             time = max(time_nodes, key=lambda x: len(time_nodes[x]))
@@ -1944,7 +1944,7 @@ class lineageTree:
         if selected_edges is None:
             selected_edges = []
         if ax is None:
-            figure, ax = plt.subplots()
+            _, ax = plt.subplots()
         else:
             ax.clear()
         if not isinstance(selected_nodes, set):

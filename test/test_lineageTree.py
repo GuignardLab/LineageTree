@@ -1,7 +1,7 @@
 import warnings
 
-import pytest
 import numpy as np
+import pytest
 
 from LineageTree import (
     lineageTree,
@@ -450,3 +450,54 @@ def test_compute_k_nearest_neighbours():
         169994,
         178396,
     }
+
+
+def test_compute_spatial_edges():
+    assert lT1.compute_spatial_edges()[129294] == {139162, 148358}
+
+
+def test_main_axes(): ...
+
+
+def test_get_ancestor_at_t():
+    assert lT1.get_ancestor_at_t(175903, 0) == 173618
+
+
+def get_labelled_ancestor():
+    assert lT1.get_labelled_ancestor(175903) == 173618
+
+
+def test_unordered_tree_edit_distances_at_time_t():
+    assert np.isclose(
+        lT1.unordered_tree_edit_distances_at_time_t(0)[(110832, 132129)],
+        0.7321711568938193,
+    )
+
+
+def test_unordered_tree_edit_distance():
+    assert np.isclose(
+        lT1.unordered_tree_edit_distance(110832, 132129), 0.7321711568938193
+    )
+
+
+def test_non_return_functions():
+    # lT1.draw_tree_graph()
+    lT1.plot_all_lineages()
+    lT1.plot_subtree(110832)
+    lT1.plot_dtw_heatmap(110832, 132129)
+    lT1.plot_dtw_trajectory(110832, 132129)
+
+
+def test_nodes_at_t():
+    assert lT1.nodes_at_t(0) == [
+        110832,
+        132129,
+        168322,
+        173618,
+        110826,
+        132063,
+    ]
+
+
+def test_calculate_dtw():
+    assert lT1.calculate_dtw(110832, 132129)[0] == 25.550036305019194
