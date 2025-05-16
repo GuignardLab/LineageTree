@@ -1,5 +1,6 @@
 import warnings
 
+import numpy as np
 import pytest
 
 from LineageTree import (
@@ -9,23 +10,23 @@ from LineageTree import (
     read_from_mastodon,
 )
 
+lT1 = read_from_mamut_xml("src/LineageTree/test/data/test-mamut.xml")
+lT2 = read_from_mastodon("src/LineageTree/test/data/test.mastodon")
+
 
 def test_read_MaMuT_xml():
-    lT = read_from_mastodon("test/data/test.mastodon")
-    assert lT.name == "test"
-    assert len(lT.roots) == 3
-    assert len(lT.nodes) == 41
-    assert len(lT.successor) == 41
-    assert len(lT.find_leaves(40)) == 2
-    lT = read_from_mamut_xml("test/data/test-mamut.xml")
-    assert lT.name == "test-mamut"
-    assert len(lT.nodes) == 2430
-    assert len(lT.successor) == 2430
+    assert lT1.name == "test-mamut"
+    assert len(lT1.nodes) == 2430
+    assert len(lT1.successor) == 2430
+    assert lT2.name == "test"
+    assert len(lT2.roots) == 3
+    assert len(lT2.nodes) == 41
+    assert len(lT2.successor) == 41
+    assert len(lT2.find_leaves(40)) == 2
 
 
 def test_all_chains():
-    lT = read_from_mamut_xml("test/data/test-mamut.xml")
-    assert len(lT.all_chains) == 18
+    assert len(lT1.all_chains) == 18
 
 
 def test_uted_2levels_vs_3levels():
@@ -91,7 +92,7 @@ def test_time_resolution():
 
 
 def test_loading():
-    lT = lineageTree.load("test/data/test-mamut.lT")
+    lT = lineageTree.load("src/LineageTree/test/data/test-mamut.lT")
     assert lT.time_resolution == 0
     lT.time_resolution = 1.51
     assert lT.time_resolution == 1.5
@@ -208,9 +209,8 @@ def test_cross_comparison():
 
 
 def test_plots():
-    lT = read_from_mastodon("test/data/test.mastodon")
-    assert len(lT.plot_all_lineages()) == 3
-    assert len(lT.plot_subtree(40)) == 2
+    assert len(lT2.plot_all_lineages()) == 3
+    assert len(lT2.plot_subtree(40)) == 2
 
 
 def test_removing_embryos_from_manager():
@@ -308,7 +308,7 @@ def test_predecessor():
 
 
 def test_empty():
-    lT = lineageTree()
+    lineageTree()
 
 
 def test_time_warning():
@@ -316,9 +316,7 @@ def test_time_warning():
         "error"
     )  # raises warnings as errors so we can catch them when expected
     with pytest.raises(UserWarning) as excinfo:
-        lT = lineageTree(
-            successor={0: (1,)}, time={0: 1, 1: 2}, starting_time=3
-        )
+        lineageTree(successor={0: (1,)}, time={0: 1, 1: 2}, starting_time=3)
     assert (
         str(excinfo.value)
         == "Both `time` and `starting_time` were provided, `starting_time` was ignored."
@@ -328,7 +326,7 @@ def test_time_warning():
 
 def test_bad_leaf():
     with pytest.raises(ValueError) as excinfo:
-        lT = lineageTree(
+        lineageTree(
             successor={
                 1: (2,),
                 2: (3, 100),
@@ -351,13 +349,13 @@ def test_bad_leaf():
 
 def test_multiple_predecessors():
     with pytest.raises(ValueError) as excinfo:
-        lT = lineageTree(successor={2: (1,), 3: (2,), 4: (2,)})
+        lineageTree(successor={2: (1,), 3: (2,), 4: (2,)})
     assert str(excinfo.value) == "Node can have at most one predecessor."
 
 
 def test_bad_root_leaf_value():
     with pytest.raises(ValueError) as excinfo:
-        lT = lineageTree(successor={1: (2,), 2: set()}, root_leaf_value=set())
+        lineageTree(successor={1: (2,), 2: set()}, root_leaf_value=set())
     assert (
         str(excinfo.value)
         == "root_leaf_value should have at least one element."
@@ -366,7 +364,7 @@ def test_bad_root_leaf_value():
 
 def test_successor_and_predecessor():
     with pytest.raises(ValueError) as excinfo:
-        lT = lineageTree(successor={1: (2, 3)}, predecessor={2: 1, 3: 1})
+        lineageTree(successor={1: (2, 3)}, predecessor={2: 1, 3: 1})
     assert (
         str(excinfo.value)
         == "You cannot have both successors and predecessors."
@@ -375,8 +373,129 @@ def test_successor_and_predecessor():
 
 def test_cycles():
     with pytest.raises(ValueError) as excinfo:
-        lT = lineageTree(successor={0: (1,), 1: (0,)})
+        lineageTree(successor={0: (1,), 1: (0,)})
     assert (
         str(excinfo.value)
         == "Cycles were found in the tree, there should not be any."
     )
+
+
+def test_equality():
+    assert lT1 == lT1
+    assert lT2 == lT2
+    assert lT1 != lT2
+
+
+def test_next_id():
+    assert lT1.get_next_id() == 182893
+    assert lT1.get_next_id() == 182894
+
+
+def test_dynamic_property():
+    lT = lineageTree()
+    assert lT.nodes == frozenset()
+    t1 = lT.add_root(0)
+    assert lT.nodes == frozenset({1})
+    lT.add_chain(t1, 10, True)
+    assert lT.nodes == frozenset({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11})
+
+
+def test_idx3d():
+    kdtree, idxs = lT1.get_idx3d(0)
+    assert np.isclose(kdtree.query((0, 0, 0))[0], 1131.2352660153383)
+    assert kdtree.query((0, 0, 0))[1] == 4
+    assert idxs[kdtree.query((1000, 2000, 1000))[1]] == 132063
+
+
+def test_gabriel_graph():
+    gg = lT1.get_gabriel_graph(0)
+    assert gg[173618] == {110832, 168322}
+
+
+def test_get_chain_of_node():
+    chain = lT1.get_chain_of_node(173618)
+    assert len(chain) == 273
+    assert chain[-1] == 181669
+
+
+def test_get_all_chains_of_subtree():
+    assert (
+        lT1.get_chain_of_node(173618)
+        == lT1.get_all_chains_of_subtree(173618)[0]
+    )
+
+
+def test_find_leaves():
+    assert lT1.find_leaves(173618) == {lT1.get_chain_of_node(173618)[-1]}
+
+
+def test_get_subtree_nodes():
+    assert lT1.get_chain_of_node(173618) == lT1.get_subtree_nodes(173618)
+
+
+def test_spatial_density():
+    density = list(lT1.compute_spatial_density(0, th=40).values())
+    assert np.count_nonzero(density) == 1669
+
+
+def test_compute_k_nearest_neighbours():
+    assert lT1.compute_k_nearest_neighbours()[169994] == {
+        108588,
+        114722,
+        129276,
+        139163,
+        148361,
+        165681,
+        169994,
+        178396,
+    }
+
+
+def test_compute_spatial_edges():
+    assert lT1.compute_spatial_edges()[129294] == {139162, 148358}
+
+
+def test_main_axes(): ...
+
+
+def test_get_ancestor_at_t():
+    assert lT1.get_ancestor_at_t(175903, 0) == 173618
+
+
+def get_labelled_ancestor():
+    assert lT1.get_labelled_ancestor(175903) == 173618
+
+
+def test_unordered_tree_edit_distances_at_time_t():
+    assert np.isclose(
+        lT1.unordered_tree_edit_distances_at_time_t(0)[(110832, 132129)],
+        0.7321711568938193,
+    )
+
+
+def test_unordered_tree_edit_distance():
+    assert np.isclose(
+        lT1.unordered_tree_edit_distance(110832, 132129), 0.7321711568938193
+    )
+
+
+def test_non_return_functions():
+    lT1.plot_all_lineages()
+    lT1.plot_subtree(110832)
+    lT1.plot_dtw_heatmap(110832, 132129)
+    lT1.plot_dtw_trajectory(110832, 132129)
+
+
+def test_nodes_at_t():
+    assert lT1.nodes_at_t(0) == [
+        110832,
+        132129,
+        168322,
+        173618,
+        110826,
+        132063,
+    ]
+
+
+def test_calculate_dtw():
+    assert np.isclose(lT1.calculate_dtw(110832, 132129)[0], 25.550036305019194)
