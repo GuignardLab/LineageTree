@@ -1255,6 +1255,13 @@ class lineageTree:
         self._all_chains = self._compute_all_chains()
         return self._all_chains
 
+    @dynamic_property
+    def time_nodes(self):
+        self._time_nodes = {}
+        for c, t in self._time.items():
+            self._time_nodes.setdefault(t, set()).add(c)
+        return self._time_nodes
+
     def m(self, i, j):
         if (i, j) not in self._tmp_parenting:
             if i == j:  # the distance to the node itself is 0
@@ -1579,42 +1586,6 @@ class lineageTree:
         srt = np.argsort(eig_val)[::-1]
         self.eig_val, self.eig_vec = eig_val[srt], eig_vec[:, srt]
         return eig_val[srt], eig_vec[:, srt]
-
-    @staticmethod
-    def __rodrigues_rotation_matrix(
-        vector1: Iterable | np.ndarray,
-        vector2: Iterable | np.ndarray = (0, 1, 0),
-    ):
-        """Calculates the rodrigues matrix of a dataset.
-        It should use vectors from the find_main_axes(eigenvectors) function of LineagTree.
-        Uses the Rodrigues rotation formula.
-
-        Parameters
-        ----------
-        vector1 : Iterable or np.array
-            The vector that should be rotated to be aligned to the second vector
-        vector2 : Iterable or np.array, default=(0, 1, 0) The second vector. Defaults to [1,0,0].
-
-        Returns
-        -------
-        np.ndarray of shape (3, 3)
-            The rotation matrix.
-        """
-        vector1 = vector1 / np.linalg.norm(vector1)
-        vector2 = vector2 / np.linalg.norm(vector2)
-        if vector1 @ vector2 == 1:
-            return np.eye(3)
-        angle = np.arccos(vector1 @ vector2)
-        axis = np.cross(vector1, vector2)
-        axis = axis / np.linalg.norm(axis)
-        K = np.array(
-            [
-                [0, -axis[2], axis[1]],
-                [axis[2], 0, -axis[0]],
-                [-axis[1], axis[0], 0],
-            ]
-        )
-        return np.eye(3) + np.sin(angle) * K + (1 - np.cos(angle)) * K @ K
 
     def get_ancestor_at_t(self, n: int, time: int | None = None) -> int | None:
         """
