@@ -2,6 +2,7 @@ import warnings
 
 import numpy as np
 import pytest
+
 from LineageTree import (
     lineageTree,
     lineageTreeManager,
@@ -514,8 +515,7 @@ def test_compute_spatial_edges():
     assert lT1.compute_spatial_edges()[129294] == {139162, 148358}
 
 
-def test_main_axes():
-    ...
+def test_main_axes(): ...
 
 
 def test_get_ancestor_at_t():

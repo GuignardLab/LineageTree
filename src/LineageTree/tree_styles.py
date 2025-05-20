@@ -23,7 +23,7 @@ class abstract_trees(ABC):
         lT: lineageTree,
         root: int,
         downsample: int | None = None,
-        end_time: int = None,
+        end_time: int | None = None,
         time_scale: int = 1,
     ):
         self.lT: lineageTree = lT
@@ -37,7 +37,7 @@ class abstract_trees(ABC):
         self.tree: tuple = self.get_tree()
         self.edist = self._edist_format(self.tree[0])
 
-    def get_next_id(self):
+    def get_next_id(self) -> int:
         self.internal_ids += 1
         return self.internal_ids
 
@@ -66,7 +66,15 @@ class abstract_trees(ABC):
         """
 
     @abstractmethod
-    def delta(self, x, y, corres1, corres2, times1, times2):
+    def delta(
+        self,
+        x: int,
+        y: int,
+        corres1: dict[int, int],
+        corres2: dict[int, int],
+        times1: dict[int, float],
+        times2: dict[int, float],
+    ) -> int | float:
         """The distance of two nodes inside a tree. Behaves like a staticmethod.
             The corres1/2 and time1/2 should always be provided and will be handled accordingly by the specific
             delta of each tree style.
@@ -78,9 +86,9 @@ class abstract_trees(ABC):
             y : int
                 The second node to compare, takes the names provided by the edist
             corres1 : dict
-                Correspondance between node1 and its name in the real tree.
+                Dictionary mapping node1 ids to the corresponding id in the original tree.
             corres2 : dict
-                Correspondance between node2 and its name in the real tree.
+                Dictionary mapping node2 ids to the corresponding id in the original tree.
             times1 : dict
                 The dictionary of the branch lengths of the tree that n1 is spawned from.
             times2 : dict

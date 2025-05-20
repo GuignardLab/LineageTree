@@ -1688,7 +1688,7 @@ class lineageTree:
         end_time: int | None = None,
         style: Literal["simple", "full", "downsampled"] = "simple",
         downsample: int = 2,
-        norm: Literal["max", "sum"] | None = "max",
+        norm: Literal["max", "sum", None] = "max",
         recompute: bool = False,
     ) -> dict[int, float]:
         """
@@ -1770,7 +1770,7 @@ class lineageTree:
         n1: int,
         n2: int,
         end_time: int | None = None,
-        norm: Literal["max", "sum"] | None = "max",
+        norm: Literal["max", "sum", None] = "max",
         style: Literal[
             "simple", "normalized_simple", "full", "downsampled", "mini"
         ] = "simple",
@@ -1871,8 +1871,8 @@ class lineageTree:
         self,
         n1: int,
         n2: int,
-        end_time: int = None,
-        norm: Literal["max", "sum"] | None = "max",
+        end_time: int | None = None,
+        norm: Literal["max", "sum", None] = "max",
         style: Literal[
             "simple", "normalized_simple", "full", "downsampled", "mini"
         ] = "simple",
@@ -1880,8 +1880,8 @@ class lineageTree:
         colormap: str = "cool",
         default_color: str = "black",
         size: float = 10,
-        lw: float = 0.1,
-        ax: list[plt.Axes, plt.Axes] = None,
+        lw: float = 0.3,
+        ax: list[plt.Axes] | None = None,
     ) -> tuple[plt.figure, plt.Axes]:
         """
         Plots the distance graphs of 2 nodes compared.
@@ -1940,9 +1940,7 @@ class lineageTree:
             times1=times1,
             times2=times2,
         )
-        norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
-        if norm is None:
-            norm = "None"
+        norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
         if norm not in norm_dict:
             raise Warning(
                 "Select a viable normalization method (max, sum, None)"
@@ -2052,8 +2050,8 @@ class lineageTree:
         self,
         n1: int,
         n2: int,
-        end_time: int = None,
-        norm: Literal["max", "sum"] | None = "max",
+        end_time: int | None = None,
+        norm: Literal["max", "sum", None] = "max",
         style: Literal[
             "simple", "normalized_simple", "full", "downsampled", "mini"
         ] = "simple",
@@ -2108,9 +2106,7 @@ class lineageTree:
             *_,
             corres2,
         ) = tree2.edist
-        norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
-        if norm is None:
-            norm = "None"
+        norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
         if norm not in norm_dict:
             raise Warning(
                 "Select a viable normalization method (max, sum, None)"
@@ -2170,8 +2166,8 @@ class lineageTree:
         self,
         n1: int,
         n2: int,
-        end_time: int = None,
-        norm: Literal["max", "sum"] | None = "max",
+        end_time: int | None = None,
+        norm: Literal["max", "sum", None] = "max",
         style: Literal[
             "simple", "normalized_simple", "full", "downsampled", "mini"
         ] = "simple",
@@ -2279,7 +2275,7 @@ class lineageTree:
     def __plot_edges(
         hier: dict,
         lnks_tms: dict,
-        selected_edges: set,
+        selected_edges: Iterable,
         color: str | dict | list,
         lw: float,
         ax: plt.Axes,
@@ -3129,7 +3125,7 @@ class lineageTree:
         fast: bool = False,
         w: int = 0,
         centered_band: bool = True,
-        projection: Literal["3d", "xy", "xz", "yz", "pca"] | None = None,
+        projection: Literal["3d", "xy", "xz", "yz", "pca", None] = None,
         alig: bool = False,
     ) -> tuple[float, plt.Figure]:
         """
