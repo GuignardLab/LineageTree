@@ -1,8 +1,11 @@
 from LineageTree import lineageTree
+from typing import Iterable
 
 
 def create_links_and_cycles(
-    lT: lineageTree, roots=None, end_time: int | None = None
+    lT: lineageTree,
+    roots: int | Iterable | None = None,
+    end_time: int | None = None,
 ) -> dict[str, dict]:
     """Generates a dictionary containing all the edges (from start of lifetime to end not the intermediate timepoints)
       of a subtree spawned by node/s and their duration
@@ -114,14 +117,28 @@ def hierarchical_pos(
     return pos_node
 
 
-def convert_style_to_number(style, downsample):
+def convert_style_to_number(style: str, downsample: int | None) -> int:
+    """Converts tree_style and downsampling to a single number.
+
+    Parameters
+    ----------
+    style : str
+        the tree style
+    downsample : int
+        the downsampling factor
+
+    Returns
+    -------
+    int
+        A number which serves as ID if the tree style and downsampling used.
+    """
     style_dict = {
         "full": 0,
         "simple": -1,
         "normalized_simple": -2,
         "mini": -1000,
     }
-    if style == "downsampled":
+    if style == "downsampled" and downsample is not None:
         return downsample
     else:
         return style_dict[style]
