@@ -14,11 +14,13 @@ from itertools import combinations
 from numbers import Number
 from types import MappingProxyType
 from typing import Literal
-
+from edist.alignment import Alignment
+from .tree_styles import abstract_trees
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import svgwrite
+from typing import Union
 from edist import uted
 from matplotlib import colormaps
 from matplotlib.collections import LineCollection
@@ -28,17 +30,6 @@ from scipy.sparse import dok_array
 from scipy.spatial import Delaunay, KDTree, distance
 
 from .tree_styles import tree_style
-
-try:
-    from edist import uted
-except ImportError:
-    warnings.warn(
-        (
-            "No edist installed therefore you will not be able"
-            "to compute the tree edit distance."
-        ),
-        stacklevel=2,
-    )
 from .utils import (
     convert_style_to_number,
     create_links_and_cycles,
@@ -1025,7 +1016,6 @@ class lineageTree:
                     "_time",
                     "pos",
                 ]
-                # and set(prop).symmetric_difference(lT._successor) == set()
             }
             lT = lineageTree(
                 successor=lT._successor,
@@ -1648,9 +1638,9 @@ class lineageTree:
 
         Returns
         -------
-        int or None
+        int or -1
             the id of the ancestor at time `time`,
-            `None` if it does not exist
+            `-1` if there is no ancestor.
         """
         if n not in self.nodes:
             return -1
@@ -1665,7 +1655,7 @@ class lineageTree:
         if self._time.get(ancestor, self.t_b - 1) == time:
             return ancestor
         else:
-            return None
+            return -1
 
     def get_labelled_ancestor(self, node: int) -> int | None:
         """Finds the first labelled ancestor and returns its ID otherwise returns None
@@ -1785,7 +1775,7 @@ class lineageTree:
             "simple", "normalized_simple", "full", "downsampled", "mini"
         ] = "simple",
         downsample: int = 2,
-    ) -> float:
+    ) -> dict[str, Alignment | tuple[abstract_trees, abstract_trees]]:
         """
         Compute the unordered tree edit backtrace from Zhang 1996 between the trees spawned
         by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
@@ -1810,10 +1800,12 @@ class lineageTree:
 
         Returns
         -------
-        Alignment
-            The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
-        tuple(tree,2)
-            The two trees that have been mapped to each other.
+         dict
+        A dictionary with:
+            - 'alignment'
+                The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
+            - 'Trees'
+                A list of the two trees that have been mapped to each other.
         """
         parameters = (
             end_time,
@@ -2349,7 +2341,7 @@ class lineageTree:
             Color of selected edges
         size : int, default=10
             Size of the nodes
-        lw : float, optional
+        lw : float
             The width of the edges of the tree graph, by default 0.1
         ax : plt.Axes, optional
             Plot the graph on existing ax. Defaults to None.
@@ -2419,7 +2411,7 @@ class lineageTree:
         start_time : int, optional
             Important only if there are no nodes it will produce the graph of every
             root that starts before or at start time. Defaults to None.
-        end_time : int, None, optional
+        end_time : int, optional
             The last timepoint to be considered, if None the last timepoint of the
             dataset (t_e) is considered, by default None.
 
@@ -2570,7 +2562,7 @@ class lineageTree:
         self,
         node: int,
         end_time: int | None = None,
-        figsize: tuple[int, int] = (4, 7),  # type: ignore
+        figsize: tuple[int, int] = (4, 7),
         dpi: int = 150,
         vert_gap: int = 2,
         selected_nodes: list | None = None,
