@@ -33,6 +33,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
+
 dependencies = [
     "scipy>=1.9",
     "numpy>=1.23",
@@ -41,6 +42,7 @@ dependencies = [
     "edist",
     "svgwrite",
 ]
+
 [project.optional-dependencies]
 dev = [
     "pytest",
@@ -54,6 +56,10 @@ doc = [
     "sphinx-rtd-theme",
     "myst-parser",
     "sphinx_book_theme",
+]
+test = [
+    "pytest",
+    "pytest-cov",
 ]
 
 [project.urls]

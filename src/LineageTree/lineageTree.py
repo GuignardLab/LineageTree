@@ -15,12 +15,17 @@ from numbers import Number
 from types import MappingProxyType
 from typing import Literal
 
+import matplotlib.pyplot as plt
+import numpy as np
 import matplotlib.colors as mcolors
 import svgwrite
 from matplotlib import colormaps
+from edist import uted
 from matplotlib.collections import LineCollection
 from packaging.version import Version
+from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.sparse import dok_array
+from scipy.spatial import Delaunay, KDTree, distance
 
 from .tree_styles import tree_style
 
@@ -94,7 +99,7 @@ class lineageTree:
 
         return raising_flag
 
-    def __check_cc_cycles(self, n) -> tuple[bool, set[int]]:
+    def __check_cc_cycles(self, n: int) -> tuple[bool, set[int]]:
         """Check if the connected component of a given node `n` has a cycle.
 
         Returns
@@ -151,7 +156,7 @@ class lineageTree:
             return False
 
     def get_next_id(self) -> int:
-        """Computes the next authorized id.
+        """Computes the next authorized id and assign it.
 
         Returns
         -------
@@ -203,10 +208,6 @@ class lineageTree:
                 old_node = node
                 node = self._add_node(pred=[old_node])
                 self._time[node] = self._time[old_node] + 1
-                # if not pos:
-                #     self.pos[node] = self.pos[old_node]
-                # else:
-                #     self.pos[node] = pos
         else:
             if self._predecessor[node]:
                 raise Warning("The node already has a predecessor.")
@@ -218,10 +219,6 @@ class lineageTree:
                 old_node = node
                 node = self._add_node(succ=[old_node])
                 self._time[node] = self._time[old_node] - 1
-                # if not pos:
-                #     self.pos[node] = self.pos[old_node]
-                # else:
-                #     self.pos[node] = pos
         return node
 
     @modifier
@@ -571,16 +568,16 @@ class lineageTree:
             from matplotlib import colormaps
 
             if node_color_map in colormaps:
-                node_color_map = colormaps[node_color_map]
+                cmap = colormaps[node_color_map]
             else:
-                node_color_map = colormaps["viridis"]
+                cmap = colormaps["viridis"]
             values = np.array(
                 [self._successor[node_color][c] for c in self.nodes]
             )
             normed_vals = normalize_values(values, self.nodes, 1, 0, 1)
 
             def node_color(x):
-                return [k * 255 for k in node_color_map(normed_vals(x))[:-1]]
+                return [k * 255 for k in cmap(normed_vals(x))[:-1]]
 
         coloring_edges = stroke_color is not None
         if not coloring_edges:
@@ -592,16 +589,16 @@ class lineageTree:
             from matplotlib import colormaps
 
             if node_color_map in colormaps:
-                node_color_map = colormaps[node_color_map]
+                cmap = colormaps[node_color_map]
             else:
-                node_color_map = colormaps["viridis"]
+                cmap = colormaps["viridis"]
             values = np.array(
                 [self._successor[stroke_color][c] for c in self.nodes]
             )
             normed_vals = normalize_values(values, self.nodes, 1, 0, 1)
 
             def stroke_color(x):
-                return [k * 255 for k in node_color_map(normed_vals(x))[:-1]]
+                return [k * 255 for k in cmap(normed_vals(x))[:-1]]
 
         prev_x = 0
         self.vert_space_factor = vert_space_factor
@@ -1489,6 +1486,8 @@ class lineageTree:
         dict of int to float
             dictionary that maps a node id to its spatial density
         """
+        if not hasattr(self, "spatial_density"):
+            self.spatial_density = {}
         s_vol = 4 / 3.0 * np.pi * th**3
         if t_b is None:
             t_b = self.t_b
@@ -1523,14 +1522,22 @@ class lineageTree:
         self.kn_graph = {}
         for t in set(self._time.values()):
             nodes = self.nodes_at_t(t)
-            use_k = k if k < len(nodes) else len(nodes)
-            idx3d, nodes = self.get_idx3d(t)
-            pos = [self.pos[c] for c in nodes]
-            _, neighbs = idx3d.query(pos, use_k)
-            out = dict(
-                zip(nodes, [set(nodes[ni[1:]]) for ni in neighbs], strict=True)
-            )
-            self.kn_graph.update(out)
+            if 1 < len(nodes):
+                use_k = k if k < len(nodes) else len(nodes)
+                idx3d, nodes = self.get_idx3d(t)
+                pos = [self.pos[c] for c in nodes]
+                _, neighbs = idx3d.query(pos, use_k)
+                out = dict(
+                    zip(
+                        nodes,
+                        map(set, nodes[neighbs]),
+                        strict=True,
+                    )
+                )
+                self.kn_graph.update(out)
+            else:
+                n = nodes.pop
+                self.kn_graph.update({n: {n}})
         return self.kn_graph
 
     def compute_spatial_edges(self, th: int = 50) -> dict[int, set[int]]:
@@ -2372,7 +2379,7 @@ class lineageTree:
         if selected_edges is None:
             selected_edges = []
         if ax is None:
-            figure, ax = plt.subplots()
+            _, ax = plt.subplots()
         else:
             ax.clear()
         if not isinstance(selected_nodes, set):
