@@ -87,7 +87,7 @@ class lineageTreeManager:
             if name:
                 self.lineagetrees[name] = other_tree
             else:
-                if hasattr(other_tree, "name"):
+                if other_tree.name:
                     name = other_tree.name
                     self.lineagetrees[name] = other_tree
                 else:

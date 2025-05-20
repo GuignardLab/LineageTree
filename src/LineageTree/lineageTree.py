@@ -2409,7 +2409,7 @@ class lineageTree:
 
     def _create_dict_of_plots(
         self,
-        node: int | None = None,
+        node: int |Iterable[int]| None = None,
         start_time: int | None = None,
         end_time: int | None = None,
     ) -> dict[int, dict]:
@@ -3474,7 +3474,7 @@ class lineageTree:
         else:
             if starting_time is not None:
                 warnings.warn(
-                    f"Both `time` and `starting_time` were provided, `starting_time` was ignored.",
+                    "Both `time` and `starting_time` were provided, `starting_time` was ignored.",
                     stacklevel=2,
                 )
             self._time = {n: int(time[n]) for n in self.nodes}
