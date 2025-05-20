@@ -160,7 +160,7 @@ class lineageTreeManager:
         embryo_2: str,
         end_time2: int,
         style="simple",
-        norm: Literal["max", "sum"] | None = "max",
+        norm: Literal["max", "sum", None] = "max",
         downsample: int = 2,
         registration=None,  # will be added as a later feature
     ):
@@ -301,7 +301,7 @@ class lineageTreeManager:
         n2: int,
         embryo_2: str,
         end_time2: int,
-        norm: tuple["max", "sum", "None"] | None = "max",
+        norm: Literal["max", "sum", None] = "max",
         style: Literal[
             "simple", "normalized_simple", "full", "downsampled", "mini"
         ] = "simple",
@@ -389,11 +389,11 @@ class lineageTreeManager:
             corres2,
         ) = tree2.edist
         if len(nodes1) == len(nodes2) == 0:
-            self._comparisons[hash(frozenset(parameters.values()))] = {
+            self._comparisons[hash(frozenset(parameters))] = {
                 "alignment": (),
                 "trees": (),
             }
-            return self._comparisons[hash(frozenset(parameters.values()))]
+            return self._comparisons[hash(frozenset(parameters))]
         delta_tmp = partial(
             tree1.delta,
             corres1=corres1,
@@ -420,7 +420,7 @@ class lineageTreeManager:
         n2: int,
         embryo_2,
         end_time2,
-        norm: Literal["max", "sum"] | None = "max",
+        norm: Literal["max", "sum", None] = "max",
         style: Literal[
             "simple", "normalized_simple", "full", "downsampled", "mini"
         ] = "simple",
@@ -429,7 +429,7 @@ class lineageTreeManager:
         default_color: str = "black",
         size: float = 10,
         lw: float = 0.3,
-        ax: list[plt.Axes, plt.Axes] = None,
+        ax: list[plt.Axes] | None = None,
     ) -> tuple[plt.figure, plt.Axes]:
         """
         Plots the distance graphs of 2 nodes compared.
@@ -501,9 +501,7 @@ class lineageTreeManager:
             times1=times1,
             times2=times2,
         )
-        norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
-        if norm is None:
-            norm = "None"
+        norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
         if norm not in norm_dict:
             raise Warning(
                 "Select a viable normalization method (max, sum, None)"
@@ -567,28 +565,28 @@ class lineageTreeManager:
                         matched_right.append(node_2)
                         l_node_2 = tree2.lT.get_chain_of_node(node_2)[-1]
                         matched_right.append(l_node_2)
-                        colors1[
-                            node_1
-                        ] = self.__calculate_distance_of_sub_tree(
-                            node_1,
-                            tree1.lT,
-                            node_2,
-                            tree2.lT,
-                            btrc,
-                            corres1,
-                            corres2,
-                            delta_tmp,
-                            norm_dict[norm],
-                            tree1.get_norm(node_1),
-                            tree2.get_norm(node_2),
+                        colors1[node_1] = (
+                            self.__calculate_distance_of_sub_tree(
+                                node_1,
+                                tree1.lT,
+                                node_2,
+                                tree2.lT,
+                                btrc,
+                                corres1,
+                                corres2,
+                                delta_tmp,
+                                norm_dict[norm],
+                                tree1.get_norm(node_1),
+                                tree2.get_norm(node_2),
+                            )
                         )
                         colors2[node_2] = colors1[node_1]
-                        colors1[
-                            tree1.lT.get_chain_of_node(node_1)[-1]
-                        ] = colors1[node_1]
-                        colors2[
-                            tree2.lT.get_chain_of_node(node_2)[-1]
-                        ] = colors2[node_2]
+                        colors1[tree1.lT.get_chain_of_node(node_1)[-1]] = (
+                            colors1[node_1]
+                        )
+                        colors2[tree2.lT.get_chain_of_node(node_2)[-1]] = (
+                            colors2[node_2]
+                        )
 
                         if tree1.lT.get_chain_of_node(node_1)[-1] != node_1:
                             matched_left.append(
@@ -634,7 +632,7 @@ class lineageTreeManager:
         n2: int,
         embryo_2,
         end_time2,
-        norm: Literal["max", "sum"] | None = "max",
+        norm: Literal["max", "sum", None] = "max",
         style: Literal[
             "simple", "normalized_simple", "full", "downsampled", "mini"
         ] = "simple",
@@ -642,7 +640,7 @@ class lineageTreeManager:
         colormap: str = "cool",
         default_color: str = "black",
         size: float = 10,
-        ax: list[plt.Axes, plt.Axes] = None,
+        ax: list[plt.Axes] | None = None,
     ) -> dict[str, list]:
         """
         Plots the distance graphs of 2 nodes compared.
@@ -708,9 +706,7 @@ class lineageTreeManager:
             *_,
             corres2,
         ) = tree2.edist
-        norm_dict = {"max": max, "sum": sum, "None": lambda x: 1}
-        if norm is None:
-            norm = "None"
+        norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
         if norm not in norm_dict:
             raise Warning(
                 "Select a viable normalization method (max, sum, None)"
