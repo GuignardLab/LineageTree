@@ -2654,9 +2654,9 @@ class lineageTree:
 
         Parameters
         ----------
-            t : int, optional
+            t : int
                 target time, if `None` goes as far as possible
-            r : int or list of int
+            r : int or list of int, optional
                 id or list of ids of the spawning node
 
         Returns
@@ -2665,7 +2665,7 @@ class lineageTree:
             list of nodes at time `t` spawned by `r`
         """
         if r is None or (not r and r != 0):
-            r = self.roots
+            r = {root for root in self.roots if self.time[root] <= t}
         if isinstance(r, int):
             r = [r]
         if t is None:
