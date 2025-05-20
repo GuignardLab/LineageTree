@@ -14,14 +14,13 @@ from itertools import combinations
 from numbers import Number
 from types import MappingProxyType
 from typing import Literal
-from edist.alignment import Alignment
-from .tree_styles import abstract_trees
+
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import svgwrite
-from typing import Union
 from edist import uted
+from edist.alignment import Alignment
 from matplotlib import colormaps
 from matplotlib.collections import LineCollection
 from packaging.version import Version
@@ -29,7 +28,7 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.sparse import dok_array
 from scipy.spatial import Delaunay, KDTree, distance
 
-from .tree_styles import tree_style
+from .tree_styles import abstract_trees, tree_style
 from .utils import (
     convert_style_to_number,
     create_links_and_cycles,
