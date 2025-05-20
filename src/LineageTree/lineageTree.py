@@ -14,7 +14,7 @@ from itertools import combinations
 from numbers import Number
 from types import MappingProxyType
 from typing import Literal
-from edist.alignment import Alignment 
+from edist.alignment import Alignment
 from .tree_styles import abstract_trees
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -1775,7 +1775,7 @@ class lineageTree:
             "simple", "normalized_simple", "full", "downsampled", "mini"
         ] = "simple",
         downsample: int = 2,
-    ) -> dict[str,Union[Alignment,tuple[abstract_trees,abstract_trees]]:]
+    ) -> dict[str, Alignment | tuple[abstract_trees, abstract_trees]]:
         """
         Compute the unordered tree edit backtrace from Zhang 1996 between the trees spawned
         by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
@@ -2566,7 +2566,7 @@ class lineageTree:
         self,
         node: int,
         end_time: int | None = None,
-        figsize: tuple[int, int] = (4, 7), 
+        figsize: tuple[int, int] = (4, 7),
         dpi: int = 150,
         vert_gap: int = 2,
         selected_nodes: list | None = None,
