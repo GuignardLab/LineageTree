@@ -15,12 +15,12 @@ from numbers import Number
 from types import MappingProxyType
 from typing import Literal
 
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.colors as mcolors
 import svgwrite
-from matplotlib import colormaps
 from edist import uted
+from matplotlib import colormaps
 from matplotlib.collections import LineCollection
 from packaging.version import Version
 from scipy.interpolate import InterpolatedUnivariateSpline
@@ -39,12 +39,6 @@ except ImportError:
         ),
         stacklevel=2,
     )
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy.interpolate import InterpolatedUnivariateSpline
-from scipy.spatial import Delaunay, distance
-from scipy.spatial import cKDTree as KDTree
-
 from .utils import (
     convert_style_to_number,
     create_links_and_cycles,
@@ -1293,7 +1287,6 @@ class lineageTree:
 
     @property
     def parenting(self):
-
         if not hasattr(self, "_parenting"):
             self._parenting = dok_array((max(self.nodes) + 1,) * 2)
             self._tmp_parenting = {}
@@ -2416,7 +2409,7 @@ class lineageTree:
 
     def _create_dict_of_plots(
         self,
-        node: int |Iterable[int]| None = None,
+        node: int | Iterable[int] | None = None,
         start_time: int | None = None,
         end_time: int | None = None,
     ) -> dict[int, dict]:

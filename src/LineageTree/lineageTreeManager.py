@@ -567,28 +567,28 @@ class lineageTreeManager:
                         matched_right.append(node_2)
                         l_node_2 = tree2.lT.get_chain_of_node(node_2)[-1]
                         matched_right.append(l_node_2)
-                        colors1[node_1] = (
-                            self.__calculate_distance_of_sub_tree(
-                                node_1,
-                                tree1.lT,
-                                node_2,
-                                tree2.lT,
-                                btrc,
-                                corres1,
-                                corres2,
-                                delta_tmp,
-                                norm_dict[norm],
-                                tree1.get_norm(node_1),
-                                tree2.get_norm(node_2),
-                            )
+                        colors1[
+                            node_1
+                        ] = self.__calculate_distance_of_sub_tree(
+                            node_1,
+                            tree1.lT,
+                            node_2,
+                            tree2.lT,
+                            btrc,
+                            corres1,
+                            corres2,
+                            delta_tmp,
+                            norm_dict[norm],
+                            tree1.get_norm(node_1),
+                            tree2.get_norm(node_2),
                         )
                         colors2[node_2] = colors1[node_1]
-                        colors1[tree1.lT.get_chain_of_node(node_1)[-1]] = colors1[
-                            node_1
-                        ]
-                        colors2[tree2.lT.get_chain_of_node(node_2)[-1]] = colors2[
-                            node_2
-                        ]
+                        colors1[
+                            tree1.lT.get_chain_of_node(node_1)[-1]
+                        ] = colors1[node_1]
+                        colors2[
+                            tree2.lT.get_chain_of_node(node_2)[-1]
+                        ] = colors2[node_2]
 
                         if tree1.lT.get_chain_of_node(node_1)[-1] != node_1:
                             matched_left.append(
