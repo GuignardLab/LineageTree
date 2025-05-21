@@ -1833,7 +1833,7 @@ class lineageTree:
         A dictionary with:
             - 'alignment'
                 The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
-            - 'Trees'
+            - 'trees'
                 A list of the two trees that have been mapped to each other.
         """
         parameters = (
@@ -1950,14 +1950,10 @@ class lineageTree:
         tuple[plt.figure, plt.Axes]
             Returns the figure and the axes of the 2 trees.
         """
-        if not isinstance(style, abstract_trees):
-
-            parameters = (
-                end_time,
-                convert_style_to_number(style=style, downsample=downsample),
-            )
-        else:
-            parameters = (end_time, "100000")  # custom
+        parameters = (
+            end_time,
+            convert_style_to_number(style=style, downsample=downsample),
+        )
         n1, n2 = sorted([n1, n2])
         self._comparisons.setdefault(parameters, {})
         if self._comparisons[parameters].get((n1, n2)):
@@ -2128,13 +2124,10 @@ class lineageTree:
         Alignment
             The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
         """
-        if not isinstance(style, abstract_trees):
-            parameters = (
-                end_time,
-                convert_style_to_number(style=style, downsample=downsample),
-            )
-        else:
-            parameters = (end_time, "100000")  # custom
+        parameters = (
+            end_time,
+            convert_style_to_number(style=style, downsample=downsample),
+        )
         n1, n2 = sorted([n1, n2])
         self._comparisons.setdefault(parameters, {})
         if self._comparisons[parameters].get((n1, n2)):

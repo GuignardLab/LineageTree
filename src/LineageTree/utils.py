@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 
-from LineageTree import lineageTree
+from LineageTree import lineageTree, tree_styles
 
 
 def create_links_and_cycles(
@@ -118,7 +118,9 @@ def hierarchical_pos(
     return pos_node
 
 
-def convert_style_to_number(style: str, downsample: int | None) -> int:
+def convert_style_to_number(
+    style: str | tree_styles.abstract_trees, downsample: int | None
+) -> int:
     """Converts tree_style and downsampling to a single number.
 
     Parameters
@@ -141,5 +143,7 @@ def convert_style_to_number(style: str, downsample: int | None) -> int:
     }
     if style == "downsampled" and downsample is not None:
         return downsample
+    elif isinstance(style, tree_styles.abstract_trees):
+        return -100000
     else:
         return style_dict[style]

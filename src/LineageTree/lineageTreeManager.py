@@ -312,7 +312,7 @@ class lineageTreeManager:
         Compute the unordered tree edit backtrace from Zhang 1996 between the trees spawned
         by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
         cost is given by the function delta (see edist doc for more information). There are
-        5 styles available (tree approximations) and the user may add their own
+        5 styles available (tree approximations) and the user may add their own.
 
         Parameters
         ----------
@@ -456,7 +456,7 @@ class lineageTreeManager:
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
             Used only when `style="downsampled"`.
-         colormap : str, optional
+        colormap : str, optional
             The colormap used for matched nodes, by default "cool"
         default_color : str
             The color of the unmatched nodes, by default "black"
