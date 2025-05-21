@@ -155,10 +155,10 @@ class lineageTreeManager:
         self,
         n1: int,
         embryo_1: str,
-        end_time1: int,
         n2: int,
         embryo_2: str,
-        end_time2: int,
+        end_time1: int | None = None,
+        end_time2: int | None = None,
         style="simple",
         norm: Literal["max", "sum", None] = "max",
         downsample: int = 2,
@@ -297,10 +297,10 @@ class lineageTreeManager:
         self,
         n1: int,
         embryo_1: str,
-        end_time1: int,
         n2: int,
         embryo_2: str,
-        end_time2: int,
+        end_time1: int | None = None,
+        end_time2: int | None = None,
         norm: Literal["max", "sum", None] = "max",
         style: Literal[
             "simple", "normalized_simple", "full", "downsampled", "mini"
@@ -320,15 +320,15 @@ class lineageTreeManager:
             id of the first node to compare
         embryo_1 : str
             the name of the first embryo to be used. (from lTm.lineagetrees.keys())
-        end_time_2 : int
-            The final time point the comparison algorithm will take into account for the second embryo.
-            If None all nodes will be taken into account.
         n2 : int
             id of the second node to compare
         embryo_2 : str
             the name of the second embryo to be used. (from lTm.lineagetrees.keys())
-        end_time_1 : int
+        end_time_1 : int, optional
             The final time point the comparison algorithm will take into account for the first embryo.
+            If None all nodes will be taken into account.
+        end_time_2 : int
+            The final time point the comparison algorithm will take into account for the second embryo.
             If None all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
@@ -362,9 +362,9 @@ class lineageTreeManager:
             tmp = self.__cross_lineage_edit_backtrace(
                 n1,
                 embryo_1,
-                end_time1,
                 n2,
                 embryo_2,
+                end_time1,
                 end_time2,
                 style,
                 norm,
@@ -416,11 +416,11 @@ class lineageTreeManager:
     def plot_tree_distance_graphs(
         self,
         n1: int,
-        embryo_1,
-        end_time1,
+        embryo_1: str,
         n2: int,
-        embryo_2,
-        end_time2,
+        embryo_2: str,
+        end_time1: int | None = None,
+        end_time2: int | None = None,
         norm: Literal["max", "sum", None] = "max",
         style: Literal[
             "simple", "normalized_simple", "full", "downsampled", "mini"
@@ -487,9 +487,9 @@ class lineageTreeManager:
             tmp = self.__cross_lineage_edit_backtrace(
                 n1,
                 embryo_1,
-                end_time1,
                 n2,
                 embryo_2,
+                end_time1,
                 end_time2,
                 style,
                 norm,
@@ -696,9 +696,9 @@ class lineageTreeManager:
             tmp = self.__cross_lineage_edit_backtrace(
                 n1,
                 embryo_1,
-                end_time1,
                 n2,
                 embryo_2,
+                end_time1,
                 end_time2,
                 style,
                 norm,

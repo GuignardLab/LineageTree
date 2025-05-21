@@ -146,9 +146,9 @@ def test_cross_comparison():
         lTm1.cross_lineage_edit_distance(
             t1,
             "embryo_1",
-            100,
             t2,
             "embryo_2",
+            100,
             100,
             style="full",
         )
@@ -158,9 +158,9 @@ def test_cross_comparison():
         lTm1.cross_lineage_edit_distance(
             node_1,
             "embryo_1",
-            100,
             node_2,
             "embryo_2",
+            100,
             100,
             style="simple",
         )
@@ -170,9 +170,9 @@ def test_cross_comparison():
         lTm1.cross_lineage_edit_distance(
             node_1,
             "embryo_1",
-            100,
             node_2,
             "embryo_2",
+            100,
             100,
             style="normalized_simple",
         )
@@ -182,9 +182,9 @@ def test_cross_comparison():
         lTm1.cross_lineage_edit_distance(
             node_1,
             "embryo_1",
-            100,
             node_2,
             "embryo_2",
+            100,
             100,
             style="downsampled",
             downsample=20,
@@ -205,9 +205,9 @@ def test_cross_comparison():
         < lTm1.cross_lineage_edit_distance(
             node_1,
             "embryo_1",
-            100,
             node_3,
             "embryo_3",
+            100,
             100,
             style="simple",
             downsample=20,
@@ -217,27 +217,27 @@ def test_cross_comparison():
     assert lTm1.plot_tree_distance_graphs(
         t1,
         "embryo_1",
-        100,
         t2,
         "embryo_2",
+        100,
         100,
         style="full",
     )
     assert lTm1.plot_tree_distance_graphs(
         t1,
         "embryo_1",
-        100,
         t2,
         "embryo_2",
+        100,
         100,
         style="simple",
     )
     assert lTm1.plot_tree_distance_graphs(
         t1,
         "embryo_1",
-        100,
         t2,
         "embryo_2",
+        100,
         100,
         style="downsampled",
         downsample=10,
@@ -245,18 +245,18 @@ def test_cross_comparison():
     assert lTm1.labelled_mappings(
         t1,
         "embryo_1",
-        100,
         t2,
         "embryo_2",
+        100,
         100,
         style="full",
     )
     assert lTm1.labelled_mappings(
         t1,
         "embryo_1",
-        100,
         t2,
         "embryo_2",
+        100,
         100,
         style="simple",
     )
