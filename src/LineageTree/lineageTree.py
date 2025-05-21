@@ -1026,101 +1026,6 @@ class lineageTree:
 
         return lT
 
-    def get_idx3d(self, t: int) -> tuple[KDTree, np.ndarray]:
-        """Get a 3d kdtree for the dataset at time `t`.
-        The  kdtree is stored in `self.kdtrees[t]` and returned.
-        The correspondancy list is also returned.
-
-        Parameters
-        ----------
-        t : int
-            time
-
-        Returns
-        -------
-        KDTree
-            The KDTree corresponding to the lineage tree at time `t`
-        np.ndarray
-            The correspondancy list in the KDTree.
-            If the query in the kdtree gives you the value `i`,
-            then it corresponds to the id in the tree `to_check_self[i]`
-        """
-        to_check_self = list(self.nodes_at_t(t=t))
-
-        if not hasattr(self, "kdtrees"):
-            self.kdtrees = {}
-
-        if t not in self.kdtrees:
-            data_corres = {}
-            data = []
-            for i, C in enumerate(to_check_self):
-                data.append(tuple(self.pos[C]))
-                data_corres[i] = C
-            idx3d = KDTree(data)
-            self.kdtrees[t] = idx3d
-        else:
-            idx3d = self.kdtrees[t]
-        return idx3d, np.array(to_check_self)
-
-    def get_gabriel_graph(self, t: int) -> dict[int, set[int]]:
-        """Build the Gabriel graph of the given graph for time point `t`.
-        The Garbiel graph is then stored in `self.Gabriel_graph` and returned.
-
-        .. warning:: the graph is not recomputed if already computed, even if the point cloud has changed
-
-        Parameters
-        ----------
-        t : int
-            time
-
-        Returns
-        -------
-        dict of int to set of int
-            A dictionary that maps a node to the set of its neighbors
-        """
-        if not hasattr(self, "Gabriel_graph"):
-            self.Gabriel_graph = {}
-
-        if t not in self.Gabriel_graph:
-            idx3d, nodes = self.get_idx3d(t)
-
-            data_corres = {}
-            data = []
-            for i, C in enumerate(nodes):
-                data.append(self.pos[C])
-                data_corres[i] = C
-
-            tmp = Delaunay(data)
-
-            delaunay_graph = {}
-
-            for N in tmp.simplices:
-                for e1, e2 in combinations(np.sort(N), 2):
-                    delaunay_graph.setdefault(e1, set()).add(e2)
-                    delaunay_graph.setdefault(e2, set()).add(e1)
-
-            Gabriel_graph = {}
-
-            for e1, neighbs in delaunay_graph.items():
-                for ni in neighbs:
-                    if not any(
-                        np.linalg.norm((data[ni] + data[e1]) / 2 - data[i])
-                        < np.linalg.norm(data[ni] - data[e1]) / 2
-                        for i in delaunay_graph[e1].intersection(
-                            delaunay_graph[ni]
-                        )
-                    ):
-                        Gabriel_graph.setdefault(data_corres[e1], set()).add(
-                            data_corres[ni]
-                        )
-                        Gabriel_graph.setdefault(data_corres[ni], set()).add(
-                            data_corres[e1]
-                        )
-
-            self.Gabriel_graph[t] = Gabriel_graph
-
-        return self.Gabriel_graph[t]
-
     def get_predecessors(
         self,
         x: int,
@@ -1291,6 +1196,109 @@ class lineageTree:
                 self._tmp_parenting[(i, j)] = self.m(i, j)
             del self._tmp_parenting
         return self._parenting
+
+    def get_idx3d(self, t: int) -> tuple[KDTree, np.ndarray]:
+        """Get a 3d kdtree for the dataset at time `t`.
+        The  kdtree is stored in `self.kdtrees[t]` and returned.
+        The correspondancy list is also returned.
+
+        Parameters
+        ----------
+        t : int
+            time
+
+        Returns
+        -------
+        KDTree
+            The KDTree corresponding to the lineage tree at time `t`
+        np.ndarray
+            The correspondancy list in the KDTree.
+            If the query in the kdtree gives you the value `i`,
+            then it corresponds to the id in the tree `to_check_self[i]`
+        """
+        to_check_self = list(self.time_nodes[t])
+
+        if not hasattr(self, "kdtrees"):
+            self.kdtrees = {}
+
+        if t not in self.kdtrees:
+            data_corres = {}
+            data = []
+            for i, C in enumerate(to_check_self):
+                data.append(tuple(self.pos[C]))
+                data_corres[i] = C
+            idx3d = KDTree(data)
+            self.kdtrees[t] = idx3d
+        else:
+            idx3d = self.kdtrees[t]
+        return idx3d, np.array(to_check_self)
+
+    def _get_gabriel_graph(self, t: int) -> dict[int, set[int]]:
+        """Build the Gabriel graph of the given graph for time point `t`.
+        The Garbiel graph is then stored in `self.Gabriel_graph` and returned.
+
+        .. warning:: the graph is not recomputed if already computed, even if the point cloud has changed
+
+        Parameters
+        ----------
+        t : int
+            time
+
+        Returns
+        -------
+        dict of int to set of int
+            A dictionary that maps a node to the set of its neighbors
+        """
+        if t not in self._gabriel_graph:
+            _, nodes = self.get_idx3d(t)
+
+            data_corres = {}
+            data = []
+            for i, C in enumerate(nodes):
+                data.append(self.pos[C])
+                data_corres[i] = C
+
+            tmp = Delaunay(data)
+
+            delaunay_graph = {}
+
+            for N in tmp.simplices:
+                for e1, e2 in combinations(np.sort(N), 2):
+                    delaunay_graph.setdefault(e1, set()).add(e2)
+                    delaunay_graph.setdefault(e2, set()).add(e1)
+
+            Gabriel_graph = {}
+
+            for e1, neighbs in delaunay_graph.items():
+                for ni in neighbs:
+                    if not any(
+                        np.linalg.norm((data[ni] + data[e1]) / 2 - data[i])
+                        < np.linalg.norm(data[ni] - data[e1]) / 2
+                        for i in delaunay_graph[e1].intersection(
+                            delaunay_graph[ni]
+                        )
+                    ):
+                        Gabriel_graph.setdefault(data_corres[e1], set()).add(
+                            data_corres[ni]
+                        )
+                        Gabriel_graph.setdefault(data_corres[ni], set()).add(
+                            data_corres[e1]
+                        )
+
+            self._gabriel_graph[t] = Gabriel_graph
+
+        return self._gabriel_graph[t]
+
+    @dynamic_property
+    def gabriel_graph(self):
+        self._gabriel_graph = {}
+        return self._get_gabriel_graph
+
+    @gabriel_graph.getter
+    def gabriel_graph(self, t):
+        print(f"hello {t}")
+        if t not in self._gabriel_graph:
+            print("hello")
 
     def get_all_chains_of_subtree(
         self, node: int, end_time: int | None = None
