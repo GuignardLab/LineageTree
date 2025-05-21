@@ -311,7 +311,8 @@ class lineageTreeManager:
         """
         Compute the unordered tree edit backtrace from Zhang 1996 between the trees spawned
         by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
-        cost is given by the function delta (see edist doc for more information).
+        cost is given by the function delta (see edist doc for more information). There are
+        5 styles available (tree approximations) and the user may add their own
 
         Parameters
         ----------
@@ -429,21 +430,25 @@ class lineageTreeManager:
         default_color: str = "black",
         size: float = 10,
         lw: float = 0.3,
-        ax: list[plt.Axes] | None = None,
+        ax: np.ndarray | None = None,
     ) -> tuple[plt.figure, plt.Axes]:
         """
-        Plots the distance graphs of 2 nodes compared.
-        !!!TODO make documentation!!!
+        Plots the subtrees compared and colors them according to the quality of the matching of their subtree.
 
         Parameters
         ----------
-        n1 : int
+         n1 : int
             id of the first node to compare
+        embryo_1 : str
+            the name of the first embryo
         n2 : int
             id of the second node to compare
-        end_time : int
-            The final time point the comparison algorithm will take into account.
-            If None all nodes will be taken into account.
+        embryo_2 : str
+            the name of the second embryo
+        end_time1 : int, optional
+            the end time of the first lineage, if None its set to t_e of the dataset
+        end_time2 : int, optional
+            the end time of the first lineage, if None its set to t_e of the dataset
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
         style : {"simple", "full", "downsampled"}, default="simple"
@@ -451,13 +456,21 @@ class lineageTreeManager:
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
             Used only when `style="downsampled"`.
+         colormap : str, optional
+            The colormap used for matched nodes, by default "cool"
+        default_color : str
+            The color of the unmatched nodes, by default "black"
+        size : float
+            The size of the nodes, by default 10
+        lw : float
+            The width of the edges, by default 0.3
+        ax : np.ndarray | None, optional
+            The axes used, if not used another set of axes is produced, by default None
 
         Returns
         -------
-        plt.figure
-            The figure of the tree distance graph
-        plt.Axes
-            The axes of the tree distance graph
+        tuple[plt.figure, plt.Axes]
+            Returns the figure and the axes of the 2 trees.
         """
 
         parameters = (
@@ -627,34 +640,34 @@ class lineageTreeManager:
     def labelled_mappings(
         self,
         n1: int,
-        embryo_1,
-        end_time1,
+        embryo_1: str,
         n2: int,
-        embryo_2,
-        end_time2,
+        embryo_2: str,
+        end_time1: int | None = None,
+        end_time2: int | None = None,
         norm: Literal["max", "sum", None] = "max",
         style: Literal[
             "simple", "normalized_simple", "full", "downsampled", "mini"
         ] = "simple",
         downsample: int = 2,
-        colormap: str = "cool",
-        default_color: str = "black",
-        size: float = 10,
-        ax: list[plt.Axes] | None = None,
     ) -> dict[str, list]:
         """
-        Plots the distance graphs of 2 nodes compared.
-        !!!TODO make documentation!!!
+        Returns the labels or IDs of all the nodes in the subtrees compared.
 
         Parameters
         ----------
         n1 : int
             id of the first node to compare
+        embryo_1 : str
+            the name of the first lineage
         n2 : int
             id of the second node to compare
-        end_time : int
-            The final time point the comparison algorithm will take into account.
-            If None all nodes will be taken into account.
+        embryo_2: str
+            the name of the second lineage
+        end_time1 : int, optional
+            the end time of the first lineage, if None its set to t_e of the dataset
+        end_time2 : int, optional
+            the end time of the first lineage, if None its set to t_e of the dataset
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
         style : {"simple", "full", "downsampled"}, default="simple"
@@ -665,13 +678,10 @@ class lineageTreeManager:
 
         Returns
         -------
-        Alignment
-            The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
+        list
+            list of all the matches and unmatched nodes with their labels.
         """
 
-        if ax:
-            assert len(ax) == 2
-            assert isinstance(ax[0], plt.Axes)
         parameters = (
             (end_time1, end_time2),
             convert_style_to_number(style, downsample),

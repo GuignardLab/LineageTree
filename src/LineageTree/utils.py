@@ -1,5 +1,6 @@
+from collections.abc import Iterable
+
 from LineageTree import lineageTree
-from typing import Iterable
 
 
 def create_links_and_cycles(

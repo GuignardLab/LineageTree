@@ -1736,17 +1736,44 @@ class lineageTree:
 
     def __calculate_distance_of_sub_tree(
         self,
-        node1,
-        node2,
-        alignment,
-        corres1,
-        corres2,
-        delta_tmp,
+        node1: int,
+        node2: int,
+        alignment: Alignment,
+        corres1: dict[int, int],
+        corres2: dict[int, int],
+        delta_tmp: Callable,
         norm: Callable,
-        norm1,
-        norm2,
+        norm1: int | float,
+        norm2: int | float,
     ):
-        """Private method that calculates the distance of all subtrees in a specific mapping."""
+        """Calculates the distance of the subtree of each node matched in a comparison.
+        TODO ITS BOUND TO CHANGE
+        Parameters
+        ----------
+        node1 : int
+            The root of the first subtree
+        node2 : int
+            The root of the second subtree
+        alignment : Alignment
+            The alignment of the subtree
+        corres1 : dict[int,int]
+            _description_
+        corres2 : dict[int,int]
+            _description_
+        delta_tmp : Callable
+            _description_
+        norm : Callable
+            _description_
+        norm1 : int | float
+            _description_
+        norm2 : int | float
+            _description_
+
+        Returns
+        -------
+        _type_
+            _description_
+        """
         sub_tree_1 = set(self.get_subtree_nodes(node1))
         sub_tree_2 = set(self.get_subtree_nodes(node2))
         res = 0
@@ -1770,9 +1797,12 @@ class lineageTree:
         n2: int,
         end_time: int | None = None,
         norm: Literal["max", "sum", None] = "max",
-        style: Literal[
-            "simple", "normalized_simple", "full", "downsampled", "mini"
-        ] = "simple",
+        style: (
+            Literal[
+                "simple", "normalized_simple", "full", "downsampled", "mini"
+            ]
+            | abstract_trees
+        ) = "simple",
         downsample: int = 2,
     ) -> dict[str, Alignment | tuple[abstract_trees, abstract_trees]]:
         """
@@ -1791,7 +1821,7 @@ class lineageTree:
             If None all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
-        style : {"simple", "full", "downsampled"}, default="simple"
+        style : {"simple", "full", "downsampled","mini"}| abstract_trees, default="simple"
             Which tree approximation is going to be used for the comparisons.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
@@ -1817,7 +1847,10 @@ class lineageTree:
                 "More than 100 comparisons are saved, use clear_comparisons() to delete them.",
                 stacklevel=2,
             )
-        tree = tree_style[style].value
+        if isinstance(style, abstract_trees):
+            tree = style
+        else:
+            tree = tree_style[style].value
         tree1 = tree(
             lT=self,
             downsample=downsample,
@@ -1883,8 +1916,7 @@ class lineageTree:
         ax: list[plt.Axes] | None = None,
     ) -> tuple[plt.figure, plt.Axes]:
         """
-        Plots the distance graphs of 2 nodes compared.
-        !!!TODO make documentation!!!
+        Plots the subtrees compared and colors them according to the quality of the matching of their subtree.
 
         Parameters
         ----------
@@ -1902,16 +1934,30 @@ class lineageTree:
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
             Used only when `style="downsampled"`.
+        colormap : str, optional
+            The colormap used for matched nodes, by default "cool"
+        default_color : str
+            The color of the unmatched nodes, by default "black"
+        size : float
+            The size of the nodes, by default 10
+        lw : float
+            The width of the edges, by default 0.3
+        ax : np.ndarray | None, optional
+            The axes used, if not used another set of axes is produced, by default None
 
         Returns
         -------
-        Alignment
-            The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
+        tuple[plt.figure, plt.Axes]
+            Returns the figure and the axes of the 2 trees.
         """
-        parameters = (
-            end_time,
-            convert_style_to_number(style=style, downsample=downsample),
-        )
+        if not isinstance(style, abstract_trees):
+
+            parameters = (
+                end_time,
+                convert_style_to_number(style=style, downsample=downsample),
+            )
+        else:
+            parameters = (end_time, "100000")  # custom
         n1, n2 = sorted([n1, n2])
         self._comparisons.setdefault(parameters, {})
         if self._comparisons[parameters].get((n1, n2)):
@@ -2057,8 +2103,8 @@ class lineageTree:
         downsample: int = 2,
     ) -> dict[str, list]:
         """
-        Plots the distance graphs of 2 nodes compared.
-        !!!TODO make documentation!!!
+        Returns the labels or IDs of all the nodes in the subtrees compared.
+
 
         Parameters
         ----------
@@ -2082,10 +2128,13 @@ class lineageTree:
         Alignment
             The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
         """
-        parameters = (
-            end_time,
-            convert_style_to_number(style=style, downsample=downsample),
-        )
+        if not isinstance(style, abstract_trees):
+            parameters = (
+                end_time,
+                convert_style_to_number(style=style, downsample=downsample),
+            )
+        else:
+            parameters = (end_time, "100000")  # custom
         n1, n2 = sorted([n1, n2])
         self._comparisons.setdefault(parameters, {})
         if self._comparisons[parameters].get((n1, n2)):
@@ -2340,7 +2389,7 @@ class lineageTree:
             Color of selected edges
         size : int, default=10
             Size of the nodes
-        lw : float
+        lw : float, defaults to 0.3
             The width of the edges of the tree graph, by default 0.1
         ax : plt.Axes, optional
             Plot the graph on existing ax. Defaults to None.

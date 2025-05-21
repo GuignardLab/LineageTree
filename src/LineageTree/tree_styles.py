@@ -8,9 +8,9 @@ from LineageTree import lineageTree
 
 
 class abstract_trees(ABC):
-    """Template class to produce different techniques to comapare lineageTrees.
-    To add a new technique you need to iherit this class or one of its children
-    and add them to the tree_style enum.
+    """Template class to produce different tree styles to comapare lineageTrees.
+    To add a new style you need to inherit this class or one of its children
+    and add them to the tree_style enum, or use it immediately on the function called.
     The main products of this class are:
     - tree constructor (get_tree) that produces one dictionary that contains
     arbitary unique labels and one dictionary that contains the duration of each node.
