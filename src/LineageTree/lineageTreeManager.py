@@ -27,11 +27,11 @@ except ImportError:
         "No edist installed therefore you will not be able to compute the tree edit distance.",
         stacklevel=2,
     )
+from edist.alignment import Alignment
+
 from LineageTree import lineageTree
 
 from .utils import convert_style_to_number
-
-from edist.alignment import Alignment
 
 
 class lineageTreeManager:
@@ -272,12 +272,46 @@ class lineageTreeManager:
         alignment: Alignment,
         corres1: dict,
         corres2: dict,
-        delta_tmp: callable,
+        delta_tmp: Callable,
         norm: Callable,
         norm1: int | float,
         norm2: int | float,
     ):
-        """Private method that calculates the distance of all subtrees in a specific mapping."""
+        """Calculates the distance of the subtree of a node matched in a comparison.
+        DOES NOT CALCULATE THE DISTANCE FROM SCRATCH BUT USING THE ALIGNMENT.
+
+        TODO ITS BOUND TO CHANGE
+
+        Parameters
+        ----------
+        node1 : int
+            The root of the first subtree
+        lT1 : lineageTree
+            The dataset the first lineage exists
+        node2 : int
+            The root of the first subtree
+        lT2 : lineageTree
+            The dataset the second lineage exists
+        alignment : Alignment
+            The alignment of the subtree
+        corres1 : dict
+            The correspndance dictionary of the first lineage
+        corres2 : dict
+            The correspondance dictionary of the second lineage
+        delta_tmp : Callable
+            The delta function for the comparisons
+        norm : Callable
+            How should the lineages be normalized
+        norm1 : int | float
+            The result of the normalization of the first tree
+        norm2 : int | float
+            The result of the normalization of the second tree
+
+        Returns
+        -------
+        float
+            The result of the comparison of the subtree
+        """
         sub_tree_1 = set(lT1.get_subtree_nodes(node1))
         sub_tree_2 = set(lT2.get_subtree_nodes(node2))
         res = 0

@@ -15,7 +15,7 @@ from functools import partial, wraps
 from itertools import combinations
 from numbers import Number
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Literal, Union
+from typing import TYPE_CHECKING, Literal
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -1751,6 +1751,7 @@ class lineageTree:
         norm2: int | float,
     ):
         """Calculates the distance of the subtree of each node matched in a comparison.
+        DOES NOT CALCULATE THE DISTANCE FROM SCRATCH BUT USING THE ALIGNMENT.
         TODO ITS BOUND TO CHANGE
         Parameters
         ----------
@@ -1760,23 +1761,23 @@ class lineageTree:
             The root of the second subtree
         alignment : Alignment
             The alignment of the subtree
-        corres1 : dict[int,int]
-            _description_
-        corres2 : dict[int,int]
-            _description_
+        corres1 : dict
+            The correspndance dictionary of the first lineage
+        corres2 : dict
+            The correspondance dictionary of the second lineage
         delta_tmp : Callable
-            _description_
+            The delta function for the comparisons
         norm : Callable
-            _description_
+            How should the lineages be normalized
         norm1 : int | float
-            _description_
+            The result of the normalization of the first tree
         norm2 : int | float
-            _description_
+            The result of the normalization of the second tree
 
         Returns
         -------
-        _type_
-            _description_
+        float
+            The result of the comparison of the subtree
         """
         sub_tree_1 = set(self.get_subtree_nodes(node1))
         sub_tree_2 = set(self.get_subtree_nodes(node2))
@@ -2654,7 +2655,7 @@ class lineageTree:
         Returns
         -------
         plt.Figure
-                The figure
+            The figure
         plt.Axes
             The axes
         Raises

@@ -1,5 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from enum import Enum
 
 import numpy as np
@@ -110,29 +111,36 @@ class abstract_trees(ABC):
         return np.abs(len_x - len_y)
 
     @abstractmethod
-    def get_norm(self) -> int:
+    def get_norm(self, root: int) -> Callable:
         """
         Returns the valid value for normalizing the edit distance.
+
+        Parameters
+        ----------
+            root : int
+                The starting node of the subtree.
 
         Returns
         -------
             int or float
-                The number of nodes of each tree according to each style.
+               The number of nodes of each tree according to each style, or the sum of the length of all the nodes in a tree.
         """
 
-    def _edist_format(self, adj_dict: dict):
+    def _edist_format(self, adj_dict: dict) -> tuple[list | dict[int, int]]:
         """Formating the custom tree style to the format needed by edist.
         .. warning:: Modifying this function might break your code.
 
         Parameters
         ----------
             adj_dict : dict
-                _description_
+                The adjacency dictionary produced by 'get_tree'
 
         Returns
         -------
-            _type_
-                _description_
+            tuple[list|list[list]]
+                - The list of the new nodes to be used for edist
+                - The adjacency list of these nodes
+                - The correspondance between the nodes used in edist and lineageTree
         """
         inv_adj = {vi: k for k, v in adj_dict.items() for vi in v}
         roots = set(adj_dict).difference(inv_adj)
@@ -241,7 +249,7 @@ class simple_tree(abstract_trees):
 
     def get_norm(self, root) -> int:
         return (
-            len(self.lT.get_subtree_nodes(self.root, end_time=self.end_time))
+            len(self.lT.get_subtree_nodes(root, end_time=self.end_time))
             * self.time_scale
         )
 
@@ -317,9 +325,7 @@ class normalized_simple_tree(simple_tree):
 
     def get_norm(self, root) -> int:
         return len(
-            self.lT.get_all_chains_of_subtree(
-                self.root, end_time=self.end_time
-            )
+            self.lT.get_all_chains_of_subtree(root, end_time=self.end_time)
         )
 
 
@@ -329,19 +335,21 @@ class full_tree(abstract_trees):
 
     """
 
-    def _edist_format(self, adj_dict: dict):
+    def _edist_format(self, adj_dict: dict) -> tuple[list | dict[int, int]]:
         """Formating the custom tree style to the format needed by edist.
         .. warning:: Modifying this function might break your code.
 
         Parameters
         ----------
             adj_dict : dict
-                _description_
+                The adjacency dictionary produced by 'get_tree'
 
         Returns
         -------
-            _type_
-                _description_
+            tuple[list|list[list]]
+                - The list of the new nodes to be used for edist
+                - The adjacency list of these nodes
+                - The correspondance between the nodes used in edist and lineageTree
         """
         inv_adj = {vi: k for k, v in adj_dict.items() for vi in v}
         roots = set(adj_dict).difference(inv_adj)
