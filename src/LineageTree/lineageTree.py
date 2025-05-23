@@ -3,6 +3,8 @@
 # file 'LICENCE', which is part of this source code package.
 # Author: Leo Guignard (leo.guignard...@AT@...gmail.com)
 
+from __future__ import annotations
+
 import importlib.metadata
 import os
 import pickle as pkl
@@ -13,14 +15,13 @@ from functools import partial, wraps
 from itertools import combinations
 from numbers import Number
 from types import MappingProxyType
-from typing import Literal
+from typing import TYPE_CHECKING, Literal, Union
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import svgwrite
 from edist import uted
-from edist.alignment import Alignment
 from matplotlib import colormaps
 from matplotlib.collections import LineCollection
 from packaging.version import Version
@@ -34,6 +35,9 @@ from .utils import (
     create_links_and_cycles,
     hierarchical_pos,
 )
+
+if TYPE_CHECKING:
+    from edist.alignment import Alignment
 
 
 class dynamic_property(property):

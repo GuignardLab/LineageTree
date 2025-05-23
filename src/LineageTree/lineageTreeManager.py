@@ -31,6 +31,8 @@ from LineageTree import lineageTree
 
 from .utils import convert_style_to_number
 
+from edist.alignment import Alignment
+
 
 class lineageTreeManager:
     def __init__(self):
@@ -263,17 +265,17 @@ class lineageTreeManager:
 
     def __calculate_distance_of_sub_tree(
         self,
-        node1,
-        lT1,
-        node2,
-        lT2,
-        alignment,
-        corres1,
-        corres2,
-        delta_tmp,
+        node1: int,
+        lT1: lineageTree,
+        node2: int,
+        lT2: lineageTree,
+        alignment: Alignment,
+        corres1: dict,
+        corres2: dict,
+        delta_tmp: callable,
         norm: Callable,
-        norm1,
-        norm2,
+        norm1: int | float,
+        norm2: int | float,
     ):
         """Private method that calculates the distance of all subtrees in a specific mapping."""
         sub_tree_1 = set(lT1.get_subtree_nodes(node1))

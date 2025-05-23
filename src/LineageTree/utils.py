@@ -29,7 +29,7 @@ def create_links_and_cycles(
     """
     if roots is None:
         to_do = set(lT.roots)
-    elif isinstance(roots, list):
+    elif isinstance(roots, Iterable):
         to_do = set(roots)
     else:
         to_do = {int(roots)}
