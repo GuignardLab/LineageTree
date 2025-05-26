@@ -1621,7 +1621,7 @@ class lineageTree:
         )
         return np.eye(3) + np.sin(angle) * K + (1 - np.cos(angle)) * K @ K
 
-    def get_ancestor_at_t(self, n: int, time: int | None = None) -> int | None:
+    def get_ancestor_at_t(self, n: int, time: int | None = None) -> int:
         """
         Find the id of the ancestor of a give node `n`
         at a given time `time`.
@@ -1852,10 +1852,12 @@ class lineageTree:
                 "More than 100 comparisons are saved, use clear_comparisons() to delete them.",
                 stacklevel=2,
             )
-        if isinstance(style, abstract_trees):
+        if isinstance(style, str):
+            tree = tree_style[style].value
+        elif issubclass(style, abstract_trees):
             tree = style
         else:
-            tree = tree_style[style].value
+            raise Warning("Please use a valid style.")
         tree1 = tree(
             lT=self,
             downsample=downsample,
@@ -1967,7 +1969,7 @@ class lineageTree:
             tmp = self.__unordereded_backtrace(
                 n1, n2, end_time, norm, style, downsample
             )
-        btrc = tmp["alignment"]
+        btrc: Alignment = tmp["alignment"]
         tree1, tree2 = tmp["trees"]
         _, times1 = tree1.tree
         _, times2 = tree2.tree
@@ -2452,7 +2454,7 @@ class lineageTree:
 
         Parameters
         ----------
-        node : int, optional
+        node : int|Iterable[int], optional
             The id of the node/nodes to produce the simple graphs
         start_time : int, optional
             Important only if there are no nodes it will produce the graph of every
@@ -2702,7 +2704,7 @@ class lineageTree:
         ----------
             t : int
                 target time, if `None` goes as far as possible
-            r : int or list of int, optional
+            r : int or Iterable[int], optional
                 id or list of ids of the spawning node
 
         Returns

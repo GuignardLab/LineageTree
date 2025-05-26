@@ -42,6 +42,29 @@ class abstract_trees(ABC):
         self.internal_ids += 1
         return self.internal_ids
 
+    @staticmethod
+    @abstractmethod
+    def handle_resolutions(
+        time_resolution1: float | int,
+        time_resolution2: float | int,
+        gcd: int,
+        downsample: int,
+    ) -> tuple[int | float, int | float]:
+        """Handle different time resolutions.
+
+        Parameters
+        ----------
+        time_resolution1 : int | float
+            Time resolution of the first dataset. (Extracted from lT._time_resolution)
+        time_resolution2 : int | float
+            Time resolution of the second dataset. (Extracted from lT._time_resolution)
+
+        Returns
+        -------
+        tuple[int|float]
+            A tuple that contains the time resolution fix for both datasets.
+        """
+
     @abstractmethod
     def get_tree(self) -> tuple[dict, dict]:
         """
@@ -111,7 +134,7 @@ class abstract_trees(ABC):
         return np.abs(len_x - len_y)
 
     @abstractmethod
-    def get_norm(self, root: int) -> Callable:
+    def get_norm(self, root: int) -> int | float:
         """
         Returns the valid value for normalizing the edit distance.
 
@@ -173,6 +196,15 @@ class mini_tree(abstract_trees):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+    @staticmethod
+    def handle_resolutions(
+        time_resolution1: float | int,
+        time_resolution2: float | int,
+        gcd,
+        downsample: int,
+    ) -> tuple[int | float, int | float]:
+        return (1, 1)
+
     def get_tree(self):
         if self.end_time is None:
             self.end_time = self.lT.t_e
@@ -223,6 +255,15 @@ class simple_tree(abstract_trees):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+    @staticmethod
+    def handle_resolutions(
+        time_resolution1: float | int,
+        time_resolution2: float | int,
+        gcd: int,
+        downsample: int,
+    ) -> tuple[int | float, int | float]:
+        return (time_resolution1, time_resolution2)
+
     def get_tree(self) -> tuple[dict, dict]:
         if self.end_time is None:
             self.end_time = self.lT.t_e
@@ -266,6 +307,23 @@ class downsample_tree(abstract_trees):
                 "Downsampling rate of 1 is identical to the full tree.",
                 stacklevel=1,
             )
+
+    @staticmethod
+    def handle_resolutions(
+        time_resolution1: float | int,
+        time_resolution2: float | int,
+        gcd: int,
+        downsample: int,
+    ) -> tuple[int | float, int | float]:
+        lcm = time_resolution1 * time_resolution2 / gcd
+        if downsample % (lcm / 10) != 0:
+            raise Exception(
+                f"Use a valid downsampling rate (multiple of {lcm})"
+            )
+        return (
+            downsample / time_resolution2 * 10,
+            downsample / time_resolution1 * 10,
+        )
 
     def get_tree(self) -> tuple[dict, dict]:
         self.out_dict = {}
@@ -376,6 +434,22 @@ class full_tree(abstract_trees):
             ]
             list2nid.update(to_update)
         return nodes, adj_list, list2nid
+
+    @staticmethod
+    def handle_resolutions(
+        time_resolution1: float | int,
+        time_resolution2: float | int,
+        gcd: int,
+        downsample: int,
+    ) -> tuple[int | float, int | float]:
+        if time_resolution1 == time_resolution2:
+            return (1, 1)
+        lcm = time_resolution1 * time_resolution2 / gcd
+        print("lcm", lcm)
+        return (
+            lcm / time_resolution2,
+            lcm / time_resolution1,
+        )
 
     def get_tree(self) -> tuple[dict, dict]:
         self.out_dict = {}

@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import os
 import pickle as pkl
 import warnings
 from collections.abc import Callable
 from functools import partial
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 import matplotlib.colors as mcolors
 import numpy as np
@@ -19,19 +21,14 @@ except ImportError:
         stacklevel=2,
     )
 import matplotlib.pyplot as plt
+from edist import uted
 
-try:
-    from edist import uted
-except ImportError:
-    warnings.warn(
-        "No edist installed therefore you will not be able to compute the tree edit distance.",
-        stacklevel=2,
-    )
-from edist.alignment import Alignment
-
-from LineageTree import lineageTree
+from LineageTree import lineageTree, tree_styles
 
 from .utils import convert_style_to_number
+
+if TYPE_CHECKING:
+    from edist.alignment import Alignment
 
 
 class lineageTreeManager:
@@ -60,7 +57,7 @@ class lineageTreeManager:
             raise KeyError(f"'{key}' not found in the manager")
 
     @property
-    def gcd(self):
+    def gcd(self) -> int:
         if len(self.lineagetrees) >= 1:
             all_time_res = [
                 embryo._time_resolution
@@ -161,7 +158,10 @@ class lineageTreeManager:
         embryo_2: str,
         end_time1: int | None = None,
         end_time2: int | None = None,
-        style="simple",
+        style: (
+            Literal["simple", "normalized_simple", "full", "downsampled"]
+            | tree_styles.abstract_trees
+        ) = "simple",
         norm: Literal["max", "sum", None] = "max",
         downsample: int = 2,
         registration=None,  # will be added as a later feature
@@ -197,31 +197,43 @@ class lineageTreeManager:
             ((n1, embryo_1), (n2, embryo_2)), key=lambda x: x[0]
         )
         self._comparisons.setdefault(parameters, {})
-        tree = tree_style[style].value
-        lcm = (
-            self.lineagetrees[embryo_1]._time_resolution
-            * self.lineagetrees[embryo_2]._time_resolution
-        ) / self.gcd
-        if style == "downsampled":
-            if downsample % (lcm / 10) != 0:
-                raise Exception(
-                    f"Use a valid downsampling rate (multiple of {lcm/10})"
-                )
-            time_res = [
-                downsample / self.lineagetrees[embryo_2].time_resolution,
-                downsample / self.lineagetrees[embryo_1].time_resolution,
-            ]
-        elif style == "full":
-            time_res = [
-                lcm / 10 / self.lineagetrees[embryo_2].time_resolution,
-                lcm / 10 / self.lineagetrees[embryo_1].time_resolution,
-            ]
+        if isinstance(style, str):
+            tree = tree_style[style].value
+        elif issubclass(style, tree_styles.abstract_trees):
+            tree = style
         else:
-            time_res = [
-                self.lineagetrees[embryo_1]._time_resolution,
-                self.lineagetrees[embryo_2]._time_resolution,
-            ]
-            time_res = [i / self.gcd for i in time_res]
+            raise Warning("Use a valid approximation.")
+        # lcm = (
+        #     self.lineagetrees[embryo_1]._time_resolution
+        #     * self.lineagetrees[embryo_2]._time_resolution
+        # ) / self.gcd
+        # if style == "downsampled":
+        #     if downsample % (lcm / 10) != 0:
+        #         raise Exception(
+        #             f"Use a valid downsampling rate (multiple of {lcm/10})"
+        #         )
+        #     time_res = [
+        #         downsample / self.lineagetrees[embryo_2].time_resolution,
+        #         downsample / self.lineagetrees[embryo_1].time_resolution,
+        #     ]
+        # elif style == "full":
+        #     time_res = [
+        #         lcm / 10 / self.lineagetrees[embryo_2].time_resolution,
+        #         lcm / 10 / self.lineagetrees[embryo_1].time_resolution,
+        #     ]
+        # else:
+        #     time_res = [
+        #         self.lineagetrees[embryo_1]._time_resolution,
+        #         self.lineagetrees[embryo_2]._time_resolution,
+        #     ]
+        #     time_res = [i / self.gcd for i in time_res]
+        time_res = tree.handle_resolutions(
+            time_resolution1=self.lineagetrees[embryo_1]._time_resolution,
+            time_resolution2=self.lineagetrees[embryo_2]._time_resolution,
+            gcd=self.gcd,
+            downsample=downsample,
+        )
+        print("time_Res", time_res, style)
         tree1 = tree(
             lT=self.lineagetrees[embryo_1],
             downsample=downsample,

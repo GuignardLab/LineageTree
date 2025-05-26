@@ -143,7 +143,7 @@ def convert_style_to_number(
     }
     if style == "downsampled" and downsample is not None:
         return downsample
-    elif isinstance(style, tree_styles.abstract_trees):
+    elif not isinstance(style, str) and issubclass(style, tree_styles.abstract_trees):
         return -100000
     else:
         return style_dict[style]

@@ -11,6 +11,7 @@ from LineageTree import (
 
 lT1 = read_from_mamut_xml("src/LineageTree/test/data/test-mamut.xml")
 lT2 = read_from_mastodon("src/LineageTree/test/data/test.mastodon")
+lt = lineageTree.load("src/LineageTree/test/data/demo.lT")
 
 
 def test_read_MaMuT_xml():
@@ -514,8 +515,7 @@ def test_compute_spatial_edges():
     assert lT1.compute_spatial_edges()[129294] == {139162, 148358}
 
 
-def test_main_axes():
-    ...
+def test_main_axes(): ...
 
 
 def test_get_ancestor_at_t():
@@ -561,3 +561,31 @@ def test_nodes_at_t():
 
 def test_calculate_dtw():
     assert np.isclose(lT1.calculate_dtw(110832, 132129)[0], 25.550036305019194)
+
+
+def create_new_style():
+    from LineageTree import tree_styles, lineageTree
+
+    class new_tree(tree_styles.simple_tree):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+
+        def delta(self, x, y, corres1, corres2, times1, times2):
+            if x is None and y is None:
+                return 0
+            if x is None:
+                return 1
+            if y is None:
+                return 1
+            return abs(times1[corres1[x]] - times2[corres2[y]]) / (
+                times1[corres1[x]] + times2[corres2[y]]
+            )
+
+        def get_norm(self, root) -> int:
+            return len(
+                self.lT.get_all_chains_of_subtree(root, end_time=self.end_time)
+            )
+
+    lt.unordered_tree_edit_distance(
+        176, 29345, style=new_tree
+    ) == lt.unordered_tree_edit_distance(176, 29345, style="normalized_simple")
