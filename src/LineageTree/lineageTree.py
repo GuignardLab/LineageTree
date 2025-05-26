@@ -2129,7 +2129,7 @@ class lineageTree:
         Returns
         -------
         Alignment
-            The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2 .`
+            The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2
         """
         parameters = (
             end_time,
