@@ -318,11 +318,11 @@ class downsample_tree(abstract_trees):
         lcm = time_resolution1 * time_resolution2 / gcd
         if downsample % (lcm / 10) != 0:
             raise Exception(
-                f"Use a valid downsampling rate (multiple of {lcm})"
+                f"Use a valid downsampling rate (multiple of {lcm/10})"
             )
         return (
-            downsample / time_resolution2 * 10,
-            downsample / time_resolution1 * 10,
+            downsample / (time_resolution2 / 10),
+            downsample / (time_resolution1 / 10),
         )
 
     def get_tree(self) -> tuple[dict, dict]:
