@@ -2374,7 +2374,7 @@ class lineageTree:
         Parameters
         ----------
         hier : dict mapping int to tuple of int
-            Dictinary that contains the positions of all nodes.
+            Dictionary that contains the positions of all nodes.
         lnks_tms : dict, dict
             2 dictionaries: 1 contains all links from start of life cycle to end of life cycle and
             the succesors of each node.
