@@ -2704,7 +2704,7 @@ class lineageTree:
         ----------
             t : int
                 target time, if `None` goes as far as possible
-            r : int or Iterable[int], optional
+            r : int or Iterable of int, optional
                 id or list of ids of the spawning node
 
         Returns

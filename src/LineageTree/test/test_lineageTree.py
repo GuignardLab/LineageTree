@@ -2,11 +2,13 @@ import warnings
 
 import numpy as np
 import pytest
+
 from LineageTree import (
     lineageTree,
     lineageTreeManager,
     read_from_mamut_xml,
     read_from_mastodon,
+    tree_styles,
 )
 
 lT1 = read_from_mamut_xml("src/LineageTree/test/data/test-mamut.xml")
@@ -563,9 +565,7 @@ def test_calculate_dtw():
     assert np.isclose(lT1.calculate_dtw(110832, 132129)[0], 25.550036305019194)
 
 
-def create_new_style():
-    from LineageTree import tree_styles, lineageTree
-
+def test_create_new_style():
     class new_tree(tree_styles.simple_tree):
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
@@ -586,6 +586,6 @@ def create_new_style():
                 self.lT.get_all_chains_of_subtree(root, end_time=self.end_time)
             )
 
-    lt.unordered_tree_edit_distance(
+    assert lt.unordered_tree_edit_distance(
         176, 29345, style=new_tree
     ) == lt.unordered_tree_edit_distance(176, 29345, style="normalized_simple")
