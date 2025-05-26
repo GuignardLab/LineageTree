@@ -571,8 +571,6 @@ def test_create_new_style():
             super().__init__(**kwargs)
 
         def delta(self, x, y, corres1, corres2, times1, times2):
-            if x is None and y is None:
-                return 0
             if x is None:
                 return 1
             if y is None:
