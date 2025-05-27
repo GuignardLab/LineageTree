@@ -1634,10 +1634,10 @@ class lineageTree:
         ----------
         n : int
             node for which to look the ancestor
-        time : int, optional
+        time : int, default=None
             time at which the ancestor has to be found.
             If `None` the ancestor at the first time point
-            will be found (default `None`)
+            will be found.
 
         Returns
         -------
@@ -1660,8 +1660,8 @@ class lineageTree:
         else:
             return -1
 
-    def get_labelled_ancestor(self, node: int) -> int | None:
-        """Finds the first labelled ancestor and returns its ID otherwise returns None
+    def get_labelled_ancestor(self, node: int) -> int:
+        """Finds the first labelled ancestor and returns its ID otherwise returns -1
 
         Parameters
         ----------
@@ -1670,11 +1670,11 @@ class lineageTree:
 
         Returns
         -------
-        int or None
-            Returns the first ancestor found that has a label otherwise `None`.
+        int
+            Returns the first ancestor found that has a label otherwise `-1`.
         """
         if node not in self.nodes:
-            return None
+            return -1
         ancestor = node
         while (
             self.t_b <= self._time.get(ancestor, self.t_b - 1)
@@ -1683,7 +1683,7 @@ class lineageTree:
             if ancestor in self.labels:
                 return ancestor
             ancestor = self._predecessor.get(ancestor, [-1])[0]
-        return None
+        return -1
 
     def unordered_tree_edit_distances_at_time_t(
         self,
@@ -1826,7 +1826,7 @@ class lineageTree:
             If None all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
-        style : {"simple", "full", "downsampled","mini"}| abstract_trees, default="simple"
+        style : {"simple", "full", "downsampled","mini"} or abstract_trees, default="simple"
             Which tree approximation is going to be used for the comparisons.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
@@ -1834,8 +1834,8 @@ class lineageTree:
 
         Returns
         -------
-         dict
-        A dictionary with:
+        dict
+            Dictionary containing:
             - 'alignment'
                 The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
             - 'trees'
@@ -1941,7 +1941,7 @@ class lineageTree:
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
             Used only when `style="downsampled"`.
-        colormap : str, optional
+        colormap : str, default="cool"
             The colormap used for matched nodes, by default "cool"
         default_color : str
             The color of the unmatched nodes, by default "black"
@@ -1954,8 +1954,8 @@ class lineageTree:
 
         Returns
         -------
-        tuple[plt.figure, plt.Axes]
-            Returns the figure and the axes of the 2 trees.
+        tuple of (matplotlib.figure.Figure, np.ndarray of matplotlib.axes.Axes)
+            The figure and array of axes containing the visualizations of the two subtrees.
         """
         parameters = (
             end_time,
