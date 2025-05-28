@@ -30,7 +30,8 @@ def test_read_MaMuT_xml():
 @pytest.fixture(scope="session")
 def test_write(tmp_path_factory):
     lt.write(tmp_path_factory)
-    lineageTree.load(tmp_path_factory)
+    lt2 = lineageTree.load(tmp_path_factory)
+    assert lt == lt2
 
 
 def test_all_chains():
