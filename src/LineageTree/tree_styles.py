@@ -54,14 +54,14 @@ class abstract_trees(ABC):
 
         Parameters
         ----------
-        time_resolution1 : int | float
+        time_resolution1 : int or float
             Time resolution of the first dataset. (Extracted from lT._time_resolution)
-        time_resolution2 : int | float
+        time_resolution2 : int or float
             Time resolution of the second dataset. (Extracted from lT._time_resolution)
 
         Returns
         -------
-        tuple[int|float]
+        tuple of (int, float)
             A tuple that contains the time resolution fix for both datasets.
         """
 
@@ -69,15 +69,6 @@ class abstract_trees(ABC):
     def get_tree(self) -> tuple[dict, dict]:
         """
         Get a tree version of the tree spawned by the node `r`
-
-        Parameters
-        ----------
-            r : int
-                root of the tree to spawn
-            end_time : int
-                the last time point to consider
-            time_resolution : float
-                the time between two consecutive time points
 
         Returns
         -------
@@ -105,23 +96,23 @@ class abstract_trees(ABC):
 
         Parameters
         ----------
-            x : int
-                The first node to compare, takes the names provided by the edist.
-            y : int
-                The second node to compare, takes the names provided by the edist
-            corres1 : dict
-                Dictionary mapping node1 ids to the corresponding id in the original tree.
-            corres2 : dict
-                Dictionary mapping node2 ids to the corresponding id in the original tree.
-            times1 : dict
-                The dictionary of the branch lengths of the tree that n1 is spawned from.
-            times2 : dict
-                The dictionary of the branch lengths of the tree that n2 is spawned from.
+        x : int
+            The first node to compare, takes the names provided by the edist.
+        y : int
+            The second node to compare, takes the names provided by the edist
+        corres1 : dict
+            Dictionary mapping node1 ids to the corresponding id in the original tree.
+        corres2 : dict
+            Dictionary mapping node2 ids to the corresponding id in the original tree.
+        times1 : dict
+            The dictionary of the chain lengths of the tree that n1 is spawned from.
+        times2 : dict
+            The dictionary of the chain lengths of the tree that n2 is spawned from.
 
         Returns
         -------
-            int or float
-                The diatance between these 2 nodes.
+        int or float
+            The distance between 'x' and 'y'.
         """
         if x is None and y is None:
             return 0
@@ -140,31 +131,18 @@ class abstract_trees(ABC):
 
         Parameters
         ----------
-            root : int
-                The starting node of the subtree.
+        root : int
+            The starting node of the subtree.
 
         Returns
         -------
-            int or float
-               The number of nodes of each tree according to each style, or the sum of the length of all the nodes in a tree.
+        int or float
+            The number of nodes of each tree according to each style, or the sum of the length of all the nodes in a tree.
         """
 
-    def _edist_format(self, adj_dict: dict) -> tuple[list | dict[int, int]]:
-        """Formating the custom tree style to the format needed by edist.
-        .. warning:: Modifying this function might break your code.
-
-        Parameters
-        ----------
-            adj_dict : dict
-                The adjacency dictionary produced by 'get_tree'
-
-        Returns
-        -------
-            tuple[list|list[list]]
-                - The list of the new nodes to be used for edist
-                - The adjacency list of these nodes
-                - The correspondance between the nodes used in edist and lineageTree
-        """
+    def _edist_format(
+        self, adj_dict: dict
+    ) -> tuple[list, list[list], dict[int, int]]:
         inv_adj = {vi: k for k, v in adj_dict.items() for vi in v}
         roots = set(adj_dict).difference(inv_adj)
         nid2list = {}
@@ -393,7 +371,9 @@ class full_tree(abstract_trees):
 
     """
 
-    def _edist_format(self, adj_dict: dict) -> tuple[list | dict[int, int]]:
+    def _edist_format(
+        self, adj_dict: dict
+    ) -> tuple[list, list[list], dict[int, int]]:
         """Formating the custom tree style to the format needed by edist.
         .. warning:: Modifying this function might break your code.
 
@@ -404,10 +384,12 @@ class full_tree(abstract_trees):
 
         Returns
         -------
-            tuple[list|list[list]]
-                - The list of the new nodes to be used for edist
-                - The adjacency list of these nodes
-                - The correspondance between the nodes used in edist and lineageTree
+            list[int]
+                The list of the new nodes to be used for edist
+            list[list]
+                The adjacency list of these nodes
+            dict[int,int]
+                The correspondance between the nodes used in edist and lineageTree
         """
         inv_adj = {vi: k for k, v in adj_dict.items() for vi in v}
         roots = set(adj_dict).difference(inv_adj)
@@ -445,7 +427,6 @@ class full_tree(abstract_trees):
         if time_resolution1 == time_resolution2:
             return (1, 1)
         lcm = time_resolution1 * time_resolution2 / gcd
-        print("lcm", lcm)
         return (
             lcm / time_resolution2,
             lcm / time_resolution1,

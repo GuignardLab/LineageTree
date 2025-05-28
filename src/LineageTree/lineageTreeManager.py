@@ -32,6 +32,8 @@ if TYPE_CHECKING:
 
 
 class lineageTreeManager:
+    norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
+
     def __init__(self):
         self.lineagetrees = {}
         self.lineageTree_counter = 0
@@ -43,6 +45,13 @@ class lineageTreeManager:
         return self.lineageTree_counter - 1
 
     def __len__(self):
+        """Returns how many lineagetrees are in the manager
+
+        Returns
+        -------
+        int
+            The number of trees inside the manager
+        """
         return len(self.lineagetrees)
 
     def __iter__(
@@ -58,6 +67,13 @@ class lineageTreeManager:
 
     @property
     def gcd(self) -> int:
+        """Calculates the greates common divisor between all lineagetree resolutions in the manager.
+
+        Returns
+        -------
+        int
+            The overall greatest common divisor.
+        """
         if len(self.lineagetrees) >= 1:
             all_time_res = [
                 embryo._time_resolution
@@ -164,7 +180,6 @@ class lineageTreeManager:
         ) = "simple",
         norm: Literal["max", "sum", None] = "max",
         downsample: int = 2,
-        registration=None,  # will be added as a later feature
     ):
         """Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
         by two nodes `n1` from lineagetree1 and `n2` lineagetree2. The topology of the trees
@@ -186,8 +201,10 @@ class lineageTreeManager:
                 Node of the second Lineagetree
             end_time2 : int
                 End time of second lineagetree
-            registration : _type_, default=None
-                _description_. Defaults to None.
+            style : {"simple", "normalized_simple", "full", "downsampled"} or abstract_trees
+                The approximation used to calculate the tree.
+            norm : {"max","sum", "None"} or abstract_trees
+                The normalization method used (Not important for this function)
         """
         parameters = (
             (end_time1, end_time2),
@@ -203,37 +220,12 @@ class lineageTreeManager:
             tree = style
         else:
             raise Warning("Use a valid approximation.")
-        # lcm = (
-        #     self.lineagetrees[embryo_1]._time_resolution
-        #     * self.lineagetrees[embryo_2]._time_resolution
-        # ) / self.gcd
-        # if style == "downsampled":
-        #     if downsample % (lcm / 10) != 0:
-        #         raise Exception(
-        #             f"Use a valid downsampling rate (multiple of {lcm/10})"
-        #         )
-        #     time_res = [
-        #         downsample / self.lineagetrees[embryo_2].time_resolution,
-        #         downsample / self.lineagetrees[embryo_1].time_resolution,
-        #     ]
-        # elif style == "full":
-        #     time_res = [
-        #         lcm / 10 / self.lineagetrees[embryo_2].time_resolution,
-        #         lcm / 10 / self.lineagetrees[embryo_1].time_resolution,
-        #     ]
-        # else:
-        #     time_res = [
-        #         self.lineagetrees[embryo_1]._time_resolution,
-        #         self.lineagetrees[embryo_2]._time_resolution,
-        #     ]
-        #     time_res = [i / self.gcd for i in time_res]
         time_res = tree.handle_resolutions(
             time_resolution1=self.lineagetrees[embryo_1]._time_resolution,
             time_resolution2=self.lineagetrees[embryo_2]._time_resolution,
             gcd=self.gcd,
             downsample=downsample,
         )
-        print("time_Res", time_res, style)
         tree1 = tree(
             lT=self.lineagetrees[embryo_1],
             downsample=downsample,
@@ -288,7 +280,7 @@ class lineageTreeManager:
         norm: Callable,
         norm1: int | float,
         norm2: int | float,
-    ):
+    ) -> float:
         """Calculates the distance of the subtree of a node matched in a comparison.
         DOES NOT CALCULATE THE DISTANCE FROM SCRATCH BUT USING THE ALIGNMENT.
 
@@ -314,9 +306,9 @@ class lineageTreeManager:
             The delta function for the comparisons
         norm : Callable
             How should the lineages be normalized
-        norm1 : int | float
+        norm1 : int or float
             The result of the normalization of the first tree
-        norm2 : int | float
+        norm2 : int or float
             The result of the normalization of the second tree
 
         Returns
@@ -375,7 +367,7 @@ class lineageTreeManager:
         end_time_1 : int, optional
             The final time point the comparison algorithm will take into account for the first embryo.
             If None all nodes will be taken into account.
-        end_time_2 : int
+        end_time_2 : int, optional
             The final time point the comparison algorithm will take into account for the second embryo.
             If None all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
@@ -392,8 +384,14 @@ class lineageTreeManager:
         -------
         Alignment
             The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
-        tuple(tree,2)
-            The two trees that have been mapped to each other.
+        --
+        ΟΡ
+        --
+        tuple with:
+            Alignment
+                The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
+            optional, tuple(tree,tree)
+                The two trees that have been mapped to each other.
         """
 
         parameters = (
@@ -450,8 +448,7 @@ class lineageTreeManager:
             times1=times1,
             times2=times2,
         )
-        norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
-        if norm not in norm_dict:
+        if norm not in self.norm_dict:
             raise ValueError(
                 "Select a viable normalization method (max, sum, None)"
             )
@@ -459,7 +456,7 @@ class lineageTreeManager:
         norm_values = (tree1.get_norm(n1), tree2.get_norm(n2))
         if return_norms:
             return cost, norm_values
-        return cost / norm_dict[norm](norm_values)
+        return cost / self.norm_dict[norm](norm_values)
 
     def plot_tree_distance_graphs(
         self,
@@ -485,7 +482,7 @@ class lineageTreeManager:
 
         Parameters
         ----------
-         n1 : int
+        n1 : int
             id of the first node to compare
         embryo_1 : str
             the name of the first embryo
@@ -517,8 +514,10 @@ class lineageTreeManager:
 
         Returns
         -------
-        tuple[plt.figure, plt.Axes]
-            Returns the figure and the axes of the 2 trees.
+        plt.Figure
+            The matplotlib figure
+        plt.Axes
+            The matplotlib axes
         """
 
         parameters = (
@@ -562,8 +561,7 @@ class lineageTreeManager:
             times1=times1,
             times2=times2,
         )
-        norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
-        if norm not in norm_dict:
+        if norm not in self.norm_dict:
             raise Warning(
                 "Select a viable normalization method (max, sum, None)"
             )
@@ -602,7 +600,7 @@ class lineageTreeManager:
                         corres1,
                         corres2,
                         delta_tmp,
-                        norm_dict[norm],
+                        self.norm_dict[norm],
                         tree1.get_norm(node_1),
                         tree2.get_norm(node_2),
                     )
@@ -636,7 +634,7 @@ class lineageTreeManager:
                                 corres1,
                                 corres2,
                                 delta_tmp,
-                                norm_dict[norm],
+                                self.norm_dict[norm],
                                 tree1.get_norm(node_1),
                                 tree2.get_norm(node_2),
                             )
@@ -698,7 +696,7 @@ class lineageTreeManager:
             "simple", "normalized_simple", "full", "downsampled", "mini"
         ] = "simple",
         downsample: int = 2,
-    ) -> dict[str, list]:
+    ) -> dict[str, list[str]]:
         """
         Returns the labels or IDs of all the nodes in the subtrees compared.
 
@@ -726,8 +724,9 @@ class lineageTreeManager:
 
         Returns
         -------
-        list
-            list of all the matches and unmatched nodes with their labels.
+        dict mapping str to lists of str
+            - 'matched' The labels of the matched nodes of the alignment.
+            - 'unmatched' The labels of the unmatched nodes of the alginment.
         """
 
         parameters = (
@@ -764,8 +763,7 @@ class lineageTreeManager:
             *_,
             corres2,
         ) = tree2.edist
-        norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
-        if norm not in norm_dict:
+        if norm not in self.norm_dict:
             raise Warning(
                 "Select a viable normalization method (max, sum, None)"
             )

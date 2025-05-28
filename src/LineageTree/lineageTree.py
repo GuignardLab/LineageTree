@@ -32,7 +32,7 @@ from scipy.spatial import Delaunay, KDTree, distance
 from .tree_styles import abstract_trees, tree_style
 from .utils import (
     convert_style_to_number,
-    create_links_and_cycles,
+    create_links_and_chains,
     hierarchical_pos,
 )
 
@@ -67,6 +67,9 @@ class dynamic_property(property):
 
 
 class lineageTree:
+
+    norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
+
     def modifier(wrapped_func):
         @wraps(wrapped_func)
         def raising_flag(self, *args, **kwargs):
@@ -1469,7 +1472,7 @@ class lineageTree:
 
         Returns
         -------
-        dict of int to float
+        dict mapping int to float
             dictionary that maps a node id to its spatial density
         """
         if not hasattr(self, "spatial_density"):
@@ -1501,7 +1504,7 @@ class lineageTree:
 
         Returns
         -------
-        dict of int to set of int
+        dict mapping int to set of int
             dictionary that maps
             a node id to its `k` nearest neighbors
         """
@@ -1538,7 +1541,7 @@ class lineageTree:
 
         Returns
         -------
-        dict of int to set of int
+        dict mapping int to set of int
             dictionary that maps a node id to its neighbors at a distance `th`
         """
         self.th_edges = {}
@@ -1834,8 +1837,7 @@ class lineageTree:
 
         Returns
         -------
-        dict
-            Dictionary containing:
+        dict mapping str to Alignment or tuple of [abstract_trees, abstract_trees]
             - 'alignment'
                 The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
             - 'trees'
@@ -1988,8 +1990,8 @@ class lineageTree:
             times1=times1,
             times2=times2,
         )
-        norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
-        if norm not in norm_dict:
+
+        if norm not in self.norm_dict:
             raise Warning(
                 "Select a viable normalization method (max, sum, None)"
             )
@@ -2025,7 +2027,7 @@ class lineageTree:
                         corres1,
                         corres2,
                         delta_tmp,
-                        norm_dict[norm],
+                        self.norm_dict[norm],
                         tree1.get_norm(node_1),
                         tree2.get_norm(node_2),
                     )
@@ -2056,7 +2058,7 @@ class lineageTree:
                             corres1,
                             corres2,
                             delta_tmp,
-                            norm_dict[norm],
+                            self.norm_dict[norm],
                             tree1.get_norm(node_1),
                             tree2.get_norm(node_2),
                         )
@@ -2104,7 +2106,7 @@ class lineageTree:
             "simple", "normalized_simple", "full", "downsampled", "mini"
         ] = "simple",
         downsample: int = 2,
-    ) -> dict[str, list]:
+    ) -> dict[str, list[str]]:
         """
         Returns the labels or IDs of all the nodes in the subtrees compared.
 
@@ -2128,8 +2130,9 @@ class lineageTree:
 
         Returns
         -------
-        Alignment
-            The alignment between the nodes of of the subtrees  spawned by the nodes n1,n2
+        dict mapping str to list[str]
+            - 'matched' The labels of the matched nodes of the alignment.
+            - 'unmatched' The labels of the unmatched nodes of the alginment.
         """
         parameters = (
             end_time,
@@ -2154,8 +2157,8 @@ class lineageTree:
             *_,
             corres2,
         ) = tree2.edist
-        norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
-        if norm not in norm_dict:
+
+        if norm not in self.norm_dict:
             raise Warning(
                 "Select a viable normalization method (max, sum, None)"
             )
@@ -2249,7 +2252,7 @@ class lineageTree:
         Returns
         -------
         float
-            The normed unordered tree edit distance between `n1` and `n2`
+            The normalized unordered tree edit distance between `n1` and `n2`
         """
         parameters = (
             end_time,
@@ -2284,8 +2287,8 @@ class lineageTree:
             times1=times1,
             times2=times2,
         )
-        norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
-        if norm not in norm_dict:
+
+        if norm not in self.norm_dict:
             raise ValueError(
                 "Select a viable normalization method (max, sum, None)"
             )
@@ -2293,7 +2296,7 @@ class lineageTree:
         norm_values = (tree1.get_norm(n1), tree2.get_norm(n2))
         if return_norms:
             return cost, norm_values
-        return cost / norm_dict[norm](norm_values)
+        return cost / self.norm_dict[norm](norm_values)
 
     @staticmethod
     def __plot_nodes(
@@ -2358,7 +2361,7 @@ class lineageTree:
     def draw_tree_graph(
         self,
         hier: dict[int, tuple[int, int]],
-        lnks_tms: dict,
+        lnks_tms: dict[str, dict[int, list | int]],
         selected_nodes: list | set | None = None,
         selected_edges: list | set | None = None,
         color_of_nodes: str | dict = "magenta",
@@ -2375,10 +2378,9 @@ class lineageTree:
         ----------
         hier : dict mapping int to tuple of int
             Dictionary that contains the positions of all nodes.
-        lnks_tms : dict, dict
-            2 dictionaries: 1 contains all links from start of life cycle to end of life cycle and
-            the succesors of each node.
-            1 contains the length of each life cycle.
+        lnks_tms : dict mapping string to dictionaries mapping int to list or int
+            - 'links' : conatains the hierarchy of the nodes (only start and end of each chain)
+            - 'times' : contains the distance between the  start and the end of each chain.
         selected_nodes : list or set, optional
             Which nodes are to be selected (Painted with a different color)
         selected_edges : list or set, optional
@@ -2389,7 +2391,7 @@ class lineageTree:
             Color of selected edges
         size : int, default=10
             Size of the nodes
-        lw : float, defaults to 0.3
+        lw : float, default=0.3
             The width of the edges of the tree graph, by default 0.1
         ax : plt.Axes, optional
             Plot the graph on existing ax. Defaults to None.
@@ -2450,11 +2452,11 @@ class lineageTree:
         end_time: int | None = None,
     ) -> dict[int, dict]:
         """Generates a dictionary of graphs where the keys are the index of the graph and
-        the values are the graphs themselves which are produced by `create_links_and_cycles`
+        the values are the graphs themselves which are produced by `create_links_and_chains`
 
         Parameters
         ----------
-        node : int|Iterable[int], optional
+        node : int or Iterable of int, optional
             The id of the node/nodes to produce the simple graphs
         start_time : int, optional
             Important only if there are no nodes it will produce the graph of every
@@ -2465,7 +2467,7 @@ class lineageTree:
 
         Returns
         -------
-        dict of int to dict
+        dict mapping int to dict
             The keys are just index values 0-n and the values are the graphs produced.
         """
         if start_time is None:
@@ -2481,7 +2483,7 @@ class lineageTree:
         else:
             mothers = [node]
         return {
-            i: create_links_and_cycles(self, mother, end_time=end_time)
+            i: create_links_and_chains(self, mother, end_time=end_time)
             for i, mother in enumerate(mothers)
         }
 
@@ -2521,7 +2523,7 @@ class lineageTree:
         vert_gap : int, default=1
             space between the nodes.
         **kwargs:
-            args accepted by matplotlib
+            kwargs accepted by matplotlib
 
         Returns
         -------
@@ -2656,10 +2658,12 @@ class lineageTree:
 
         Returns
         -------
-        plt.Figure
-            The figure
-        plt.Axes
-            The axes
+        tuple (plt.Figure, plt.Axes)
+            tuple with:
+                plt.Figure
+                    The matplotlib figure
+                plt.Axes
+                    The matplotlib axes
         Raises
         ------
         Warning
@@ -3213,7 +3217,7 @@ class lineageTree:
         -------
         float
             DTW distance
-        figue
+        figure
             Trajectories Plot
         """
         (

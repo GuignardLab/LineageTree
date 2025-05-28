@@ -3,7 +3,7 @@ from collections.abc import Iterable
 from LineageTree import lineageTree, tree_styles
 
 
-def create_links_and_cycles(
+def create_links_and_chains(
     lT: lineageTree,
     roots: int | Iterable | None = None,
     end_time: int | None = None,
@@ -16,16 +16,18 @@ def create_links_and_cycles(
     ----------
     lT : lineageTree
         The lineagetree that the user is working on
-    roots : int | Iterable, optional
-        The root/s from which the tree/s will be generated, by default None
-    end_time : int, None, optional
-        The last timepoint to be considered, if None the last timepoint of the dataset (t_e) is considered, by default None.
+    roots : int or Iterable, optional
+        The root/s from which the tree/s will be generated, if 'None' all the roots will be selected.
+    end_time : int, optional
+        The last timepoint to be considered, if 'None' the last timepoint of the dataset (t_e) is considered, by default None.
 
     Returns
     -------
-    dict[str,dict]
-        Returns a dictionary that contains 3 dictionaries the "links" ( contains all the edges) the "times" (contains all lifetime durations)
-        and "roots" (contains the roots.).
+    dict mapping str to set or dict mapping int to list or int
+        A dictionary that contains:
+            - "links": The dictionary that contains the hierarchy of the nodes (only start and end of each chain)
+            - "times": The time distance between the start and the end of a chain
+            - "roots": The roots used
     """
     if roots is None:
         to_do = set(lT.roots)
@@ -57,13 +59,13 @@ def create_links_and_cycles(
 
 def hierarchical_pos(
     lnks_tms: dict, root, width=1000, vert_gap=2, xcenter=0, ycenter=0
-) -> dict[int, list[int]] | None:
+) -> dict[int, list[float]] | None:
     """Calculates the position of each node on the tree graph.
 
     Parameters
     ----------
     lnks_tms : dict
-         a dictionary created by create_links_and_cycles.
+         a dictionary created by create_links_and_chains.
     root : _type_
         The id of the node, usually it exists inside lnks_tms dictionary, however you may use your own root.
     width : int, optional
@@ -77,7 +79,7 @@ def hierarchical_pos(
 
     Returns
     -------
-    dict[int, list[int]] or None
+    dict mapping int to list of float
         Provides a dictionary that contains the id of each node as keys and its 2-d position on the
         tree graph as values.
         If the root requested does not exists, None is then returned
@@ -143,7 +145,9 @@ def convert_style_to_number(
     }
     if style == "downsampled" and downsample is not None:
         return downsample
-    elif not isinstance(style, str) and issubclass(style, tree_styles.abstract_trees):
-        return -100000
+    elif not isinstance(style, str) and issubclass(
+        style, tree_styles.abstract_trees
+    ):
+        return hash(style.__name__)
     else:
         return style_dict[style]
