@@ -2,6 +2,7 @@ import warnings
 
 import numpy as np
 import pytest
+
 from LineageTree import (
     lineageTree,
     lineageTreeManager,
@@ -24,6 +25,12 @@ def test_read_MaMuT_xml():
     assert len(lT2.nodes) == 41
     assert len(lT2.successor) == 41
     assert len(lT2.find_leaves(40)) == 2
+
+
+@pytest.fixture(scope="session")
+def test_write(tmp_path_factory):
+    lt.write(tmp_path_factory)
+    lineageTree.load(tmp_path_factory)
 
 
 def test_all_chains():
@@ -540,8 +547,7 @@ def test_compute_spatial_edges():
     assert lT1.compute_spatial_edges()[129294] == {139162, 148358}
 
 
-def test_main_axes():
-    ...
+def test_main_axes(): ...
 
 
 def test_get_ancestor_at_t():

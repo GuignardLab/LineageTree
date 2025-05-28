@@ -54,6 +54,9 @@ class dynamic_property(property):
         if not hasattr(owner, "_dependent_properties"):
             owner._dependent_properties = []
         owner._dependent_properties.append(self.protected_name)
+        if not hasattr(owner, "_values_to_not_load"):
+            owner._values_to_not_load = []
+        owner._values_to_not_load += [name, self.protected_name]
         setattr(owner, self.protected_name, None)
 
     def __get__(self, instance, owner):
@@ -1021,6 +1024,7 @@ class lineageTree:
                     "_time",
                     "pos",
                 ]
+                + lineageTree._values_to_not_load
             }
             lT = lineageTree(
                 successor=lT._successor,
