@@ -67,7 +67,6 @@ class dynamic_property(property):
 
 
 class lineageTree:
-
     norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
 
     def modifier(wrapped_func):
