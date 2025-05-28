@@ -444,6 +444,27 @@ def test_cycles():
     )
 
 
+def test_time_nodes():
+    assert lT1.time_nodes[131] == {
+        108735,
+        114627,
+        129407,
+        138526,
+        148274,
+        165742,
+        169927,
+        178305,
+    }
+    all_cells = set(lT1.nodes)
+    no_cells = set()
+    for c in lT1.time_nodes.values():
+        all_cells.difference_update(c)
+        no_cells.update(set(c))
+
+    assert no_cells == lT1.nodes
+    assert all_cells == set()
+
+
 def test_equality():
     assert lT1 == lT1
     assert lT2 == lT2
