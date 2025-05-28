@@ -3520,4 +3520,4 @@ class lineageTree:
                     f"Attribute name {name} is reserved.", stacklevel=2
                 )
                 continue
-            setattr(self, name, d)
+            self.setattr(self, name, d)
