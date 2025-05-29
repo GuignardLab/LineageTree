@@ -1567,37 +1567,6 @@ class lineageTree:
             )
         return self.th_edges
 
-    def main_axes(self, time: int | None = None) -> tuple[np.array, np.array]:
-        """Finds the main axes for a timepoint.
-        If none will select the timepoint with the highest amound of nodes.
-
-        Parameters
-        ----------
-        time : int, optional
-            The timepoint to find the main axes.
-            If `None` will find the timepoint
-            with the largest number of nodes.
-
-        Returns
-        -------
-        np.ndarray of shape (3,)
-            sorted eigenvalues
-        np.ndarray
-            sorted eigenvectors (3,)
-        """
-        time_nodes = {
-            t: len(self.nodes_at_t(t)) for t in range(self.t_b, self.t_e)
-        }
-        if time is None:
-            time = max(time_nodes, key=lambda x: len(time_nodes[x]))
-        pos = np.array([self.pos[node] for node in time_nodes[time]])
-        pos = pos - np.mean(pos, axis=0)
-        cov = np.cov(np.array(pos).T)
-        eig_val, eig_vec = np.linalg.eig(cov)
-        srt = np.argsort(eig_val)[::-1]
-        self.eig_val, self.eig_vec = eig_val[srt], eig_vec[:, srt]
-        return eig_val[srt], eig_vec[:, srt]
-
     def get_ancestor_at_t(self, n: int, time: int | None = None) -> int:
         """
         Find the id of the ancestor of a give node `n`
