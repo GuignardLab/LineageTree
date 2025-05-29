@@ -28,8 +28,14 @@ def test_read_MaMuT_xml():
 
 @pytest.fixture(scope="session")
 def test_write(tmp_path_factory):
-    lt.write(tmp_path_factory)
-    lt2 = lineageTree.load(tmp_path_factory)
+    tmp_path = str(tmp_path_factory.mktemp("lineagetree")) + ".lT"
+    lt.write(str(tmp_path))
+    return tmp_path
+
+
+def test_load(test_write):
+    print(test_write, str(test_write))
+    lt2 = lineageTree.load(str(test_write))
     assert lt == lt2
 
 
@@ -547,8 +553,7 @@ def test_compute_spatial_edges():
     assert lT1.compute_spatial_edges()[129294] == {139162, 148358}
 
 
-def test_main_axes():
-    ...
+def test_main_axes(): ...
 
 
 def test_get_ancestor_at_t():
