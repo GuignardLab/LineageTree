@@ -95,7 +95,7 @@ class lineageTreeManager:
                 Then name of the lineagetree to be added.
 
         """
-        if isinstance(other_tree, lineageTree) and other_tree.time_resolution:
+        if isinstance(other_tree, lineageTree):
             for tree in self.lineagetrees.values():
                 if tree == other_tree:
                     return False
@@ -206,6 +206,11 @@ class lineageTreeManager:
             norm : {"max","sum", "None"} or abstract_trees
                 The normalization method used (Not important for this function)
         """
+        if (
+            self[embryo_1].time_resolution <= 0
+            or self.embryo_2.time_resolution <= 0
+        ):
+            raise Warning("Please set the resolution before continuing")
         parameters = (
             (end_time1, end_time2),
             convert_style_to_number(style, downsample),
@@ -624,28 +629,28 @@ class lineageTreeManager:
                         matched_right.append(node_2)
                         l_node_2 = tree2.lT.get_chain_of_node(node_2)[-1]
                         matched_right.append(l_node_2)
-                        colors1[
-                            node_1
-                        ] = self.__calculate_distance_of_sub_tree(
-                            node_1,
-                            tree1.lT,
-                            node_2,
-                            tree2.lT,
-                            btrc,
-                            corres1,
-                            corres2,
-                            delta_tmp,
-                            self.norm_dict[norm],
-                            tree1.get_norm(node_1),
-                            tree2.get_norm(node_2),
+                        colors1[node_1] = (
+                            self.__calculate_distance_of_sub_tree(
+                                node_1,
+                                tree1.lT,
+                                node_2,
+                                tree2.lT,
+                                btrc,
+                                corres1,
+                                corres2,
+                                delta_tmp,
+                                self.norm_dict[norm],
+                                tree1.get_norm(node_1),
+                                tree2.get_norm(node_2),
+                            )
                         )
                         colors2[node_2] = colors1[node_1]
-                        colors1[
-                            tree1.lT.get_chain_of_node(node_1)[-1]
-                        ] = colors1[node_1]
-                        colors2[
-                            tree2.lT.get_chain_of_node(node_2)[-1]
-                        ] = colors2[node_2]
+                        colors1[tree1.lT.get_chain_of_node(node_1)[-1]] = (
+                            colors1[node_1]
+                        )
+                        colors2[tree2.lT.get_chain_of_node(node_2)[-1]] = (
+                            colors2[node_2]
+                        )
 
                         if tree1.lT.get_chain_of_node(node_1)[-1] != node_1:
                             matched_left.append(

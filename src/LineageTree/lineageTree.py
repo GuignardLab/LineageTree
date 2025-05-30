@@ -1023,6 +1023,7 @@ class lineageTree:
                     "_predecessor",
                     "_time",
                     "pos",
+                    "labels",
                 ]
                 + lineageTree._dynamic_properties
             }
