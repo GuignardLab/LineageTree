@@ -30,13 +30,14 @@ def test_read_MaMuT_xml():
 @pytest.fixture(scope="session")
 def test_write(tmp_path_factory):
     tmp_path = str(tmp_path_factory.mktemp("lineagetree")) + ".lT"
+    lt.labels[list(lt.nodes)[0]] = "test"
     lt.write(str(tmp_path))
     return tmp_path
 
 
 def test_load(test_write):
-    print(test_write, str(test_write))
     lt2 = lineageTree.load(str(test_write))
+    assert lt.labels[list(lt.nodes)[0]] == "test"
     assert lt == lt2
 
 
