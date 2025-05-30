@@ -2073,7 +2073,7 @@ class lineageTree:
 
         Returns
         -------
-        dict mapping str to list[str]
+        dict mapping str to list of str
             - 'matched' The labels of the matched nodes of the alignment.
             - 'unmatched' The labels of the unmatched nodes of the alginment.
         """
