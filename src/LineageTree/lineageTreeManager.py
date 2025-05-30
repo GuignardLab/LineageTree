@@ -208,9 +208,9 @@ class lineageTreeManager:
         """
         if (
             self[embryo_1].time_resolution <= 0
-            or self.embryo_2.time_resolution <= 0
+            or self[embryo_2].time_resolution <= 0
         ):
-            raise Warning("Please set the resolution before continuing")
+            raise Warning("Resolution cannot be <=0 ")
         parameters = (
             (end_time1, end_time2),
             convert_style_to_number(style, downsample),
