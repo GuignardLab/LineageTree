@@ -2,6 +2,7 @@ import warnings
 
 import numpy as np
 import pytest
+
 from LineageTree import (
     lineageTree,
     lineageTreeManager,
