@@ -99,7 +99,7 @@ class lineageTree:
         -------
         bool
             True if the tree has cycles, False otherwise.
-        set[int]
+        set of int
             The set of nodes that have been checked.
         """
         to_do = [n]
@@ -2732,14 +2732,14 @@ class lineageTree:
         centered_band : bool, default=True
             if `True`, the band will be centered around the diagonal
 
-            Returns
-            -------
-            tuple of tuples of int
-                Aligment path
-            np.ndarray
-                cost matrix
-            float
-                optimal cost
+        Returns
+        -------
+        tuple of tuples of int
+            Aligment path
+        np.ndarray
+            cost matrix
+        float
+            optimal cost
         """
         N, M = dist_mat.shape
         w_limit = max(w, abs(N - M))  # Calculate the Sakoe-Chiba band width
