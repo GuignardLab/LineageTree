@@ -51,9 +51,9 @@ class dynamic_property(property):
         self.name = name
         if self.protected_name is None:
             self.protected_name = f"_{name}"
-        if not hasattr(owner, "protected_dynamic_properties"):
-            owner.protected_dynamic_properties = []
-        owner.protected_dynamic_properties.append(self.protected_name)
+        if not hasattr(owner, "_protected_dynamic_properties"):
+            owner._protected_dynamic_properties = []
+        owner._protected_dynamic_properties.append(self.protected_name)
         if not hasattr(owner, "_dynamic_properties"):
             owner._dynamic_properties = []
         owner._dynamic_properties += [name, self.protected_name]
@@ -85,7 +85,7 @@ class lineageTree:
                 should_reset = False
             out_func = wrapped_func(self, *args, **kwargs)
             if should_reset:
-                for prop in self.protected_dynamic_properties:
+                for prop in self._protected_dynamic_properties:
                     self.__dict__[prop] = None
                 self._already_changing = False
             return out_func
@@ -215,7 +215,7 @@ class lineageTree:
         return node
 
     @modifier
-    def add_root(self, t: int, pos: list | None = None):
+    def add_root(self, t: int, pos: list | None = None) -> int:
         """Adds a root to a specific timepoint.
 
         Parameters
@@ -224,6 +224,10 @@ class lineageTree:
             The timepoint the node is going to be added.
         pos : list
             The position of the new node.
+        Returns
+        -------
+        int
+            The id of the new root.
         """
         C_next = self.get_next_id()
         self._successor[C_next] = ()
@@ -992,7 +996,7 @@ class lineageTree:
     @classmethod
     def load(clf, fname: str):
         """
-        Loading a lineage tree from a ".lT" file.
+        Loading a lineage tree from a '.lT' file.
 
         Parameters
         ----------
@@ -1026,6 +1030,7 @@ class lineageTree:
                     "labels",
                 ]
                 + lineageTree._dynamic_properties
+                + lineageTree._protected_dynamic_properties
             }
             lT = lineageTree(
                 successor=lT._successor,
@@ -1365,7 +1370,7 @@ class lineageTree:
         Returns
         -------
         dict mapping int to list of Chain
-            dictionary mapping node ids to a list of chains
+            dictionary mapping the node ids to a list of chains
         """
         all_chains = self.all_chains
         if nodes is None:
@@ -1588,7 +1593,7 @@ class lineageTree:
 
         Returns
         -------
-        int or -1
+        int
             the id of the ancestor at time `time`,
             `-1` if there is no ancestor.
         """
@@ -1664,7 +1669,7 @@ class lineageTree:
 
         Returns
         -------
-        dict of tuple of int to float
+        dict mapping a tuple of int to float
             a dictionary that maps a pair of node ids at time `t` to their unordered tree edit distance
         """
         if not hasattr(self, "uted"):
@@ -1869,39 +1874,41 @@ class lineageTree:
         ax: list[plt.Axes] | None = None,
     ) -> tuple[plt.figure, plt.Axes]:
         """
-        Plots the subtrees compared and colors them according to the quality of the matching of their subtree.
+         Plots the subtrees compared and colors them according to the quality of the matching of their subtree.
 
-        Parameters
-        ----------
-        n1 : int
-            id of the first node to compare
-        n2 : int
-            id of the second node to compare
-        end_time : int
-            The final time point the comparison algorithm will take into account.
-            If None all nodes will be taken into account.
-        norm : {"max", "sum"}, default="max"
-            The normalization method to use.
-        style : {"simple", "full", "downsampled"}, default="simple"
-            Which tree approximation is going to be used for the comparisons.
-        downsample : int, default=2
-            The downsample factor for the downsampled tree approximation.
-            Used only when `style="downsampled"`.
-        colormap : str, default="cool"
-            The colormap used for matched nodes, by default "cool"
-        default_color : str
-            The color of the unmatched nodes, by default "black"
-        size : float
-            The size of the nodes, by default 10
-        lw : float
-            The width of the edges, by default 0.3
-        ax : np.ndarray | None, optional
-            The axes used, if not used another set of axes is produced, by default None
+         Parameters
+         ----------
+         n1 : int
+             id of the first node to compare
+         n2 : int
+             id of the second node to compare
+         end_time : int
+             The final time point the comparison algorithm will take into account.
+             If None all nodes will be taken into account.
+         norm : {"max", "sum"}, default="max"
+             The normalization method to use.
+         style : {"simple", "full", "downsampled"}, default="simple"
+             Which tree approximation is going to be used for the comparisons.
+         downsample : int, default=2
+             The downsample factor for the downsampled tree approximation.
+             Used only when `style="downsampled"`.
+         colormap : str, default="cool"
+             The colormap used for matched nodes, by default "cool"
+         default_color : str
+             The color of the unmatched nodes, by default "black"
+         size : float
+             The size of the nodes, by default 10
+         lw : float
+             The width of the edges, by default 0.3
+         ax : np.ndarray, optional
+             The axes used, if not used another set of axes is produced, by default None
 
-        Returns
-        -------
-        tuple of (matplotlib.figure.Figure, np.ndarray of matplotlib.axes.Axes)
-            The figure and array of axes containing the visualizations of the two subtrees.
+         Returns
+         -------
+        plt.Figure
+             The figure of the plot
+        plt.Axes
+             The axes of the plot
         """
         parameters = (
             end_time,
@@ -2347,7 +2354,7 @@ class lineageTree:
         plt.Figure
             The matplotlib figure
         plt.Axes
-            The matplotlib ax.
+            The matplotlib ax
         """
         if selected_nodes is None:
             selected_nodes = []
@@ -2576,38 +2583,35 @@ class lineageTree:
                 The id of the node that is going to be plotted.
         end_time : int, None, optional
             The last timepoint to be considered, if None the last timepoint of the dataset (t_e) is considered, by default None.
-        figsize : tuple[int, int], optional
+        figsize : tuple[int, int], by default= (4,7)
             The size of the figure, by deafult (4,7).
-        vert_gap : int, optional
+        vert_gap : int, by default=2
             The verical gap of a node when it divides, by default 2.
         dpi : int, optional
             The dpi of the figure, by default 2
-        selected_nodes : list | None, optional
+        selected_nodes : list, optional
             The nodes that are going to be colored, that do not have the default color, by default None
-        selected_edges : list | None, optional
+        selected_edges : list, optional
             The edges that are going to be colored, that do not have the default color, by default None
         color_of_nodes : str, optional
             The color of the nodes to be colored, except the default colored ones, by default "magenta"
         color_of_edges : str, optional
             The color of the edges to be colored, except the default colored ones,, by default "magenta"
-        lw : float, optional
-            The widthe of the edges of the tree graph, by default 0.1
-
-        size : int, optional
+        size : int, by default=10
             The size of the nodes, by default 10
-        default_color : str, optional
+        lw : float, by default=0.1
+            The widthe of the edges of the tree graph, by default 0.1
+        default_color : str, by default="black"
             The default color of nodes and edges, by default "black"
-        ax : plt.Axes | None, optional
+        ax : plt.Axes, optional
             The ax where the plot is going to be applied, by default None
 
         Returns
         -------
-        tuple (plt.Figure, plt.Axes)
-            tuple with:
-                plt.Figure
-                    The matplotlib figure
-                plt.Axes
-                    The matplotlib axes
+            plt.Figure
+                The matplotlib figure
+            plt.Axes
+                The matplotlib axes
         Raises
         ------
         Warning
@@ -2650,10 +2654,10 @@ class lineageTree:
 
         Parameters
         ----------
-            t : int
-                target time, if `None` goes as far as possible
-            r : int or Iterable of int, optional
-                id or list of ids of the spawning node
+        t : int
+            target time, if `None` goes as far as possible
+        r : int or Iterable of int, optional
+            id or list of ids of the spawning node
 
         Returns
         -------
@@ -3053,7 +3057,7 @@ class lineageTree:
         -------
         float
             DTW distance
-        figure
+        plt.Figure
             Heatmap of cost matrix with opitimal path
         """
         cost, path, cost_mat, pos_chain1, pos_chain2 = self.calculate_dtw(

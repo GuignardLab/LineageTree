@@ -60,8 +60,10 @@ class abstract_trees(ABC):
 
         Returns
         -------
-        tuple of (int, float)
-            A tuple that contains the time resolution fix for both datasets.
+        int or float
+            The time resolution fix for the first dataset
+        int or float
+            The time resolution fix for the second dataset
         """
 
     @abstractmethod
@@ -71,12 +73,12 @@ class abstract_trees(ABC):
 
         Returns
         -------
-            dict mapping an int to a list of int
-                an adjacency dictionnary where the ids are the ids of the
-                cells in the original tree at their first time point
-                (except for the cell `r` if it was not the first time point).
-            dict mapping an int to a float
-                life time duration of the key cell `m`
+        dict mapping an int to a list of int
+            an adjacency dictionnary where the ids are the ids of the
+            cells in the original tree at their first time point
+            (except for the cell `r` if it was not the first time point).
+        dict mapping an int to a float
+            life time duration of the key cell `m`
         """
 
     @abstractmethod

@@ -67,7 +67,7 @@ class lineageTreeManager:
 
     @property
     def gcd(self) -> int:
-        """Calculates the greates common divisor between all lineagetree resolutions in the manager.
+        """Calculates the greatesτ common divisor between all lineagetree resolutions in the manager.
 
         Returns
         -------
@@ -89,11 +89,10 @@ class lineageTreeManager:
 
         Parameters
         ----------
-            other_tree : LineageTree
-                Thelineagetree to be added.
-            name : str, default=""
-                Then name of the lineagetree to be added.
-
+        other_tree : LineageTree
+            Thelineagetree to be added.
+        name : str, default=""
+            Then name of the lineagetree to be added.
         """
         if isinstance(other_tree, lineageTree):
             for tree in self.lineagetrees.values():
@@ -122,8 +121,8 @@ class lineageTreeManager:
 
         Parameters
         ----------
-            fname : str
-                The path and name of the file that is to be saved.
+        fname : str
+            The path and name of the file that is to be saved.
         """
         if os.path.splitext(fname)[-1] != ".ltM":
             fname = os.path.extsep.join((fname, "ltM"))
@@ -136,30 +135,30 @@ class lineageTreeManager:
 
         Parameters
         ----------
-            key : str
-                The name of the lineagetree to be removed
+        key : str
+            The name of the lineagetree to be removed
 
         Raises
         ------
-            IndexError
-                If there is not such a lineagetree
+        IndexError
+            If there is not such a lineagetree
         """
         self.lineagetrees.pop(key, None)
 
     @classmethod
-    def load(cls, fname: str):
+    def load(cls, fname: str) -> lineageTreeManager:
         """
         Loading a lineage tree Manager from a ".ltm" file.
 
         Parameters
         ----------
-            fname : str
-                path to and name of the file to read
+        fname : str
+            path to and name of the file to read
 
         Returns
         -------
-            lineageTree
-                loaded file
+        lineageTreeManager
+            loaded file
         """
         with open(fname, "br") as f:
             ltm = pkl.load(f)
@@ -180,7 +179,11 @@ class lineageTreeManager:
         ) = "simple",
         norm: Literal["max", "sum", None] = "max",
         downsample: int = 2,
-    ):
+    ) -> dict[
+        str,
+        Alignment
+        | tuple[tree_styles.abstract_trees, tree_styles.abstract_trees],
+    ]:
         """Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
         by two nodes `n1` from lineagetree1 and `n2` lineagetree2. The topology of the trees
         are compared and the matching cost is given by the function delta (see edist doc for
@@ -189,22 +192,33 @@ class lineageTreeManager:
 
         Parameters
         ----------
-            n1 : int
-                Node of the first Lineagetree
-            embryo_1 : str
-                The key/name of the first Lineagetree
-            end_time1 : int
-                End time of first Lineagetree
-            n2 : int
-                The key/name of the first Lineagetree
-            embryo_2 : str
-                Node of the second Lineagetree
-            end_time2 : int
-                End time of second lineagetree
-            style : {"simple", "normalized_simple", "full", "downsampled"} or abstract_trees
-                The approximation used to calculate the tree.
-            norm : {"max","sum", "None"} or abstract_trees
-                The normalization method used (Not important for this function)
+        n1 : int
+            Node of the first Lineagetree
+        embryo_1 : str
+            The key/name of the first Lineagetree
+        end_time1 : int
+            End time of first Lineagetree
+        n2 : int
+            The key/name of the first Lineagetree
+        embryo_2 : str
+            Node of the second Lineagetree
+        end_time2 : int
+            End time of second lineagetree
+        style : {"simple", "normalized_simple", "full", "downsampled"} or abstract_trees
+            The approximation used to calculate the tree.
+        norm : {"max","sum", "None"} or abstract_trees
+            The normalization method used (Not important for this function)
+        downsample : int, by default=2
+            The downsample factor for the downsampled tree approximation.
+            Used only when `style="downsampled"`.
+
+        Returns
+        -------
+        dict mapping str to Alignment or tuple of [abstract_trees, abstract_trees]
+            - 'alignment'
+                The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
+            - 'trees'
+                A list of the two trees that have been mapped to each other.
         """
         if (
             self[embryo_1].time_resolution <= 0
@@ -392,11 +406,11 @@ class lineageTreeManager:
         --
         ΟΡ
         --
-        tuple with:
-            Alignment
-                The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
-            optional, tuple(tree,tree)
-                The two trees that have been mapped to each other.
+
+        Alignment
+            The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
+        tuple(tree,tree)
+            The two trees that have been mapped to each other.
         """
 
         parameters = (
