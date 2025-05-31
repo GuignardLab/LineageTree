@@ -214,7 +214,7 @@ def _read_from_ASTEC_pkl(file_path: str, eigen: bool = False):
 
 
 def read_from_ASTEC(
-    self, file_path: str, eigen: bool = False, name: None | str = None
+    file_path: str, eigen: bool = False, name: None | str = None
 ) -> lineageTree:
     """
     Read an `xml` or `pkl` file produced by the ASTEC algorithm.
@@ -314,9 +314,7 @@ def read_from_ASTEC(
         "cell_labels_in_time",  # redundant
     }
     for prop_name, prop_values in tmp_data.items():
-        if not (
-            prop_name in discard or hasattr(self, prop_name)
-        ) and isinstance(prop_values, dict):
+        if prop_name not in discard and isinstance(prop_values, dict):
             dictionary = {pkl2lT.get(k, -1): v for k, v in prop_values.items()}
             # is it a regular dictionary or a dictionary with dictionaries inside?
             for key, value in dictionary.items():
