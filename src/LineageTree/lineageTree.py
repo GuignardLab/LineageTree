@@ -2583,8 +2583,8 @@ class lineageTree:
                 The id of the node that is going to be plotted.
         end_time : int, None, optional
             The last timepoint to be considered, if None the last timepoint of the dataset (t_e) is considered, by default None.
-        figsize : tuple[int, int], by default= (4,7)
-            The size of the figure, by deafult (4,7).
+        figsize : tuple[int, int], by default=(4,7)
+            The size of the figure, by deafult=(4,7)
         vert_gap : int, by default=2
             The verical gap of a node when it divides, by default 2.
         dpi : int, optional
