@@ -1651,22 +1651,27 @@ class lineageTree:
         int
             Returns the first ancestor found that has an attribute otherwise `-1`.
         """
+        if not isinstance(self.__getattribute__(attribute), dict):
+            raise Warning("Please select a dict attribute")
         if node not in self.nodes:
             return -1
-        ancestor = node
+        if node in self.__getattribute__(attribute):
+            return node
         if node in self.roots:
-            if node in self.__getattribute__(attribute):
-                return node
-            else:
-                return -1
+            return -1
+        ancestor = node
         while (
             self.t_b <= self._time.get(ancestor, self.t_b - 1)
             and ancestor != -1
-            and ancestor != ()
+            # and ancestor != ()
         ):
             if ancestor in self.__getattribute__(attribute):
                 return ancestor
-            ancestor = self._predecessor.get(ancestor, [-1])[0]
+            ancestor = self._predecessor.get(ancestor, [-1])
+            if ancestor == ():
+                break
+            ancestor = ancestor[0]
+
         return -1
 
     def unordered_tree_edit_distances_at_time_t(
