@@ -1637,6 +1637,38 @@ class lineageTree:
             ancestor = self._predecessor.get(ancestor, [-1])[0]
         return -1
 
+    def get_ancestor_with_attribute(self, node: int, attribute: str) -> int:
+        """
+        General purpose function to help with searching the first ancestor that has an attribute.
+        Similar to get_labeled_ancestor and may make it redundant,
+        Parameters
+        ----------
+        node : int
+            The id of the node
+
+        Returns
+        -------
+        int
+            Returns the first ancestor found that has an attribute otherwise `-1`.
+        """
+        if node not in self.nodes:
+            return -1
+        ancestor = node
+        if node in self.roots:
+            if node in self.__getattribute__(attribute):
+                return node
+            else:
+                return -1
+        while (
+            self.t_b <= self._time.get(ancestor, self.t_b - 1)
+            and ancestor != -1
+            and ancestor != ()
+        ):
+            if ancestor in self.__getattribute__(attribute):
+                return ancestor
+            ancestor = self._predecessor.get(ancestor, [-1])[0]
+        return -1
+
     def unordered_tree_edit_distances_at_time_t(
         self,
         t: int,
