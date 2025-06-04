@@ -1216,7 +1216,7 @@ class lineageTree:
             If the query in the kdtree gives you the value `i`,
             then it corresponds to the id in the tree `to_check_self[i]`
         """
-        to_check_self = list(self.time_nodes[t])
+        to_check_self = list(self.nodes_at_t(t=t))
 
         if not hasattr(self, "kdtrees"):
             self.kdtrees = {}
@@ -1233,7 +1233,7 @@ class lineageTree:
             idx3d = self.kdtrees[t]
         return idx3d, np.array(to_check_self)
 
-    def _get_gabriel_graph(self, t: int) -> dict[int, set[int]]:
+    def get_gabriel_graph(self, t: int) -> dict[int, set[int]]:
         """Build the Gabriel graph of the given graph for time point `t`.
         The Garbiel graph is then stored in `self.Gabriel_graph` and returned.
 
@@ -1249,8 +1249,11 @@ class lineageTree:
         dict of int to set of int
             A dictionary that maps a node to the set of its neighbors
         """
-        if t not in self._gabriel_graph:
-            _, nodes = self.get_idx3d(t)
+        if not hasattr(self, "Gabriel_graph"):
+            self.Gabriel_graph = {}
+
+        if t not in self.Gabriel_graph:
+            idx3d, nodes = self.get_idx3d(t)
 
             data_corres = {}
             data = []
@@ -1285,9 +1288,9 @@ class lineageTree:
                             data_corres[e1]
                         )
 
-            self._gabriel_graph[t] = Gabriel_graph
+            self.Gabriel_graph[t] = Gabriel_graph
 
-        return self._gabriel_graph[t]
+        return self.Gabriel_graph[t]
 
     @dynamic_property
     def gabriel_graph(self):
