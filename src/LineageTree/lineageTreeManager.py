@@ -45,7 +45,7 @@ class lineageTreeManager:
         return self.lineageTree_counter - 1
 
     def __len__(self):
-        """Returns how many lineagetrees are in the manager
+        """Returns how many lineagetrees are in the manager.
 
         Returns
         -------
@@ -141,7 +141,7 @@ class lineageTreeManager:
         Raises
         ------
         IndexError
-            If there is not such a lineagetree
+            If there is no such lineagetree
         """
         self.lineagetrees.pop(key, None)
 
@@ -362,7 +362,7 @@ class lineageTreeManager:
         end_time2: int | None = None,
         norm: Literal["max", "sum", None] = "max",
         style: Literal[
-            "simple", "normalized_simple", "full", "downsampled", "mini"
+            "simple", "normalized_simple", "full", "downsampled"
         ] = "simple",
         downsample: int = 2,
         return_norms: bool = False,
@@ -391,7 +391,7 @@ class lineageTreeManager:
             If None all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
-        style : {"simple", "full", "downsampled"}, default="simple"
+        style : {"simple","normalized_simple", "full", "downsampled"}, default="simple"
             Which tree approximation is going to be used for the comparisons.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
@@ -643,28 +643,28 @@ class lineageTreeManager:
                         matched_right.append(node_2)
                         l_node_2 = tree2.lT.get_chain_of_node(node_2)[-1]
                         matched_right.append(l_node_2)
-                        colors1[
-                            node_1
-                        ] = self.__calculate_distance_of_sub_tree(
-                            node_1,
-                            tree1.lT,
-                            node_2,
-                            tree2.lT,
-                            btrc,
-                            corres1,
-                            corres2,
-                            delta_tmp,
-                            self.norm_dict[norm],
-                            tree1.get_norm(node_1),
-                            tree2.get_norm(node_2),
+                        colors1[node_1] = (
+                            self.__calculate_distance_of_sub_tree(
+                                node_1,
+                                tree1.lT,
+                                node_2,
+                                tree2.lT,
+                                btrc,
+                                corres1,
+                                corres2,
+                                delta_tmp,
+                                self.norm_dict[norm],
+                                tree1.get_norm(node_1),
+                                tree2.get_norm(node_2),
+                            )
                         )
                         colors2[node_2] = colors1[node_1]
-                        colors1[
-                            tree1.lT.get_chain_of_node(node_1)[-1]
-                        ] = colors1[node_1]
-                        colors2[
-                            tree2.lT.get_chain_of_node(node_2)[-1]
-                        ] = colors2[node_2]
+                        colors1[tree1.lT.get_chain_of_node(node_1)[-1]] = (
+                            colors1[node_1]
+                        )
+                        colors2[tree2.lT.get_chain_of_node(node_2)[-1]] = (
+                            colors2[node_2]
+                        )
 
                         if tree1.lT.get_chain_of_node(node_1)[-1] != node_1:
                             matched_left.append(

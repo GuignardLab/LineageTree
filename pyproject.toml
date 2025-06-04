@@ -143,3 +143,9 @@ root = "./src"
 
 [tool.ty.rules]
 unresolved-import = "ignore"
+
+[tool.pytest.ini_options]
+addopts = "--cov"
+
+[report]
+show_missing=true

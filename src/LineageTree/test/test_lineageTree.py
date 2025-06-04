@@ -565,7 +565,9 @@ def get_labelled_ancestor():
 
 def test_unordered_tree_edit_distances_at_time_t():
     assert np.isclose(
-        lT1.unordered_tree_edit_distances_at_time_t(0)[(110832, 132129)],
+        lT1.unordered_tree_edit_distances_at_time_t(0, style="simple")[
+            (110832, 132129)
+        ],
         0.7321711568938193,
     )
 
@@ -622,3 +624,9 @@ def test_create_new_style():
     assert lt.unordered_tree_edit_distance(
         176, 29345, style=new_tree
     ) == lt.unordered_tree_edit_distance(176, 29345, style="normalized_simple")
+
+
+def test_get_ancestor_with():
+    assert lt.get_labelled_ancestor(
+        list(lt.nodes)[0]
+    ) == lt.get_ancestor_with_attribute(list(lt.nodes)[0], "labels")

@@ -1663,7 +1663,7 @@ class lineageTree:
         while (
             self.t_b <= self._time.get(ancestor, self.t_b - 1)
             and ancestor != -1
-            # and ancestor != ()
+            # and ancestor != () # this line makes an empty list for some reason, I should look into it
         ):
             if ancestor in self.__getattribute__(attribute):
                 return ancestor
@@ -1678,11 +1678,13 @@ class lineageTree:
         self,
         t: int,
         end_time: int | None = None,
-        style: Literal["simple", "full", "downsampled"] = "simple",
+        style: Literal[
+            "simple", "full", "downsampled", "normalized_simple"
+        ] = "simple",
         downsample: int = 2,
         norm: Literal["max", "sum", None] = "max",
         recompute: bool = False,
-    ) -> dict[int, float]:
+    ) -> dict[tuple[int, int], float]:
         """
         TODO: change docstring
         Compute all the pairwise unordered tree edit distances from Zhang 996 between the trees spawned at time `t`
@@ -1706,7 +1708,7 @@ class lineageTree:
 
         Returns
         -------
-        dict mapping a tuple of int to float
+        dict mapping a tuple of tuple that contains 2 int to float
             a dictionary that maps a pair of node ids at time `t` to their unordered tree edit distance
         """
         if not hasattr(self, "uted"):
@@ -1792,9 +1794,7 @@ class lineageTree:
         end_time: int | None = None,
         norm: Literal["max", "sum", None] = "max",
         style: (
-            Literal[
-                "simple", "normalized_simple", "full", "downsampled", "mini"
-            ]
+            Literal["simple", "normalized_simple", "full", "downsampled"]
             | abstract_trees
         ) = "simple",
         downsample: int = 2,
@@ -1815,7 +1815,7 @@ class lineageTree:
             If None all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
-        style : {"simple", "full", "downsampled","mini"} or abstract_trees, default="simple"
+        style : {"simple", "full", "downsampled","normalized_simple"} or abstract_trees, default="simple"
             Which tree approximation is going to be used for the comparisons.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
@@ -1901,7 +1901,7 @@ class lineageTree:
         end_time: int | None = None,
         norm: Literal["max", "sum", None] = "max",
         style: Literal[
-            "simple", "normalized_simple", "full", "downsampled", "mini"
+            "simple", "normalized_simple", "full", "downsampled"
         ] = "simple",
         downsample: int = 2,
         colormap: str = "cool",
@@ -2091,7 +2091,7 @@ class lineageTree:
         end_time: int | None = None,
         norm: Literal["max", "sum", None] = "max",
         style: Literal[
-            "simple", "normalized_simple", "full", "downsampled", "mini"
+            "simple", "normalized_simple", "full", "downsampled"
         ] = "simple",
         downsample: int = 2,
     ) -> dict[str, list[str]]:
@@ -2208,7 +2208,7 @@ class lineageTree:
         end_time: int | None = None,
         norm: Literal["max", "sum", None] = "max",
         style: Literal[
-            "simple", "normalized_simple", "full", "downsampled", "mini"
+            "simple", "normalized_simple", "full", "downsampled"
         ] = "simple",
         downsample: int = 2,
         return_norms: bool = False,
@@ -2231,7 +2231,7 @@ class lineageTree:
             If None all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
-        style : {"simple", "normalized_simple", "full", "downsampled", "mini"}, default="simple"
+        style : {"simple", "normalized_simple", "full", "downsampled"}, default="simple"
             Which tree approximation is going to be used for the comparisons.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
