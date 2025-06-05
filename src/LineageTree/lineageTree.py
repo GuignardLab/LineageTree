@@ -988,7 +988,7 @@ class lineageTree:
             del self._protected_successor
         if hasattr(self, "_protected_time"):
             del self._protected_time
-        self.clear_comparisons()
+        self.clear_comparisons()  # for now we clear the comparisons.
         with open(fname, "bw") as f:
             pkl.dump(self, f)
             f.close()
