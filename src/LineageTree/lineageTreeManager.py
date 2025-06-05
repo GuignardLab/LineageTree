@@ -11,7 +11,7 @@ import matplotlib.colors as mcolors
 import numpy as np
 from matplotlib import colormaps
 
-from .tree_styles import tree_style
+from .tree_approximation import tree_style
 
 try:
     from edist import uted
@@ -23,7 +23,8 @@ except ImportError:
 import matplotlib.pyplot as plt
 from edist import uted
 
-from LineageTree import lineageTree, tree_styles
+from LineageTree import lineageTree
+from LineageTree.tree_approximation import TreeApproximationTemplate
 
 from .utils import convert_style_to_number
 
@@ -80,6 +81,12 @@ class lineageTreeManager:
                 for embryo in self.lineagetrees.values()
             ]
             return np.gcd.reduce(all_time_res)
+        elif len(self):
+            return 1
+        else:
+            raise ValueError(
+                "You cannot calculate the greatest common divisor of time resolutions with an empty manager."
+            )
 
     def add(self, other_tree: lineageTree, name: str = ""):
         """Function that adds a new lineagetree object to the class.
@@ -175,14 +182,14 @@ class lineageTreeManager:
         end_time2: int | None = None,
         style: (
             Literal["simple", "normalized_simple", "full", "downsampled"]
-            | tree_styles.abstract_trees
+            | TreeApproximationTemplate
         ) = "simple",
         norm: Literal["max", "sum", None] = "max",
         downsample: int = 2,
     ) -> dict[
         str,
         Alignment
-        | tuple[tree_styles.abstract_trees, tree_styles.abstract_trees],
+        | tuple[TreeApproximationTemplate, TreeApproximationTemplate],
     ]:
         """Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
         by two nodes `n1` from lineagetree1 and `n2` lineagetree2. The topology of the trees
@@ -204,17 +211,17 @@ class lineageTreeManager:
             Node of the second Lineagetree
         end_time2 : int
             End time of second lineagetree
-        style : {"simple", "normalized_simple", "full", "downsampled"} or abstract_trees
+        style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate, default="simple"
             The approximation used to calculate the tree.
-        norm : {"max","sum", "None"} or abstract_trees
+        norm : {"max","sum", "None"}, default="max"
             The normalization method used (Not important for this function)
-        downsample : int, by default=2
+        downsample : int, default==2
             The downsample factor for the downsampled tree approximation.
             Used only when `style="downsampled"`.
 
         Returns
         -------
-        dict mapping str to Alignment or tuple of [abstract_trees, abstract_trees]
+        dict mapping str to Alignment or tuple of [TreeApproximationTemplate, TreeApproximationTemplate]
             - 'alignment'
                 The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
             - 'trees'
@@ -235,7 +242,7 @@ class lineageTreeManager:
         self._comparisons.setdefault(parameters, {})
         if isinstance(style, str):
             tree = tree_style[style].value
-        elif issubclass(style, tree_styles.abstract_trees):
+        elif issubclass(style, TreeApproximationTemplate):
             tree = style
         else:
             raise Warning("Use a valid approximation.")
@@ -361,9 +368,10 @@ class lineageTreeManager:
         end_time1: int | None = None,
         end_time2: int | None = None,
         norm: Literal["max", "sum", None] = "max",
-        style: Literal[
-            "simple", "normalized_simple", "full", "downsampled"
-        ] = "simple",
+        style: (
+            Literal["simple", "normalized_simple", "full", "downsampled"]
+            | TreeApproximationTemplate
+        ) = "simple",
         downsample: int = 2,
         return_norms: bool = False,
     ) -> float | tuple[float, tuple[float, float]]:
@@ -391,8 +399,8 @@ class lineageTreeManager:
             If None all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
-        style : {"simple","normalized_simple", "full", "downsampled"}, default="simple"
-            Which tree approximation is going to be used for the comparisons.
+        style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate, default="simple"
+            Which tree approximation is going ttypeo be used for the comparisons.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
             Used only when `style="downsampled"`.
@@ -486,9 +494,12 @@ class lineageTreeManager:
         end_time1: int | None = None,
         end_time2: int | None = None,
         norm: Literal["max", "sum", None] = "max",
-        style: Literal[
-            "simple", "normalized_simple", "full", "downsampled", "mini"
-        ] = "simple",
+        style: (
+            Literal[
+                "simple", "normalized_simple", "full", "downsampled", "mini"
+            ]
+            | type[TreeApproximationTemplate]
+        ) = "simple",
         downsample: int = 2,
         colormap: str = "cool",
         default_color: str = "black",
@@ -515,7 +526,7 @@ class lineageTreeManager:
             the end time of the first lineage, if None its set to t_e of the dataset
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
-        style : {"simple", "full", "downsampled"}, default="simple"
+        style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate, default="simple"
             Which tree approximation is going to be used for the comparisons.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
@@ -711,9 +722,12 @@ class lineageTreeManager:
         end_time1: int | None = None,
         end_time2: int | None = None,
         norm: Literal["max", "sum", None] = "max",
-        style: Literal[
-            "simple", "normalized_simple", "full", "downsampled", "mini"
-        ] = "simple",
+        style: (
+            Literal[
+                "simple", "normalized_simple", "full", "downsampled", "mini"
+            ]
+            | type[TreeApproximationTemplate]
+        ) = "simple",
         downsample: int = 2,
     ) -> dict[str, list[str]]:
         """

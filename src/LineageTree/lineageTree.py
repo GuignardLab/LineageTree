@@ -29,7 +29,7 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.sparse import dok_array
 from scipy.spatial import Delaunay, KDTree, distance
 
-from .tree_styles import abstract_trees, tree_style
+from .tree_approximation import TreeApproximationTemplate, tree_style
 from .utils import (
     convert_style_to_number,
     create_links_and_chains,
@@ -973,8 +973,7 @@ class lineageTree:
             f.close()
 
     def write(self, fname: str) -> None:
-        """
-        Write a lineage tree on disk as an .lT file.
+        """Write a lineage tree on disk as an .lT file.
 
         Parameters
         ----------
@@ -989,14 +988,14 @@ class lineageTree:
             del self._protected_successor
         if hasattr(self, "_protected_time"):
             del self._protected_time
+        self.clear_comparisons()
         with open(fname, "bw") as f:
             pkl.dump(self, f)
             f.close()
 
     @classmethod
     def load(clf, fname: str):
-        """
-        Loading a lineage tree from a '.lT' file.
+        """Loading a lineage tree from a '.lT' file.
 
         Parameters
         ----------
@@ -1093,7 +1092,7 @@ class lineageTree:
 
         Returns
         -------
-        dict of int to set of int
+        dict mapping int to set of int
             A dictionary that maps a node to the set of its neighbors
         """
         if not hasattr(self, "Gabriel_graph"):
@@ -1473,8 +1472,8 @@ class lineageTree:
     def compute_spatial_density(
         self, t_b: int | None = None, t_e: int | None = None, th: float = 50
     ) -> dict[int, float]:
-        """Computes the spatial density of nodes between `t_b` and `t_e`.
-
+        """
+        Computes the spatial density of nodes between `t_b` and `t_e`.
         The results is stored in `self.spatial_density` and returned.
 
         Parameters
@@ -1586,7 +1585,7 @@ class lineageTree:
         ----------
         n : int
             node for which to look the ancestor
-        time : int, default=None
+        time : int, optional
             time at which the ancestor has to be found.
             If `None` the ancestor at the first time point
             will be found.
@@ -1638,9 +1637,9 @@ class lineageTree:
         return -1
 
     def get_ancestor_with_attribute(self, node: int, attribute: str) -> int:
-        """
-        General purpose function to help with searching the first ancestor that has an attribute.
-        Similar to get_labeled_ancestor and may make it redundant,
+        """General purpose function to help with searching the first ancestor that has an attribute.
+        Similar to get_labeled_ancestor and may make it redundant.
+
         Parameters
         ----------
         node : int
@@ -1652,7 +1651,7 @@ class lineageTree:
             Returns the first ancestor found that has an attribute otherwise `-1`.
         """
         if not isinstance(self.__getattribute__(attribute), dict):
-            raise Warning("Please select a dict attribute")
+            raise ValueError("Please select a dict attribute")
         if node not in self.nodes:
             return -1
         if node in self.__getattribute__(attribute):
@@ -1660,16 +1659,10 @@ class lineageTree:
         if node in self.roots:
             return -1
         ancestor = node
-        while (
-            self.t_b <= self._time.get(ancestor, self.t_b - 1)
-            and ancestor != -1
-            # and ancestor != () # this line makes an empty list for some reason, I should look into it
-        ):
+        while ancestor != -1 and ancestor != ():
             if ancestor in self.__getattribute__(attribute):
                 return ancestor
             ancestor = self._predecessor.get(ancestor, [-1])
-            if ancestor == ():
-                break
             ancestor = ancestor[0]
 
         return -1
@@ -1678,16 +1671,15 @@ class lineageTree:
         self,
         t: int,
         end_time: int | None = None,
-        style: Literal[
-            "simple", "full", "downsampled", "normalized_simple"
-        ] = "simple",
+        style: (
+            Literal["simple", "full", "downsampled", "normalized_simple"]
+            | type[TreeApproximationTemplate]
+        ) = "simple",
         downsample: int = 2,
         norm: Literal["max", "sum", None] = "max",
         recompute: bool = False,
     ) -> dict[tuple[int, int], float]:
-        """
-        TODO: change docstring
-        Compute all the pairwise unordered tree edit distances from Zhang 996 between the trees spawned at time `t`
+        """Compute all the pairwise unordered tree edit distances from Zhang 996 between the trees spawned at time `t`
 
         Parameters
         ----------
@@ -1696,7 +1688,7 @@ class lineageTree:
         end_time : int
             The final time point the comparison algorithm will take into account.
             If None all nodes will be taken into account.
-        style : {"simple", "full", "downsampled"}, default="simple"
+        style : {"simple", "full", "downsampled", "normalized_simple"} or TreeApproximationTemplate, default="simple"
             Which tree approximation is going to be used for the comparisons.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
@@ -1708,7 +1700,7 @@ class lineageTree:
 
         Returns
         -------
-        dict mapping a tuple of tuple that contains 2 int to float
+        dict mapping a tuple of tuple that contains 2 ints to float
             a dictionary that maps a pair of node ids at time `t` to their unordered tree edit distance
         """
         if not hasattr(self, "uted"):
@@ -1740,7 +1732,7 @@ class lineageTree:
         norm: Callable,
         norm1: int | float,
         norm2: int | float,
-    ):
+    ) -> float:
         """Calculates the distance of the subtree of each node matched in a comparison.
         DOES NOT CALCULATE THE DISTANCE FROM SCRATCH BUT USING THE ALIGNMENT.
         TODO ITS BOUND TO CHANGE
@@ -1760,9 +1752,9 @@ class lineageTree:
             The delta function for the comparisons
         norm : Callable
             How should the lineages be normalized
-        norm1 : int | float
+        norm1 : int or float
             The result of the normalization of the first tree
-        norm2 : int | float
+        norm2 : int or float
             The result of the normalization of the second tree
 
         Returns
@@ -1795,10 +1787,14 @@ class lineageTree:
         norm: Literal["max", "sum", None] = "max",
         style: (
             Literal["simple", "normalized_simple", "full", "downsampled"]
-            | abstract_trees
+            | type[TreeApproximationTemplate]
         ) = "simple",
         downsample: int = 2,
-    ) -> dict[str, Alignment | tuple[abstract_trees, abstract_trees]]:
+    ) -> dict[
+        str,
+        Alignment
+        | tuple[TreeApproximationTemplate, TreeApproximationTemplate],
+    ]:
         """
         Compute the unordered tree edit backtrace from Zhang 1996 between the trees spawned
         by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
@@ -1815,7 +1811,7 @@ class lineageTree:
             If None all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
-        style : {"simple", "full", "downsampled","normalized_simple"} or abstract_trees, default="simple"
+        style : {"simple", "full", "downsampled", "normalized_simple"} or TreeApproximationTemplate, default="simple"
             Which tree approximation is going to be used for the comparisons.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
@@ -1823,9 +1819,9 @@ class lineageTree:
 
         Returns
         -------
-        dict mapping str to Alignment or tuple of [abstract_trees, abstract_trees]
+        dict mapping str to Alignment or tuple of [TreeApproximationTemplate, TreeApproximationTemplate]
             - 'alignment'
-                The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
+                The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.
             - 'trees'
                 A list of the two trees that have been mapped to each other.
         """
@@ -1842,10 +1838,10 @@ class lineageTree:
             )
         if isinstance(style, str):
             tree = tree_style[style].value
-        elif issubclass(style, abstract_trees):
+        elif issubclass(style, TreeApproximationTemplate):
             tree = style
         else:
-            raise Warning("Please use a valid style.")
+            raise ValueError("Please use a valid approximation.")
         tree1 = tree(
             lT=self,
             downsample=downsample,
@@ -1900,9 +1896,10 @@ class lineageTree:
         n2: int,
         end_time: int | None = None,
         norm: Literal["max", "sum", None] = "max",
-        style: Literal[
-            "simple", "normalized_simple", "full", "downsampled"
-        ] = "simple",
+        style: (
+            Literal["simple", "normalized_simple", "full", "downsampled"]
+            | type[TreeApproximationTemplate]
+        ) = "simple",
         downsample: int = 2,
         colormap: str = "cool",
         default_color: str = "black",
@@ -1911,37 +1908,37 @@ class lineageTree:
         ax: list[plt.Axes] | None = None,
     ) -> tuple[plt.figure, plt.Axes]:
         """
-         Plots the subtrees compared and colors them according to the quality of the matching of their subtree.
+        Plots the subtrees compared and colors them according to the quality of the matching of their subtree.
 
-         Parameters
-         ----------
-         n1 : int
-             id of the first node to compare
-         n2 : int
-             id of the second node to compare
-         end_time : int
-             The final time point the comparison algorithm will take into account.
-             If None all nodes will be taken into account.
-         norm : {"max", "sum"}, default="max"
-             The normalization method to use.
-         style : {"simple", "full", "downsampled"}, default="simple"
-             Which tree approximation is going to be used for the comparisons.
-         downsample : int, default=2
-             The downsample factor for the downsampled tree approximation.
-             Used only when `style="downsampled"`.
-         colormap : str, default="cool"
-             The colormap used for matched nodes, by default "cool"
-         default_color : str
-             The color of the unmatched nodes, by default "black"
-         size : float
-             The size of the nodes, by default 10
-         lw : float
-             The width of the edges, by default 0.3
-         ax : np.ndarray, optional
-             The axes used, if not used another set of axes is produced, by default None
+        Parameters
+        ----------
+        n1 : int
+            id of the first node to compare
+        n2 : int
+            id of the second node to compare
+        end_time : int
+            The final time point the comparison algorithm will take into account.
+            If None all nodes will be taken into account.
+        norm : {"max", "sum"}, default="max"
+            The normalization method to use.
+        style : {"simple", "full", "downsampled", "normalized_simple} or TreeApproximationTemplate, default="simple"
+            Which tree approximation is going to be used for the comparisons.
+        downsample : int, default=2
+            The downsample factor for the downsampled tree approximation.
+            Used only when `style="downsampled"`.
+        colormap : str, default="cool"
+            The colormap used for matched nodes, default="cool"
+        default_color : str
+            The color of the unmatched nodes, default="black"
+        size : float
+            The size of the nodes, default=10
+        lw : float
+            The width of the edges, default=0.3
+        ax : np.ndarray, optional
+            The axes used, if not used another set of axes is produced, default=None
 
-         Returns
-         -------
+        Returns
+        -------
         plt.Figure
              The figure of the plot
         plt.Axes
@@ -2090,9 +2087,10 @@ class lineageTree:
         n2: int,
         end_time: int | None = None,
         norm: Literal["max", "sum", None] = "max",
-        style: Literal[
-            "simple", "normalized_simple", "full", "downsampled"
-        ] = "simple",
+        style: (
+            Literal["simple", "normalized_simple", "full", "downsampled"]
+            | type[TreeApproximationTemplate]
+        ) = "simple",
         downsample: int = 2,
     ) -> dict[str, list[str]]:
         """
@@ -2110,7 +2108,7 @@ class lineageTree:
             If None all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
-        style : {"simple", "full", "downsampled"}, default="simple"
+        style : {"simple", "full", "downsampled", "normalized_simple} or TreeApproximationTemplate, default="simple"
             Which tree approximation is going to be used for the comparisons.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
@@ -2207,9 +2205,10 @@ class lineageTree:
         n2: int,
         end_time: int | None = None,
         norm: Literal["max", "sum", None] = "max",
-        style: Literal[
-            "simple", "normalized_simple", "full", "downsampled"
-        ] = "simple",
+        style: (
+            Literal["simple", "normalized_simple", "full", "downsampled"]
+            | type[TreeApproximationTemplate]
+        ) = "simple",
         downsample: int = 2,
         return_norms: bool = False,
     ) -> float | tuple[float, tuple[float, float]]:
@@ -2231,7 +2230,7 @@ class lineageTree:
             If None all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
-        style : {"simple", "normalized_simple", "full", "downsampled"}, default="simple"
+        style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate, default="simple"
             Which tree approximation is going to be used for the comparisons.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
@@ -2380,7 +2379,7 @@ class lineageTree:
         size : int, default=10
             Size of the nodes
         lw : float, default=0.3
-            The width of the edges of the tree graph, by default 0.1
+            The width of the edges of the tree graph, default=0.1
         ax : plt.Axes, optional
             Plot the graph on existing ax. Defaults to None.
         default_color : str, default="black"
@@ -2445,13 +2444,14 @@ class lineageTree:
         Parameters
         ----------
         node : int or Iterable of int, optional
-            The id of the node/nodes to produce the simple graphs
+            The id of the node/nodes to produce the simple graphs, if not provided will
+            calculate the dicts for every root that starts before 'start_time'
         start_time : int, optional
             Important only if there are no nodes it will produce the graph of every
             root that starts before or at start time. Defaults to None.
         end_time : int, optional
             The last timepoint to be considered, if None the last timepoint of the
-            dataset (t_e) is considered, by default None.
+            dataset (t_e) is considered, default=None.
 
         Returns
         -------
@@ -2511,7 +2511,7 @@ class lineageTree:
         vert_gap : int, default=1
             space between the nodes.
         **kwargs:
-            kwargs accepted by matplotlib
+            kwargs accepted by matplotlib.pyplot.plot, matplotlib.pyplot.scatter
 
         Returns
         -------
@@ -2617,38 +2617,39 @@ class lineageTree:
         Parameters
         ----------
         node : int
-                The id of the node that is going to be plotted.
+            The id of the node that is going to be plotted.
         end_time : int, None, optional
-            The last timepoint to be considered, if None the last timepoint of the dataset (t_e) is considered, by default None.
-        figsize : tuple[int, int], by default=(4,7)
-            The size of the figure, by deafult=(4,7)
-        vert_gap : int, by default=2
-            The verical gap of a node when it divides, by default 2.
-        dpi : int, optional
-            The dpi of the figure, by default 2
+            The last timepoint to be considered, if None the last timepoint of the dataset (t_e) is considered, default=None.
+        figsize : tuple of 2 ints, default=(4,7)
+            The size of the figure, deafult=(4,7)
+        vert_gap : int, default=2
+            The verical gap of a node when it divides, default=2.
+        dpi : int, default=150
+            The dpi of the figure, default=150
         selected_nodes : list, optional
-            The nodes that are going to be colored, that do not have the default color, by default None
+            The nodes that are selected by the user to be colored in a different color, default=None
         selected_edges : list, optional
-            The edges that are going to be colored, that do not have the default color, by default None
-        color_of_nodes : str, optional
-            The color of the nodes to be colored, except the default colored ones, by default "magenta"
-        color_of_edges : str, optional
-            The color of the edges to be colored, except the default colored ones,, by default "magenta"
-        size : int, by default=10
-            The size of the nodes, by default 10
-        lw : float, by default=0.1
-            The widthe of the edges of the tree graph, by default 0.1
-        default_color : str, by default="black"
-            The default color of nodes and edges, by default "black"
+            The edges that are selected by the user to be colored in a different color, default=None
+        color_of_nodes : str, default="magenta"
+            The color of the nodes to be colored, except the default colored ones, default="magenta"
+        color_of_edges : str, default="magenta"
+            The color of the edges to be colored, except the default colored ones, default="magenta"
+        size : int, default=10
+            The size of the nodes, default=10
+        lw : float, default=0.1
+            The widthe of the edges of the tree graph, default=0.1
+        default_color : str, default="black"
+            The default color of nodes and edges, default="black"
         ax : plt.Axes, optional
-            The ax where the plot is going to be applied, by default None
+            The ax where the plot is going to be applied, default=None
 
         Returns
         -------
-            plt.Figure
-                The matplotlib figure
-            plt.Axes
-                The matplotlib axes
+        plt.Figure
+            The matplotlib figure
+        plt.Axes
+            The matplotlib axes
+
         Raises
         ------
         Warning
@@ -2701,7 +2702,7 @@ class lineageTree:
         list
             list of nodes at time `t` spawned by `r`
         """
-        if r is None or (not r and r != 0):
+        if not r and r != 0:
             r = {root for root in self.roots if self.time[root] <= t}
         if isinstance(r, int):
             r = [r]

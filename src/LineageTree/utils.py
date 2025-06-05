@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 
-from LineageTree import lineageTree, tree_styles
+from LineageTree import lineageTree, tree_approximation
 
 
 def create_links_and_chains(
@@ -121,7 +121,8 @@ def hierarchical_pos(
 
 
 def convert_style_to_number(
-    style: str | tree_styles.abstract_trees, downsample: int | None
+    style: str | tree_approximation.TreeApproximationTemplate,
+    downsample: int | None,
 ) -> int:
     """Converts tree_style and downsampling to a single number.
 
@@ -146,7 +147,7 @@ def convert_style_to_number(
     if style == "downsampled" and downsample is not None:
         return downsample
     elif not isinstance(style, str) and issubclass(
-        style, tree_styles.abstract_trees
+        style, tree_approximation.TreeApproximationTemplate
     ):
         return hash(style.__name__)
     else:

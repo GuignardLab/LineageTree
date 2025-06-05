@@ -8,7 +8,7 @@ from LineageTree import (
     lineageTreeManager,
     read_from_mamut_xml,
     read_from_mastodon,
-    tree_styles,
+    tree_approximation,
 )
 
 lT1 = read_from_mamut_xml("src/LineageTree/test/data/test-mamut.xml")
@@ -603,7 +603,7 @@ def test_calculate_dtw():
 
 
 def test_create_new_style():
-    class new_tree(tree_styles.simple_tree):
+    class new_tree(tree_approximation.simple_tree):
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
 

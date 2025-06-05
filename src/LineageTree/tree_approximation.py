@@ -7,7 +7,7 @@ import numpy as np
 from LineageTree import lineageTree
 
 
-class abstract_trees(ABC):
+class TreeApproximationTemplate(ABC):
     """Template class to produce different tree styles to comapare lineageTrees.
     To add a new style you need to inherit this class or one of its children
     and add them to the tree_style enum, or use it immediately on the function called.
@@ -167,7 +167,7 @@ class abstract_trees(ABC):
         return nodes, adj_list, list2nid
 
 
-class mini_tree(abstract_trees):
+class mini_tree(TreeApproximationTemplate):
     """Each branch is converted to a node of length 1, it is useful for comparing synchronous developing cells, extremely fast.
     Mainly used for testing.
     """
@@ -207,9 +207,7 @@ class mini_tree(abstract_trees):
 
     def get_norm(self, root) -> int:
         return len(
-            self.lT.get_all_chains_of_subtree(
-                self.root, end_time=self.end_time
-            )
+            self.lT.get_all_chains_of_subtree(root, end_time=self.end_time)
         )
 
     def _edist_format(self, adj_dict: dict):
@@ -225,7 +223,7 @@ class mini_tree(abstract_trees):
         return 0
 
 
-class simple_tree(abstract_trees):
+class simple_tree(TreeApproximationTemplate):
     """Each branch is converted to one node with length the same as the life cycle of the cell.
     This method is fast, but imprecise, especialy for small trees (recommended height of the trees should be 100 at least).
     Use with CAUTION.
@@ -274,7 +272,7 @@ class simple_tree(abstract_trees):
         )
 
 
-class downsample_tree(abstract_trees):
+class downsample_tree(TreeApproximationTemplate):
     """Downsamples a tree so every n nodes are being used as one."""
 
     def __init__(self, **kwargs):
@@ -366,7 +364,7 @@ class normalized_simple_tree(simple_tree):
         )
 
 
-class full_tree(abstract_trees):
+class full_tree(TreeApproximationTemplate):
     """No approximations the whole tree is used here. Perfect accuracy, but heavy on ram and speed.
     Not recommended to use on napari.
 
