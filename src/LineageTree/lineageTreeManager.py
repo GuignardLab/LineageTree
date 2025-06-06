@@ -182,7 +182,7 @@ class lineageTreeManager:
         end_time2: int | None = None,
         style: (
             Literal["simple", "normalized_simple", "full", "downsampled"]
-            | TreeApproximationTemplate
+            | type[TreeApproximationTemplate]
         ) = "simple",
         norm: Literal["max", "sum", None] = "max",
         downsample: int = 2,
@@ -211,7 +211,7 @@ class lineageTreeManager:
             Node of the second Lineagetree
         end_time2 : int
             End time of second lineagetree
-        style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate, default="simple"
+        style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate subclass, default="simple"
             The approximation used to calculate the tree.
         norm : {"max","sum", "None"}, default="max"
             The normalization method used (Not important for this function)
@@ -370,7 +370,7 @@ class lineageTreeManager:
         norm: Literal["max", "sum", None] = "max",
         style: (
             Literal["simple", "normalized_simple", "full", "downsampled"]
-            | TreeApproximationTemplate
+            | type[TreeApproximationTemplate]
         ) = "simple",
         downsample: int = 2,
         return_norms: bool = False,
@@ -399,7 +399,7 @@ class lineageTreeManager:
             If None all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
-        style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate, default="simple"
+        style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate subclass, default="simple"
             Which tree approximation is going ttypeo be used for the comparisons.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
@@ -495,9 +495,7 @@ class lineageTreeManager:
         end_time2: int | None = None,
         norm: Literal["max", "sum", None] = "max",
         style: (
-            Literal[
-                "simple", "normalized_simple", "full", "downsampled", "mini"
-            ]
+            Literal["simple", "normalized_simple", "full", "downsampled"]
             | type[TreeApproximationTemplate]
         ) = "simple",
         downsample: int = 2,
@@ -526,7 +524,7 @@ class lineageTreeManager:
             the end time of the first lineage, if None its set to t_e of the dataset
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
-        style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate, default="simple"
+        style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate subclass, default="simple"
             Which tree approximation is going to be used for the comparisons.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
@@ -723,9 +721,7 @@ class lineageTreeManager:
         end_time2: int | None = None,
         norm: Literal["max", "sum", None] = "max",
         style: (
-            Literal[
-                "simple", "normalized_simple", "full", "downsampled", "mini"
-            ]
+            Literal["simple", "normalized_simple", "full", "downsampled"]
             | type[TreeApproximationTemplate]
         ) = "simple",
         downsample: int = 2,
@@ -749,7 +745,7 @@ class lineageTreeManager:
             the end time of the first lineage, if None its set to t_e of the dataset
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
-        style : {"simple", "full", "downsampled"}, default="simple"
+        style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate subclass, default="simple"
             Which tree approximation is going to be used for the comparisons.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
