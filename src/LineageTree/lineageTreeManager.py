@@ -154,8 +154,7 @@ class lineageTreeManager:
 
     @classmethod
     def load(cls, fname: str) -> lineageTreeManager:
-        """
-        Loading a lineage tree Manager from a ".ltm" file.
+        """Loading a lineage tree Manager from a ".ltm" file.
 
         Parameters
         ----------
@@ -530,15 +529,15 @@ class lineageTreeManager:
             The downsample factor for the downsampled tree approximation.
             Used only when `style="downsampled"`.
         colormap : str, optional
-            The colormap used for matched nodes, default= "cool"
+            The colormap used for matched nodes, default="cool"
         default_color : str
-            The color of the unmatched nodes, default= "black"
+            The color of the unmatched nodes, default="black"
         size : float
-            The size of the nodes, default= 10
+            The size of the nodes, default=10
         lw : float
-            The width of the edges, default= 0.3
+            The width of the edges, default=0.3
         ax : np.ndarray | None, optional
-            The axes used, if not used another set of axes is produced, default= None
+            The axes used, if not used another set of axes is produced, default=None
 
         Returns
         -------

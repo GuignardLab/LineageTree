@@ -1472,8 +1472,7 @@ class lineageTree:
     def compute_spatial_density(
         self, t_b: int | None = None, t_e: int | None = None, th: float = 50
     ) -> dict[int, float]:
-        """
-        Computes the spatial density of nodes between `t_b` and `t_e`.
+        """Computes the spatial density of nodes between `t_b` and `t_e`.
         The results is stored in `self.spatial_density` and returned.
 
         Parameters
@@ -1573,8 +1572,7 @@ class lineageTree:
         return self.th_edges
 
     def get_ancestor_at_t(self, n: int, time: int | None = None) -> int:
-        """
-        Find the id of the ancestor of a give node `n`
+        """Find the id of the ancestor of a give node `n`
         at a given time `time`.
 
         If there is no ancestor, returns `None`
@@ -1650,17 +1648,18 @@ class lineageTree:
         int
             Returns the first ancestor found that has an attribute otherwise `-1`.
         """
-        if not isinstance(self.__getattribute__(attribute), dict):
+        attr_dict = self.__getattribute__(attribute)
+        if not isinstance(attr_dict, dict):
             raise ValueError("Please select a dict attribute")
         if node not in self.nodes:
             return -1
-        if node in self.__getattribute__(attribute):
+        if node in attr_dict:
             return node
         if node in self.roots:
             return -1
         ancestor = node
         while ancestor != -1 and ancestor != ():
-            if ancestor in self.__getattribute__(attribute):
+            if ancestor in attr_dict:
                 return ancestor
             ancestor = self._predecessor.get(ancestor, [-1])
             ancestor = ancestor[0]
