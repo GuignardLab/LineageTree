@@ -1657,13 +1657,12 @@ class lineageTree:
             return node
         if node in self.roots:
             return -1
-        ancestor = node
-        while ancestor != -1 and ancestor != ():
+        ancestor = (node,)
+        while ancestor and ancestor != [-1]:
+            ancestor = ancestor[0]
             if ancestor in attr_dict:
                 return ancestor
             ancestor = self._predecessor.get(ancestor, [-1])
-            ancestor = ancestor[0]
-
         return -1
 
     def unordered_tree_edit_distances_at_time_t(
