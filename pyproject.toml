@@ -16,7 +16,7 @@ maintainers = [
 ]
 name = "LineageTree"
 description = "Structure for Lineage Trees"
-version = "1.7.0"
+version = "2.0.0"
 license = { file = "LICENSE" }
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">= 3.10"
@@ -85,6 +85,7 @@ push = false
 
 [tool.bumpver.file_patterns]
 "pyproject.toml" = [
+    'version = "{version}"',
     'current_version = "{version}"',
 ]
 "src/LineageTree/__init__.py" = [
