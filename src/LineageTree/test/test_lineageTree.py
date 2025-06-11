@@ -31,12 +31,14 @@ def test_read_MaMuT_xml():
 def test_write(tmp_path_factory):
     tmp_path = str(tmp_path_factory.mktemp("lineagetree")) + ".lT"
     lt.labels[list(lt.nodes)[0]] = "test"
+    lt._comparisons = {(1, 2): 30}
     lt.write(str(tmp_path))
     return tmp_path
 
 
 def test_load(test_write):
     lt2 = lineageTree.load(str(test_write))
+    assert lt2._comparisons == {(1, 2): 30}
     assert lt.labels[list(lt.nodes)[0]] == "test"
     assert lt == lt2
 

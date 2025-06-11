@@ -75,7 +75,7 @@ class lineageTreeManager:
         int
             The overall greatest common divisor.
         """
-        if len(self.lineagetrees) >= 1:
+        if len(self) > 1:
             all_time_res = [
                 embryo._time_resolution
                 for embryo in self.lineagetrees.values()
@@ -99,7 +99,9 @@ class lineageTreeManager:
         other_tree : LineageTree
             Thelineagetree to be added.
         name : str, default=""
-            Then name of the lineagetree to be added.
+            Then name of the lineagetree to be added, defaults to ''.
+            (Usually lineageTrees have the name of the path they are read from,
+            so this is going to be the name most of the times.)
         """
         if isinstance(other_tree, lineageTree):
             for tree in self.lineagetrees.values():
@@ -202,14 +204,16 @@ class lineageTreeManager:
             Node of the first Lineagetree
         embryo_1 : str
             The key/name of the first Lineagetree
-        end_time1 : int
-            End time of first Lineagetree
         n2 : int
             The key/name of the first Lineagetree
         embryo_2 : str
             Node of the second Lineagetree
-        end_time2 : int
-            End time of second lineagetree
+        end_time1 : int, optional
+            The final time point the comparison algorithm will take into account for the first dataset.
+            If None or not provided all nodes will be taken into account.
+        end_time2 : int, optional
+             The final time point the comparison algorithm will take into account for the second dataset.
+            If None or not provided all nodes will be taken into account.
         style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate subclass, default="simple"
             The approximation used to calculate the tree.
         norm : {"max","sum", "None"}, default="max"
@@ -391,15 +395,15 @@ class lineageTreeManager:
         embryo_2 : str
             the name of the second embryo to be used. (from lTm.lineagetrees.keys())
         end_time_1 : int, optional
-            The final time point the comparison algorithm will take into account for the first embryo.
-            If None all nodes will be taken into account.
+            the final time point the comparison algorithm will take into account for the first dataset.
+            If None or not provided all nodes will be taken into account.
         end_time_2 : int, optional
-            The final time point the comparison algorithm will take into account for the second embryo.
-            If None all nodes will be taken into account.
+            the final time point the comparison algorithm will take into account for the second dataset.
+            If None or not provided all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
-            The normalization method to use.
+            The normalization method to use, defaults to 'max'.
         style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate subclass, default="simple"
-            Which tree approximation is going ttypeo be used for the comparisons.
+            Which tree approximation is going to be used for the comparisons, defaults to 'simple'.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
             Used only when `style="downsampled"`.
@@ -518,9 +522,11 @@ class lineageTreeManager:
         embryo_2 : str
             the name of the second embryo
         end_time1 : int, optional
-            the end time of the first lineage, if None its set to t_e of the dataset
+            the final time point the comparison algorithm will take into account for the first dataset.
+            If None or not provided all nodes will be taken into account.
         end_time2 : int, optional
-            the end time of the first lineage, if None its set to t_e of the dataset
+            the final time point the comparison algorithm will take into account for the second dataset.
+            If None or not provided all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
         style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate subclass, default="simple"
@@ -528,16 +534,16 @@ class lineageTreeManager:
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
             Used only when `style="downsampled"`.
-        colormap : str, optional
-            The colormap used for matched nodes, default="cool"
+        colormap : str, default="cool"
+            The colormap used for matched nodes, defaults to "cool"
         default_color : str
-            The color of the unmatched nodes, default="black"
+            The color of the unmatched nodes, defaults to "black"
         size : float
-            The size of the nodes, default=10
+            The size of the nodes, defaults to 10
         lw : float
-            The width of the edges, default=0.3
-        ax : np.ndarray | None, optional
-            The axes used, if not used another set of axes is produced, default=None
+            The width of the edges, defaults to 0.3
+        ax : np.ndarray, optional
+            The axes used, if not provided another set of axes is produced, defaults to None
 
         Returns
         -------
@@ -739,9 +745,11 @@ class lineageTreeManager:
         embryo_2: str
             the name of the second lineage
         end_time1 : int, optional
-            the end time of the first lineage, if None its set to t_e of the dataset
+            the final time point the comparison algorithm will take into account for the first dataset.
+            If None or not provided all nodes will be taken into account.
         end_time2 : int, optional
-            the end time of the first lineage, if None its set to t_e of the dataset
+            the final time point the comparison algorithm will take into account for the first dataset.
+            If None or not provided all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
         style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate subclass, default="simple"

@@ -491,7 +491,7 @@ class lineageTree:
         file_name : str
             filesystem filename valid for `open()`
         roots : list of int, defaults to `self.roots`
-            list of node ids to be drawn. If `None` all the nodes will be drawn. Default `None`
+            list of node ids to be drawn. If `None` or not provided all the nodes will be drawn. Default `None`
         draw_nodes : bool, default True
             wether to print the nodes or not
         draw_edges : bool, default True
@@ -988,7 +988,6 @@ class lineageTree:
             del self._protected_successor
         if hasattr(self, "_protected_time"):
             del self._protected_time
-        self.clear_comparisons()  # for now we clear the comparisons.
         with open(fname, "bw") as f:
             pkl.dump(self, f)
             f.close()
@@ -1031,6 +1030,7 @@ class lineageTree:
                 + lineageTree._dynamic_properties
                 + lineageTree._protected_dynamic_properties
             }
+            print("_comparisons" in properties)
             lT = lineageTree(
                 successor=lT._successor,
                 time=lT._time,
@@ -1823,6 +1823,7 @@ class lineageTree:
             - 'trees'
                 A list of the two trees that have been mapped to each other.
         """
+
         parameters = (
             end_time,
             convert_style_to_number(style=style, downsample=downsample),
@@ -1925,15 +1926,15 @@ class lineageTree:
             The downsample factor for the downsampled tree approximation.
             Used only when `style="downsampled"`.
         colormap : str, default="cool"
-            The colormap used for matched nodes, default="cool"
+            The colormap used for matched nodes, defaults to "cool"
         default_color : str
-            The color of the unmatched nodes, default="black"
+            The color of the unmatched nodes, defaults to "black"
         size : float
-            The size of the nodes, default=10
+            The size of the nodes, defaults to 10
         lw : float
-            The width of the edges, default=0.3
+            The width of the edges, defaults to 0.3
         ax : np.ndarray, optional
-            The axes used, if not used another set of axes is produced, default=None
+            The axes used, if not provided another set of axes is produced, defaults to None
 
         Returns
         -------
@@ -2101,13 +2102,13 @@ class lineageTree:
             id of the first node to compare
         n2 : int
             id of the second node to compare
-        end_time : int
+        end_time : int, optional
             The final time point the comparison algorithm will take into account.
-            If None all nodes will be taken into account.
+            If None or not provided all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
-            The normalization method to use.
+            The normalization method to use, defaults to 'max'.
         style : {"simple", "full", "downsampled", "normalized_simple} or TreeApproximationTemplate subclass, default="simple"
-            Which tree approximation is going to be used for the comparisons.
+            Which tree approximation is going to be used for the comparisons, defaults to 'simple'.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
             Used only when `style="downsampled"`.
@@ -2223,11 +2224,11 @@ class lineageTree:
             id of the first node to compare
         n2 : int
             id of the second node to compare
-        end_time : int
+        end_time : int, optional
             The final time point the comparison algorithm will take into account.
-            If None all nodes will be taken into account.
+            If None or not provided all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
-            The normalization method to use.
+            The normalization method to use, defaults to 'max'.
         style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate subclass, default="simple"
             Which tree approximation is going to be used for the comparisons.
         downsample : int, default=2
@@ -2367,19 +2368,19 @@ class lineageTree:
             - 'links' : conatains the hierarchy of the nodes (only start and end of each chain)
             - 'times' : contains the distance between the  start and the end of each chain.
         selected_nodes : list or set, optional
-            Which nodes are to be selected (Painted with a different color)
+            Which nodes are to be selected (Painted with a different color, according to 'color_'of_nodes')
         selected_edges : list or set, optional
-            Which edges are to be selected (Painted with a different color)
+            Which edges are to be selected (Painted with a different color, according to 'color_'of_edges')
         color_of_nodes : str, default="magenta"
             Color of selected nodes
-        color_of_edges : str, optional
+        color_of_edges : str, default="magenta"
             Color of selected edges
         size : int, default=10
-            Size of the nodes
+            Size of the nodes, defaults to 10
         lw : float, default=0.3
-            The width of the edges of the tree graph, default=0.1
+            The width of the edges of the tree graph, defaults to 0.3
         ax : plt.Axes, optional
-            Plot the graph on existing ax. Defaults to None.
+            Plot the graph on existing ax. If not provided or None a new ax is going to be created.
         default_color : str, default="black"
             Default color of nodes
 
@@ -2442,14 +2443,14 @@ class lineageTree:
         Parameters
         ----------
         node : int or Iterable of int, optional
-            The id of the node/nodes to produce the simple graphs, if not provided will
+            The id of the node/nodes to produce the simple graphs, if not provided or None will
             calculate the dicts for every root that starts before 'start_time'
         start_time : int, optional
             Important only if there are no nodes it will produce the graph of every
-            root that starts before or at start time. Defaults to None.
+            root that starts before or at start time. If not provided or None the 'start_time' defaults to the start of the dataset.
         end_time : int, optional
-            The last timepoint to be considered, if None the last timepoint of the
-            dataset (t_e) is considered, default=None.
+            The last timepoint to be considered, if not provided or None the last timepoint of the
+            dataset (t_e) is considered.
 
         Returns
         -------
@@ -2496,7 +2497,7 @@ class lineageTree:
             For example if start_time is 10, then all trees that begin
             on tp 10 or before are calculated. Defaults to None, where
             it will plot all the roots that exist on `self.t_b`.
-        nrows : int
+        nrows : int, default=2
             How many rows of plots should be printed.
         figsize : tuple, default=(10, 15)
             The size of the figure.
@@ -2505,9 +2506,9 @@ class lineageTree:
         fontsize : int, default=15
             The fontsize of the labels.
         axes : plt.Axes, optional
-            The axes to plot the graphs on.
+            The axes to plot the graphs on. If None or not provided new axes are going to be created.
         vert_gap : int, default=1
-            space between the nodes.
+            space between the nodes, defaults to 1
         **kwargs:
             kwargs accepted by matplotlib.pyplot.plot, matplotlib.pyplot.scatter
 
@@ -2616,30 +2617,30 @@ class lineageTree:
         ----------
         node : int
             The id of the node that is going to be plotted.
-        end_time : int, None, optional
-            The last timepoint to be considered, if None the last timepoint of the dataset (t_e) is considered, default=None.
+        end_time : int, optional
+            The last timepoint to be considered, if None or not provided the last timepoint of the dataset (t_e) is considered.
         figsize : tuple of 2 ints, default=(4,7)
-            The size of the figure, deafult=(4,7)
+            The size of the figure, deafults to (4,7)
         vert_gap : int, default=2
-            The verical gap of a node when it divides, default=2.
+            The verical gap of a node when it divides, defaults to 2.
         dpi : int, default=150
-            The dpi of the figure, default=150
+            The dpi of the figure, defaults to 150
         selected_nodes : list, optional
-            The nodes that are selected by the user to be colored in a different color, default=None
+            The nodes that are selected by the user to be colored in a different color, defaults to None
         selected_edges : list, optional
-            The edges that are selected by the user to be colored in a different color, default=None
+            The edges that are selected by the user to be colored in a different color, defaults to None
         color_of_nodes : str, default="magenta"
-            The color of the nodes to be colored, except the default colored ones, default="magenta"
+            The color of the nodes to be colored, except the default colored ones, defaults to "magenta"
         color_of_edges : str, default="magenta"
-            The color of the edges to be colored, except the default colored ones, default="magenta"
+            The color of the edges to be colored, except the default colored ones, defaults to "magenta"
         size : int, default=10
-            The size of the nodes, default=10
+            The size of the nodes, defaults to 10
         lw : float, default=0.1
-            The widthe of the edges of the tree graph, default=0.1
+            The widthe of the edges of the tree graph, defaults to 0.1
         default_color : str, default="black"
-            The default color of nodes and edges, default="black"
+            The default color of nodes and edges, defaults to "black"
         ax : plt.Axes, optional
-            The ax where the plot is going to be applied, default=None
+            The ax where the plot is going to be applied, if not provided or None new axes will be created.
 
         Returns
         -------
@@ -3403,7 +3404,6 @@ class lineageTree:
             The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
         self.__version__ = importlib.metadata.version("LineageTree")
-        self._comparisons = {}
         self.name = str(name) if name is not None else None
         if successor is not None and predecessor is not None:
             raise ValueError(
@@ -3535,3 +3535,5 @@ class lineageTree:
                 )
                 continue
             setattr(self, name, d)
+        if not hasattr(self, "_comparisons"):
+            self._comparisons = {}
