@@ -1292,17 +1292,6 @@ class lineageTree:
 
         return self.Gabriel_graph[t]
 
-    @dynamic_property
-    def gabriel_graph(self):
-        self._gabriel_graph = {}
-        return self._get_gabriel_graph
-
-    @gabriel_graph.getter
-    def gabriel_graph(self, t):
-        print(f"hello {t}")
-        if t not in self._gabriel_graph:
-            print("hello")
-
     def get_all_chains_of_subtree(
         self, node: int, end_time: int | None = None
     ) -> list[list[int]]:
