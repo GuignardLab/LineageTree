@@ -3,6 +3,8 @@
 # file 'LICENCE', which is part of this source code package.
 # Author: Leo Guignard (leo.guignard...@AT@...gmail.com)
 
+from __future__ import annotations
+
 import importlib.metadata
 import os
 import pickle as pkl
@@ -13,23 +15,29 @@ from functools import partial, wraps
 from itertools import combinations
 from numbers import Number
 from types import MappingProxyType
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import svgwrite
 from edist import uted
+from matplotlib import colormaps
 from matplotlib.collections import LineCollection
 from packaging.version import Version
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.sparse import dok_array
 from scipy.spatial import Delaunay, KDTree, distance
 
-from .tree_styles import tree_style
+from .tree_approximation import TreeApproximationTemplate, tree_style
 from .utils import (
-    create_links_and_cycles,
+    convert_style_to_number,
+    create_links_and_chains,
     hierarchical_pos,
 )
+
+if TYPE_CHECKING:
+    from edist.alignment import Alignment
 
 
 class dynamic_property(property):
@@ -43,9 +51,12 @@ class dynamic_property(property):
         self.name = name
         if self.protected_name is None:
             self.protected_name = f"_{name}"
-        if not hasattr(owner, "_dependent_properties"):
-            owner._dependent_properties = []
-        owner._dependent_properties.append(self.protected_name)
+        if not hasattr(owner, "_protected_dynamic_properties"):
+            owner._protected_dynamic_properties = []
+        owner._protected_dynamic_properties.append(self.protected_name)
+        if not hasattr(owner, "_dynamic_properties"):
+            owner._dynamic_properties = []
+        owner._dynamic_properties += [name, self.protected_name]
         setattr(owner, self.protected_name, None)
 
     def __get__(self, instance, owner):
@@ -59,6 +70,7 @@ class dynamic_property(property):
 
 
 class lineageTree:
+    norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
 
     def modifier(wrapped_func):
         @wraps(wrapped_func)
@@ -73,7 +85,7 @@ class lineageTree:
                 should_reset = False
             out_func = wrapped_func(self, *args, **kwargs)
             if should_reset:
-                for prop in self._dependent_properties:
+                for prop in self._protected_dynamic_properties:
                     self.__dict__[prop] = None
                 self._already_changing = False
             return out_func
@@ -87,7 +99,7 @@ class lineageTree:
         -------
         bool
             True if the tree has cycles, False otherwise.
-        set[int]
+        set of int
             The set of nodes that have been checked.
         """
         to_do = [n]
@@ -203,7 +215,7 @@ class lineageTree:
         return node
 
     @modifier
-    def add_root(self, t: int, pos: list | None = None):
+    def add_root(self, t: int, pos: list | None = None) -> int:
         """Adds a root to a specific timepoint.
 
         Parameters
@@ -212,6 +224,10 @@ class lineageTree:
             The timepoint the node is going to be added.
         pos : list
             The position of the new node.
+        Returns
+        -------
+        int
+            The id of the new root.
         """
         C_next = self.get_next_id()
         self._successor[C_next] = ()
@@ -475,7 +491,7 @@ class lineageTree:
         file_name : str
             filesystem filename valid for `open()`
         roots : list of int, defaults to `self.roots`
-            list of node ids to be drawn. If `None` all the nodes will be drawn. Default `None`
+            list of node ids to be drawn. If `None` or not provided all the nodes will be drawn. Default `None`
         draw_nodes : bool, default True
             wether to print the nodes or not
         draw_edges : bool, default True
@@ -957,8 +973,7 @@ class lineageTree:
             f.close()
 
     def write(self, fname: str) -> None:
-        """
-        Write a lineage tree on disk as an .lT file.
+        """Write a lineage tree on disk as an .lT file.
 
         Parameters
         ----------
@@ -979,8 +994,7 @@ class lineageTree:
 
     @classmethod
     def load(clf, fname: str):
-        """
-        Loading a lineage tree from a ".lT" file.
+        """Loading a lineage tree from a '.lT' file.
 
         Parameters
         ----------
@@ -1011,9 +1025,12 @@ class lineageTree:
                     "_predecessor",
                     "_time",
                     "pos",
+                    "labels",
                 ]
-                and set(prop).symmetric_difference(lT._successor) == set()
+                + lineageTree._dynamic_properties
+                + lineageTree._protected_dynamic_properties
             }
+            print("_comparisons" in properties)
             lT = lineageTree(
                 successor=lT._successor,
                 time=lT._time,
@@ -1022,7 +1039,7 @@ class lineageTree:
                 **properties,
             )
         if not hasattr(lT, "time_resolution"):
-            lT.time_resolution = 0
+            lT.time_resolution = 1
 
         return lT
 
@@ -1186,7 +1203,6 @@ class lineageTree:
 
     @property
     def parenting(self):
-
         if not hasattr(self, "_parenting"):
             self._parenting = dok_array((max(self.nodes) + 1,) * 2)
             self._tmp_parenting = {}
@@ -1353,7 +1369,7 @@ class lineageTree:
         Returns
         -------
         dict mapping int to list of Chain
-            dictionary mapping node ids to a list of chains
+            dictionary mapping the node ids to a list of chains
         """
         all_chains = self.all_chains
         if nodes is None:
@@ -1457,7 +1473,6 @@ class lineageTree:
         self, t_b: int | None = None, t_e: int | None = None, th: float = 50
     ) -> dict[int, float]:
         """Computes the spatial density of nodes between `t_b` and `t_e`.
-
         The results is stored in `self.spatial_density` and returned.
 
         Parameters
@@ -1471,7 +1486,7 @@ class lineageTree:
 
         Returns
         -------
-        dict of int to float
+        dict mapping int to float
             dictionary that maps a node id to its spatial density
         """
         if not hasattr(self, "spatial_density"):
@@ -1503,7 +1518,7 @@ class lineageTree:
 
         Returns
         -------
-        dict of int to set of int
+        dict mapping int to set of int
             dictionary that maps
             a node id to its `k` nearest neighbors
         """
@@ -1540,7 +1555,7 @@ class lineageTree:
 
         Returns
         -------
-        dict of int to set of int
+        dict mapping int to set of int
             dictionary that maps a node id to its neighbors at a distance `th`
         """
         self.th_edges = {}
@@ -1556,40 +1571,8 @@ class lineageTree:
             )
         return self.th_edges
 
-    def main_axes(self, time: int | None = None) -> tuple[np.array, np.array]:
-        """Finds the main axes for a timepoint.
-        If none will select the timepoint with the highest amound of nodes.
-
-        Parameters
-        ----------
-        time : int, optional
-            The timepoint to find the main axes.
-            If `None` will find the timepoint
-            with the largest number of nodes.
-
-        Returns
-        -------
-        np.ndarray of shape (3,)
-            sorted eigenvalues
-        np.ndarray
-            sorted eigenvectors (3,)
-        """
-        time_nodes = {
-            t: len(self.nodes_at_t(t)) for t in range(self.t_b, self.t_e)
-        }
-        if time is None:
-            time = max(time_nodes, key=lambda x: len(time_nodes[x]))
-        pos = np.array([self.pos[node] for node in time_nodes[time]])
-        pos = pos - np.mean(pos, axis=0)
-        cov = np.cov(np.array(pos).T)
-        eig_val, eig_vec = np.linalg.eig(cov)
-        srt = np.argsort(eig_val)[::-1]
-        self.eig_val, self.eig_vec = eig_val[srt], eig_vec[:, srt]
-        return eig_val[srt], eig_vec[:, srt]
-
-    def get_ancestor_at_t(self, n: int, time: int | None = None) -> int | None:
-        """
-        Find the id of the ancestor of a give node `n`
+    def get_ancestor_at_t(self, n: int, time: int | None = None) -> int:
+        """Find the id of the ancestor of a give node `n`
         at a given time `time`.
 
         If there is no ancestor, returns `None`
@@ -1603,16 +1586,16 @@ class lineageTree:
         time : int, optional
             time at which the ancestor has to be found.
             If `None` the ancestor at the first time point
-            will be found (default `None`)
+            will be found.
 
         Returns
         -------
-        int or None
+        int
             the id of the ancestor at time `time`,
-            `None` if it does not exist
+            `-1` if there is no ancestor.
         """
         if n not in self.nodes:
-            return None
+            return -1
         if time is None:
             time = self.t_b
         ancestor = n
@@ -1624,10 +1607,10 @@ class lineageTree:
         if self._time.get(ancestor, self.t_b - 1) == time:
             return ancestor
         else:
-            return None
+            return -1
 
-    def get_labelled_ancestor(self, node: int) -> int | None:
-        """Finds the first labelled ancestor and returns its ID otherwise returns None
+    def get_labelled_ancestor(self, node: int) -> int:
+        """Finds the first labelled ancestor and returns its ID otherwise returns -1
 
         Parameters
         ----------
@@ -1636,11 +1619,11 @@ class lineageTree:
 
         Returns
         -------
-        int or None
-            Returns the first ancestor found that has a label otherwise `None`.
+        int
+            Returns the first ancestor found that has a label otherwise `-1`.
         """
         if node not in self.nodes:
-            return None
+            return -1
         ancestor = node
         while (
             self.t_b <= self._time.get(ancestor, self.t_b - 1)
@@ -1649,20 +1632,52 @@ class lineageTree:
             if ancestor in self.labels:
                 return ancestor
             ancestor = self._predecessor.get(ancestor, [-1])[0]
-        return None
+        return -1
+
+    def get_ancestor_with_attribute(self, node: int, attribute: str) -> int:
+        """General purpose function to help with searching the first ancestor that has an attribute.
+        Similar to get_labeled_ancestor and may make it redundant.
+
+        Parameters
+        ----------
+        node : int
+            The id of the node
+
+        Returns
+        -------
+        int
+            Returns the first ancestor found that has an attribute otherwise `-1`.
+        """
+        attr_dict = self.__getattribute__(attribute)
+        if not isinstance(attr_dict, dict):
+            raise ValueError("Please select a dict attribute")
+        if node not in self.nodes:
+            return -1
+        if node in attr_dict:
+            return node
+        if node in self.roots:
+            return -1
+        ancestor = (node,)
+        while ancestor and ancestor != [-1]:
+            ancestor = ancestor[0]
+            if ancestor in attr_dict:
+                return ancestor
+            ancestor = self._predecessor.get(ancestor, [-1])
+        return -1
 
     def unordered_tree_edit_distances_at_time_t(
         self,
         t: int,
         end_time: int | None = None,
-        style: Literal["simple", "full", "downsampled"] = "simple",
+        style: (
+            Literal["simple", "full", "downsampled", "normalized_simple"]
+            | type[TreeApproximationTemplate]
+        ) = "simple",
         downsample: int = 2,
-        norm: Literal["max", "sum"] | None = "max",
+        norm: Literal["max", "sum", None] = "max",
         recompute: bool = False,
-    ) -> dict[int, float]:
-        """
-        TODO: change docstring
-        Compute all the pairwise unordered tree edit distances from Zhang 996 between the trees spawned at time `t`
+    ) -> dict[tuple[int, int], float]:
+        """Compute all the pairwise unordered tree edit distances from Zhang 996 between the trees spawned at time `t`
 
         Parameters
         ----------
@@ -1671,7 +1686,7 @@ class lineageTree:
         end_time : int
             The final time point the comparison algorithm will take into account.
             If None all nodes will be taken into account.
-        style : {"simple", "full", "downsampled"}, default="simple"
+        style : {"simple", "full", "downsampled", "normalized_simple"} or TreeApproximationTemplate subclass, default="simple"
             Which tree approximation is going to be used for the comparisons.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
@@ -1683,7 +1698,7 @@ class lineageTree:
 
         Returns
         -------
-        dict of tuple of int to float
+        dict mapping a tuple of tuple that contains 2 ints to float
             a dictionary that maps a pair of node ids at time `t` to their unordered tree edit distance
         """
         if not hasattr(self, "uted"):
@@ -1704,21 +1719,84 @@ class lineageTree:
             )
         return self.uted[t]
 
-    def unordered_tree_edit_distance(
+    def __calculate_distance_of_sub_tree(
+        self,
+        node1: int,
+        node2: int,
+        alignment: Alignment,
+        corres1: dict[int, int],
+        corres2: dict[int, int],
+        delta_tmp: Callable,
+        norm: Callable,
+        norm1: int | float,
+        norm2: int | float,
+    ) -> float:
+        """Calculates the distance of the subtree of each node matched in a comparison.
+        DOES NOT CALCULATE THE DISTANCE FROM SCRATCH BUT USING THE ALIGNMENT.
+        TODO ITS BOUND TO CHANGE
+        Parameters
+        ----------
+        node1 : int
+            The root of the first subtree
+        node2 : int
+            The root of the second subtree
+        alignment : Alignment
+            The alignment of the subtree
+        corres1 : dict
+            The correspndance dictionary of the first lineage
+        corres2 : dict
+            The correspondance dictionary of the second lineage
+        delta_tmp : Callable
+            The delta function for the comparisons
+        norm : Callable
+            How should the lineages be normalized
+        norm1 : int or float
+            The result of the normalization of the first tree
+        norm2 : int or float
+            The result of the normalization of the second tree
+
+        Returns
+        -------
+        float
+            The result of the comparison of the subtree
+        """
+        sub_tree_1 = set(self.get_subtree_nodes(node1))
+        sub_tree_2 = set(self.get_subtree_nodes(node2))
+        res = 0
+        for m in alignment:
+            if (
+                corres1.get(m._left, -1) in sub_tree_1
+                or corres2.get(m._right, -1) in sub_tree_2
+            ):
+                res += delta_tmp(
+                    m._left if m._left != -1 else None,
+                    m._right if m._right != -1 else None,
+                )
+        return res / norm([norm1, norm2])
+
+    def clear_comparisons(self):
+        self._comparisons.clear()
+
+    def __unordereded_backtrace(
         self,
         n1: int,
         n2: int,
         end_time: int | None = None,
-        norm: Literal["max", "sum"] | None = "max",
-        style="simple",
+        norm: Literal["max", "sum", None] = "max",
+        style: (
+            Literal["simple", "normalized_simple", "full", "downsampled"]
+            | type[TreeApproximationTemplate]
+        ) = "simple",
         downsample: int = 2,
-    ) -> float:
+    ) -> dict[
+        str,
+        Alignment
+        | tuple[TreeApproximationTemplate, TreeApproximationTemplate],
+    ]:
         """
-        Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
+        Compute the unordered tree edit backtrace from Zhang 1996 between the trees spawned
         by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
         cost is given by the function delta (see edist doc for more information).
-        The distance is normed by the function norm that takes the two list of nodes
-        spawned by the trees `n1` and `n2`.
 
         Parameters
         ----------
@@ -1731,7 +1809,7 @@ class lineageTree:
             If None all nodes will be taken into account.
         norm : {"max", "sum"}, default="max"
             The normalization method to use.
-        style : {"simple", "full", "downsampled"}, default="simple"
+        style : {"simple", "full", "downsampled", "normalized_simple"} or TreeApproximationTemplate subclass, default="simple"
             Which tree approximation is going to be used for the comparisons.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
@@ -1739,11 +1817,30 @@ class lineageTree:
 
         Returns
         -------
-        float
-            The normed unordered tree edit distance between `n1` and `n2`
+        dict mapping str to Alignment or tuple of [TreeApproximationTemplate, TreeApproximationTemplate]
+            - 'alignment'
+                The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.
+            - 'trees'
+                A list of the two trees that have been mapped to each other.
         """
 
-        tree = tree_style[style].value
+        parameters = (
+            end_time,
+            convert_style_to_number(style=style, downsample=downsample),
+        )
+        n1, n2 = sorted([n1, n2])
+        self._comparisons.setdefault(parameters, {})
+        if len(self._comparisons) > 100:
+            warnings.warn(
+                "More than 100 comparisons are saved, use clear_comparisons() to delete them.",
+                stacklevel=2,
+            )
+        if isinstance(style, str):
+            tree = tree_style[style].value
+        elif issubclass(style, TreeApproximationTemplate):
+            tree = style
+        else:
+            raise ValueError("Please use a valid approximation.")
         tree1 = tree(
             lT=self,
             downsample=downsample,
@@ -1772,7 +1869,11 @@ class lineageTree:
             corres2,
         ) = tree2.edist
         if len(nodes1) == len(nodes2) == 0:
-            return 0
+            self._comparisons[parameters][(n1, n2)] = {
+                "alignment": (),
+                "trees": (),
+            }
+            return self._comparisons[parameters][(n1, n2)]
         delta_tmp = partial(
             delta,
             corres1=corres1,
@@ -1780,23 +1881,415 @@ class lineageTree:
             times1=times1,
             times2=times2,
         )
-        norm1 = tree1.get_norm()
-        norm2 = tree2.get_norm()
-        norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
-        if norm not in norm_dict:
+        btrc = uted.uted_backtrace(nodes1, adj1, nodes2, adj2, delta=delta_tmp)
+
+        self._comparisons[parameters][(n1, n2)] = {
+            "alignment": btrc,
+            "trees": (tree1, tree2),
+        }
+        return self._comparisons[parameters][(n1, n2)]
+
+    def plot_tree_distance_graphs(
+        self,
+        n1: int,
+        n2: int,
+        end_time: int | None = None,
+        norm: Literal["max", "sum", None] = "max",
+        style: (
+            Literal["simple", "normalized_simple", "full", "downsampled"]
+            | type[TreeApproximationTemplate]
+        ) = "simple",
+        downsample: int = 2,
+        colormap: str = "cool",
+        default_color: str = "black",
+        size: float = 10,
+        lw: float = 0.3,
+        ax: list[plt.Axes] | None = None,
+    ) -> tuple[plt.figure, plt.Axes]:
+        """
+        Plots the subtrees compared and colors them according to the quality of the matching of their subtree.
+
+        Parameters
+        ----------
+        n1 : int
+            id of the first node to compare
+        n2 : int
+            id of the second node to compare
+        end_time : int
+            The final time point the comparison algorithm will take into account.
+            If None all nodes will be taken into account.
+        norm : {"max", "sum"}, default="max"
+            The normalization method to use.
+        style : {"simple", "full", "downsampled", "normalized_simple} or TreeApproximationTemplate subclass, default="simple"
+            Which tree approximation is going to be used for the comparisons.
+        downsample : int, default=2
+            The downsample factor for the downsampled tree approximation.
+            Used only when `style="downsampled"`.
+        colormap : str, default="cool"
+            The colormap used for matched nodes, defaults to "cool"
+        default_color : str
+            The color of the unmatched nodes, defaults to "black"
+        size : float
+            The size of the nodes, defaults to 10
+        lw : float
+            The width of the edges, defaults to 0.3
+        ax : np.ndarray, optional
+            The axes used, if not provided another set of axes is produced, defaults to None
+
+        Returns
+        -------
+        plt.Figure
+             The figure of the plot
+        plt.Axes
+             The axes of the plot
+        """
+        parameters = (
+            end_time,
+            convert_style_to_number(style=style, downsample=downsample),
+        )
+        n1, n2 = sorted([n1, n2])
+        self._comparisons.setdefault(parameters, {})
+        if self._comparisons[parameters].get((n1, n2)):
+            tmp = self._comparisons[parameters][(n1, n2)]
+        else:
+            tmp = self.__unordereded_backtrace(
+                n1, n2, end_time, norm, style, downsample
+            )
+        btrc: Alignment = tmp["alignment"]
+        tree1, tree2 = tmp["trees"]
+        _, times1 = tree1.tree
+        _, times2 = tree2.tree
+        (
+            *_,
+            corres1,
+        ) = tree1.edist
+        (
+            *_,
+            corres2,
+        ) = tree2.edist
+        delta_tmp = partial(
+            tree1.delta,
+            corres1=corres1,
+            corres2=corres2,
+            times1=times1,
+            times2=times2,
+        )
+
+        if norm not in self.norm_dict:
             raise Warning(
                 "Select a viable normalization method (max, sum, None)"
             )
-        return uted.uted(
-            nodes1, adj1, nodes2, adj2, delta=delta_tmp
-        ) / norm_dict[norm]([norm1, norm2])
+        matched_right = []
+        matched_left = []
+        colors = {}
+        if style not in ("full", "downsampled"):
+            for m in btrc:
+                if m._left != -1 and m._right != -1:
+                    cyc1 = self.get_chain_of_node(corres1[m._left])
+                    if len(cyc1) > 1:
+                        node_1, *_, l_node_1 = cyc1
+                        matched_left.append(node_1)
+                        matched_left.append(l_node_1)
+                    elif len(cyc1) == 1:
+                        node_1 = l_node_1 = cyc1.pop()
+                        matched_left.append(node_1)
+
+                    cyc2 = self.get_chain_of_node(corres2[m._right])
+                    if len(cyc2) > 1:
+                        node_2, *_, l_node_2 = cyc2
+                        matched_right.append(node_2)
+                        matched_right.append(l_node_2)
+
+                    elif len(cyc2) == 1:
+                        node_2 = l_node_2 = cyc2.pop()
+                        matched_right.append(node_2)
+
+                    colors[node_1] = self.__calculate_distance_of_sub_tree(
+                        node_1,
+                        node_2,
+                        btrc,
+                        corres1,
+                        corres2,
+                        delta_tmp,
+                        self.norm_dict[norm],
+                        tree1.get_norm(node_1),
+                        tree2.get_norm(node_2),
+                    )
+                    colors[node_2] = colors[node_1]
+                    colors[l_node_1] = colors[node_1]
+                    colors[l_node_2] = colors[node_2]
+        else:
+            for m in btrc:
+                if m._left != -1 and m._right != -1:
+                    node_1 = corres1[m._left]
+                    node_2 = corres2[m._right]
+
+                    if (
+                        self.get_chain_of_node(node_1)[0] == node_1
+                        or self.get_chain_of_node(node_2)[0] == node_2
+                        and (node_1 not in colors or node_2 not in colors)
+                    ):
+                        matched_left.append(node_1)
+                        l_node_1 = self.get_chain_of_node(node_1)[-1]
+                        matched_left.append(l_node_1)
+                        matched_right.append(node_2)
+                        l_node_2 = self.get_chain_of_node(node_2)[-1]
+                        matched_right.append(l_node_2)
+                        colors[node_1] = self.__calculate_distance_of_sub_tree(
+                            node_1,
+                            node_2,
+                            btrc,
+                            corres1,
+                            corres2,
+                            delta_tmp,
+                            self.norm_dict[norm],
+                            tree1.get_norm(node_1),
+                            tree2.get_norm(node_2),
+                        )
+                        colors[l_node_1] = colors[node_1]
+                        colors[node_2] = colors[node_1]
+                        colors[l_node_2] = colors[node_1]
+        if ax is None:
+            fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True)
+        cmap = colormaps[colormap]
+        c_norm = mcolors.Normalize(0, 1)
+        colors = {c: cmap(c_norm(v)) for c, v in colors.items()}
+        self.plot_subtree(
+            self.get_ancestor_at_t(n1),
+            end_time=end_time,
+            size=size,
+            selected_nodes=matched_left,
+            color_of_nodes=colors,
+            selected_edges=matched_left,
+            color_of_edges=colors,
+            default_color=default_color,
+            lw=lw,
+            ax=ax[0],
+        )
+        self.plot_subtree(
+            self.get_ancestor_at_t(n2),
+            end_time=end_time,
+            size=size,
+            selected_nodes=matched_right,
+            color_of_nodes=colors,
+            selected_edges=matched_right,
+            color_of_edges=colors,
+            default_color=default_color,
+            lw=lw,
+            ax=ax[1],
+        )
+        return ax[0].get_figure(), ax
+
+    def labelled_mappings(
+        self,
+        n1: int,
+        n2: int,
+        end_time: int | None = None,
+        norm: Literal["max", "sum", None] = "max",
+        style: (
+            Literal["simple", "normalized_simple", "full", "downsampled"]
+            | type[TreeApproximationTemplate]
+        ) = "simple",
+        downsample: int = 2,
+    ) -> dict[str, list[str]]:
+        """
+        Returns the labels or IDs of all the nodes in the subtrees compared.
+
+
+        Parameters
+        ----------
+        n1 : int
+            id of the first node to compare
+        n2 : int
+            id of the second node to compare
+        end_time : int, optional
+            The final time point the comparison algorithm will take into account.
+            If None or not provided all nodes will be taken into account.
+        norm : {"max", "sum"}, default="max"
+            The normalization method to use, defaults to 'max'.
+        style : {"simple", "full", "downsampled", "normalized_simple} or TreeApproximationTemplate subclass, default="simple"
+            Which tree approximation is going to be used for the comparisons, defaults to 'simple'.
+        downsample : int, default=2
+            The downsample factor for the downsampled tree approximation.
+            Used only when `style="downsampled"`.
+
+        Returns
+        -------
+        dict mapping str to list of str
+            - 'matched' The labels of the matched nodes of the alignment.
+            - 'unmatched' The labels of the unmatched nodes of the alginment.
+        """
+        parameters = (
+            end_time,
+            convert_style_to_number(style=style, downsample=downsample),
+        )
+        n1, n2 = sorted([n1, n2])
+        self._comparisons.setdefault(parameters, {})
+        if self._comparisons[parameters].get((n1, n2)):
+            tmp = self._comparisons[parameters][(n1, n2)]
+        else:
+            tmp = self.__unordereded_backtrace(
+                n1, n2, end_time, norm, style, downsample
+            )
+        btrc = tmp["alignment"]
+        tree1, tree2 = tmp["trees"]
+
+        (
+            *_,
+            corres1,
+        ) = tree1.edist
+        (
+            *_,
+            corres2,
+        ) = tree2.edist
+
+        if norm not in self.norm_dict:
+            raise Warning(
+                "Select a viable normalization method (max, sum, None)"
+            )
+        matched = []
+        unmatched = []
+        if style not in ("full", "downsampled"):
+            for m in btrc:
+                if m._left != -1 and m._right != -1:
+                    cyc1 = self.get_chain_of_node(corres1[m._left])
+                    if len(cyc1) > 1:
+                        node_1, *_ = cyc1
+                    elif len(cyc1) == 1:
+                        node_1 = cyc1.pop()
+                    cyc2 = self.get_chain_of_node(corres2[m._right])
+                    if len(cyc2) > 1:
+                        node_2, *_ = cyc2
+                    elif len(cyc2) == 1:
+                        node_2 = cyc2.pop()
+                    matched.append(
+                        (
+                            self.labels.get(node_1, node_1),
+                            self.labels.get(node_2, node_2),
+                        )
+                    )
+
+                else:
+                    if m._left != -1:
+                        node_1 = self.get_chain_of_node(
+                            corres1.get(m._left, "-")
+                        )[0]
+                    else:
+                        node_1 = self.get_chain_of_node(
+                            corres2.get(m._right, "-")
+                        )[0]
+                    unmatched.append(self.labels.get(node_1, node_1))
+        else:
+            for m in btrc:
+                if m._left != -1 and m._right != -1:
+                    node_1 = corres1[m._left]
+                    node_2 = corres2[m._right]
+                    matched.append(
+                        (
+                            self.labels.get(node_1, node_1),
+                            self.labels.get(node_2, node_2),
+                        )
+                    )
+                else:
+                    if m._left != -1:
+                        node_1 = corres1[m._left]
+                    else:
+                        node_1 = corres2[m._right]
+                    unmatched.append(self.labels.get(node_1, node_1))
+        return {"matched": matched, "unmatched": unmatched}
+
+    def unordered_tree_edit_distance(
+        self,
+        n1: int,
+        n2: int,
+        end_time: int | None = None,
+        norm: Literal["max", "sum", None] = "max",
+        style: (
+            Literal["simple", "normalized_simple", "full", "downsampled"]
+            | type[TreeApproximationTemplate]
+        ) = "simple",
+        downsample: int = 2,
+        return_norms: bool = False,
+    ) -> float | tuple[float, tuple[float, float]]:
+        """
+        Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
+        by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
+        cost is given by the function delta (see edist doc for more information).
+        The distance is normed by the function norm that takes the two list of nodes
+        spawned by the trees `n1` and `n2`.
+
+        Parameters
+        ----------
+        n1 : int
+            id of the first node to compare
+        n2 : int
+            id of the second node to compare
+        end_time : int, optional
+            The final time point the comparison algorithm will take into account.
+            If None or not provided all nodes will be taken into account.
+        norm : {"max", "sum"}, default="max"
+            The normalization method to use, defaults to 'max'.
+        style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate subclass, default="simple"
+            Which tree approximation is going to be used for the comparisons.
+        downsample : int, default=2
+            The downsample factor for the downsampled tree approximation.
+            Used only when `style="downsampled"`.
+
+        Returns
+        -------
+        float
+            The normalized unordered tree edit distance between `n1` and `n2`
+        """
+        parameters = (
+            end_time,
+            convert_style_to_number(style=style, downsample=downsample),
+        )
+        n1, n2 = sorted([n1, n2])
+        self._comparisons.setdefault(parameters, {})
+        if self._comparisons[parameters].get((n1, n2)):
+            tmp = self._comparisons[parameters][(n1, n2)]
+        else:
+            tmp = self.__unordereded_backtrace(
+                n1, n2, end_time, norm, style, downsample
+            )
+        btrc = tmp["alignment"]
+        tree1, tree2 = tmp["trees"]
+        _, times1 = tree1.tree
+        _, times2 = tree2.tree
+        (
+            nodes1,
+            adj1,
+            corres1,
+        ) = tree1.edist
+        (
+            nodes2,
+            adj2,
+            corres2,
+        ) = tree2.edist
+        delta_tmp = partial(
+            tree1.delta,
+            corres1=corres1,
+            corres2=corres2,
+            times1=times1,
+            times2=times2,
+        )
+
+        if norm not in self.norm_dict:
+            raise ValueError(
+                "Select a viable normalization method (max, sum, None)"
+            )
+        cost = btrc.cost(nodes1, nodes2, delta_tmp)
+        norm_values = (tree1.get_norm(n1), tree2.get_norm(n2))
+        if return_norms:
+            return cost, norm_values
+        return cost / self.norm_dict[norm](norm_values)
 
     @staticmethod
     def __plot_nodes(
         hier: dict,
         selected_nodes: set,
-        color: str | dict,
-        size: int,
+        color: str | dict | list,
+        size: int | float,
         ax: plt.Axes,
         default_color: str = "black",
         **kwargs,
@@ -1807,7 +2300,7 @@ class lineageTree:
 
         if isinstance(color, dict):
             color = [color.get(k, default_color) for k in hier]
-        if isinstance(color, str):
+        elif isinstance(color, str | list):
             color = [
                 color if node in selected_nodes else default_color
                 for node in hier
@@ -1819,8 +2312,9 @@ class lineageTree:
     def __plot_edges(
         hier: dict,
         lnks_tms: dict,
-        selected_edges: set,
-        color: str | dict,
+        selected_edges: Iterable,
+        color: str | dict | list,
+        lw: float,
         ax: plt.Axes,
         default_color: str = "black",
         **kwargs,
@@ -1828,6 +2322,8 @@ class lineageTree:
         """
         Private method that plots the edges of the tree.
         """
+        if isinstance(color, dict):
+            selected_edges = color.keys()
         lines = []
         c = []
         for pred, succs in lnks_tms["links"].items():
@@ -1839,24 +2335,25 @@ class lineageTree:
                     ]
                 )
                 if pred in selected_edges:
-                    if isinstance(color, str):
+                    if isinstance(color, str | list):
                         c.append(color)
                     elif isinstance(color, dict):
                         c.append(color[pred])
                 else:
                     c.append(default_color)
-        lc = LineCollection(lines, colors=c, linewidth=0.3, **kwargs)
+        lc = LineCollection(lines, colors=c, linewidth=lw, **kwargs)
         ax.add_collection(lc)
 
     def draw_tree_graph(
         self,
         hier: dict[int, tuple[int, int]],
-        lnks_tms: dict,
+        lnks_tms: dict[str, dict[int, list | int]],
         selected_nodes: list | set | None = None,
         selected_edges: list | set | None = None,
         color_of_nodes: str | dict = "magenta",
         color_of_edges: str | dict = "magenta",
         size: int | float = 10,
+        lw: float = 0.3,
         ax: plt.Axes | None = None,
         default_color: str = "black",
         **kwargs,
@@ -1866,23 +2363,24 @@ class lineageTree:
         Parameters
         ----------
         hier : dict mapping int to tuple of int
-            Dictinary that contains the positions of all nodes.
-        lnks_tms : dict, dict
-            2 dictionaries: 1 contains all links from start of life cycle to end of life cycle and
-            the succesors of each node.
-            1 contains the length of each life cycle.
+            Dictionary that contains the positions of all nodes.
+        lnks_tms : dict mapping string to dictionaries mapping int to list or int
+            - 'links' : conatains the hierarchy of the nodes (only start and end of each chain)
+            - 'times' : contains the distance between the  start and the end of each chain.
         selected_nodes : list or set, optional
-            Which nodes are to be selected (Painted with a different color)
+            Which nodes are to be selected (Painted with a different color, according to 'color_'of_nodes')
         selected_edges : list or set, optional
-            Which edges are to be selected (Painted with a different color)
+            Which edges are to be selected (Painted with a different color, according to 'color_'of_edges')
         color_of_nodes : str, default="magenta"
             Color of selected nodes
-        color_of_edges : str, optional
+        color_of_edges : str, default="magenta"
             Color of selected edges
         size : int, default=10
-            Size of the nodes
+            Size of the nodes, defaults to 10
+        lw : float, default=0.3
+            The width of the edges of the tree graph, defaults to 0.3
         ax : plt.Axes, optional
-            Plot the graph on existing ax. Defaults to None.
+            Plot the graph on existing ax. If not provided or None a new ax is going to be created.
         default_color : str, default="black"
             Default color of nodes
 
@@ -1891,7 +2389,7 @@ class lineageTree:
         plt.Figure
             The matplotlib figure
         plt.Axes
-            The matplotlib ax.
+            The matplotlib ax
         """
         if selected_nodes is None:
             selected_nodes = []
@@ -1905,15 +2403,16 @@ class lineageTree:
             selected_nodes = set(selected_nodes)
         if not isinstance(selected_edges, set):
             selected_edges = set(selected_edges)
-        self.__plot_nodes(
-            hier,
-            selected_nodes,
-            color_of_nodes,
-            size=size,
-            ax=ax,
-            default_color=default_color,
-            **kwargs,
-        )
+        if 0 < size:
+            self.__plot_nodes(
+                hier,
+                selected_nodes,
+                color_of_nodes,
+                size=size,
+                ax=ax,
+                default_color=default_color,
+                **kwargs,
+            )
         if not color_of_edges:
             color_of_edges = color_of_nodes
         self.__plot_edges(
@@ -1921,35 +2420,47 @@ class lineageTree:
             lnks_tms,
             selected_edges,
             color_of_edges,
+            lw,
             ax,
             default_color=default_color,
             **kwargs,
         )
+        ax.autoscale()
+        plt.draw()
         ax.get_yaxis().set_visible(False)
         ax.get_xaxis().set_visible(False)
         return ax.get_figure(), ax
 
     def _create_dict_of_plots(
-        self, node: int | None = None, start_time: int | None = None
+        self,
+        node: int | Iterable[int] | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
     ) -> dict[int, dict]:
         """Generates a dictionary of graphs where the keys are the index of the graph and
-        the values are the graphs themselves which are produced by `create_links_and_cycles`
+        the values are the graphs themselves which are produced by `create_links_and_chains`
 
         Parameters
         ----------
-        node : int, optional
-            The id of the node/nodes to produce the simple graphs
+        node : int or Iterable of int, optional
+            The id of the node/nodes to produce the simple graphs, if not provided or None will
+            calculate the dicts for every root that starts before 'start_time'
         start_time : int, optional
             Important only if there are no nodes it will produce the graph of every
-            root that starts before or at start time. Defaults to None.
+            root that starts before or at start time. If not provided or None the 'start_time' defaults to the start of the dataset.
+        end_time : int, optional
+            The last timepoint to be considered, if not provided or None the last timepoint of the
+            dataset (t_e) is considered.
 
         Returns
         -------
-        dict of int to dict
+        dict mapping int to dict
             The keys are just index values 0-n and the values are the graphs produced.
         """
         if start_time is None:
             start_time = self.t_b
+        if end_time is None:
+            end_time = self.t_e
         if node is None:
             mothers = [
                 root for root in self.roots if self._time[root] <= start_time
@@ -1959,7 +2470,7 @@ class lineageTree:
         else:
             mothers = [node]
         return {
-            i: create_links_and_cycles(self, mother)
+            i: create_links_and_chains(self, mother, end_time=end_time)
             for i, mother in enumerate(mothers)
         }
 
@@ -1986,7 +2497,7 @@ class lineageTree:
             For example if start_time is 10, then all trees that begin
             on tp 10 or before are calculated. Defaults to None, where
             it will plot all the roots that exist on `self.t_b`.
-        nrows : int
+        nrows : int, default=2
             How many rows of plots should be printed.
         figsize : tuple, default=(10, 15)
             The size of the figure.
@@ -1995,11 +2506,11 @@ class lineageTree:
         fontsize : int, default=15
             The fontsize of the labels.
         axes : plt.Axes, optional
-            The axes to plot the graphs on.
+            The axes to plot the graphs on. If None or not provided new axes are going to be created.
         vert_gap : int, default=1
-            space between the nodes.
+            space between the nodes, defaults to 1
         **kwargs:
-            args accepted by matplotlib
+            kwargs accepted by matplotlib.pyplot.plot, matplotlib.pyplot.scatter
 
         Returns
         -------
@@ -2087,6 +2598,7 @@ class lineageTree:
     def plot_subtree(
         self,
         node: int,
+        end_time: int | None = None,
         figsize: tuple[int, int] = (4, 7),
         dpi: int = 150,
         vert_gap: int = 2,
@@ -2095,6 +2607,7 @@ class lineageTree:
         color_of_nodes: str | dict = "magenta",
         color_of_edges: str | dict = "magenta",
         size: int | float = 10,
+        lw: float = 0.1,
         default_color: str = "black",
         ax: plt.Axes | None = None,
     ) -> tuple[plt.Figure, plt.Axes]:
@@ -2103,40 +2616,45 @@ class lineageTree:
         Parameters
         ----------
         node : int
-                The id of the node that is going to be plotted.
-        figsize : tuple[int, int], optional
-                The size of the figure, by deafult (4,7).
-        vert_gap : int, optional
-            The verical gap of a node when it divides, by default 2.
-        dpi : int, optional
-            The dpi of the figure, by default 2
-        selected_nodes : list | None, optional
-            The nodes that are going to be colored, that do not have the default color, by default None
-        selected_edges : list | None, optional
-            The edges that are going to be colored, that do not have the default color, by default None
-        color_of_nodes : str, optional
-            The color of the nodes to be colored, except the default colored ones, by default "magenta"
-        color_of_edges : str, optional
-            The color of the edges to be colored, except the default colored ones, by default "magenta"
-        size : int, optional
-            The size of the nodes, by default 10
-        default_color : str, optional
-            The default color of nodes and edges, by default "black"
-        ax : plt.Axes | None, optional
-            The ax where the plot is going to be applied, by default None
+            The id of the node that is going to be plotted.
+        end_time : int, optional
+            The last timepoint to be considered, if None or not provided the last timepoint of the dataset (t_e) is considered.
+        figsize : tuple of 2 ints, default=(4,7)
+            The size of the figure, deafults to (4,7)
+        vert_gap : int, default=2
+            The verical gap of a node when it divides, defaults to 2.
+        dpi : int, default=150
+            The dpi of the figure, defaults to 150
+        selected_nodes : list, optional
+            The nodes that are selected by the user to be colored in a different color, defaults to None
+        selected_edges : list, optional
+            The edges that are selected by the user to be colored in a different color, defaults to None
+        color_of_nodes : str, default="magenta"
+            The color of the nodes to be colored, except the default colored ones, defaults to "magenta"
+        color_of_edges : str, default="magenta"
+            The color of the edges to be colored, except the default colored ones, defaults to "magenta"
+        size : int, default=10
+            The size of the nodes, defaults to 10
+        lw : float, default=0.1
+            The widthe of the edges of the tree graph, defaults to 0.1
+        default_color : str, default="black"
+            The default color of nodes and edges, defaults to "black"
+        ax : plt.Axes, optional
+            The ax where the plot is going to be applied, if not provided or None new axes will be created.
 
         Returns
         -------
         plt.Figure
-                The figure
+            The matplotlib figure
         plt.Axes
-            The axes
+            The matplotlib axes
+
         Raises
         ------
         Warning
             If more than one nodes are received
         """
-        graph = self._create_dict_of_plots(node)
+        graph = self._create_dict_of_plots(node, end_time=end_time)
         if len(graph) > 1:
             raise Warning(
                 "Please use lT.plot_all_lineages(nodes) for plotting multiple nodes."
@@ -2157,6 +2675,7 @@ class lineageTree:
             color_of_nodes=color_of_nodes,
             default_color=default_color,
             size=size,
+            lw=lw,
             lnks_tms=graph,
             ax=ax,
         )
@@ -2172,10 +2691,10 @@ class lineageTree:
 
         Parameters
         ----------
-            r : int or list of int
-                id or list of ids of the spawning node
-            t : int, optional
-                target time, if `None` goes as far as possible
+        t : int
+            target time, if `None` goes as far as possible
+        r : int or Iterable of int, optional
+            id or list of ids of the spawning node
 
         Returns
         -------
@@ -2183,7 +2702,7 @@ class lineageTree:
             list of nodes at time `t` spawned by `r`
         """
         if not r and r != 0:
-            r = self.roots
+            r = {root for root in self.roots if self.time[root] <= t}
         if isinstance(r, int):
             r = [r]
         if t is None:
@@ -2255,14 +2774,14 @@ class lineageTree:
         centered_band : bool, default=True
             if `True`, the band will be centered around the diagonal
 
-            Returns
-            -------
-            tuple of tuples of int
-                Aligment path
-            np.ndarray
-                cost matrix
-            float
-                optimal cost
+        Returns
+        -------
+        tuple of tuples of int
+            Aligment path
+        np.ndarray
+            cost matrix
+        float
+            optimal cost
         """
         N, M = dist_mat.shape
         w_limit = max(w, abs(N - M))  # Calculate the Sakoe-Chiba band width
@@ -2575,7 +3094,7 @@ class lineageTree:
         -------
         float
             DTW distance
-        figure
+        plt.Figure
             Heatmap of cost matrix with opitimal path
         """
         cost, path, cost_mat, pos_chain1, pos_chain2 = self.calculate_dtw(
@@ -2643,7 +3162,7 @@ class lineageTree:
         fast: bool = False,
         w: int = 0,
         centered_band: bool = True,
-        projection: Literal["3d", "xy", "xz", "yz", "pca"] | None = None,
+        projection: Literal["3d", "xy", "xz", "yz", "pca", None] = None,
         alig: bool = False,
     ) -> tuple[float, plt.Figure]:
         """
@@ -2683,7 +3202,7 @@ class lineageTree:
         -------
         float
             DTW distance
-        figue
+        figure
             Trajectories Plot
         """
         (
@@ -2885,7 +3404,6 @@ class lineageTree:
             The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
         self.__version__ = importlib.metadata.version("LineageTree")
-
         self.name = str(name) if name is not None else None
         if successor is not None and predecessor is not None:
             raise ValueError(
@@ -2944,7 +3462,6 @@ class lineageTree:
                     self._predecessor[succ] = (pred,)
                     self._successor.setdefault(pred, ())
                     self._successor[pred] += (succ,)
-
         for root in set(self._successor).difference(self._predecessor):
             self._predecessor[root] = ()
         for leaf in set(self._predecessor).difference(self._successor):
@@ -3018,3 +3535,5 @@ class lineageTree:
                 )
                 continue
             setattr(self, name, d)
+        if not hasattr(self, "_comparisons"):
+            self._comparisons = {}

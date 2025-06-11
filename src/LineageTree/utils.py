@@ -1,7 +1,13 @@
-from LineageTree import lineageTree
+from collections.abc import Iterable
+
+from LineageTree import lineageTree, tree_approximation
 
 
-def create_links_and_cycles(lT: lineageTree, roots=None) -> dict[str, dict]:
+def create_links_and_chains(
+    lT: lineageTree,
+    roots: int | Iterable | None = None,
+    end_time: int | None = None,
+) -> dict[str, dict]:
     """Generates a dictionary containing all the edges (from start of lifetime to end not the intermediate timepoints)
       of a subtree spawned by node/s and their duration
 
@@ -10,49 +16,56 @@ def create_links_and_cycles(lT: lineageTree, roots=None) -> dict[str, dict]:
     ----------
     lT : lineageTree
         The lineagetree that the user is working on
-    roots : _type_, optional
-        The root/s from which the tree/s will be generated, by default None
+    roots : int or Iterable, optional
+        The root/s from which the tree/s will be generated, if 'None' all the roots will be selected.
+    end_time : int, optional
+        The last timepoint to be considered, if 'None' the last timepoint of the dataset (t_e) is considered, by default None.
 
     Returns
     -------
-    dict[str,dict]
-        Returns a dictionary that contains 3 dictionaries the "links" ( contains all the edges) the "times" (contains all lifetime durations)
-        and "roots" (contains the roots.).
+    dict mapping str to set or dict mapping int to list or int
+        A dictionary that contains:
+            - "links": The dictionary that contains the hierarchy of the nodes (only start and end of each chain)
+            - "times": The time distance between the start and the end of a chain
+            - "roots": The roots used
     """
     if roots is None:
         to_do = set(lT.roots)
-    elif isinstance(roots, list):
+    elif isinstance(roots, Iterable):
         to_do = set(roots)
     else:
         to_do = {int(roots)}
+    if end_time is None:
+        end_time = lT.t_e
     times = {}
     links = {}
     while to_do:
         curr = to_do.pop()
-        cyc = lT.get_successors(curr)
-        last = cyc[-1]
-        times[curr] = len(cyc)
-        if last != curr:
-            links[curr] = [last]
-        else:
-            links[curr] = []
-        succ = lT._successor.get(last)
-        if succ:
-            times[cyc[-1]] = 0
-            to_do.update(succ)
+        cyc = lT.get_successors(curr, end_time=end_time)
+        if cyc[-1] != curr or lT.time[cyc[-1]] <= end_time:
+            last = cyc[-1]
+            times[curr] = len(cyc)
+            if last != curr:
+                links[curr] = [last]
+            else:
+                links[curr] = []
+            succ = lT._successor.get(last)
+            if succ:
+                times[cyc[-1]] = 0
+                to_do.update(succ)
             links[last] = succ
     return {"links": links, "times": times, "root": roots}
 
 
 def hierarchical_pos(
     lnks_tms: dict, root, width=1000, vert_gap=2, xcenter=0, ycenter=0
-) -> dict[int, list[int]] | None:
+) -> dict[int, list[float]] | None:
     """Calculates the position of each node on the tree graph.
 
     Parameters
     ----------
     lnks_tms : dict
-         a dictionary created by create_links_and_cycles.
+         a dictionary created by create_links_and_chains.
     root : _type_
         The id of the node, usually it exists inside lnks_tms dictionary, however you may use your own root.
     width : int, optional
@@ -66,7 +79,7 @@ def hierarchical_pos(
 
     Returns
     -------
-    dict[int, list[int]] or None
+    dict mapping int to list of float
         Provides a dictionary that contains the id of each node as keys and its 2-d position on the
         tree graph as values.
         If the root requested does not exists, None is then returned
@@ -105,3 +118,37 @@ def hierarchical_pos(
                 prev_width[curr] / 2,
             )
     return pos_node
+
+
+def convert_style_to_number(
+    style: str | tree_approximation.TreeApproximationTemplate,
+    downsample: int | None,
+) -> int:
+    """Converts tree_style and downsampling to a single number.
+
+    Parameters
+    ----------
+    style : str
+        the tree style
+    downsample : int
+        the downsampling factor
+
+    Returns
+    -------
+    int
+        A number which serves as ID if the tree style and downsampling used.
+    """
+    style_dict = {
+        "full": 0,
+        "simple": -1,
+        "normalized_simple": -2,
+        "mini": -1000,
+    }
+    if style == "downsampled" and downsample is not None:
+        return downsample
+    elif not isinstance(style, str) and issubclass(
+        style, tree_approximation.TreeApproximationTemplate
+    ):
+        return hash(style.__name__)
+    else:
+        return style_dict[style]

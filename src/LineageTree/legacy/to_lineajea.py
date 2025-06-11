@@ -1,5 +1,4 @@
 import csv
-from ..lineageTree import lineageTree
 
 
 def write_csv_from_lT_to_lineaja(

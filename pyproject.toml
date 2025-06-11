@@ -94,7 +94,7 @@ push = false
 
 [tool.ruff]
 line-length = 79
-select = [
+lint.select = [
     "E", "F", "W", #flake8
     "UP", # pyupgrade
     "I", # isort
@@ -110,7 +110,7 @@ select = [
     "T201", # print statements
     "ERA001", #commented out code
 ]
-ignore = [
+lint.ignore = [
     "E501", # line too long. let black handle this
     "SIM300", # yoda conditions
 ]
@@ -144,3 +144,9 @@ root = "./src"
 
 [tool.ty.rules]
 unresolved-import = "ignore"
+
+[tool.pytest.ini_options]
+addopts = "--cov"
+
+[report]
+show_missing=true

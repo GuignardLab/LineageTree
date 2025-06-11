@@ -31,7 +31,7 @@ LineageTree.loaders module
 LineageTree.tree\_styles module
 -------------------------------
 
-.. automodule:: LineageTree.tree_styles
+.. automodule:: LineageTree.tree_approximation
    :members:
    :show-inheritance:
    :undoc-members:

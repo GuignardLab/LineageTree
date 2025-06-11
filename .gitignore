@@ -92,7 +92,7 @@ test.tlp
 # *.mastodon
 bak_*
 # data/*
-
+*write_demo.lT
 .coverage
 
 ty_check

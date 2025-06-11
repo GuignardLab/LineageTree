@@ -8,10 +8,12 @@ from LineageTree import (
     lineageTreeManager,
     read_from_mamut_xml,
     read_from_mastodon,
+    tree_approximation,
 )
 
 lT1 = read_from_mamut_xml("src/LineageTree/test/data/test-mamut.xml")
 lT2 = read_from_mastodon("src/LineageTree/test/data/test.mastodon")
+lt = lineageTree.load("src/LineageTree/test/data/demo.lT")
 
 
 def test_read_MaMuT_xml():
@@ -23,6 +25,22 @@ def test_read_MaMuT_xml():
     assert len(lT2.nodes) == 41
     assert len(lT2.successor) == 41
     assert len(lT2.find_leaves(40)) == 2
+
+
+@pytest.fixture(scope="session")
+def test_write(tmp_path_factory):
+    tmp_path = str(tmp_path_factory.mktemp("lineagetree")) + ".lT"
+    lt.labels[list(lt.nodes)[0]] = "test"
+    lt._comparisons = {(1, 2): 30}
+    lt.write(str(tmp_path))
+    return tmp_path
+
+
+def test_load(test_write):
+    lt2 = lineageTree.load(str(test_write))
+    assert lt2._comparisons == {(1, 2): 30}
+    assert lt.labels[list(lt.nodes)[0]] == "test"
+    assert lt == lt2
 
 
 def test_all_chains():
@@ -52,6 +70,7 @@ def test_uted_2levels_vs_3levels():
         lT.unordered_tree_edit_distance(t1, t2, style="simple", norm=None)
         == 40
     )
+    assert lT.unordered_tree_edit_distance(t1, t2, style="downsampled")
     assert (
         lT.unordered_tree_edit_distance(t1, t2, style="full", norm=None) == 40
     )
@@ -61,6 +80,16 @@ def test_uted_2levels_vs_3levels():
     assert lT.unordered_tree_edit_distance(
         t1, t2, style="normalized_simple", norm="max"
     )
+    assert lT.plot_tree_distance_graphs(t1, t2, style="simple", norm=None)
+    assert lT.plot_tree_distance_graphs(
+        t1, t2, style="normalized_simple", norm=None
+    )
+    assert lT.plot_tree_distance_graphs(t1, t2, style="full", norm=None)
+    assert lT.plot_tree_distance_graphs(
+        t1, t2, style="downsampled", downsample=4, norm=None
+    )
+    assert lT.unordered_tree_edit_distances_at_time_t(10)
+    assert lT.labelled_mappings(t1, t2)
 
 
 def test_adding_nodes():
@@ -139,9 +168,9 @@ def test_cross_comparison():
         lTm1.cross_lineage_edit_distance(
             t1,
             "embryo_1",
-            100,
             t2,
             "embryo_2",
+            100,
             100,
             style="full",
         )
@@ -151,9 +180,9 @@ def test_cross_comparison():
         lTm1.cross_lineage_edit_distance(
             node_1,
             "embryo_1",
-            100,
             node_2,
             "embryo_2",
+            100,
             100,
             style="simple",
         )
@@ -163,9 +192,9 @@ def test_cross_comparison():
         lTm1.cross_lineage_edit_distance(
             node_1,
             "embryo_1",
-            100,
             node_2,
             "embryo_2",
+            100,
             100,
             style="normalized_simple",
         )
@@ -175,9 +204,9 @@ def test_cross_comparison():
         lTm1.cross_lineage_edit_distance(
             node_1,
             "embryo_1",
-            100,
             node_2,
             "embryo_2",
+            100,
             100,
             style="downsampled",
             downsample=20,
@@ -194,18 +223,67 @@ def test_cross_comparison():
     lT_3.time_resolution = 10
     lTm1.add(lT_3, "embryo_3")
     assert (
-        lTm1.cross_lineage_edit_distance(
+        0
+        < lTm1.cross_lineage_edit_distance(
             node_1,
             "embryo_1",
-            100,
             node_3,
-            "embryo_2",
+            "embryo_3",
             100,
-            style="downsampled",
+            100,
+            style="simple",
             downsample=20,
         )
         < 1
     )
+    assert lTm1.plot_tree_distance_graphs(
+        t1,
+        "embryo_1",
+        t2,
+        "embryo_2",
+        100,
+        100,
+        style="full",
+    )
+    assert lTm1.plot_tree_distance_graphs(
+        t1,
+        "embryo_1",
+        t2,
+        "embryo_2",
+        100,
+        100,
+        style="simple",
+    )
+    assert lTm1.plot_tree_distance_graphs(
+        t1,
+        "embryo_1",
+        t2,
+        "embryo_2",
+        100,
+        100,
+        style="downsampled",
+        downsample=10,
+    )
+    assert lTm1.labelled_mappings(
+        t1,
+        "embryo_1",
+        t2,
+        "embryo_2",
+        100,
+        100,
+        style="full",
+    )
+    assert lTm1.labelled_mappings(
+        t1,
+        "embryo_1",
+        t2,
+        "embryo_2",
+        100,
+        100,
+        style="simple",
+    )
+    lTm1.clear_comparisons()
+    assert lTm1._comparisons == {}
 
 
 def test_plots():
@@ -245,6 +323,9 @@ def test_removing_embryos_from_manager():
     lTm1.add(lT_2, name="embryo_2")
     lTm1.remove_embryo("embryo_1")
     assert len(lTm1.lineagetrees) == 1
+    for k, _e in lTm1:
+        assert k == "embryo_2"
+    assert lTm1["embryo_2"]
 
 
 def test_successor():
@@ -424,7 +505,7 @@ def test_dynamic_property():
 def test_idx3d():
     kdtree, idxs = lT1.get_idx3d(0)
     assert np.isclose(kdtree.query((0, 0, 0))[0], 1131.2352660153383)
-    assert kdtree.query((0, 0, 0))[1] == 4
+    assert idxs[kdtree.query((0, 0, 0))[1]] == 110826
     assert idxs[kdtree.query((1000, 2000, 1000))[1]] == 132063
 
 
@@ -476,9 +557,6 @@ def test_compute_spatial_edges():
     assert lT1.compute_spatial_edges()[129294] == {139162, 148358}
 
 
-def test_main_axes(): ...
-
-
 def test_get_ancestor_at_t():
     assert lT1.get_ancestor_at_t(175903, 0) == 173618
 
@@ -489,7 +567,9 @@ def get_labelled_ancestor():
 
 def test_unordered_tree_edit_distances_at_time_t():
     assert np.isclose(
-        lT1.unordered_tree_edit_distances_at_time_t(0)[(110832, 132129)],
+        lT1.unordered_tree_edit_distances_at_time_t(0, style="simple")[
+            (110832, 132129)
+        ],
         0.7321711568938193,
     )
 
@@ -508,15 +588,47 @@ def test_non_return_functions():
 
 
 def test_nodes_at_t():
-    assert lT1.nodes_at_t(0) == [
-        110832,
-        132129,
-        168322,
-        173618,
-        110826,
-        132063,
-    ]
+    assert sorted(lT1.nodes_at_t(0)) == sorted(
+        [
+            110832,
+            132129,
+            168322,
+            173618,
+            110826,
+            132063,
+        ]
+    )
 
 
 def test_calculate_dtw():
     assert np.isclose(lT1.calculate_dtw(110832, 132129)[0], 25.550036305019194)
+
+
+def test_create_new_style():
+    class new_tree(tree_approximation.simple_tree):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+
+        def delta(self, x, y, corres1, corres2, times1, times2):
+            if x is None:
+                return 1
+            if y is None:
+                return 1
+            return abs(times1[corres1[x]] - times2[corres2[y]]) / (
+                times1[corres1[x]] + times2[corres2[y]]
+            )
+
+        def get_norm(self, root) -> int:
+            return len(
+                self.lT.get_all_chains_of_subtree(root, end_time=self.end_time)
+            )
+
+    assert lt.unordered_tree_edit_distance(
+        176, 29345, style=new_tree
+    ) == lt.unordered_tree_edit_distance(176, 29345, style="normalized_simple")
+
+
+def test_get_ancestor_with():
+    assert lt.get_labelled_ancestor(
+        list(lt.nodes)[0]
+    ) == lt.get_ancestor_with_attribute(list(lt.nodes)[0], "labels")
