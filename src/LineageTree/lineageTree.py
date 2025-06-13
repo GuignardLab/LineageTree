@@ -62,11 +62,13 @@ class dynamic_property(property):
     def __get__(self, instance, owner):
         if instance is None:
             return self
+        instance._has_been_reset = False
         if getattr(instance, self.protected_name, None) is None:
             value = super().__get__(instance, owner)
             setattr(instance, self.protected_name, value)
             return value
-        return getattr(instance, self.protected_name)
+        else:
+            return getattr(instance, self.protected_name)
 
 
 class lineageTree:
@@ -75,19 +77,15 @@ class lineageTree:
     def modifier(wrapped_func):
         @wraps(wrapped_func)
         def raising_flag(self, *args, **kwargs):
-            if (
-                not hasattr(self, "_already_changing")
-                or not self._already_changing
-            ):
-                self._already_changing = True
-                should_reset = True
-            else:
-                should_reset = False
+            should_reset = (
+                not hasattr(self, "_has_been_reset")
+                or not self._has_been_reset
+            )
             out_func = wrapped_func(self, *args, **kwargs)
             if should_reset:
                 for prop in self._protected_dynamic_properties:
                     self.__dict__[prop] = None
-                self._already_changing = False
+                self._has_been_reset = True
             return out_func
 
         return raising_flag
@@ -346,59 +344,47 @@ class lineageTree:
     @dynamic_property
     def t_b(self) -> int:
         """The first timepoint of the tree."""
-        self._t_b = min(self._time.values())
-        return self._t_b
+        return min(self._time.values())
 
     @dynamic_property
     def t_e(self) -> int:
         """The last timepoint of the tree."""
-        self._t_e = max(self._time.values())
-        return self._t_e
+        return max(self._time.values())
 
     @dynamic_property
     def nodes(self) -> frozenset[int]:
         """Nodes of the tree"""
-        self._nodes = frozenset(self._successor.keys())
-        return self._nodes
+        return frozenset(self._successor.keys())
 
     @dynamic_property
     def depth(self) -> dict[int, int]:
         """The depth of each node in the tree."""
-        self._depth = {}
+        _depth = {}
         for leaf in self.leaves:
-            self._depth[leaf] = 1
+            _depth[leaf] = 1
             while leaf in self._predecessor and self._predecessor[leaf]:
                 parent = self._predecessor[leaf][0]
-                current_depth = self._depth.get(parent, 0)
-                self._depth[parent] = max(self._depth[leaf] + 1, current_depth)
+                current_depth = _depth.get(parent, 0)
+                _depth[parent] = max(_depth[leaf] + 1, current_depth)
                 leaf = parent
-        for root in self.roots - set(self._depth):
-            self._depth[root] = 1
-        return self._depth
+        for root in self.roots - set(_depth):
+            _depth[root] = 1
+        return _depth
 
     @dynamic_property
     def roots(self) -> frozenset[int]:
         """Set of roots of the tree"""
-        self._roots = frozenset(
-            {s for s, p in self._predecessor.items() if p == ()}
-        )
-        return self._roots
+        return frozenset({s for s, p in self._predecessor.items() if p == ()})
 
     @dynamic_property
     def leaves(self) -> frozenset[int]:
         """Set of leaves"""
-        self._leaves = frozenset(
-            {p for p, s in self._successor.items() if s == ()}
-        )
-        return self._leaves
+        return frozenset({p for p, s in self._successor.items() if s == ()})
 
     @dynamic_property
     def edges(self) -> tuple[tuple[int, int]]:
         """Set of edges"""
-        self._edges = tuple(
-            (p, si) for p, s in self._successor.items() for si in s
-        )
-        return self._edges
+        return tuple((p, si) for p, s in self._successor.items() for si in s)
 
     @property
     def labels(self) -> dict[int, str]:
@@ -1174,15 +1160,14 @@ class lineageTree:
     @dynamic_property
     def all_chains(self) -> list[list[int]]:
         """List of all chains in the tree, ordered in depth-first search."""
-        self._all_chains = self._compute_all_chains()
-        return self._all_chains
+        return self._compute_all_chains()
 
     @dynamic_property
     def time_nodes(self):
-        self._time_nodes = {}
+        _time_nodes = {}
         for c, t in self._time.items():
-            self._time_nodes.setdefault(t, set()).add(c)
-        return self._time_nodes
+            _time_nodes.setdefault(t, set()).add(c)
+        return _time_nodes
 
     def m(self, i, j):
         if (i, j) not in self._tmp_parenting:
