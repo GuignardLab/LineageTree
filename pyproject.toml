@@ -85,8 +85,8 @@ push = false
 
 [tool.bumpver.file_patterns]
 "pyproject.toml" = [
-    'version = "{version}"',
     'current_version = "{version}"',
+    'version = "{version}"',
 ]
 "src/LineageTree/__init__.py" = [
     '__version__ = "{version}"',
