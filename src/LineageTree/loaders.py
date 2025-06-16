@@ -146,14 +146,14 @@ def read_from_csv(
             id_, t, z, y, x, *_ = line
             pred = None
         t = int(t)
-        pos = np.array([x, y, z])
+        positions = np.array([x, y, z])
         C = unique_id
         corres[id_] = C
-        pos[-1] = pos[-1] * z_mult
+        positions[-1] = positions[-1] * z_mult
         if pred in corres:
             M = corres[pred]
             successor.setdefault(M, []).append(C)
-        pos[C] = pos
+        pos[C] = positions
         time[C] = t
     if not name:
         tmp_name = Path(file_path).stem
@@ -706,7 +706,7 @@ def read_from_tgmm_xml(
         root = tree.getroot()
         for unique_id, it in enumerate(root):
             if "-1.#IND" not in it.attrib["m"] and "nan" not in it.attrib["m"]:
-                M_id, pos, cell_id, svIdx, lin_id = (
+                M_id, positions, cell_id, svIdx, lin_id = (
                     int(it.attrib["parent"]),
                     [float(v) for v in it.attrib["m"].split(" ") if v != ""],
                     int(it.attrib["id"]),
@@ -729,13 +729,13 @@ def read_from_tgmm_xml(
                         float(it.attrib["nu"]),
                         float(it.attrib["alphaPrior"]),
                     )
-                    pos = np.array(pos)
+                    positions = np.array(positions)
                     C = unique_id
-                    pos[-1] = pos[-1] * z_mult
+                    positions[-1] = positions[-1] * z_mult
                     if (t - 1, M_id) in time_id:
                         M = time_id[(t - 1, M_id)]
                         successor.setdefault(M, []).append(C)
-                    pos[C] = pos
+                    pos[C] = positions
                     time_id[(t, cell_id)] = C
                     time[C] = t
                     properties["svIdx"][C] = svIdx
@@ -745,7 +745,7 @@ def read_from_tgmm_xml(
                     tmp = list(np.array(W) * nu)
                     W[C] = np.array(W).reshape(3, 3)
                     properties["coeffs"][C] = (
-                        tmp[:3] + tmp[4:6] + tmp[8:9] + list(pos)
+                        tmp[:3] + tmp[4:6] + tmp[8:9] + list(positions)
                     )
     if not name:
         tmp_name = Path(file_format).stem
