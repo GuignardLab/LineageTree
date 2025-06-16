@@ -17,13 +17,13 @@ maintainers = [
 name = "LineageTree"
 description = "Structure for Lineage Trees"
 version = "2.0.1"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = [ "LICENSE" ]
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">= 3.10"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
