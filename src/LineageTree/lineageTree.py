@@ -63,7 +63,7 @@ class dynamic_property(property):
         if instance is None:
             return self
         instance._has_been_reset = False
-        if getattr(instance, self.protected_name, None) is None:
+        if getattr(instance, self.protected_name) is None:
             value = super().__get__(instance, owner)
             setattr(instance, self.protected_name, value)
             return value
