@@ -34,12 +34,6 @@ from LineageTree import read_from_ASTEC
 lT = read_from_ASTEC('path/to/ASTEC.pkl')
 ```
 
-For SVF:
-
-```python
-lT = lineageTree('path/to/SVF.bin')
-```
-
 For MaMuT or TrackMate:
 
 ```python
@@ -67,15 +61,6 @@ or, for Mastodon csv file:
 from LineageTree import read_from_mastodon_csv
 lT = read_from_mastodon_csv(['path/to/nodes.csv', 'path/to/links.csv'])
 ```
-
-## Dependencies
-
-Some dependecies are requiered:
-
-- general python dependecies:
-  - numpy, scipy, edist, svgwrite, mastodon-reader, matplotlib
-- specific dependency:
-  - svgwrite if svg output is needed
 
 ## Quick install
 
