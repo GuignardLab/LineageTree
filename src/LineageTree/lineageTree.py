@@ -1016,7 +1016,6 @@ class lineageTree:
                 + lineageTree._dynamic_properties
                 + lineageTree._protected_dynamic_properties
             }
-            print("_comparisons" in properties)
             lT = lineageTree(
                 successor=lT._successor,
                 time=lT._time,
