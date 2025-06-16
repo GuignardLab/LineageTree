@@ -24,65 +24,43 @@ and one can then load lineage trees the following way:
 For `.lT` files:
 
 ```python
-lT = lineageTree('path/to/file.lT')
+lT = lineageTree.load('path/to/file.lT')
 ```
 
 For ASTEC data:
 
 ```python
-lT = lineageTree('path/to/ASTEC.pkl', file_type='ASTEC')
+from LineageTree import read_from_ASTEC
+lT = read_from_ASTEC('path/to/ASTEC.pkl')
 ```
 
-or
+For MaMuT or TrackMate:
 
 ```python
-lT = lineageTree('path/to/ASTEC.xml', file_type='ASTEC')
-```
-
-For SVF:
-
-```python
-lT = lineageTree('path/to/SVF.bin')
-```
-
-For MaMuT:
-
-```python
-lT = lineageTree('path/to/MaMuT.xml', file_type='MaMuT')
-```
-
-For TrackMate:
-
-```python
-lT = lineageTree('path/to/MaMuT.xml', file_type='TrackMate')
+from LineageTree import read_from_mamut_xml
+lT = read_from_mamut_xml('path/to/MaMuT.xml')
 ```
 
 For TGMM:
 
 ```python
-lT = lineageTree('path/to/single_time_file{t:04d}.xml', tb=0, te=500, file_type='TGMM')
+from LineageTree import read_from_tgmm_xml
+lT = read_from_tgmm_xml('path/to/single_time_file{t:04d}.xml', tb=0, te=500)
 ```
 
 For Mastodon:
 
 ```python
-lT = lineageTree('path/to/Mastodon.mastodon', file_type='mastodon')
+from LineageTree import read_from_mastodon
+lT = read_from_mastodon('path/to/Mastodon.mastodon')
 ```
 
 or, for Mastodon csv file:
 
 ```python
-lT = lineageTree(['path/to/nodes.csv', 'path/to/links.csv'], file_type='mastodon')
+from LineageTree import read_from_mastodon_csv
+lT = read_from_mastodon_csv(['path/to/nodes.csv', 'path/to/links.csv'])
 ```
-
-## Dependencies
-
-Some dependecies are requiered:
-
-- general python dependecies:
-  - numpy, scipy
-- specific dependency:
-  - svgwrite if svg output is needed
 
 ## Quick install
 
