@@ -1001,7 +1001,7 @@ class lineageTree:
             properties = {
                 prop_name: prop
                 for prop_name, prop in lT.__dict__.items()
-                if isinstance(prop, dict)
+                if (isinstance(prop, dict) or prop_name == "_time_resolution")
                 and prop_name
                 not in [
                     "successor",
