@@ -306,7 +306,6 @@ class lineageTree:
                     "predecessor",
                     "_successor",
                     "_predecessor",
-                    "_time",
                 ]:
                     attr_value.pop(node, ())
             if self._predecessor.get(node):
