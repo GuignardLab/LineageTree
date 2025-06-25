@@ -306,7 +306,6 @@ class lineageTree:
                     "predecessor",
                     "_successor",
                     "_predecessor",
-                    "_time",
                 ]:
                     attr_value.pop(node, ())
             if self._predecessor.get(node):
@@ -1001,7 +1000,7 @@ class lineageTree:
             properties = {
                 prop_name: prop
                 for prop_name, prop in lT.__dict__.items()
-                if isinstance(prop, dict)
+                if (isinstance(prop, dict) or prop_name == "_time_resolution")
                 and prop_name
                 not in [
                     "successor",
