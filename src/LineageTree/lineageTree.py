@@ -3351,7 +3351,7 @@ class lineageTree:
 
     def get_subtree(self, node_list: set[int]) -> lineageTree:
         new_successors = {
-            n: (vi for vi in self.successor[n] if vi in node_list)
+            n: tuple(vi for vi in self.successor[n] if vi in node_list)
             for n in node_list
         }
         return lineageTree(
