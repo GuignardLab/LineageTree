@@ -3474,7 +3474,7 @@ class lineageTree:
                 "Cycles were found in the tree, there should not be any."
             )
 
-        if pos is None:
+        if pos is None or len(pos) == 0:
             self.pos = {}
         else:
             if self.nodes.difference(pos) != set():
