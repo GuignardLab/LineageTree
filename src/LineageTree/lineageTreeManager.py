@@ -143,7 +143,7 @@ class lineageTreeManager:
         """
         if os.path.splitext(fname)[-1] != ".lTM":
             fname = os.path.extsep.join((fname, "lTM"))
-        for _name, lT in self:
+        for _, lT in self:
             if hasattr(lT, "_protected_predecessor"):
                 del lT._protected_predecessor
             if hasattr(lT, "_protected_successor"):
