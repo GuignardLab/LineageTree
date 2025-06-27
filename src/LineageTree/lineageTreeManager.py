@@ -36,6 +36,14 @@ class lineageTreeManager:
     norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
 
     def __init__(self, lineagetree_list: Iterable[lineageTree] = ()):
+        """Creates a lineageTreeManager
+        :TODO: write the docstring
+
+        Parameters
+        ----------
+        lineagetree_list: Iterable of lineageTree
+            List of lineage trees to be in the lineageTreeManager
+        """
         self.lineagetrees = {}
         self.lineageTree_counter = 0
         self.registered = {}
