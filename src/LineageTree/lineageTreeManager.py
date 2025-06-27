@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import pickle as pkl
 import warnings
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from functools import partial
 from typing import TYPE_CHECKING, Literal
 
@@ -35,11 +35,21 @@ if TYPE_CHECKING:
 class lineageTreeManager:
     norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
 
-    def __init__(self):
+    def __init__(self, lineagetree_list: Iterable[lineageTree] = ()):
+        """Creates a lineageTreeManager
+        :TODO: write the docstring
+
+        Parameters
+        ----------
+        lineagetree_list: Iterable of lineageTree
+            List of lineage trees to be in the lineageTreeManager
+        """
         self.lineagetrees = {}
         self.lineageTree_counter = 0
         self.registered = {}
         self._comparisons = {}
+        for lT in lineagetree_list:
+            self.add(lT)
 
     def __next__(self):
         self.lineageTree_counter += 1
@@ -55,9 +65,7 @@ class lineageTreeManager:
         """
         return len(self.lineagetrees)
 
-    def __iter__(
-        self,
-    ):
+    def __iter__(self):
         yield from self.lineagetrees.items()
 
     def __getitem__(self, key):
@@ -657,28 +665,28 @@ class lineageTreeManager:
                         matched_right.append(node_2)
                         l_node_2 = tree2.lT.get_chain_of_node(node_2)[-1]
                         matched_right.append(l_node_2)
-                        colors1[
-                            node_1
-                        ] = self.__calculate_distance_of_sub_tree(
-                            node_1,
-                            tree1.lT,
-                            node_2,
-                            tree2.lT,
-                            btrc,
-                            corres1,
-                            corres2,
-                            delta_tmp,
-                            self.norm_dict[norm],
-                            tree1.get_norm(node_1),
-                            tree2.get_norm(node_2),
+                        colors1[node_1] = (
+                            self.__calculate_distance_of_sub_tree(
+                                node_1,
+                                tree1.lT,
+                                node_2,
+                                tree2.lT,
+                                btrc,
+                                corres1,
+                                corres2,
+                                delta_tmp,
+                                self.norm_dict[norm],
+                                tree1.get_norm(node_1),
+                                tree2.get_norm(node_2),
+                            )
                         )
                         colors2[node_2] = colors1[node_1]
-                        colors1[
-                            tree1.lT.get_chain_of_node(node_1)[-1]
-                        ] = colors1[node_1]
-                        colors2[
-                            tree2.lT.get_chain_of_node(node_2)[-1]
-                        ] = colors2[node_2]
+                        colors1[tree1.lT.get_chain_of_node(node_1)[-1]] = (
+                            colors1[node_1]
+                        )
+                        colors2[tree2.lT.get_chain_of_node(node_2)[-1]] = (
+                            colors2[node_2]
+                        )
 
                         if tree1.lT.get_chain_of_node(node_1)[-1] != node_1:
                             matched_left.append(

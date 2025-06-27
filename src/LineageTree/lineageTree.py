@@ -3349,6 +3349,25 @@ class lineageTree:
 
         return distance, fig
 
+    def get_subtree(self, node_list: set[int]) -> lineageTree:
+        new_successors = {
+            n: tuple(vi for vi in self.successor[n] if vi in node_list)
+            for n in node_list
+        }
+        return lineageTree(
+            successor=new_successors,
+            time=self._time,
+            pos=self.pos,
+            name=self.name,
+            root_leaf_value=[
+                (),
+            ],
+            **{
+                name: self.__dict__[name]
+                for name in self._custom_property_list
+            },
+        )
+
     def __init__(
         self,
         *,
@@ -3455,7 +3474,7 @@ class lineageTree:
                 "Cycles were found in the tree, there should not be any."
             )
 
-        if pos is None:
+        if pos is None or len(pos) == 0:
             self.pos = {}
         else:
             if self.nodes.difference(pos) != set():
@@ -3511,6 +3530,7 @@ class lineageTree:
                     "Provided times are not strictly increasing. Setting times to default."
                 )
         # custom properties
+        self._custom_property_list = []
         for name, d in kwargs.items():
             if name in self.__dict__:
                 warnings.warn(
@@ -3518,5 +3538,6 @@ class lineageTree:
                 )
                 continue
             setattr(self, name, d)
+            self._custom_property_list.append(name)
         if not hasattr(self, "_comparisons"):
             self._comparisons = {}
