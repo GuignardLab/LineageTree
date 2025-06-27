@@ -3359,7 +3359,9 @@ class lineageTree:
             time=self._time,
             pos=self.pos,
             name=self.name,
-            root_leaf_value=(()),
+            root_leaf_value=[
+                (),
+            ],
             **{
                 name: self.__dict__[name]
                 for name in self._custom_property_list
