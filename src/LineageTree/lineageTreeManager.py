@@ -141,8 +141,15 @@ class lineageTreeManager:
         fname : str
             The path and name of the file that is to be saved.
         """
-        if os.path.splitext(fname)[-1] != ".ltM":
-            fname = os.path.extsep.join((fname, "ltM"))
+        if os.path.splitext(fname)[-1] != ".lTM":
+            fname = os.path.extsep.join((fname, "lTM"))
+        for _, lT in self:
+            if hasattr(lT, "_protected_predecessor"):
+                del lT._protected_predecessor
+            if hasattr(lT, "_protected_successor"):
+                del lT._protected_successor
+            if hasattr(lT, "_protected_time"):
+                del lT._protected_time
         with open(fname, "bw") as f:
             pkl.dump(self, f)
             f.close()
