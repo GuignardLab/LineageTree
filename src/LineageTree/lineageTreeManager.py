@@ -430,6 +430,7 @@ class lineageTreeManager:
             The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
         tuple(tree,tree), optional
             The two trees that have been mapped to each other.
+            Returned if `return_norms` is `True`
         """
 
         parameters = (

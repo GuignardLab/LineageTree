@@ -356,6 +356,10 @@ class lineageTree:
         return frozenset(self._successor.keys())
 
     @dynamic_property
+    def number_of_nodes(self) -> int:
+        return len(self.nodes)
+
+    @dynamic_property
     def depth(self) -> dict[int, int]:
         """The depth of each node in the tree."""
         _depth = {}
