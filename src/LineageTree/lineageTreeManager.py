@@ -67,7 +67,7 @@ class lineageTreeManager:
     def __iter__(self) -> Generator[tuple[str, lineageTree]]:
         yield from self.lineagetrees.items()
 
-    def __getitem__(self, key) -> lineageTree:
+    def __getitem__(self, key: str) -> lineageTree:
         if key in self.lineagetrees:
             return self.lineagetrees[key]
         else:
@@ -129,7 +129,7 @@ class lineageTreeManager:
                 "Please add a LineageTree object or add time resolution to the LineageTree added."
             )
 
-    def __add__(self, other):
+    def __add__(self, other: lineageTree):
         self.add(other)
 
     def write(self, fname: str):
@@ -153,7 +153,7 @@ class lineageTreeManager:
             pkl.dump(self, f)
             f.close()
 
-    def remove_embryo(self, key):
+    def remove_embryo(self, key: str):
         """Removes the embryo from the manager.
 
         Parameters
