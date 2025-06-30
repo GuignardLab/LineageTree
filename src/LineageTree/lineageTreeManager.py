@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import pickle as pkl
 import warnings
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Generator
 from functools import partial
 from typing import TYPE_CHECKING, Literal
 
@@ -65,7 +65,7 @@ class lineageTreeManager:
         """
         return len(self.lineagetrees)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[tuple[str, lineageTree]]:
         yield from self.lineagetrees.items()
 
     def __getitem__(self, key) -> lineageTree:
