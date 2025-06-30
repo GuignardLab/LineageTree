@@ -44,14 +44,13 @@ class lineageTreeManager:
         lineagetree_list: Iterable of lineageTree
             List of lineage trees to be in the lineageTreeManager
         """
-        self.lineagetrees = {}
-        self.lineageTree_counter = 0
-        self.registered = {}
-        self._comparisons = {}
+        self.lineagetrees: dict[str, lineageTree] = {}
+        self.lineageTree_counter: int = 0
+        self._comparisons: dict = {}
         for lT in lineagetree_list:
             self.add(lT)
 
-    def __next__(self):
+    def __next__(self) -> int:
         self.lineageTree_counter += 1
         return self.lineageTree_counter - 1
 
@@ -429,13 +428,7 @@ class lineageTreeManager:
         -------
         Alignment
             The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
-        --
-        ΟΡ
-        --
-
-        Alignment
-            The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
-        tuple(tree,tree)
+        tuple(tree,tree), optional
             The two trees that have been mapped to each other.
         """
 
