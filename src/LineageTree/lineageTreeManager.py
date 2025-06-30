@@ -3,10 +3,10 @@ from __future__ import annotations
 import os
 import pickle as pkl
 import warnings
-from collections.abc import Callable, Iterable, Generator
+from collections.abc import Callable, Generator, Iterable
 from functools import partial
 from typing import TYPE_CHECKING, Literal
-from pathlib import Path
+
 import matplotlib.colors as mcolors
 import numpy as np
 from matplotlib import colormaps
