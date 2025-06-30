@@ -1,7 +1,9 @@
+import binarymeshformat as bmf
 import csv
 import os
 import pickle as pkl
 import struct
+import trimesh
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from warnings import warn
@@ -91,6 +93,82 @@ ASTEC_KEYDICTIONARY = {
     "problematic_cells": ["problematic_cells"],
     "unknown_key": ["unknown_key"],
 }
+
+
+def _load_trimesh_from_bmfmesh(bmfmesh, pos_multipliers, translation):
+
+    points = np.array(bmfmesh.positions).reshape(-1, 3)[:,::-1]
+    triangles = np.array(bmfmesh.triangles).reshape(-1, 3)
+
+    pos_multipliers = np.array(pos_multipliers, dtype=float)
+    translation = np.array(translation, dtype=float)
+    points = points * pos_multipliers + translation
+
+    return trimesh.Trimesh(points, triangles)
+
+
+def read_from_bmf(
+    file_path: str,
+    store_meshes: bool = False,
+    pos_multipliers: tuple[float, float, float] = (1.0, 1.0, 1.0),
+    translation: tuple[float, float, float] = (0.0, 0.0, 0.0),
+    name: None | str = None,
+) -> lineageTree:
+    """Read a lineage tree from a bmf file.
+
+    Parameters
+    ----------
+        file_path : str
+            path to the bmf file
+        store_meshes : bool, default=False
+            whether to stores the meshes in the LineageTree or not.
+        pos_multipliers : tuple of float, default=(1.0, 1.0, 1.0)
+            multipliers for the x, y, z coordinates
+        translation : tuple of float, default=(0.0, 0.0, 0.0)
+            translation for the x, y, z coordinates
+        name : None or str, optional
+           The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
+           will be the name attribute, otherwise the name will be the stem of the file path.
+
+    Returns
+    -------
+        lineageTree
+            lineage tree
+    """
+
+    tracks = bmf.loadMeshTracks(file_path)
+    predecessor = {}
+    times = {}
+    pos = {}
+    lT_mesh = {}
+    cell_id = 1
+    for track in tracks:
+        pred = None
+        for t, mesh in track.meshes.items():
+            mesh = _load_trimesh_from_bmfmesh(mesh, pos_multipliers, translation)
+            pos[cell_id] = mesh.center_mass
+            
+            if store_meshes:
+                lT_mesh[cell_id] = mesh
+            
+            predecessor[cell_id] = (pred,)
+            pred = cell_id
+            times[cell_id] = t
+
+            cell_id += 1
+
+    kwargs = {"mesh": lT_mesh} if store_meshes else {}
+
+    lT = lineageTree(
+        predecessor=predecessor,
+        time=times,
+        pos=pos,
+        root_leaf_value=[(None,)],
+        name=name if name else Path(file_path).stem,
+        **kwargs,
+    )
+
+    return lT
 
 
 def read_from_csv(
