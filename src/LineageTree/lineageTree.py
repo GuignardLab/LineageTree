@@ -1222,11 +1222,9 @@ class lineageTree:
             self.kdtrees = {}
 
         if t not in self.kdtrees:
-            data_corres = {}
-            data = []
+            data = np.zeros((len(to_check_self), len(next(iter(self.pos.values())))))
             for i, C in enumerate(to_check_self):
-                data.append(tuple(self.pos[C]))
-                data_corres[i] = C
+                data[i] = self.pos[C]
             idx3d = KDTree(data)
             self.kdtrees[t] = idx3d
         else:
