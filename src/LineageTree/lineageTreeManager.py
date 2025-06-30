@@ -55,7 +55,7 @@ class lineageTreeManager:
         self.lineageTree_counter += 1
         return self.lineageTree_counter - 1
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Returns how many lineagetrees are in the manager.
 
         Returns
@@ -68,7 +68,7 @@ class lineageTreeManager:
     def __iter__(self):
         yield from self.lineagetrees.items()
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> lineageTree:
         if key in self.lineagetrees:
             return self.lineagetrees[key]
         else:
