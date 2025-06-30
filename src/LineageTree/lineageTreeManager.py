@@ -6,7 +6,7 @@ import warnings
 from collections.abc import Callable, Iterable, Generator
 from functools import partial
 from typing import TYPE_CHECKING, Literal
-
+from pathlib import Path
 import matplotlib.colors as mcolors
 import numpy as np
 from matplotlib import colormaps
@@ -140,7 +140,7 @@ class lineageTreeManager:
         fname : str
             The path and name of the file that is to be saved.
         """
-        if os.path.splitext(fname)[-1] != ".lTM":
+        if os.path.splitext(fname)[-1].upper() != ".LTM":
             fname = os.path.extsep.join((fname, "lTM"))
         for _, lT in self:
             if hasattr(lT, "_protected_predecessor"):

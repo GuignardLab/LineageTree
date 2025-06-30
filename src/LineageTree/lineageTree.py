@@ -965,7 +965,7 @@ class lineageTree:
         fname : str
             path to and name of the file to save
         """
-        if os.path.splitext(fname)[-1] != ".lT":
+        if os.path.splitext(fname)[-1].upper() != ".LT":
             fname = os.path.extsep.join((fname, "lT"))
         if hasattr(self, "_protected_predecessor"):
             del self._protected_predecessor
