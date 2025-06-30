@@ -2668,7 +2668,7 @@ class lineageTree:
         self,
         t: int,
         r: int | Iterable[int] | None = None,
-    ) -> list:
+    ) -> list[int]:
         """
         Returns the list of nodes at time `t` that are spawn by the node(s) `r`.
 
@@ -2681,8 +2681,8 @@ class lineageTree:
 
         Returns
         -------
-        list
-            list of nodes at time `t` spawned by `r`
+        list of int
+            list of ids of the nodes at time `t` spawned by `r`
         """
         if not r and r != 0:
             r = {root for root in self.roots if self.time[root] <= t}
