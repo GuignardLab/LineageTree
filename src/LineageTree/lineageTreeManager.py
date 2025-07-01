@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import pickle as pkl
 import warnings
-from collections.abc import Callable, Iterable, Generator
+from collections.abc import Callable, Generator, Iterable
 from functools import partial
 from typing import TYPE_CHECKING, Literal
 
@@ -140,7 +140,7 @@ class lineageTreeManager:
         fname : str
             The path and name of the file that is to be saved.
         """
-        if os.path.splitext(fname)[-1] != ".lTM":
+        if os.path.splitext(fname)[-1].upper() != ".LTM":
             fname = os.path.extsep.join((fname, "lTM"))
         for _, lT in self:
             if hasattr(lT, "_protected_predecessor"):
