@@ -3486,7 +3486,9 @@ class lineageTree:
             self.pos = {
                 node: np.array(position) for node, position in pos.items()
             }
-
+        if "labels" in kwargs:
+            self._labels = kwargs["labels"]
+            kwargs.pop("labels")
         if time is None:
             if starting_time is None:
                 starting_time = 0
