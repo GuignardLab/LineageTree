@@ -3497,7 +3497,7 @@ class lineageTree:
                     f"Attribute `starting_time` was a `{type(starting_time)}`, has been casted as an `int`.",
                     stacklevel=2,
                 )
-            self._time = {node: starting_time for node in self.roots}
+            self._time = dict.fromkeys(self.roots, starting_time)
             queue = list(self.roots)
             for node in queue:
                 for succ in self._successor[node]:
