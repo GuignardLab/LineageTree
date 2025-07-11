@@ -1,14 +1,18 @@
+from __future__ import annotations
+
 import warnings
 from abc import ABC, abstractmethod
 from enum import Enum
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from LineageTree import lineageTree
+if TYPE_CHECKING:
+    from ._core import LineageTree
 
 
 class TreeApproximationTemplate(ABC):
-    """Template class to produce different tree styles to comapare lineageTrees.
+    """Template class to produce different tree styles to comapare LineageTrees.
     To add a new style you need to inherit this class or one of its children
     and add them to the tree_style enum, or use it immediately on the function called.
     The main products of this class are:
@@ -20,13 +24,13 @@ class TreeApproximationTemplate(ABC):
 
     def __init__(
         self,
-        lT: lineageTree,
+        lT: LineageTree,
         root: int,
         downsample: int | None = None,
         end_time: int | None = None,
         time_scale: int = 1,
     ):
-        self.lT: lineageTree = lT
+        self.lT: LineageTree = lT
         self.internal_ids = max(self.lT.nodes)
         self.root: int = root
         self.downsample: int = downsample
@@ -388,7 +392,7 @@ class full_tree(TreeApproximationTemplate):
             list[list]
                 The adjacency list of these nodes
             dict[int,int]
-                The correspondance between the nodes used in edist and lineageTree
+                The correspondance between the nodes used in edist and LineageTree
         """
         inv_adj = {vi: k for k, v in adj_dict.items() for vi in v}
         roots = set(adj_dict).difference(inv_adj)

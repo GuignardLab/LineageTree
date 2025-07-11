@@ -1,6 +1,6 @@
 __version__ = "2.0.2"
-from .lineageTree import lineageTree
-from .lineageTreeManager import lineageTreeManager
+from ._core import LineageTree
+from .lineage_tree_manager import LineageTreeManager
 from .loaders import (
     read_from_ASTEC,
     read_from_binary,
@@ -15,8 +15,8 @@ from .loaders import (
 )
 
 __all__ = (
-    "lineageTree",
-    "lineageTreeManager",
+    "LineageTree",
+    "LineageTreeManager",
     "read_from_tgmm_xml",
     "read_from_txt_for_celegans_BAO",
     "read_from_ASTEC",

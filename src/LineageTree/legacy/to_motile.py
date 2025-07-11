@@ -1,6 +1,6 @@
 import warnings
 
-from ..lineageTree import lineageTree
+from .._core import LineageTree
 
 try:
     import motile
@@ -12,7 +12,7 @@ except ImportError:
 
 
 def to_motile(
-    lT: lineageTree, crop: int | None = None, max_dist=200, max_skip_frames=1
+    lT: LineageTree, crop: int | None = None, max_dist=200, max_skip_frames=1
 ):
     try:
         import networkx as nx

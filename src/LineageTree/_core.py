@@ -31,6 +31,7 @@ from scipy.spatial import Delaunay, KDTree, distance
 
 from .tree_approximation import TreeApproximationTemplate, tree_style
 from .utils import (
+    CompatibleUnpickler,
     convert_style_to_number,
     create_links_and_chains,
     hierarchical_pos,
@@ -71,7 +72,7 @@ class dynamic_property(property):
             return getattr(instance, self.protected_name)
 
 
-class lineageTree:
+class LineageTree:
     norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
 
     def modifier(wrapped_func):
@@ -137,7 +138,7 @@ class lineageTree:
         return found_cycle
 
     def __eq__(self, other) -> bool:
-        if isinstance(other, lineageTree):
+        if isinstance(other, LineageTree):
             return (
                 other._successor == self._successor
                 and other._predecessor == self._predecessor
@@ -996,7 +997,8 @@ class lineageTree:
             loaded file
         """
         with open(fname, "br") as f:
-            lT = pkl.load(f)
+            lT = CompatibleUnpickler(f).load()
+            # lT = pkl.load(f)
             f.close()
         if not hasattr(lT, "__version__") or Version(lT.__version__) < Version(
             "2.0.0"
@@ -1016,10 +1018,10 @@ class lineageTree:
                     "pos",
                     "labels",
                 ]
-                + lineageTree._dynamic_properties
-                + lineageTree._protected_dynamic_properties
+                + LineageTree._dynamic_properties
+                + LineageTree._protected_dynamic_properties
             }
-            lT = lineageTree(
+            lT = LineageTree(
                 successor=lT._successor,
                 time=lT._time,
                 pos=lT.pos,
@@ -3353,12 +3355,12 @@ class lineageTree:
 
         return distance, fig
 
-    def get_subtree(self, node_list: set[int]) -> lineageTree:
+    def get_subtree(self, node_list: set[int]) -> LineageTree:
         new_successors = {
             n: tuple(vi for vi in self.successor[n] if vi in node_list)
             for n in node_list
         }
-        return lineageTree(
+        return LineageTree(
             successor=new_successors,
             time=self._time,
             pos=self.pos,
@@ -3384,7 +3386,7 @@ class lineageTree:
         root_leaf_value: Sequence | None = None,
         **kwargs,
     ):
-        """Create a lineageTree object from minimal information, without reading from a file.
+        """Create a LineageTree object from minimal information, without reading from a file.
         Either `successor` or `predecessor` should be specified.
 
         Parameters
@@ -3407,9 +3409,9 @@ class lineageTree:
             Defaults are `[None, (), [], set()]`.
         **kwargs:
             Supported keyword arguments are dictionaries assigning nodes to any custom property.
-            The property must be specified for every node, and named differently from lineageTree's own attributes.
+            The property must be specified for every node, and named differently from LineageTree's own attributes.
         """
-        self.__version__ = importlib.metadata.version("LineageTree")
+        self.__version__ = importlib.metadata.version("lineagetree")
         self.name = str(name) if name is not None else None
         if successor is not None and predecessor is not None:
             raise ValueError(

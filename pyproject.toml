@@ -14,7 +14,7 @@ authors = [
 maintainers = [
     {name = "Léo Guignard", email = "leo.guignard@univ-amu.fr"}
 ]
-name = "LineageTree"
+name = "lineagetree"
 description = "Structure for Lineage Trees"
 version = "2.0.2"
 license = "MIT"
