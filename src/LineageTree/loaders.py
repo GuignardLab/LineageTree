@@ -393,7 +393,7 @@ def read_from_binary(fname: str, name: None | str = None) -> lineageTree:
                     )
                 )
             )
-            is_root = {c: True for c in tmp}
+            is_root = dict.fromkeys(tmp, True)
             done = True
     while (
         i < len(number_sequence) and not done
@@ -635,7 +635,7 @@ def read_from_txt_for_celegans_BAO(
         ids = list(range(unique_id, unique_id + len(lc)))
         successor.update({ids[i]: [ids[i + 1]] for i in range(len(ids) - 1)})
         properties["expression"].update(dict(zip(ids, lc, strict=True)))
-        properties["_labels"].update({id_: c for id_ in ids})
+        properties["_labels"].update(dict.fromkeys(ids, c))
         to_link[c] = (unique_id, unique_id + len(lc) - 1)
         unique_id += len(lc)
 
