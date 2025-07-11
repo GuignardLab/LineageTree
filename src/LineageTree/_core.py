@@ -998,7 +998,6 @@ class LineageTree:
         """
         with open(fname, "br") as f:
             lT = CompatibleUnpickler(f).load()
-            # lT = pkl.load(f)
             f.close()
         if not hasattr(lT, "__version__") or Version(lT.__version__) < Version(
             "2.0.0"
