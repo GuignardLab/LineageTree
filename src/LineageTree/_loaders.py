@@ -7,8 +7,10 @@ from pathlib import Path
 from warnings import warn
 
 import numpy as np
+from packaging.version import Version
 
 from ._core import LineageTree
+from .utils import CompatibleUnpickler
 
 IMPLICIT_L_T = {
     "AB": "P0",
@@ -972,3 +974,54 @@ def read_from_mamut_xml(
         name=name,
         **properties,
     )
+
+
+@classmethod
+def load(clf, fname: str):
+    """Loading a lineage tree from a '.lT' file.
+
+    Parameters
+    ----------
+    fname : str
+        path to and name of the file to read
+
+    Returns
+    -------
+    LineageTree
+        loaded file
+    """
+    with open(fname, "br") as f:
+        lT = CompatibleUnpickler(f).load()
+        f.close()
+    if not hasattr(lT, "__version__") or Version(lT.__version__) < Version(
+        "2.0.0"
+    ):
+        properties = {
+            prop_name: prop
+            for prop_name, prop in lT.__dict__.items()
+            if (isinstance(prop, dict) or prop_name == "_time_resolution")
+            and prop_name
+            not in [
+                "successor",
+                "predecessor",
+                "time",
+                "_successor",
+                "_predecessor",
+                "_time",
+                "pos",
+                "labels",
+            ]
+            + LineageTree._dynamic_properties
+            + LineageTree._protected_dynamic_properties
+        }
+        lT = LineageTree(
+            successor=lT._successor,
+            time=lT._time,
+            pos=lT.pos,
+            name=lT.name if hasattr(lT, "name") else None,
+            **properties,
+        )
+    if not hasattr(lT, "time_resolution"):
+        lT.time_resolution = 1
+
+    return lT
