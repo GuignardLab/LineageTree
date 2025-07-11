@@ -8,7 +8,7 @@ from __future__ import annotations
 import importlib.metadata
 import warnings
 from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -34,15 +34,12 @@ from ._properties import (
     time_nodes,
     time_resolution,
 )
-from .tree_approximation import TreeApproximationTemplate, tree_style
+from .tree_approximation import TreeApproximationTemplate
 from .utils import (
     convert_style_to_number,
     create_links_and_chains,
     hierarchical_pos,
 )
-
-if TYPE_CHECKING:
-    from edist.alignment import Alignment
 
 
 class LineageTree:
