@@ -47,7 +47,6 @@ dependencies = [
 dev = [
     "pytest",
     "pytest-cov",
-    "tox",
     "black",
     "ruff",
     "bumpver",
@@ -88,7 +87,7 @@ push = false
     'current_version = "{version}"',
     'version = "{version}"',
 ]
-"src/LineageTree/__init__.py" = [
+"src/lineagetree/__init__.py" = [
     '__version__ = "{version}"',
 ]
 
