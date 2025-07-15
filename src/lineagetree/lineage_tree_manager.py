@@ -504,7 +504,7 @@ class LineageTreeManager:
         embryo_2: str,
         end_time1: int | None = None,
         end_time2: int | None = None,
-        norm: Literal["max", "sum", None] = "max",
+        norm: Literal["max", "sum"] | None = "max",
         style: (
             Literal["simple", "normalized_simple", "full", "downsampled"]
             | type[TreeApproximationTemplate]
