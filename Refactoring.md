@@ -70,6 +70,20 @@ Potential points of discussion:
 - Is the file naming good? (for example, right now I don't like `_navigation.py`)
 - Should we have a folder structure and therefore sub-categories?
 - Should all the function files indeed be private `_` in front of the name of the file (making the side effect above more or less accessible)?
+- As of right now the functions are declared as follow:
+
+```python
+def some_function(lT: LineageTree, ...) -> None:
+    ...
+```
+
+to specify that they are class functions, should they be shifted back to:
+
+```python
+def some_function(self, ...) -> None:
+    ...
+```
+
 - ...
 
 ## Remaining to be done
