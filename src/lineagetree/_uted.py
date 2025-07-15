@@ -16,10 +16,14 @@ from .utils import convert_style_to_number
 
 if TYPE_CHECKING:
     from edist.alignment import Alignment
+    from ._core import LineageTree
+
+
+norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
 
 
 def unordered_tree_edit_distances_at_time_t(
-    self,
+    lT: LineageTree,
     t: int,
     end_time: int | None = None,
     style: (
@@ -54,15 +58,15 @@ def unordered_tree_edit_distances_at_time_t(
     dict mapping a tuple of tuple that contains 2 ints to float
         a dictionary that maps a pair of node ids at time `t` to their unordered tree edit distance
     """
-    if not hasattr(self, "uted"):
-        self.uted = {}
-    elif t in self.uted and not recompute:
-        return self.uted[t]
-    self.uted[t] = {}
-    roots = self.nodes_at_t(t=t)
+    if not hasattr(lT, "uted"):
+        lT.uted = {}
+    elif t in lT.uted and not recompute:
+        return lT.uted[t]
+    lT.uted[t] = {}
+    roots = lT.nodes_at_t(t=t)
     for n1, n2 in combinations(roots, 2):
         key = tuple(sorted((n1, n2)))
-        self.uted[t][key] = self.unordered_tree_edit_distance(
+        lT.uted[t][key] = lT.unordered_tree_edit_distance(
             n1,
             n2,
             end_time=end_time,
@@ -70,11 +74,11 @@ def unordered_tree_edit_distances_at_time_t(
             downsample=downsample,
             norm=norm,
         )
-    return self.uted[t]
+    return lT.uted[t]
 
 
 def __calculate_distance_of_sub_tree(
-    self,
+    lT: LineageTree,
     node1: int,
     node2: int,
     alignment: Alignment,
@@ -114,8 +118,8 @@ def __calculate_distance_of_sub_tree(
     float
         The result of the comparison of the subtree
     """
-    sub_tree_1 = set(self.get_subtree_nodes(node1))
-    sub_tree_2 = set(self.get_subtree_nodes(node2))
+    sub_tree_1 = set(lT.get_subtree_nodes(node1))
+    sub_tree_2 = set(lT.get_subtree_nodes(node2))
     res = 0
     for m in alignment:
         if (
@@ -129,12 +133,12 @@ def __calculate_distance_of_sub_tree(
     return res / norm([norm1, norm2])
 
 
-def clear_comparisons(self):
-    self._comparisons.clear()
+def clear_comparisons(lT: LineageTree):
+    lT._comparisons.clear()
 
 
 def __unordereded_backtrace(
-    self,
+    lT: LineageTree,
     n1: int,
     n2: int,
     end_time: int | None = None,
@@ -184,8 +188,8 @@ def __unordereded_backtrace(
         convert_style_to_number(style=style, downsample=downsample),
     )
     n1, n2 = sorted([n1, n2])
-    self._comparisons.setdefault(parameters, {})
-    if len(self._comparisons) > 100:
+    lT._comparisons.setdefault(parameters, {})
+    if len(lT._comparisons) > 100:
         warnings.warn(
             "More than 100 comparisons are saved, use clear_comparisons() to delete them.",
             stacklevel=2,
@@ -197,14 +201,14 @@ def __unordereded_backtrace(
     else:
         raise ValueError("Please use a valid approximation.")
     tree1 = tree(
-        lT=self,
+        lT=lT,
         downsample=downsample,
         end_time=end_time,
         root=n1,
         time_scale=1,
     )
     tree2 = tree(
-        lT=self,
+        lT=lT,
         downsample=downsample,
         end_time=end_time,
         root=n2,
@@ -224,11 +228,11 @@ def __unordereded_backtrace(
         corres2,
     ) = tree2.edist
     if len(nodes1) == len(nodes2) == 0:
-        self._comparisons[parameters][(n1, n2)] = {
+        lT._comparisons[parameters][(n1, n2)] = {
             "alignment": (),
             "trees": (),
         }
-        return self._comparisons[parameters][(n1, n2)]
+        return lT._comparisons[parameters][(n1, n2)]
     delta_tmp = partial(
         delta,
         corres1=corres1,
@@ -238,15 +242,15 @@ def __unordereded_backtrace(
     )
     btrc = uted.uted_backtrace(nodes1, adj1, nodes2, adj2, delta=delta_tmp)
 
-    self._comparisons[parameters][(n1, n2)] = {
+    lT._comparisons[parameters][(n1, n2)] = {
         "alignment": btrc,
         "trees": (tree1, tree2),
     }
-    return self._comparisons[parameters][(n1, n2)]
+    return lT._comparisons[parameters][(n1, n2)]
 
 
 def unordered_tree_edit_distance(
-    self,
+    lT: LineageTree,
     n1: int,
     n2: int,
     end_time: int | None = None,
@@ -292,11 +296,11 @@ def unordered_tree_edit_distance(
         convert_style_to_number(style=style, downsample=downsample),
     )
     n1, n2 = sorted([n1, n2])
-    self._comparisons.setdefault(parameters, {})
-    if self._comparisons[parameters].get((n1, n2)):
-        tmp = self._comparisons[parameters][(n1, n2)]
+    lT._comparisons.setdefault(parameters, {})
+    if lT._comparisons[parameters].get((n1, n2)):
+        tmp = lT._comparisons[parameters][(n1, n2)]
     else:
-        tmp = self.__unordereded_backtrace(
+        tmp = lT.__unordereded_backtrace(
             n1, n2, end_time, norm, style, downsample
         )
     btrc = tmp["alignment"]
@@ -321,7 +325,7 @@ def unordered_tree_edit_distance(
         times2=times2,
     )
 
-    if norm not in self.norm_dict:
+    if norm not in lT.norm_dict:
         raise ValueError(
             "Select a viable normalization method (max, sum, None)"
         )
@@ -329,11 +333,11 @@ def unordered_tree_edit_distance(
     norm_values = (tree1.get_norm(n1), tree2.get_norm(n2))
     if return_norms:
         return cost, norm_values
-    return cost / self.norm_dict[norm](norm_values)
+    return cost / lT.norm_dict[norm](norm_values)
 
 
 def plot_tree_distance_graphs(
-    self,
+    lT: LineageTree,
     n1: int,
     n2: int,
     end_time: int | None = None,
@@ -391,11 +395,11 @@ def plot_tree_distance_graphs(
         convert_style_to_number(style=style, downsample=downsample),
     )
     n1, n2 = sorted([n1, n2])
-    self._comparisons.setdefault(parameters, {})
-    if self._comparisons[parameters].get((n1, n2)):
-        tmp = self._comparisons[parameters][(n1, n2)]
+    lT._comparisons.setdefault(parameters, {})
+    if lT._comparisons[parameters].get((n1, n2)):
+        tmp = lT._comparisons[parameters][(n1, n2)]
     else:
-        tmp = self.__unordereded_backtrace(
+        tmp = lT.__unordereded_backtrace(
             n1, n2, end_time, norm, style, downsample
         )
     btrc: Alignment = tmp["alignment"]
@@ -418,7 +422,7 @@ def plot_tree_distance_graphs(
         times2=times2,
     )
 
-    if norm not in self.norm_dict:
+    if norm not in lT.norm_dict:
         raise Warning("Select a viable normalization method (max, sum, None)")
     matched_right = []
     matched_left = []
@@ -426,7 +430,7 @@ def plot_tree_distance_graphs(
     if style not in ("full", "downsampled"):
         for m in btrc:
             if m._left != -1 and m._right != -1:
-                cyc1 = self.get_chain_of_node(corres1[m._left])
+                cyc1 = lT.get_chain_of_node(corres1[m._left])
                 if len(cyc1) > 1:
                     node_1, *_, l_node_1 = cyc1
                     matched_left.append(node_1)
@@ -435,7 +439,7 @@ def plot_tree_distance_graphs(
                     node_1 = l_node_1 = cyc1.pop()
                     matched_left.append(node_1)
 
-                cyc2 = self.get_chain_of_node(corres2[m._right])
+                cyc2 = lT.get_chain_of_node(corres2[m._right])
                 if len(cyc2) > 1:
                     node_2, *_, l_node_2 = cyc2
                     matched_right.append(node_2)
@@ -445,14 +449,14 @@ def plot_tree_distance_graphs(
                     node_2 = l_node_2 = cyc2.pop()
                     matched_right.append(node_2)
 
-                colors[node_1] = self.__calculate_distance_of_sub_tree(
+                colors[node_1] = lT.__calculate_distance_of_sub_tree(
                     node_1,
                     node_2,
                     btrc,
                     corres1,
                     corres2,
                     delta_tmp,
-                    self.norm_dict[norm],
+                    lT.norm_dict[norm],
                     tree1.get_norm(node_1),
                     tree2.get_norm(node_2),
                 )
@@ -466,24 +470,24 @@ def plot_tree_distance_graphs(
                 node_2 = corres2[m._right]
 
                 if (
-                    self.get_chain_of_node(node_1)[0] == node_1
-                    or self.get_chain_of_node(node_2)[0] == node_2
+                    lT.get_chain_of_node(node_1)[0] == node_1
+                    or lT.get_chain_of_node(node_2)[0] == node_2
                     and (node_1 not in colors or node_2 not in colors)
                 ):
                     matched_left.append(node_1)
-                    l_node_1 = self.get_chain_of_node(node_1)[-1]
+                    l_node_1 = lT.get_chain_of_node(node_1)[-1]
                     matched_left.append(l_node_1)
                     matched_right.append(node_2)
-                    l_node_2 = self.get_chain_of_node(node_2)[-1]
+                    l_node_2 = lT.get_chain_of_node(node_2)[-1]
                     matched_right.append(l_node_2)
-                    colors[node_1] = self.__calculate_distance_of_sub_tree(
+                    colors[node_1] = lT.__calculate_distance_of_sub_tree(
                         node_1,
                         node_2,
                         btrc,
                         corres1,
                         corres2,
                         delta_tmp,
-                        self.norm_dict[norm],
+                        lT.norm_dict[norm],
                         tree1.get_norm(node_1),
                         tree2.get_norm(node_2),
                     )
@@ -495,8 +499,8 @@ def plot_tree_distance_graphs(
     cmap = colormaps[colormap]
     c_norm = mcolors.Normalize(0, 1)
     colors = {c: cmap(c_norm(v)) for c, v in colors.items()}
-    self.plot_subtree(
-        self.get_ancestor_at_t(n1),
+    lT.plot_subtree(
+        lT.get_ancestor_at_t(n1),
         end_time=end_time,
         size=size,
         selected_nodes=matched_left,
@@ -507,8 +511,8 @@ def plot_tree_distance_graphs(
         lw=lw,
         ax=ax[0],
     )
-    self.plot_subtree(
-        self.get_ancestor_at_t(n2),
+    lT.plot_subtree(
+        lT.get_ancestor_at_t(n2),
         end_time=end_time,
         size=size,
         selected_nodes=matched_right,
@@ -520,3 +524,118 @@ def plot_tree_distance_graphs(
         ax=ax[1],
     )
     return ax[0].get_figure(), ax
+
+
+def labelled_mappings(
+    lT: LineageTree,
+    n1: int,
+    n2: int,
+    end_time: int | None = None,
+    norm: Literal["max", "sum", None] = "max",
+    style: (
+        Literal["simple", "normalized_simple", "full", "downsampled"]
+        | type[TreeApproximationTemplate]
+    ) = "simple",
+    downsample: int = 2,
+) -> dict[str, list[str]]:
+    """
+    Returns the labels or IDs of all the nodes in the subtrees compared.
+
+
+    Parameters
+    ----------
+    n1 : int
+        id of the first node to compare
+    n2 : int
+        id of the second node to compare
+    end_time : int, optional
+        The final time point the comparison algorithm will take into account.
+        If None or not provided all nodes will be taken into account.
+    norm : {"max", "sum"}, default="max"
+        The normalization method to use, defaults to 'max'.
+    style : {"simple", "full", "downsampled", "normalized_simple} or TreeApproximationTemplate subclass, default="simple"
+        Which tree approximation is going to be used for the comparisons, defaults to 'simple'.
+    downsample : int, default=2
+        The downsample factor for the downsampled tree approximation.
+        Used only when `style="downsampled"`.
+
+    Returns
+    -------
+    dict mapping str to list of str
+        - 'matched' The labels of the matched nodes of the alignment.
+        - 'unmatched' The labels of the unmatched nodes of the alginment.
+    """
+    parameters = (
+        end_time,
+        convert_style_to_number(style=style, downsample=downsample),
+    )
+    n1, n2 = sorted([n1, n2])
+    lT._comparisons.setdefault(parameters, {})
+    if lT._comparisons[parameters].get((n1, n2)):
+        tmp = lT._comparisons[parameters][(n1, n2)]
+    else:
+        tmp = lT.__unordereded_backtrace(
+            n1, n2, end_time, norm, style, downsample
+        )
+    btrc = tmp["alignment"]
+    tree1, tree2 = tmp["trees"]
+
+    (
+        *_,
+        corres1,
+    ) = tree1.edist
+    (
+        *_,
+        corres2,
+    ) = tree2.edist
+
+    if norm not in lT.norm_dict:
+        raise Warning("Select a viable normalization method (max, sum, None)")
+    matched = []
+    unmatched = []
+    if style not in ("full", "downsampled"):
+        for m in btrc:
+            if m._left != -1 and m._right != -1:
+                cyc1 = lT.get_chain_of_node(corres1[m._left])
+                if len(cyc1) > 1:
+                    node_1, *_ = cyc1
+                elif len(cyc1) == 1:
+                    node_1 = cyc1.pop()
+                cyc2 = lT.get_chain_of_node(corres2[m._right])
+                if len(cyc2) > 1:
+                    node_2, *_ = cyc2
+                elif len(cyc2) == 1:
+                    node_2 = cyc2.pop()
+                matched.append(
+                    (
+                        lT.labels.get(node_1, node_1),
+                        lT.labels.get(node_2, node_2),
+                    )
+                )
+
+            else:
+                if m._left != -1:
+                    node_1 = lT.get_chain_of_node(corres1.get(m._left, "-"))[0]
+                else:
+                    node_1 = lT.get_chain_of_node(corres2.get(m._right, "-"))[
+                        0
+                    ]
+                unmatched.append(lT.labels.get(node_1, node_1))
+    else:
+        for m in btrc:
+            if m._left != -1 and m._right != -1:
+                node_1 = corres1[m._left]
+                node_2 = corres2[m._right]
+                matched.append(
+                    (
+                        lT.labels.get(node_1, node_1),
+                        lT.labels.get(node_2, node_2),
+                    )
+                )
+            else:
+                if m._left != -1:
+                    node_1 = corres1[m._left]
+                else:
+                    node_1 = corres2[m._right]
+                unmatched.append(lT.labels.get(node_1, node_1))
+    return {"matched": matched, "unmatched": unmatched}

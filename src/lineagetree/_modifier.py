@@ -1,5 +1,11 @@
+from __future__ import annotations
+
 from collections.abc import Callable, Iterable
 from functools import wraps
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ._core import LineageTree
 
 
 def modifier(wrapped_func):
@@ -21,7 +27,7 @@ def modifier(wrapped_func):
 ###TODO pos can be callable and stay motionless (copy the position of the succ node, use something like optical flow)
 @modifier
 def add_chain(
-    self,
+    lT: LineageTree,
     node: int,
     length: int,
     downstream: bool,
@@ -53,24 +59,24 @@ def add_chain(
     if downstream:
         for _ in range(int(length)):
             old_node = node
-            node = self._add_node(pred=[old_node])
-            self._time[node] = self._time[old_node] + 1
+            node = lT._add_node(pred=[old_node])
+            lT._time[node] = lT._time[old_node] + 1
     else:
-        if self._predecessor[node]:
+        if lT._predecessor[node]:
             raise Warning("The node already has a predecessor.")
-        if self._time[node] - length < self.t_b:
+        if lT._time[node] - length < lT.t_b:
             raise Warning(
                 "A node cannot created outside the lower bound of the dataset. (It is possible to change it by lT.t_b = int(...))"
             )
         for _ in range(int(length)):
             old_node = node
-            node = self._add_node(succ=[old_node])
-            self._time[node] = self._time[old_node] - 1
+            node = lT._add_node(succ=[old_node])
+            lT._time[node] = lT._time[old_node] - 1
     return node
 
 
 @modifier
-def add_root(self, t: int, pos: list | None = None) -> int:
+def add_root(lT: LineageTree, t: int, pos: list | None = None) -> int:
     """Adds a root to a specific timepoint.
 
     Parameters
@@ -84,16 +90,16 @@ def add_root(self, t: int, pos: list | None = None) -> int:
     int
         The id of the new root.
     """
-    C_next = self.get_next_id()
-    self._successor[C_next] = ()
-    self._predecessor[C_next] = ()
-    self._time[C_next] = t
-    self.pos[C_next] = pos if isinstance(pos, list) else []
-    self._changed_roots = True
+    C_next = lT.get_next_id()
+    lT._successor[C_next] = ()
+    lT._predecessor[C_next] = ()
+    lT._time[C_next] = t
+    lT.pos[C_next] = pos if isinstance(pos, list) else []
+    lT._changed_roots = True
     return C_next
 
 
-def get_next_id(self) -> int:
+def get_next_id(lT) -> int:
     """Computes the next authorized id and assign it.
 
     Returns
@@ -101,18 +107,18 @@ def get_next_id(self) -> int:
     int
         next authorized id
     """
-    if not hasattr(self, "max_id") or (self.max_id == -1 and self.nodes):
-        self.max_id = max(self.nodes) if len(self.nodes) else 0
-    if not hasattr(self, "next_id") or self.next_id == []:
-        self.max_id += 1
-        return self.max_id
+    if not hasattr(lT, "max_id") or (lT.max_id == -1 and lT.nodes):
+        lT.max_id = max(lT.nodes) if len(lT.nodes) else 0
+    if not hasattr(lT, "next_id") or lT.next_id == []:
+        lT.max_id += 1
+        return lT.max_id
     else:
-        return self.next_id.pop()
+        return lT.next_id.pop()
 
 
 @modifier
 def _add_node(
-    self,
+    lT: LineageTree,
     succ: list | None = None,
     pred: list | None = None,
     pos: Iterable | None = None,
@@ -142,27 +148,27 @@ def _add_node(
         raise Warning(
             "Please enter a successor or a predecessor, otherwise use the add_roots() function."
         )
-    C_next = self.get_next_id() if nid is None else nid
+    C_next = lT.get_next_id() if nid is None else nid
     if succ:
-        self._successor[C_next] = succ
+        lT._successor[C_next] = succ
         for suc in succ:
-            self._predecessor[suc] = (C_next,)
+            lT._predecessor[suc] = (C_next,)
     else:
-        self._successor[C_next] = ()
+        lT._successor[C_next] = ()
     if pred:
-        self._predecessor[C_next] = pred
-        self._successor[pred[0]] = self._successor.setdefault(pred[0], ()) + (
+        lT._predecessor[C_next] = pred
+        lT._successor[pred[0]] = lT._successor.setdefault(pred[0], ()) + (
             C_next,
         )
     else:
-        self._predecessor[C_next] = ()
+        lT._predecessor[C_next] = ()
     if isinstance(pos, list):
-        self.pos[C_next] = pos
+        lT.pos[C_next] = pos
     return C_next
 
 
 @modifier
-def remove_nodes(self, group: int | set | list) -> None:
+def remove_nodes(lT: LineageTree, group: int | set | list) -> None:
     """Removes a group of nodes from the LineageTree
 
     Parameters
@@ -174,10 +180,10 @@ def remove_nodes(self, group: int | set | list) -> None:
         group = {group}
     if isinstance(group, list):
         group = set(group)
-    group = self.nodes.intersection(group)
+    group = lT.nodes.intersection(group)
     for node in group:
-        for attr in self.__dict__:
-            attr_value = self.__getattribute__(attr)
+        for attr in lT.__dict__:
+            attr_value = lT.__getattribute__(attr)
             if isinstance(attr_value, dict) and attr not in [
                 "successor",
                 "predecessor",
@@ -185,13 +191,11 @@ def remove_nodes(self, group: int | set | list) -> None:
                 "_predecessor",
             ]:
                 attr_value.pop(node, ())
-        if self._predecessor.get(node):
-            self._successor[self._predecessor[node][0]] = tuple(
-                set(self._successor[self._predecessor[node][0]]).difference(
-                    group
-                )
+        if lT._predecessor.get(node):
+            lT._successor[lT._predecessor[node][0]] = tuple(
+                set(lT._successor[lT._predecessor[node][0]]).difference(group)
             )
-        for p_node in self._successor.get(node, []):
-            self._predecessor[p_node] = ()
-        self._predecessor.pop(node, ())
-        self._successor.pop(node, ())
+        for p_node in lT._successor.get(node, []):
+            lT._predecessor[p_node] = ()
+        lT._predecessor.pop(node, ())
+        lT._successor.pop(node, ())

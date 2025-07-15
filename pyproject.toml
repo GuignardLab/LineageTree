@@ -93,27 +93,6 @@ push = false
 
 [tool.ruff]
 line-length = 79
-lint.select = [
-    "E", "F", "W", #flake8
-    "UP", # pyupgrade
-    "I", # isort
-    "BLE", # flake8-blind-exception
-    "B", # flake8-bugbear
-    "A", # flake8-builtins
-    "C4", # flake8-comprehensions
-    "ISC", # flake8-implicit-str-concat
-    "G", # flake8-logging-format
-    "PIE", # flake8-pie
-    "SIM", # flake8-simplify
-    "I", # imports
-    "T201", # print statements
-    "ERA001", #commented out code
-]
-lint.ignore = [
-    "E501", # line too long. let black handle this
-    "SIM300", # yoda conditions
-]
-
 exclude = [
     ".bzr",
     ".direnv",
@@ -136,10 +115,10 @@ exclude = [
     "*_vendor*",
 ]
 
-target-version = "py310"
+target-version = "py313"
 
-[tool.ty.src]
-root = "./src"
+[tool.ty.environment]
+root = ["./src", ]
 
 [tool.ty.rules]
 unresolved-import = "ignore"
@@ -147,5 +126,3 @@ unresolved-import = "ignore"
 [tool.pytest.ini_options]
 addopts = "--cov"
 
-[report]
-show_missing=true

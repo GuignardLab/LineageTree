@@ -1,14 +1,20 @@
+from __future__ import annotations
+
 import os
 import pickle as pkl
 import struct
 from collections.abc import Callable
 from numbers import Number
+from typing import TYPE_CHECKING
 
 import numpy as np
 import svgwrite
 
+if TYPE_CHECKING:
+    from ._core import LineageTree
 
-def _get_height(self, c: int, done: dict) -> float:
+
+def _get_height(lT: LineageTree, c: int, done: dict) -> float:
     """Recursively computes the height of a node within a tree times a space factor.
     This function is specific to the function write_to_svg.
 
@@ -27,13 +33,13 @@ def _get_height(self, c: int, done: dict) -> float:
     if c in done:
         return done[c][0]
     else:
-        P = np.mean([self._get_height(di, done) for di in self._successor[c]])
-        done[c] = [P, self.vert_space_factor * self._time[c]]
+        P = np.mean([lT._get_height(di, done) for di in lT._successor[c]])
+        done[c] = [P, lT.vert_space_factor * lT._time[c]]
         return P
 
 
 def write_to_svg(
-    self,
+    lT: LineageTree,
     file_name: str,
     roots: list | None = None,
     draw_nodes: bool = True,
@@ -56,7 +62,7 @@ def write_to_svg(
     ----------
     file_name : str
         filesystem filename valid for `open()`
-    roots : list of int, defaults to `self.roots`
+    roots : list of int, defaults to `lT.roots`
         list of node ids to be drawn. If `None` or not provided all the nodes will be drawn. Default `None`
     draw_nodes : bool, default True
         wether to print the nodes or not
@@ -101,9 +107,9 @@ def write_to_svg(
         return lambda x: values_dict_nodes[x] * mult
 
     if roots is None:
-        roots = self.roots
-        if hasattr(self, "image_label"):
-            roots = [node for node in roots if self.image_label[node] != 1]
+        roots = lT.roots
+        if hasattr(lT, "image_label"):
+            roots = [node for node in roots if lT.image_label[node] != 1]
 
     if node_size is None:
 
@@ -111,9 +117,9 @@ def write_to_svg(
             return vert_space_factor / 2.1
 
     else:
-        values = np.array([self._successor[node_size][c] for c in self.nodes])
+        values = np.array([lT._successor[node_size][c] for c in lT.nodes])
         node_size = normalize_values(
-            values, self.nodes, 0.5, 0.5, vert_space_factor / 2.1
+            values, lT.nodes, 0.5, 0.5, vert_space_factor / 2.1
         )
     if stroke_width is None:
 
@@ -125,15 +131,15 @@ def write_to_svg(
         def node_color(x):
             return 0, 0, 0
 
-    elif isinstance(node_color, str) and node_color in self.__dict__:
+    elif isinstance(node_color, str) and node_color in lT.__dict__:
         from matplotlib import colormaps
 
         if node_color_map in colormaps:
             cmap = colormaps[node_color_map]
         else:
             cmap = colormaps["viridis"]
-        values = np.array([self._successor[node_color][c] for c in self.nodes])
-        normed_vals = normalize_values(values, self.nodes, 1, 0, 1)
+        values = np.array([lT._successor[node_color][c] for c in lT.nodes])
+        normed_vals = normalize_values(values, lT.nodes, 1, 0, 1)
 
         def node_color(x):
             return [k * 255 for k in cmap(normed_vals(x))[:-1]]
@@ -144,23 +150,21 @@ def write_to_svg(
         def stroke_color(x):
             return 0, 0, 0
 
-    elif isinstance(stroke_color, str) and stroke_color in self.__dict__:
+    elif isinstance(stroke_color, str) and stroke_color in lT.__dict__:
         from matplotlib import colormaps
 
         if node_color_map in colormaps:
             cmap = colormaps[node_color_map]
         else:
             cmap = colormaps["viridis"]
-        values = np.array(
-            [self._successor[stroke_color][c] for c in self.nodes]
-        )
-        normed_vals = normalize_values(values, self.nodes, 1, 0, 1)
+        values = np.array([lT._successor[stroke_color][c] for c in lT.nodes])
+        normed_vals = normalize_values(values, lT.nodes, 1, 0, 1)
 
         def stroke_color(x):
             return [k * 255 for k in cmap(normed_vals(x))[:-1]]
 
     prev_x = 0
-    self.vert_space_factor = vert_space_factor
+    lT.vert_space_factor = vert_space_factor
     if order_key is not None:
         roots.sort(key=order_key)
     treated_nodes = []
@@ -169,11 +173,11 @@ def write_to_svg(
     if not pos_given:
         positions = dict(
             zip(
-                self.nodes,
+                lT.nodes,
                 [
                     [0.0, 0.0],
                 ]
-                * len(self.nodes),
+                * len(lT.nodes),
                 strict=True,
             ),
         )
@@ -183,21 +187,21 @@ def write_to_svg(
         while len(to_do) != 0:
             curr = to_do.pop(0)
             treated_nodes += [curr]
-            if not self._successor[curr]:
+            if not lT._successor[curr]:
                 if order_key is not None:
-                    to_do += sorted(self._successor[curr], key=order_key)
+                    to_do += sorted(lT._successor[curr], key=order_key)
                 else:
-                    to_do += self._successor[curr]
+                    to_do += lT._successor[curr]
             else:
                 r_leaves += [curr]
         r_pos = {
             leave: [
                 prev_x + horizontal_space * (1 + j),
-                self.vert_space_factor * self._time[leave],
+                lT.vert_space_factor * lT._time[leave],
             ]
             for j, leave in enumerate(r_leaves)
         }
-        self._get_height(r, r_pos)
+        lT._get_height(r, r_pos)
         prev_x = np.max(list(r_pos.values()), axis=0)[0]
         if not pos_given:
             positions.update(r_pos)
@@ -211,7 +215,7 @@ def write_to_svg(
         to_do = set(treated_nodes)
         while len(to_do) > 0:
             curr = to_do.pop()
-            c_chain = self.get_chain_of_node(curr)
+            c_chain = lT.get_chain_of_node(curr)
             x1, y1 = positions[c_chain[0]]
             x2, y2 = positions[c_chain[-1]]
             dwg.add(
@@ -221,7 +225,7 @@ def write_to_svg(
                     stroke=svgwrite.rgb(0, 0, 0),
                 )
             )
-            for si in self._successor[c_chain[-1]]:
+            for si in lT._successor[c_chain[-1]]:
                 x3, y3 = positions[si]
                 dwg.add(
                     dwg.line(
@@ -234,7 +238,7 @@ def write_to_svg(
     else:
         for c in treated_nodes:
             x1, y1 = positions[c]
-            for si in self._successor[c]:
+            for si in lT._successor[c]:
                 x2, y2 = positions[si]
                 if draw_edges:
                     dwg.add(
@@ -259,7 +263,7 @@ def write_to_svg(
 
 
 def write_to_tlp(
-    self,
+    lT: LineageTree,
     fname: str,
     t_min: int = -1,
     t_max: int = np.inf,
@@ -282,7 +286,7 @@ def write_to_tlp(
         maximum time to consider
     nodes_to_use : list of int, optional
         list of nodes to show in the graph,
-        if `None` then self.nodes is used
+        if `None` then lT.nodes is used
         (taking into account `t_min` and `t_max`)
     temporal : bool, default=True
         True if the temporal links should be printed
@@ -331,34 +335,32 @@ def write_to_tlp(
         f.write("(nodes ")
 
         if spatial:
-            if spatial.lower() == "gg" and hasattr(self, "Gabriel_graph"):
-                s_edges = spatial_adjlist_to_set(self.Gabriel_graph)
-            elif spatial.lower() == "kn" and hasattr(self, "kn_graph"):
-                s_edges = spatial_adjlist_to_set(self.kn_graph)
-            elif spatial.lower() == "ball" and hasattr(self, "th_edges"):
-                s_edges = spatial_adjlist_to_set(self.th_edges)
+            if spatial.lower() == "gg" and hasattr(lT, "Gabriel_graph"):
+                s_edges = spatial_adjlist_to_set(lT.Gabriel_graph)
+            elif spatial.lower() == "kn" and hasattr(lT, "kn_graph"):
+                s_edges = spatial_adjlist_to_set(lT.kn_graph)
+            elif spatial.lower() == "ball" and hasattr(lT, "th_edges"):
+                s_edges = spatial_adjlist_to_set(lT.th_edges)
 
         if not nodes_to_use:
             if t_max != np.inf or t_min > -1:
                 nodes_to_use = [
-                    n for n in self.nodes if t_min < self._time[n] <= t_max
+                    n for n in lT.nodes if t_min < lT._time[n] <= t_max
                 ]
                 edges_to_use = []
                 if temporal:
                     edges_to_use += [
-                        e
-                        for e in self.edges
-                        if t_min < self._time[e[0]] < t_max
+                        e for e in lT.edges if t_min < lT._time[e[0]] < t_max
                     ]
                 if spatial:
                     edges_to_use += [
-                        e for e in s_edges if t_min < self._time[e[0]] < t_max
+                        e for e in s_edges if t_min < lT._time[e[0]] < t_max
                     ]
             else:
-                nodes_to_use = list(self.nodes)
+                nodes_to_use = list(lT.nodes)
                 edges_to_use = []
                 if temporal:
-                    edges_to_use += list(self.edges)
+                    edges_to_use += list(lT.edges)
                 if spatial:
                     edges_to_use += list(s_edges)
         else:
@@ -366,12 +368,12 @@ def write_to_tlp(
             nodes_to_use = set(nodes_to_use)
             if temporal:
                 for n in nodes_to_use:
-                    for d in self._successor[n]:
+                    for d in lT._successor[n]:
                         if d in nodes_to_use:
                             edges_to_use.append((n, d))
             if spatial:
                 edges_to_use += [
-                    e for e in s_edges if t_min < self._time[e[0]] < t_max
+                    e for e in s_edges if t_min < lT._time[e[0]] < t_max
                 ]
         nodes_to_use = set(nodes_to_use)
         if Names:
@@ -388,13 +390,9 @@ def write_to_tlp(
             tmp_names = {}
             for k, v in node_properties[Names][0].items():
                 if (
-                    len(
-                        self._successor.get(
-                            self._predecessor.get(k, [-1])[0], ()
-                        )
-                    )
+                    len(lT._successor.get(lT._predecessor.get(k, [-1])[0], ()))
                     != 1
-                    or self._time[k] == t_min + 1
+                    or lT._time[k] == t_min + 1
                 ):
                     tmp_names[k] = v
             node_properties[Names][0] = tmp_names
@@ -417,7 +415,7 @@ def write_to_tlp(
         f.write('(property 0 int "time"\n')
         f.write('\t(default "0" "0")\n')
         for n in nodes_to_use:
-            f.write("\t(node " + str(n) + ' "' + str(self._time[n]) + '")\n')
+            f.write("\t(node " + str(n) + ' "' + str(lT._time[n]) + '")\n')
         f.write(")\n")
 
         if write_layout:
@@ -425,17 +423,13 @@ def write_to_tlp(
             f.write('\t(default "(0, 0, 0)" "()")\n')
             for n in nodes_to_use:
                 f.write(
-                    "\t(node "
-                    + str(n)
-                    + ' "'
-                    + str(tuple(self.pos[n]))
-                    + '")\n'
+                    "\t(node " + str(n) + ' "' + str(tuple(lT.pos[n])) + '")\n'
                 )
             f.write(")\n")
             f.write('(property 0 double "distance"\n')
             f.write('\t(default "0" "0")\n')
             for i, e in enumerate(edges_to_use):
-                d_tmp = np.linalg.norm(self.pos[e[0]] - self.pos[e[1]])
+                d_tmp = np.linalg.norm(lT.pos[e[0]] - lT.pos[e[1]])
                 f.write("\t(edge " + str(i) + ' "' + str(d_tmp) + '")\n')
                 f.write("\t(node " + str(e[0]) + ' "' + str(d_tmp) + '")\n')
             f.write(")\n")
@@ -463,7 +457,7 @@ def write_to_tlp(
 
 
 def write_to_binary(
-    self, fname: str, starting_points: list[int] | None = None
+    lT: LineageTree, fname: str, starting_points: list[int] | None = None
 ) -> None:
     """Writes the lineage tree (a forest) as a binary structure
     (assuming it is a binary tree, it would not work for *n* ary tree with 2 < *n*).
@@ -488,30 +482,30 @@ def write_to_binary(
         If `None`, all roots are written, default value, None
     """
     if starting_points is None:
-        starting_points = list(self.roots)
+        starting_points = list(lT.roots)
     number_sequence = [-1]
     pos_sequence = []
     time_sequence = []
     for c in starting_points:
-        time_sequence.append(self._time.get(c, 0))
+        time_sequence.append(lT._time.get(c, 0))
         to_treat = [c]
         while to_treat:
             curr_c = to_treat.pop()
             number_sequence.append(curr_c)
-            pos_sequence += list(self.pos[curr_c])
-            if self._successor[curr_c] == ():
+            pos_sequence += list(lT.pos[curr_c])
+            if lT._successor[curr_c] == ():
                 number_sequence.append(-1)
-            elif len(self._successor[curr_c]) == 1:
-                to_treat += self._successor[curr_c]
+            elif len(lT._successor[curr_c]) == 1:
+                to_treat += lT._successor[curr_c]
             else:
                 number_sequence.append(-2)
-                to_treat += self._successor[curr_c]
-    remaining_nodes = set(self.nodes) - set(number_sequence)
+                to_treat += lT._successor[curr_c]
+    remaining_nodes = set(lT.nodes) - set(number_sequence)
 
     for c in remaining_nodes:
-        time_sequence.append(self._time.get(c, 0))
+        time_sequence.append(lT._time.get(c, 0))
         number_sequence.append(c)
-        pos_sequence += list(self.pos[c])
+        pos_sequence += list(lT.pos[c])
         number_sequence.append(-1)
 
     with open(fname, "wb") as f:
@@ -525,7 +519,7 @@ def write_to_binary(
         f.close()
 
 
-def write(self, fname: str) -> None:
+def write(lT: LineageTree, fname: str) -> None:
     """Write a lineage tree on disk as an .lT file.
 
     Parameters
@@ -535,12 +529,12 @@ def write(self, fname: str) -> None:
     """
     if os.path.splitext(fname)[-1].upper() != ".LT":
         fname = os.path.extsep.join((fname, "lT"))
-    if hasattr(self, "_protected_predecessor"):
-        del self._protected_predecessor
-    if hasattr(self, "_protected_successor"):
-        del self._protected_successor
-    if hasattr(self, "_protected_time"):
-        del self._protected_time
+    if hasattr(lT, "_protected_predecessor"):
+        del lT._protected_predecessor
+    if hasattr(lT, "_protected_successor"):
+        del lT._protected_successor
+    if hasattr(lT, "_protected_time"):
+        del lT._protected_time
     with open(fname, "bw") as f:
-        pkl.dump(self, f)
+        pkl.dump(lT, f)
         f.close()

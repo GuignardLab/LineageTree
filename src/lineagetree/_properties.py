@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 import warnings
 from itertools import combinations
 from types import MappingProxyType
+from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy.sparse import dok_array
+
+if TYPE_CHECKING:
+    from ._core import LineageTree
 
 
 class dynamic_property(property):
@@ -37,162 +43,182 @@ class dynamic_property(property):
             return getattr(instance, self.protected_name)
 
 
-@property
-def successor(self) -> MappingProxyType[int, tuple[int]]:
-    """The successor of the tree."""
-    if not hasattr(self, "_protected_successor"):
-        self._protected_successor = MappingProxyType(self._successor)
-    return self._protected_successor
+def _compute_all_chains(lT: LineageTree) -> tuple[tuple[int]]:
+    """Computes all the chains of a given lineage tree,
+    stores it in `lT.all_chains` and returns it.
+
+    Returns
+    -------
+    tuple of tuple of int
+        tuple of chains
+    """
+    all_chains = []
+    to_do = sorted(lT.roots, key=lT.time.get, reverse=True)
+    while len(to_do) != 0:
+        current = to_do.pop()
+        chain = lT.get_chain_of_node(current)
+        all_chains += [chain]
+        to_do.extend(lT._successor[chain[-1]])
+    return tuple(tuple(chain) for chain in all_chains)
 
 
 @property
-def predecessor(self) -> MappingProxyType[int, tuple[int]]:
-    """The predecessor of the tree."""
-    if not hasattr(self, "_protected_predecessor"):
-        self._protected_predecessor = MappingProxyType(self._predecessor)
-    return self._protected_predecessor
+def successor(lT: LineageTree) -> MappingProxyType[int, tuple[int]]:
+    """Dictionary that maps a node to its successors"""
+    if not hasattr(lT, "_protected_successor"):
+        lT._protected_successor = MappingProxyType(lT._successor)
+    return lT._protected_successor
 
 
 @property
-def time(self) -> MappingProxyType[int, int]:
-    """The time of the tree."""
-    if not hasattr(self, "_protected_time"):
-        self._protected_time = MappingProxyType(self._time)
-    return self._protected_time
+def predecessor(lT: LineageTree) -> MappingProxyType[int, tuple[int]]:
+    """Dictionary that maps a node to its predecessors"""
+    if not hasattr(lT, "_protected_predecessor"):
+        lT._protected_predecessor = MappingProxyType(lT._predecessor)
+    return lT._protected_predecessor
+
+
+@property
+def time(lT: LineageTree) -> MappingProxyType[int, int]:
+    """Dictionary that maps a node to its time"""
+    if not hasattr(lT, "_protected_time"):
+        lT._protected_time = MappingProxyType(lT._time)
+    return lT._protected_time
 
 
 @dynamic_property
-def t_b(self) -> int:
-    """The first timepoint of the tree."""
-    return min(self._time.values())
+def t_b(lT: LineageTree) -> int:
+    """The first timepoint of the lineage tree"""
+    return min(lT._time.values())
 
 
 @dynamic_property
-def t_e(self) -> int:
-    """The last timepoint of the tree."""
-    return max(self._time.values())
+def t_e(lT: LineageTree) -> int:
+    """The last timepoint of the lineage tree"""
+    return max(lT._time.values())
 
 
 @dynamic_property
-def nodes(self) -> frozenset[int]:
-    """Nodes of the tree"""
-    return frozenset(self._successor.keys())
+def nodes(lT: LineageTree) -> frozenset[int]:
+    """Set of node ids of the lineage tree"""
+    return frozenset(lT._successor.keys())
 
 
 @dynamic_property
-def number_of_nodes(self) -> int:
-    return len(self.nodes)
+def number_of_nodes(lT: LineageTree) -> int:
+    """Number of nodes in the lineage tree"""
+    return len(lT.nodes)
 
 
 @dynamic_property
-def depth(self) -> dict[int, int]:
-    """The depth of each node in the tree."""
+def depth(lT: LineageTree) -> dict[int, int]:
+    """The depth of each node in the lineage tree"""
     _depth = {}
-    for leaf in self.leaves:
+    for leaf in lT.leaves:
         _depth[leaf] = 1
-        while leaf in self._predecessor and self._predecessor[leaf]:
-            parent = self._predecessor[leaf][0]
+        while leaf in lT._predecessor and lT._predecessor[leaf]:
+            parent = lT._predecessor[leaf][0]
             current_depth = _depth.get(parent, 0)
             _depth[parent] = max(_depth[leaf] + 1, current_depth)
             leaf = parent
-    for root in self.roots - set(_depth):
+    for root in lT.roots - set(_depth):
         _depth[root] = 1
     return _depth
 
 
 @dynamic_property
-def roots(self) -> frozenset[int]:
-    """Set of roots of the tree"""
-    return frozenset({s for s, p in self._predecessor.items() if p == ()})
+def roots(lT: LineageTree) -> frozenset[int]:
+    """Set of roots of the lineage tree"""
+    return frozenset({s for s, p in lT._predecessor.items() if p == ()})
 
 
 @dynamic_property
-def leaves(self) -> frozenset[int]:
-    """Set of leaves"""
-    return frozenset({p for p, s in self._successor.items() if s == ()})
+def leaves(lT: LineageTree) -> frozenset[int]:
+    """Set of leaves of the lineage tree"""
+    return frozenset({p for p, s in lT._successor.items() if s == ()})
 
 
 @dynamic_property
-def edges(self) -> tuple[tuple[int, int]]:
-    """Set of edges"""
-    return tuple((p, si) for p, s in self._successor.items() for si in s)
+def edges(lT: LineageTree) -> tuple[tuple[int, int]]:
+    """Set of edges of the lineage tree"""
+    return tuple((p, si) for p, s in lT._successor.items() for si in s)
 
 
 @property
-def labels(self) -> dict[int, str]:
-    """The labels of the nodes."""
-    if not hasattr(self, "_labels"):
-        if hasattr(self, "node_name"):
-            self._labels = {
-                i: self.node_name.get(i, "Unlabeled") for i in self.roots
+def labels(lT: LineageTree) -> dict[int, str]:
+    """Dictionary that maps a node to its label"""
+    if not hasattr(lT, "_labels"):
+        if hasattr(lT, "node_name"):
+            lT._labels = {
+                i: lT.node_name.get(i, "Unlabeled") for i in lT.roots
             }
         else:
-            self._labels = {
+            lT._labels = {
                 root: "Unlabeled"
-                for root in self.roots
-                for leaf in self.find_leaves(root)
-                if abs(self._time[leaf] - self._time[root])
-                >= abs(self.t_e - self.t_b) / 4
+                for root in lT.roots
+                for leaf in lT.find_leaves(root)
+                if abs(lT._time[leaf] - lT._time[root])
+                >= abs(lT.t_e - lT.t_b) / 4
             }
-    return self._labels
+    return lT._labels
 
 
 @property
-def time_resolution(self) -> float:
-    if not hasattr(self, "_time_resolution"):
-        self._time_resolution = 0
-    return self._time_resolution / 10
+def time_resolution(lT: LineageTree) -> float:
+    """Time resolution of the lineage tree"""
+    if not hasattr(lT, "_time_resolution"):
+        lT._time_resolution = 0
+    return lT._time_resolution / 10
 
 
 @time_resolution.setter
-def time_resolution(self, time_resolution) -> None:
+def time_resolution(lT, time_resolution) -> None:
     if time_resolution is not None and time_resolution > 0:
-        self._time_resolution = int(time_resolution * 10)
+        lT._time_resolution = int(time_resolution * 10)
     else:
         warnings.warn("Time resolution set to default 0", stacklevel=2)
-        self._time_resolution = 0
+        lT._time_resolution = 0
 
 
 @dynamic_property
-def all_chains(self) -> list[list[int]]:
+def all_chains(lT: LineageTree) -> tuple[tuple[int]]:
     """List of all chains in the tree, ordered in depth-first search."""
-    return self._compute_all_chains()
+    return _compute_all_chains(lT)
 
 
 @dynamic_property
-def time_nodes(self):
+def time_nodes(lT: LineageTree) -> dict[int, set[int]]:
+    """Dictionary that maps a time to the set of nodes at that time."""
     _time_nodes = {}
-    for c, t in self._time.items():
+    for c, t in lT._time.items():
         _time_nodes.setdefault(t, set()).add(c)
     return _time_nodes
 
 
-def _m(self, i, j):
-    if (i, j) not in self._tmp_parenting:
-        if i == j:  # the distance to the node itself is 0
-            self._tmp_parenting[(i, j)] = 0
-            self._parenting[i, j] = self._tmp_parenting[(i, j)]
-        elif not self._predecessor[
+def _m(lT: LineageTree, i, j):
+    if (i, j) not in lT._tmp_parenting:
+        if i == j:  # the distance to the node itlT is 0
+            lT._tmp_parenting[(i, j)] = 0
+            lT._parenting[i, j] = lT._tmp_parenting[(i, j)]
+        elif not lT._predecessor[
             j
         ]:  # j and i are note connected so the distance if inf
-            self._tmp_parenting[(i, j)] = np.inf
+            lT._tmp_parenting[(i, j)] = np.inf
         else:  # the distance between i and j is the distance between i and pred(j) + 1
-            self._tmp_parenting[(i, j)] = (
-                self.m(i, self._predecessor[j][0]) + 1
-            )
-            self._parenting[i, j] = self._tmp_parenting[(i, j)]
-            self._parenting[j, i] = -self._tmp_parenting[(i, j)]
-    return self._tmp_parenting[(i, j)]
+            lT._tmp_parenting[(i, j)] = lT.m(i, lT._predecessor[j][0]) + 1
+            lT._parenting[i, j] = lT._tmp_parenting[(i, j)]
+            lT._parenting[j, i] = -lT._tmp_parenting[(i, j)]
+    return lT._tmp_parenting[(i, j)]
 
 
 @property
-def parenting(self):
-    if not hasattr(self, "_parenting"):
-        self._parenting = dok_array((max(self.nodes) + 1,) * 2)
-        self._tmp_parenting = {}
-        for i, j in combinations(self.nodes, 2):
-            if self._time[j] < self.time[i]:
+def parenting(lT: LineageTree):
+    if not hasattr(lT, "_parenting"):
+        lT._parenting = dok_array((max(lT.nodes) + 1,) * 2)
+        lT._tmp_parenting = {}
+        for i, j in combinations(lT.nodes, 2):
+            if lT._time[j] < lT.time[i]:
                 i, j = j, i
-            self._tmp_parenting[(i, j)] = self._m(i, j)
-        del self._tmp_parenting
-    return self._parenting
+            lT._tmp_parenting[(i, j)] = lT._m(i, j)
+        del lT._tmp_parenting
+    return lT._parenting
