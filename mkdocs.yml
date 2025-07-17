@@ -1,0 +1,14 @@
+site_name: LineageTree documentation
+theme:
+  name: material
+  features:
+  - navigation.path
+  - navigation.expand
+
+nav:
+  - Home: index.md
+  - Getting started:
+    - Download and Import: getting-started.md
+    - Glossary: glossary.md
+    - Loaders: loaders.md
+  - API Reference: api.md
