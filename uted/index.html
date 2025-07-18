@@ -1,0 +1,698 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../viz/">
+      
+      
+        <link rel="next" href="../api/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.15">
+    
+    
+      
+        <title>Uted - LineageTree documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#introduction-to-unordered-tree-edit-distance-uted" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="LineageTree documentation" class="md-header__button md-logo" aria-label="LineageTree documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            LineageTree documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Uted
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="LineageTree documentation" class="md-nav__button md-logo" aria-label="LineageTree documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    LineageTree documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Getting started
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Download and Import
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Glossary
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../loaders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Loaders
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../viz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Visualization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Uted
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Uted
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#different-tree-approximations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Different Tree approximations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-need-for-normalization" class="md-nav__link">
+    <span class="md-ellipsis">
+      The need for normalization
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-the-approximations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Testing the approximations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tree-distance-graphs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tree distance Graphs
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#different-tree-approximations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Different Tree approximations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-need-for-normalization" class="md-nav__link">
+    <span class="md-ellipsis">
+      The need for normalization
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-the-approximations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Testing the approximations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tree-distance-graphs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tree distance Graphs
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="introduction-to-unordered-tree-edit-distance-uted">Introduction to Unordered Tree Edit Distance (UTED)</h1>
+<p>While visual inspection allows for identifying similarities and differences between lineages, it is insufficient for scientific analysis. Therefore, mathematical tools are required to objectively analyze and compare such structures. This module focuses on finding such patterns across lineages using an unordered tree edit distance (UTED) algorithm developed by [citation]. UTED computes the minimum distance between two trees by transforming one into the other using the fewest possible operations: addition of a node, removal of a node, and matching two nodes (also referred to as substitution). </p>
+<p>UTED is label agnostic, meaning it can compare lineages without needing any prior knowledge of the naming of the cell, meaning that 2 daughter cells are born equal, however this strength comes with a significant drawback: the algorithm must map nodes from one tree to another which makes time consumed scale exponentially to the number of nodes, because there are many possible mappings. This pairing always respects the hierarchical structure of the trees; thus, nodes that exist at a specific depth will only be mapped to nodes of the same depth or greater. </p>
+<p><img alt="uted_explanation" src="../images/uted_explanation.png" /></p>
+<h2 id="different-tree-approximations">Different Tree approximations</h2>
+<p>To address this computational challenge, we developed 4 approaches that reduce the number of nodes, while preserving accuracy. 2 of these also alter the behaviour of UTED, so it is crucial to understand the mechanisms and implications of each approach:</p>
+<ol>
+<li>
+<p><strong>Full Tree</strong>: This algorithm is the simplest, as the dataset without changes is used to produce the distance. So the algorithm will either:</p>
+<ul>
+<li><strong>Match</strong> a node, where the cost will be 0</li>
+<li><strong>Add</strong> a node to either of the trees for a cost of 1</li>
+<li><strong>Remove</strong> a node from either of the trees for a cost of 1.</li>
+</ul>
+<p>Normal tree is the most accurate, but it does not scale well with time, meaning that computation time scales exponentially with the number of nodes.</p>
+</li>
+<li>
+<p><strong>Downsampled Tree</strong>: This algorithm reconstructs the tree but skips nodes every n time points, so the result will be similar to the first tree but with fewer nodes.</p>
+<ul>
+<li><strong>Match</strong> a node, where the cost will be 0</li>
+<li><strong>Add</strong> a node to either of the trees for a cost of 1 </li>
+<li><strong>Remove</strong> a node from either of the trees for a cost of 1.</li>
+</ul>
+<p>Downsampled Tree is slightly less accurate or equal to normal tree, but much faster</p>
+</li>
+<li>
+<p><strong>Reduced Tree</strong>: This algorithm will reconstruct the trees, but every chain will be replaced with a node of the same length. This approximation completely changes the behaviour of the algorithm, as it will match whole chains with other chains and not just nodes. Such an algorithm may be extremely useful for fast but not precise results, however some biological question may be better answered using this algorithm.</p>
+<ul>
+<li><strong>Match</strong> a node, the cost will be the absolute difference of the length of the 2 chains</li>
+<li><strong>Add</strong> a node, will add a node of size equal to the length of the existing chain, so the cost will be the value of the length of the chain.</li>
+<li><strong>Remove</strong> a node, will remove a node of size equal to the length of the existing chain, so the cost will be the value of the length of the chain.</li>
+</ul>
+<p>This algorithm is extremely lightweight and fast; however, the score is different than the normal tree. Some users may prefer this algorithm due to its capability of comparing chains instead of nodes, making it easily interpretable. Many other developers use the same or similar algorithms to this one [novel metrics, deeplineage citation] </p>
+</li>
+<li>
+<p><strong>Bound Reduced Tree</strong>: This algorithm will use the same tree as the reduced tree, however the edit operations are modified so that big chains that have similar length will be easier to be matched together. Has the strengths of reduced tree, but the resulting distance is closer to the that of the normal tree.</p>
+<ul>
+<li><strong>Match</strong> a node, the cost will be the absolute difference of the length of the 2 chains divided by the sum of both of them, so the result will be between 0 and 1</li>
+<li><strong>Add</strong> a node, will add a node of size 1</li>
+<li><strong>Remove</strong> a node, will remove a node of size 1</li>
+</ul>
+<p>This algorithm has all the advantages of reduced tree, but tries to reduce its disadvantages but adding a new way of comparing chains.</p>
+</li>
+</ol>
+<p><img alt="tree_styles" src="../images/tree_styles.png" /></p>
+<p>To inspect any style:</p>
+<pre><code class="language-python">from LineageTree import tree_styles
+tree_styles.tree_style[&quot;simple&quot;].value(parameters)
+</code></pre>
+<h2 id="the-need-for-normalization">The need for normalization</h2>
+<p>Uted produces distances in the range of zero to infinity, meaning that the results are not easily interpretable. For instance, 2 visually similar, large trees may have a difference of 1000 nodes, but 2 small, dissimilar trees may only have a difference of 10 nodes. This makes the results of this algorithm confusing and its application very limited. To enhance the use of this algorithm, we developed a way to normalize these distances so that the results are bound between 0 and 1 using the number of nodes of the trees. Each tree style employs its own way of normalization.</p>
+<ol>
+<li>
+<p>Full: The distance of 2 trees is divided by the max or the sum of the number of nodes of the trees used.</p>
+</li>
+<li>
+<p>Downsampled: The distance of 2 trees is divided by the max or the sum of the number of nodes of the downsapled tree.</p>
+</li>
+<li>
+<p>Reduced: The distance of 2 trees is divided by the max or the sum of the number of nodes of the trees used before being converted to the reduced form ( Equal to the sum of all the node sizes after the conversion).</p>
+</li>
+<li>
+<p>Normalized Reduced: The distance of 2 trees is divided by the max or the sum of the number of chains that exist in each tree.</p>
+</li>
+</ol>
+<p>Normalization in general
+- Max: This way of normalization produces values that are well distributed along the [0,1] axis, however, trees that show extreme disimilarity may produce values slightly bigger than one (1.16 max). However, most of the time, the compared trees are not that different, so it is a rare occasion.</p>
+<ul>
+<li>Sum: This way of normalization bounds the values between [0,1];  however, most trees will be distributed along the [0,0.5] axis, meaning it's more difficult to distinguish the similar trees from the dissimilar. </li>
+</ul>
+<p>Template to create new styles:</p>
+<pre><code class="language-python">from LineageTree import lineageTree
+from LineageTree.tree_styles import abstract_trees
+
+class tree_style_template(abstract_trees):
+
+   ### The user has to implement these methods
+
+   def get_tree(self)-&gt; tuple[dict[int, list], dict[int, int | float]]:
+       out_dict = {}
+       times_or_other_attribute = {}
+       ... # If time_scale exists for cross embryo comparison use it here
+       return (out_dict, # The hierarchy of the nodes should be a dict(unique_node:[successors])
+               times_or_other_attribute) # An attribute that may be used for comparisons.
+
+   def _edist_format(self, adj_dict): # This methods seldom needs changing, creates the adjacency matrix 
+       return super()._edist_format(adj_dict)# and provides the corresponding nodes that between lt and the tree style
+
+   def delta(self, x, y, corres1, corres2, times1, times2)-&gt; int|float:
+       if x is None and y is None:
+           return 0
+       if x is None: # Cost for removing a node
+           return times2[corres2[y]]
+       if y is None: # Cost for adding a node
+           return times1[corres1[x]]
+       len_x = times1[corres1[x]]
+       len_y = times2[corres2[y]]
+       return abs(len_x - len_y) # Cost for matching a node
+
+   def get_norm(self)-&gt;int|float:
+       ... # how will the normalization work, should return a function that
+       ... # calculates the norm for every subtree of the starting tree
+       return value
+
+   @staticmethod
+   def handle_resolutions(
+       time_resolution1: float | int,
+       time_resolution2: float | int,
+       gcd, #the greatest common divisor of all the time resolutions of datasets in the manager.
+       downsample: int,
+   ) -&gt; tuple[int | float, int | float]: #Needed for cross embryo analysis
+       ...
+       return (time_resolution_fix_for_dataset_1   # This list will be used as the time scale
+               ,time_resolution_fix_for_dataset_2) # parameter when comparing.
+</code></pre>
+<h2 id="testing-the-approximations">Testing the approximations</h2>
+<p>This section is focused on showcasing the advantages and disadvantages of the tree approximations shown in the previous section. </p>
+<p><img alt="synthetic_trees" src="../images/synthetic_trees.png" /></p>
+<h2 id="tree-distance-graphs">Tree distance Graphs</h2>
+<p>The distance value is a very useful metric to check the similarity of two lineages, however its just a distance, it does not give you further information. A user should not only know how similar a tree is to another, but also which sublineages/subtrees are similar and which are not! Fortunately, we realized that we can extract important information during an important step of the algorithm, the matched pairs created during the mapping process and plot them into a new graph, called the tree distance graph. To produce these graphs, we color each chain that has been mapped with the value of the subtree spawned by these chains, showing a metric that can be interpreted as the quality of mapping. Such graphs can show two very significant things:</p>
+<ul>
+<li>
+<p>Variance: Such graphs will use a spectrum of colors to show the distances that are mapped and how well their mapping is, so colors that correspond to the good mapping indicate small variance during development.</p>
+</li>
+<li>
+<p>Gain or loss of function, the unmapped regions can be interpreted as regions, where no region of one tree corresponds to the one with unmapped (of course this may also happen due to a bad dataset), which means that there is a lineage that does not exist in the other, a new lineage, the organism gained or lost a function!</p>
+</li>
+</ul>
+<p><img alt="add_an_example" src="tree_distance_graph.png" /></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.path", "navigation.expand", "content.code.annotate"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.56ea9cef.min.js"></script>
+      
+    
+  </body>
+</html>
