@@ -18,4 +18,6 @@ nav:
     - Download and Import: getting-started.md
     - Glossary: glossary.md
     - Loaders: loaders.md
+    - Visualization: viz.md
+    - Uted: uted.md
   - API Reference: api.md
