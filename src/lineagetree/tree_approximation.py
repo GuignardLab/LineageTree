@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
-    from ._core import LineageTree
+    from .lineage_tree import LineageTree
 
 
 class TreeApproximationTemplate(ABC):

@@ -11,7 +11,7 @@ import numpy as np
 import svgwrite
 
 if TYPE_CHECKING:
-    from ._core import LineageTree
+    from ..lineage_tree import LineageTree
 
 
 def _get_height(lT: LineageTree, c: int, done: dict) -> float:

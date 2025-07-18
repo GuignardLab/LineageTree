@@ -11,10 +11,9 @@ from matplotlib.collections import LineCollection
 from .utils import create_links_and_chains, hierarchical_pos
 
 if TYPE_CHECKING:
-    from ._core import LineageTree
+    from ..lineage_tree import LineageTree
 
 
-@staticmethod
 def __plot_nodes(
     hier: dict,
     selected_nodes: set,
@@ -38,7 +37,6 @@ def __plot_nodes(
     ax.scatter(*hier_pos.T, s=size, zorder=10, color=color, **kwargs)
 
 
-@staticmethod
 def __plot_edges(
     hier: dict,
     lnks_tms: dict,
@@ -135,7 +133,7 @@ def draw_tree_graph(
     if not isinstance(selected_edges, set):
         selected_edges = set(selected_edges)
     if 0 < size:
-        lT.__plot_nodes(
+        __plot_nodes(
             hier,
             selected_nodes,
             color_of_nodes,
@@ -146,7 +144,7 @@ def draw_tree_graph(
         )
     if not color_of_edges:
         color_of_edges = color_of_nodes
-    lT.__plot_edges(
+    __plot_edges(
         hier,
         lnks_tms,
         selected_edges,
@@ -484,7 +482,6 @@ def plot_dtw_heatmap(
     return cost, fig
 
 
-@staticmethod
 def __plot_2d(
     pos_chain1: np.ndarray,
     pos_chain2: np.ndarray,
@@ -612,7 +609,7 @@ def plot_dtw_trajectory(
         ax.set_zlabel("z position")
     else:
         if projection == "xy" or projection == "yx" or projection is None:
-            lT.__plot_2d(
+            __plot_2d(
                 pos_chain1,
                 pos_chain2,
                 nodes1,
@@ -624,7 +621,7 @@ def plot_dtw_trajectory(
                 "y position",
             )
         elif projection == "xz" or projection == "zx":
-            lT.__plot_2d(
+            __plot_2d(
                 pos_chain1,
                 pos_chain2,
                 nodes1,
@@ -636,7 +633,7 @@ def plot_dtw_trajectory(
                 "z position",
             )
         elif projection == "yz" or projection == "zy":
-            lT.__plot_2d(
+            __plot_2d(
                 pos_chain1,
                 pos_chain2,
                 nodes1,

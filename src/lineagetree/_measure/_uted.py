@@ -11,12 +11,12 @@ from edist import uted
 from matplotlib import colormaps
 from matplotlib import pyplot as plt
 
-from .tree_approximation import TreeApproximationTemplate, tree_style
-from .utils import convert_style_to_number
+from ..tree_approximation import TreeApproximationTemplate, tree_style
+from .._basics.utils import convert_style_to_number
 
 if TYPE_CHECKING:
     from edist.alignment import Alignment
-    from ._core import LineageTree
+    from ..lineage_tree import LineageTree
 
 
 norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
@@ -300,8 +300,8 @@ def unordered_tree_edit_distance(
     if lT._comparisons[parameters].get((n1, n2)):
         tmp = lT._comparisons[parameters][(n1, n2)]
     else:
-        tmp = lT.__unordereded_backtrace(
-            n1, n2, end_time, norm, style, downsample
+        tmp = __unordereded_backtrace(
+            lT, n1, n2, end_time, norm, style, downsample
         )
     btrc = tmp["alignment"]
     tree1, tree2 = tmp["trees"]
@@ -399,8 +399,8 @@ def plot_tree_distance_graphs(
     if lT._comparisons[parameters].get((n1, n2)):
         tmp = lT._comparisons[parameters][(n1, n2)]
     else:
-        tmp = lT.__unordereded_backtrace(
-            n1, n2, end_time, norm, style, downsample
+        tmp = __unordereded_backtrace(
+            lT, n1, n2, end_time, norm, style, downsample
         )
     btrc: Alignment = tmp["alignment"]
     tree1, tree2 = tmp["trees"]
@@ -449,7 +449,8 @@ def plot_tree_distance_graphs(
                     node_2 = l_node_2 = cyc2.pop()
                     matched_right.append(node_2)
 
-                colors[node_1] = lT.__calculate_distance_of_sub_tree(
+                colors[node_1] = __calculate_distance_of_sub_tree(
+                    lT,
                     node_1,
                     node_2,
                     btrc,
@@ -480,7 +481,8 @@ def plot_tree_distance_graphs(
                     matched_right.append(node_2)
                     l_node_2 = lT.get_chain_of_node(node_2)[-1]
                     matched_right.append(l_node_2)
-                    colors[node_1] = lT.__calculate_distance_of_sub_tree(
+                    colors[node_1] = __calculate_distance_of_sub_tree(
+                        lT,
                         node_1,
                         node_2,
                         btrc,
@@ -574,8 +576,8 @@ def labelled_mappings(
     if lT._comparisons[parameters].get((n1, n2)):
         tmp = lT._comparisons[parameters][(n1, n2)]
     else:
-        tmp = lT.__unordereded_backtrace(
-            n1, n2, end_time, norm, style, downsample
+        tmp = __unordereded_backtrace(
+            lT, n1, n2, end_time, norm, style, downsample
         )
     btrc = tmp["alignment"]
     tree1, tree2 = tmp["trees"]

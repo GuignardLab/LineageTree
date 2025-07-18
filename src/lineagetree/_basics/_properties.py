@@ -9,7 +9,7 @@ import numpy as np
 from scipy.sparse import dok_array
 
 if TYPE_CHECKING:
-    from ._core import LineageTree
+    from ..lineage_tree import LineageTree
 
 
 class dynamic_property(property):

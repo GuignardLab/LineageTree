@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._core import LineageTree
+    from ..lineage_tree import LineageTree
 
 
 def get_predecessors(

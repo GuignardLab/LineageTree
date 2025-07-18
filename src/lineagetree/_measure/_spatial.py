@@ -7,7 +7,7 @@ import numpy as np
 from scipy.spatial import Delaunay, KDTree
 
 if TYPE_CHECKING:
-    from ._core import LineageTree
+    from ..lineage_tree import LineageTree
 
 
 def get_idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:

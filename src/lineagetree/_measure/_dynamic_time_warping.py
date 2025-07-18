@@ -6,10 +6,9 @@ from scipy.spatial import distance
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._core import LineageTree
+    from ..lineage_tree import LineageTree
 
 
-@staticmethod
 def __calculate_diag_line(dist_mat: np.ndarray) -> tuple[float, float]:
     """
     Calculate the line that centers the band w.
@@ -77,7 +76,7 @@ def __dp(
     w_limit = max(w, abs(N - M))  # Calculate the Sakoe-Chiba band width
 
     if centered_band:
-        slope, intercept = lT.__calculate_diag_line(dist_mat)
+        slope, intercept = __calculate_diag_line(dist_mat)
         square_root = np.sqrt((slope**2) + 1)
 
     # Initialize the cost matrix
@@ -154,7 +153,6 @@ def __dp(
 
 
 # Reference: https://github.com/nghiaho12/rigid_transform_3D
-@staticmethod
 def __rigid_transform_3D(A, B):
     assert A.shape == B.shape
 
@@ -310,22 +308,23 @@ def calculate_dtw(
     nodes1_chain = lT.get_chain_of_node(nodes1)
     nodes2_chain = lT.get_chain_of_node(nodes2)
 
-    interp_chain1, interp_chain2 = lT.__interpolate(
-        nodes1_chain, nodes2_chain, threshold
+    interp_chain1, interp_chain2 = __interpolate(
+        lT, nodes1_chain, nodes2_chain, threshold
     )
 
     pos_chain1 = np.array([lT.pos[c_id] for c_id in nodes1_chain])
     pos_chain2 = np.array([lT.pos[c_id] for c_id in nodes2_chain])
 
     if regist:
-        R, t = lT.__rigid_transform_3D(
+        R, t = __rigid_transform_3D(
             np.transpose(interp_chain1), np.transpose(interp_chain2)
         )
         pos_chain1 = np.transpose(np.dot(R, pos_chain1.T) + t)
 
     dist_mat = distance.cdist(pos_chain1, pos_chain2, "euclidean")
 
-    path, cost_mat, final_cost = lT.__dp(
+    path, cost_mat, final_cost = __dp(
+        lT,
         dist_mat,
         start_d,
         back_d,

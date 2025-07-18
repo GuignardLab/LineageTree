@@ -11,8 +11,8 @@ from warnings import warn
 import numpy as np
 from packaging.version import Version
 
-from ._core import LineageTree
-from .utils import CompatibleUnpickler
+from ..lineage_tree import LineageTree
+from .._basics.utils import CompatibleUnpickler
 
 IMPLICIT_L_T = {
     "AB": "P0",

@@ -11,7 +11,7 @@ import matplotlib.colors as mcolors
 import numpy as np
 from matplotlib import colormaps
 
-from ._core import LineageTree
+from .lineage_tree import LineageTree
 from .tree_approximation import tree_style
 
 try:
@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 from edist import uted
 
 from .tree_approximation import TreeApproximationTemplate
-from .utils import convert_style_to_number
+from ._basics.utils import convert_style_to_number
 
 if TYPE_CHECKING:
     from edist.alignment import Alignment

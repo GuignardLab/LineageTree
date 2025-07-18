@@ -1,15 +1,11 @@
-from ._core import LineageTree
-from ._dynamic_time_warping import (
-    __calculate_diag_line,
-    __dp,
-    __interpolate,
-    __rigid_transform_3D,
+from .lineage_tree import LineageTree
+from ._measure._dynamic_time_warping import (
     calculate_dtw,
 )
-from ._loaders import (
+from ._io._loaders import (
     load,
 )
-from ._modifier import (
+from ._basics._modifier import (
     _add_node,
     add_chain,
     add_root,
@@ -17,7 +13,7 @@ from ._modifier import (
     modifier,
     remove_nodes,
 )
-from ._navigation import (
+from ._basics._navigation import (
     find_leaves,
     get_all_chains_of_subtree,
     get_ancestor_at_t,
@@ -30,10 +26,7 @@ from ._navigation import (
     get_successors,
     nodes_at_t,
 )
-from ._plot import (
-    __plot_2d,
-    __plot_edges,
-    __plot_nodes,
+from ._basics._plot import (
     _create_dict_of_plots,
     draw_tree_graph,
     plot_all_lineages,
@@ -41,16 +34,14 @@ from ._plot import (
     plot_dtw_trajectory,
     plot_subtree,
 )
-from ._spatial import (
+from ._measure._spatial import (
     compute_k_nearest_neighbours,
     compute_spatial_density,
     compute_spatial_edges,
     get_gabriel_graph,
     get_idx3d,
 )
-from ._uted import (
-    __calculate_distance_of_sub_tree,
-    __unordereded_backtrace,
+from ._measure._uted import (
     clear_comparisons,
     labelled_mappings,
     norm_dict,
@@ -58,7 +49,7 @@ from ._uted import (
     unordered_tree_edit_distance,
     unordered_tree_edit_distances_at_time_t,
 )
-from ._writers import (
+from ._io._writers import (
     _get_height,
     write,
     write_to_binary,
@@ -92,8 +83,6 @@ LineageTree.compute_spatial_edges = compute_spatial_edges
 LineageTree.compute_spatial_density = compute_spatial_density
 
 # Uted functions
-LineageTree.__calculate_distance_of_sub_tree = __calculate_distance_of_sub_tree
-LineageTree.__unordereded_backtrace = __unordereded_backtrace
 LineageTree.clear_comparisons = clear_comparisons
 LineageTree.labelled_mappings = labelled_mappings
 LineageTree.norm_dict = norm_dict
@@ -104,9 +93,6 @@ LineageTree.unordered_tree_edit_distance = unordered_tree_edit_distance
 LineageTree.plot_tree_distance_graphs = plot_tree_distance_graphs
 
 # Plot functions
-LineageTree.__plot_2d = __plot_2d
-LineageTree.__plot_edges = __plot_edges
-LineageTree.__plot_nodes = __plot_nodes
 LineageTree._create_dict_of_plots = _create_dict_of_plots
 LineageTree.draw_tree_graph = draw_tree_graph
 LineageTree.plot_all_lineages = plot_all_lineages
@@ -115,10 +101,6 @@ LineageTree.plot_dtw_trajectory = plot_dtw_trajectory
 LineageTree.plot_subtree = plot_subtree
 
 # DTW functions
-LineageTree.__calculate_diag_line = __calculate_diag_line
-LineageTree.__dp = __dp
-LineageTree.__interpolate = __interpolate
-LineageTree.__rigid_transform_3D = __rigid_transform_3D
 LineageTree.calculate_dtw = calculate_dtw
 
 # Navigation functions

@@ -10,7 +10,7 @@ from collections.abc import Iterable, Sequence
 
 import numpy as np
 
-from ._properties import (
+from ._basics._properties import (
     all_chains,
     depth,
     edges,

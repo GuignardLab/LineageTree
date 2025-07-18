@@ -1,6 +1,6 @@
 import warnings
 
-from .._core import LineageTree
+from ..lineage_tree import LineageTree
 
 try:
     import motile

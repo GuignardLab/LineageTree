@@ -4,10 +4,10 @@ import pickle
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
-from .tree_approximation import TreeApproximationTemplate
+from ..tree_approximation import TreeApproximationTemplate
 
 if TYPE_CHECKING:
-    from ._core import LineageTree
+    from ..lineage_tree import LineageTree
 
 
 def create_links_and_chains(
