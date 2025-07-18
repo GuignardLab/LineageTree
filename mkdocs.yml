@@ -4,7 +4,14 @@ theme:
   features:
   - navigation.path
   - navigation.expand
-
+  - content.code.annotate
+plugins:
+- mkdocstrings:
+    handlers:
+      python:
+        options:
+          show_submodules: true
+          docstring_style: numpy
 nav:
   - Home: index.md
   - Getting started:

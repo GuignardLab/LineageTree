@@ -8,7 +8,7 @@ Multiple well known formats are ready for import out of the box:
 4. MaMut xml files
 5. Mastodon files ( Either the .mastodon file or the 2 CSV files extracted using the User interface)
 6. TGMM data
-7. ...
+
 
 The user may also decide to import their custom format. The bare minimum inormation needed to create a Lineage tree is the hierarchy of the nodes, which is a Python dictionary of the successors or the predecessors shown in the example:
 
@@ -80,5 +80,5 @@ def template_load(path, name=None):
        return lineageTree(predecessor=relations, time=time, pos=pos, name=name, **properties
    )
 ```
-  
+:::LineageTree.loaders
 
