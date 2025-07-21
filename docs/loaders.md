@@ -1,14 +1,15 @@
 
 # Loaders
+
 Multiple well known formats are ready for import out of the box:
 
-1. csv with the format: id, time, z, y, x, id, pred_id, lin_id
-2. Astec data
-3. Multiple C. Elegans formats (add citations here)
-4. MaMut xml files
-5. Mastodon files ( Either the .mastodon file or the 2 CSV files extracted using the User interface)
-6. TGMM data
+1. **csv** with the format: id, time, z, y, x, id, pred_id, lin_id
 
+- **Astec** data
+- **Multiple** C. Elegans formats (add citations here)
+- **MaMut** xml files
+- **Mastodon** files ( Either the .mastodon file or the 2 CSV files extracted using the User interface)
+- **TGMM** data
 
 The user may also decide to import their custom format. The bare minimum inormation needed to create a Lineage tree is the hierarchy of the nodes, which is a Python dictionary of the successors or the predecessors shown in the example:
 
@@ -24,7 +25,7 @@ Other attributes that can be used to initiate a lineageTree file apart from the 
 
 - **kwargs: Any other dictionary provided during imaging can be loaded into lineageTree. The format is {unique_id: value}
 
-#Example of loading and template with **kwargs.
+### Example of loading and template with **kwargs
 
 ```python
 
@@ -80,5 +81,5 @@ def template_load(path, name=None):
        return lineageTree(predecessor=relations, time=time, pos=pos, name=name, **properties
    )
 ```
-:::LineageTree.loaders
 
+:::LineageTree.loaders

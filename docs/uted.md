@@ -4,12 +4,13 @@ While visual inspection allows for identifying similarities and differences betw
 
 UTED is label agnostic, meaning it can compare lineages without needing any prior knowledge of the naming of the cell, meaning that 2 daughter cells are born equal, however this strength comes with a significant drawback: the algorithm must map nodes from one tree to another which makes time consumed scale exponentially to the number of nodes, because there are many possible mappings. This pairing always respects the hierarchical structure of the trees; thus, nodes that exist at a specific depth will only be mapped to nodes of the same depth or greater. 
 
-
 ![uted_explanation](./images/uted_explanation.png)
+
 ## Different Tree approximations
+
 To address this computational challenge, we developed 4 approaches that reduce the number of nodes, while preserving accuracy. 2 of these also alter the behaviour of UTED, so it is crucial to understand the mechanisms and implications of each approach:
 
-1. **Full Tree**: This algorithm is the simplest, as the dataset without changes is used to produce the distance. So the algorithm will either:
+1. **Normal Tree**: This algorithm is the simplest, as the dataset without changes is used to produce the distance. So the algorithm will either:
 
     - **Match** a node, where the cost will be 0
     - **Add** a node to either of the trees for a cost of 1
@@ -44,31 +45,33 @@ To address this computational challenge, we developed 4 approaches that reduce t
 
 ![tree_styles](./images/tree_styles.png)
 
-
-
 To inspect any style:
+
 ```python
 from LineageTree import tree_styles
 tree_styles.tree_style["simple"].value(parameters)
 ```
+
 ## The need for normalization
 
 Uted produces distances in the range of zero to infinity, meaning that the results are not easily interpretable. For instance, 2 visually similar, large trees may have a difference of 1000 nodes, but 2 small, dissimilar trees may only have a difference of 10 nodes. This makes the results of this algorithm confusing and its application very limited. To enhance the use of this algorithm, we developed a way to normalize these distances so that the results are bound between 0 and 1 using the number of nodes of the trees. Each tree style employs its own way of normalization.
 
-1. Full: The distance of 2 trees is divided by the max or the sum of the number of nodes of the trees used.
+1. **Normal**: The distance of 2 trees is divided by the max or the sum of the number of nodes of the trees used.
 
-2. Downsampled: The distance of 2 trees is divided by the max or the sum of the number of nodes of the downsapled tree.
+2. **Downsampled**: The distance of 2 trees is divided by the max or the sum of the number of nodes of the downsapled tree.
 
-3. Reduced: The distance of 2 trees is divided by the max or the sum of the number of nodes of the trees used before being converted to the reduced form ( Equal to the sum of all the node sizes after the conversion).
+3. **Reduced**: The distance of 2 trees is divided by the max or the sum of the number of nodes of the trees used before being converted to the reduced form ( Equal to the sum of all the node sizes after the conversion).
 
-4. Normalized Reduced: The distance of 2 trees is divided by the max or the sum of the number of chains that exist in each tree.
+4.**Normalized Reduced**: The distance of 2 trees is divided by the max or the sum of the number of chains that exist in each tree.
 
 Normalization in general
+
 - Max: This way of normalization produces values that are well distributed along the [0,1] axis, however, trees that show extreme disimilarity may produce values slightly bigger than one (1.16 max). However, most of the time, the compared trees are not that different, so it is a rare occasion.
 
 - Sum: This way of normalization bounds the values between [0,1];  however, most trees will be distributed along the [0,0.5] axis, meaning it's more difficult to distinguish the similar trees from the dissimilar. 
 
 Template to create new styles:
+
 ```python
 from LineageTree import lineageTree
 from LineageTree.tree_styles import abstract_trees
@@ -121,7 +124,6 @@ This section is focused on showcasing the advantages and disadvantages of the tr
 
 ![synthetic_trees](./images/synthetic_trees.png)
 
-
 ## Tree distance Graphs
 
 The distance value is a very useful metric to check the similarity of two lineages, however its just a distance, it does not give you further information. A user should not only know how similar a tree is to another, but also which sublineages/subtrees are similar and which are not! Fortunately, we realized that we can extract important information during an important step of the algorithm, the matched pairs created during the mapping process and plot them into a new graph, called the tree distance graph. To produce these graphs, we color each chain that has been mapped with the value of the subtree spawned by these chains, showing a metric that can be interpreted as the quality of mapping. Such graphs can show two very significant things:
@@ -130,17 +132,4 @@ The distance value is a very useful metric to check the similarity of two lineag
 
 - Gain or loss of function, the unmapped regions can be interpreted as regions, where no region of one tree corresponds to the one with unmapped (of course this may also happen due to a bad dataset), which means that there is a lineage that does not exist in the other, a new lineage, the organism gained or lost a function!
 
-
 ![add_an_example](tree_distance_graph.png)
-
-
-
-
-
-
-
-
-
-
-
-

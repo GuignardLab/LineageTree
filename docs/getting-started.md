@@ -69,4 +69,3 @@ or, for Mastodon csv file:
 from LineageTree import read_from_mastodon_csv
 lT = read_from_mastodon_csv(['path/to/nodes.csv', 'path/to/links.csv'])
 ```
-
