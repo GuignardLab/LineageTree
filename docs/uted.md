@@ -126,8 +126,10 @@ This section is focused on showcasing the advantages and disadvantages of the tr
 
 ## Tree distance Graphs
 
-The distance value is a very useful metric to check the similarity of two lineages, however its just a distance, it does not give you further information. A user should not only know how similar a tree is to another, but also which sublineages/subtrees are similar and which are not! Fortunately, we realized that we can extract important information during an important step of the algorithm, the matched pairs created during the mapping process and plot them into a new graph, called the tree distance graph. To produce these graphs, we color each chain that has been mapped with the value of the subtree spawned by these chains, showing a metric that can be interpreted as the quality of mapping. Such graphs can show two very significant things:
+<p style="text-align: justify;">
 
+The distance value is a very useful metric to check the similarity of two lineages, however its just a distance, it does not give you further information. A user should not only know how similar a tree is to another, but also which sublineages/subtrees are similar and which are not! Fortunately, we realized that we can extract important information during an important step of the algorithm, the matched pairs created during the mapping process and plot them into a new graph, called the tree distance graph. To produce these graphs, we color each chain that has been mapped with the value of the subtree spawned by these chains, showing a metric that can be interpreted as the quality of mapping. Such graphs can show two very significant things:
+</p>
 - Variance: Such graphs will use a spectrum of colors to show the distances that are mapped and how well their mapping is, so colors that correspond to the good mapping indicate small variance during development.
 
 - Gain or loss of function, the unmapped regions can be interpreted as regions, where no region of one tree corresponds to the one with unmapped (of course this may also happen due to a bad dataset), which means that there is a lineage that does not exist in the other, a new lineage, the organism gained or lost a function!
