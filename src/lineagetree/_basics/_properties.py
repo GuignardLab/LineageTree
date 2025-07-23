@@ -200,9 +200,9 @@ def _m(lT: LineageTree, i, j):
         if i == j:  # the distance to the node itlT is 0
             lT._tmp_parenting[(i, j)] = 0
             lT._parenting[i, j] = lT._tmp_parenting[(i, j)]
-        elif not lT._predecessor[
-            j
-        ]:  # j and i are note connected so the distance if inf
+
+        # j and i are note connected so the distance if inf
+        elif not lT._predecessor[j]:
             lT._tmp_parenting[(i, j)] = np.inf
         else:  # the distance between i and j is the distance between i and pred(j) + 1
             lT._tmp_parenting[(i, j)] = lT.m(i, lT._predecessor[j][0]) + 1
