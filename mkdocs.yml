@@ -1,6 +1,19 @@
 site_name: LineageTree documentation
 theme:
   name: material
+  palette:
+  - scheme: default
+    primary: indigo
+    accent: indigo
+    toggle:
+      icon: material/weather-night
+      name: Switch to dark mode
+  - scheme: slate
+    primary: indigo
+    accent: indigo
+    toggle:
+      icon: material/weather-sunny
+      name: Switch to light mode
   features:
   - navigation.path
   - navigation.expand
@@ -17,7 +30,7 @@ nav:
   - Getting started:
     - Download and Import: getting-started.md
     - Glossary: glossary.md
-    - Loaders: loaders.md
-    - Visualization: viz.md
-    - Uted: uted.md
+  - Loaders: loaders.md
+  - Visualization: viz.md
+  - Uted: uted.md
   - API Reference: api.md
