@@ -175,20 +175,20 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
         
           
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
@@ -204,7 +204,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Getting started
@@ -257,8 +257,15 @@
 
               
             
-              
-                
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
   
   
   
@@ -278,10 +285,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
   
@@ -301,10 +307,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
     
@@ -398,14 +403,6 @@
     </ul>
   
 </nav>
-      
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
       
     </li>
   
@@ -519,7 +516,7 @@
 <p>To address this computational challenge, we developed 4 approaches that reduce the number of nodes, while preserving accuracy. 2 of these also alter the behaviour of UTED, so it is crucial to understand the mechanisms and implications of each approach:</p>
 <ol>
 <li>
-<p><strong>Full Tree</strong>: This algorithm is the simplest, as the dataset without changes is used to produce the distance. So the algorithm will either:</p>
+<p><strong>Normal Tree</strong>: This algorithm is the simplest, as the dataset without changes is used to produce the distance. So the algorithm will either:</p>
 <ul>
 <li><strong>Match</strong> a node, where the cost will be 0</li>
 <li><strong>Add</strong> a node to either of the trees for a cost of 1</li>
@@ -564,22 +561,24 @@ tree_styles.tree_style[&quot;simple&quot;].value(parameters)
 <p>Uted produces distances in the range of zero to infinity, meaning that the results are not easily interpretable. For instance, 2 visually similar, large trees may have a difference of 1000 nodes, but 2 small, dissimilar trees may only have a difference of 10 nodes. This makes the results of this algorithm confusing and its application very limited. To enhance the use of this algorithm, we developed a way to normalize these distances so that the results are bound between 0 and 1 using the number of nodes of the trees. Each tree style employs its own way of normalization.</p>
 <ol>
 <li>
-<p>Full: The distance of 2 trees is divided by the max or the sum of the number of nodes of the trees used.</p>
+<p><strong>Normal</strong>: The distance of 2 trees is divided by the max or the sum of the number of nodes of the trees used.</p>
 </li>
 <li>
-<p>Downsampled: The distance of 2 trees is divided by the max or the sum of the number of nodes of the downsapled tree.</p>
+<p><strong>Downsampled</strong>: The distance of 2 trees is divided by the max or the sum of the number of nodes of the downsapled tree.</p>
 </li>
 <li>
-<p>Reduced: The distance of 2 trees is divided by the max or the sum of the number of nodes of the trees used before being converted to the reduced form ( Equal to the sum of all the node sizes after the conversion).</p>
-</li>
-<li>
-<p>Normalized Reduced: The distance of 2 trees is divided by the max or the sum of the number of chains that exist in each tree.</p>
+<p><strong>Reduced</strong>: The distance of 2 trees is divided by the max or the sum of the number of nodes of the trees used before being converted to the reduced form ( Equal to the sum of all the node sizes after the conversion).</p>
 </li>
 </ol>
-<p>Normalization in general
-- Max: This way of normalization produces values that are well distributed along the [0,1] axis, however, trees that show extreme disimilarity may produce values slightly bigger than one (1.16 max). However, most of the time, the compared trees are not that different, so it is a rare occasion.</p>
+<p>4.<strong>Normalized Reduced</strong>: The distance of 2 trees is divided by the max or the sum of the number of chains that exist in each tree.</p>
+<p>Normalization in general</p>
 <ul>
-<li>Sum: This way of normalization bounds the values between [0,1];  however, most trees will be distributed along the [0,0.5] axis, meaning it's more difficult to distinguish the similar trees from the dissimilar. </li>
+<li>
+<p>Max: This way of normalization produces values that are well distributed along the [0,1] axis, however, trees that show extreme disimilarity may produce values slightly bigger than one (1.16 max). However, most of the time, the compared trees are not that different, so it is a rare occasion.</p>
+</li>
+<li>
+<p>Sum: This way of normalization bounds the values between [0,1];  however, most trees will be distributed along the [0,0.5] axis, meaning it's more difficult to distinguish the similar trees from the dissimilar. </p>
+</li>
 </ul>
 <p>Template to create new styles:</p>
 <pre><code class="language-python">from LineageTree import lineageTree
@@ -630,7 +629,10 @@ class tree_style_template(abstract_trees):
 <p>This section is focused on showcasing the advantages and disadvantages of the tree approximations shown in the previous section. </p>
 <p><img alt="synthetic_trees" src="../images/synthetic_trees.png" /></p>
 <h2 id="tree-distance-graphs">Tree distance Graphs</h2>
-<p>The distance value is a very useful metric to check the similarity of two lineages, however its just a distance, it does not give you further information. A user should not only know how similar a tree is to another, but also which sublineages/subtrees are similar and which are not! Fortunately, we realized that we can extract important information during an important step of the algorithm, the matched pairs created during the mapping process and plot them into a new graph, called the tree distance graph. To produce these graphs, we color each chain that has been mapped with the value of the subtree spawned by these chains, showing a metric that can be interpreted as the quality of mapping. Such graphs can show two very significant things:</p>
+<p style="text-align: justify;">
+
+The distance value is a very useful metric to check the similarity of two lineages, however its just a distance, it does not give you further information. A user should not only know how similar a tree is to another, but also which sublineages/subtrees are similar and which are not! Fortunately, we realized that we can extract important information during an important step of the algorithm, the matched pairs created during the mapping process and plot them into a new graph, called the tree distance graph. To produce these graphs, we color each chain that has been mapped with the value of the subtree spawned by these chains, showing a metric that can be interpreted as the quality of mapping. Such graphs can show two very significant things:
+</p>
 <ul>
 <li>
 <p>Variance: Such graphs will use a spectrum of colors to show the distances that are mapped and how well their mapping is, so colors that correspond to the good mapping indicate small variance during development.</p>

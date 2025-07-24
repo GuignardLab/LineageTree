@@ -412,8 +412,15 @@
 
               
             
-              
-                
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
   
   
   
@@ -433,10 +440,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
   
@@ -456,10 +462,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
   
@@ -476,14 +481,6 @@
   
 
       </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -673,67 +670,90 @@
 <ul>
 <li>
 <h3 id="trees">Trees</h3>
- A tree is a hierarchical acyclic graph that contains nodes and edges, lineageTree works with at most 2 successors for one node. To create a demo tree the user can call </li>
+</li>
 </ul>
+<p>A tree is a hierarchical acyclic graph that contains nodes and edges, lineageTree works with at most 2 successors for one node. To create a demo tree the user can call</p>
 <pre><code class="language-python">from lineagetree import LineageTree
 lT = LineageTree(successors= {i:[i+1] for i in range(10)})
 </code></pre>
 <p><img alt="Image for glossary" src="../images/glossary_image.png" /></p>
 <blockquote>
-<p>The differences between a biological lineage and a LineageTree lineage </p>
+<p>The differences between a biological lineage and a LineageTree lineage</p>
 </blockquote>
 <ul>
 <li>
 <h3 id="nodes">Nodes</h3>
-<p>The smallest part of a tree, a point that may or may not connect to others. The set of all the nodes may be accessed by <code>lT.nodes</code></p>
-</li>
-<li>
-<h3 id="edges">Edges</h3>
-<p>The lTect that connects 2 nodes, in the case of the tree its also directed (goes one way). The edges may be accessed throug <code>lT.edges</code></p>
-</li>
-<li>
-<h3 id="successors">Successors</h3>
-<p>The successor of a node n is a node connected with an edge to the node n that exists one level (timepoint) lower than n. The immutable dictionary (MappingProxy) of all the successors may be accessed by <code>lT.successor</code></p>
-</li>
-<li>
-<h3 id="predecessors">Predecessors</h3>
-<p>The predecessor of a node n is a node connected to the node that exists one time point higher than n. The immutable dictionary (MappingProxy) of all the predecessors may be accessed by <code>lT.predecessor</code></p>
-</li>
-<li>
-<h3 id="roots">Roots</h3>
-<p>The root of a tree is a node that has no predecessors. In the case of lineageTree the root has an empty tuple as predecessor. LineageTree allows for many roots to exist in the same file. The set of roots may be accessed by using <code>lT.roots</code></p>
-</li>
-<li>
-<h3 id="leaves">Leaves</h3>
-<p>The leaf of a tree is a node that has no successors. In the case of lineageTree the leaf has an empty tuple as a successor. The set of leaves may be accessed through <code>lT.leaves</code></p>
-</li>
-<li>
-<h3 id="divisions">Divisions</h3>
-<p>An event where one node has 2 successors instead of one. There is no direct way to access a division; however, the node that is before a division (or after) is always at the end or start of a chain (except for the cases that the chain contains a leaf or a root)</p>
-</li>
-<li>
-<h3 id="chains">Chains</h3>
-<p>A tree segment, where all nodes are between a division or root and a division or a leaf. To access a chain that contains a specific node <code>n</code>, the user may use:<code>lT.get_chain_of_node(n)</code>
-A continuous subset of a chain may be referred to as a subchain or a path, which is not a chain.</p>
-</li>
-<li>
-<h3 id="subtree">Subtree</h3>
-<p>Any segment of a tree that is also a tree. Using the function <code>lT.get_sub_tree(node)</code> will not provide a new lineageTree but a list of all the nodes contained inside the subtree. </p>
-</li>
-<li>
-<h3 id="siblings">Siblings</h3>
-<p>Two nodes that have the same predecessor. Often used for chains where the first node of each chain has the same predecessor as the other one.</p>
-</li>
-<li>
-<h3 id="time">Time</h3>
-<p>The time point at which the nodes exist. This property concerns time points and is not real time.
- The immutable dictionary (MappingProxy) containing the time information for all the nodes may be accessed through <code>lT.times</code>.</p>
-</li>
-<li>
-<h3 id="time-resolution">Time resolution</h3>
-<p>How long one time point lasts, relevant only for comparisons across lineages. This attribute can be a property or inspected by <code>lT.time_resolution</code>.</p>
 </li>
 </ul>
+<p>The smallest part of a tree, a point that may or may not connect to others. The set of all the nodes may be accessed by <code>lT.nodes</code></p>
+<ul>
+<li>
+<h3 id="edges">Edges</h3>
+</li>
+</ul>
+<p>The lTect that connects 2 nodes, in the case of the tree its also directed (goes one way). The edges may be accessed throug <code>lT.edges</code></p>
+<ul>
+<li>
+<h3 id="successors">Successors</h3>
+</li>
+</ul>
+<p>The successor of a node n is a node connected with an edge to the node n that exists one level (timepoint) lower than n. The immutable dictionary (MappingProxy) of all the successors may be accessed by <code>lT.successor</code></p>
+<ul>
+<li>
+<h3 id="predecessors">Predecessors</h3>
+</li>
+</ul>
+<p>The predecessor of a node n is a node connected to the node that exists one time point higher than n. The immutable dictionary (MappingProxy) of all the predecessors may be accessed by <code>lT.predecessor</code></p>
+<ul>
+<li>
+<h3 id="roots">Roots</h3>
+</li>
+</ul>
+<p>The root of a tree is a node that has no predecessors. In the case of lineageTree the root has an empty tuple as predecessor. LineageTree allows for many roots to exist in the same file. The set of roots may be accessed by using <code>lT.roots</code></p>
+<ul>
+<li>
+<h3 id="leaves">Leaves</h3>
+</li>
+</ul>
+<p>The leaf of a tree is a node that has no successors. In the case of lineageTree the leaf has an empty tuple as a successor. The set of leaves may be accessed through <code>lT.leaves</code></p>
+<ul>
+<li>
+<h3 id="divisions">Divisions</h3>
+</li>
+</ul>
+<p>An event where one node has 2 successors instead of one. There is no direct way to access a division; however, the node that is before a division (or after) is always at the end or start of a chain (except for the cases that the chain contains a leaf or a root)</p>
+<ul>
+<li>
+<h3 id="chains">Chains</h3>
+</li>
+</ul>
+<p>A tree segment, where all nodes are between a division or root and a division or a leaf. To access a chain that contains a specific node <code>n</code>, the user may use:<code>lT.get_chain_of_node(n)</code>
+A continuous subset of a chain may be referred to as a subchain or a path, which is not a chain.</p>
+<ul>
+<li>
+<h3 id="subtree">Subtree</h3>
+</li>
+</ul>
+<p>Any segment of a tree that is also a tree. Using the function <code>lT.get_sub_tree(node)</code> will not provide a new lineageTree but a list of all the nodes contained inside the subtree.</p>
+<ul>
+<li>
+<h3 id="siblings">Siblings</h3>
+</li>
+</ul>
+<p>Two nodes that have the same predecessor. Often used for chains where the first node of each chain has the same predecessor as the other one.</p>
+<ul>
+<li>
+<h3 id="time">Time</h3>
+</li>
+</ul>
+<p>The time point at which the nodes exist. This property concerns time points and is not real time.
+ The immutable dictionary (MappingProxy) containing the time information for all the nodes may be accessed through <code>lT.times</code>.</p>
+<ul>
+<li>
+<h3 id="time-resolution">Time resolution</h3>
+</li>
+</ul>
+<p>How long one time point lasts, relevant only for comparisons across lineages. This attribute can be a property or inspected by <code>lT.time_resolution</code>.</p>
 
 
 

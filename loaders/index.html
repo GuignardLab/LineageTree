@@ -175,20 +175,20 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
         
           
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
@@ -204,7 +204,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Getting started
@@ -257,8 +257,15 @@
 
               
             
-              
-                
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
   
   
     
@@ -273,6 +280,19 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Loaders
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -285,13 +305,139 @@
 
       </a>
       
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#example-of-loading-and-template-with-kwargs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example of loading and template with **kwargs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders" class="md-nav__link">
+    <span class="md-ellipsis">
+      loaders
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_ASTEC" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_ASTEC
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_binary" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_binary
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_csv" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_csv
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_mamut_xml" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_mamut_xml
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_mastodon" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_mastodon
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_mastodon_csv" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_mastodon_csv
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_tgmm_xml" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_tgmm_xml
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_txt_for_celegans" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_txt_for_celegans
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_txt_for_celegans_BAO" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_txt_for_celegans_BAO
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_txt_for_celegans_CAO" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_txt_for_celegans_CAO
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
   
@@ -311,10 +457,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
   
@@ -331,14 +476,6 @@
   
 
       </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -385,6 +522,122 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#example-of-loading-and-template-with-kwargs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example of loading and template with **kwargs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders" class="md-nav__link">
+    <span class="md-ellipsis">
+      loaders
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_ASTEC" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_ASTEC
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_binary" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_binary
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_csv" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_csv
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_mamut_xml" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_mamut_xml
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_mastodon" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_mastodon
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_mastodon_csv" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_mastodon_csv
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_tgmm_xml" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_tgmm_xml
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_txt_for_celegans" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_txt_for_celegans
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_txt_for_celegans_BAO" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_txt_for_celegans_BAO
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#LineageTree.loaders.read_from_txt_for_celegans_CAO" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_from_txt_for_celegans_CAO
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -402,12 +655,16 @@
 <h1 id="loaders">Loaders</h1>
 <p>Multiple well known formats are ready for import out of the box:</p>
 <ol>
-<li>csv with the format: id, time, z, y, x, id, pred_id, lin_id</li>
-<li>Astec data</li>
-<li>Multiple C. Elegans formats (add citations here)</li>
-<li>MaMut xml files</li>
-<li>Mastodon files ( Either the .mastodon file or the 2 CSV files extracted using the User interface)</li>
-<li>TGMM data</li>
+<li>
+<p><strong>csv</strong> with the format: id, time, z, y, x, id, pred_id, lin_id</p>
+</li>
+<li>
+<p><strong>Astec</strong> data</p>
+</li>
+<li><strong>Multiple</strong> C. Elegans formats (add citations here)</li>
+<li><strong>MaMut</strong> xml files</li>
+<li><strong>Mastodon</strong> files ( Either the .mastodon file or the 2 CSV files extracted using the User interface)</li>
+<li><strong>TGMM</strong> data</li>
 </ol>
 <p>The user may also decide to import their custom format. The bare minimum inormation needed to create a Lineage tree is the hierarchy of the nodes, which is a Python dictionary of the successors or the predecessors shown in the example:</p>
 <p><code>successor/predecessor : {unique_node_id (int) : [next_unique_node_ids (int)]}</code></p>
@@ -426,7 +683,7 @@
 <p>**kwargs: Any other dictionary provided during imaging can be loaded into lineageTree. The format is {unique_id: value}</p>
 </li>
 </ul>
-<h1 id="example-of-loading-and-template-with-kwargs">Example of loading and template with **kwargs.</h1>
+<h3 id="example-of-loading-and-template-with-kwargs">Example of loading and template with **kwargs</h3>
 <pre><code class="language-python">
 from pathlib import Path
 from LineageTree import lineageTree
