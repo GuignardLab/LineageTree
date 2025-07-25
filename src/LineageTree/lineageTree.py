@@ -29,6 +29,7 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.sparse import dok_array
 from scipy.spatial import Delaunay, KDTree, distance
 
+from . import __version__
 from .tree_approximation import TreeApproximationTemplate, tree_style
 from .utils import (
     convert_style_to_number,
@@ -3409,7 +3410,7 @@ class lineageTree:
             Supported keyword arguments are dictionaries assigning nodes to any custom property.
             The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
-        self.__version__ = importlib.metadata.version("LineageTree")
+        self.__version__ = __version__
         self.name = str(name) if name is not None else None
         if successor is not None and predecessor is not None:
             raise ValueError(
