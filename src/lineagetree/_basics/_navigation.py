@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
+import warnings
 
 if TYPE_CHECKING:
     from ..lineage_tree import LineageTree
@@ -394,3 +395,103 @@ def get_subtree(lT: LineageTree, node_list: set[int]) -> LineageTree:
         ],
         **{name: lT.__dict__[name] for name in lT._custom_property_list},
     )
+
+
+def available_labels(lT: LineageTree) -> list[str]:
+    """Returns the list all the available label dictionaries
+
+    Returns
+    -------
+    list of string
+        list of the names of all the available properties
+        to label the nodes
+    """
+    available_labels = []
+    for prop_name, prop in lT.__dict__.items():
+        if (
+            0 < len(prop_name)
+            and prop_name[0] != "_"
+            and isinstance(prop, dict)
+            and 0 < len(prop)
+            and all(isinstance(k, int) for k in prop.keys())
+            and all(isinstance(v, str) for v in prop.values())
+        ):
+            available_labels.append(prop_name)
+    return available_labels
+
+
+def change_labels(
+    lT: LineageTree,
+    new_labels_name: str | None = None,
+    new_labels_dict: dict[int, str] | None = None,
+    only_first_node_in_chain: bool = False,
+):
+    """Change the dictionary that serves at labels with
+    the `LineageTree` attribute `new_labels_name`.
+    It has to be a dictionary mapping node id to string.
+
+    If `new_labels_dict` is provided, it will be used to
+    label the cells.
+    If `new_labels_name` is not specified, the labels are reset.
+
+    One can decide to only label the first node of the chain
+    instead of all the nodes of the chain.
+    That can help readability in the napari plugin reLAX.
+
+    .. warning:: The labels are changed in place.
+        Therefore, the former labels dictionary was not
+        saved it is lost.
+
+    Parameters
+    ----------
+    lT : LineageTree
+    new_labels_name : string, optional
+        The name of the dictionary to use
+        (the list of potential dictionaries can be found
+        with `lT.available_labels`)
+        If `new_labels_name` is not provided,
+        the labels are reset
+    new_labels_dict : dictionary mapping integers to strings, optional
+        The new names as a dictionary mapping each named node id to its string label
+        If not provided and lT has a fitting attribute named `new_labels_name`,
+        it will therefore be used
+    only_first_node_in_chain : bool, default=True
+        If `True` only labels the first node of the chains
+    """
+
+    if new_labels_name is not None:
+        lT.labels_name = new_labels_name
+        if new_labels_dict is None:
+            if new_labels_name in lT.__dict__:
+                new_labels_dict = lT.__dict__[new_labels_name]
+            else:
+                raise AttributeError(
+                    f"{new_labels_name} is not in the properties of {lT.name}"
+                )
+        if any(not isinstance(v, str) for v in new_labels_dict.values()):
+            raise TypeError(
+                "All values of new_labels dictionary should be `str`"
+            )
+
+        labelled_cells = lT.nodes.intersection(new_labels_dict)
+        if only_first_node_in_chain:
+            labelled_cells = labelled_cells.intersection(
+                {chain[0] for chain in lT.all_chains}
+            )
+
+        if len(labelled_cells) < 1:
+            warnings.warn(
+                "The labeling dictionary does not have any node labels.\n"
+                'Defaulting to the "Unlabeled" labeling'
+            )
+        else:
+            lT._labels = {n: new_labels_dict[n] for n in labelled_cells}
+            return
+
+    lT.labels_name = ""
+    lT._labels = {
+        root: "Unlabeled"
+        for root in lT.roots
+        for leaf in lT.find_leaves(root)
+        if abs(lT._time[leaf] - lT._time[root]) >= abs(lT.t_e - lT.t_b) / 4
+    }

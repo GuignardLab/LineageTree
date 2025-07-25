@@ -632,3 +632,34 @@ def test_get_ancestor_with():
     assert lt.get_labelled_ancestor(
         list(lt.nodes)[0]
     ) == lt.get_ancestor_with_attribute(list(lt.nodes)[0], "labels")
+
+
+def test_mastodon_labeling():
+    assert lT2.labels[25] == "p"
+    assert lT2.labels[40] == "p(2)"
+    assert lT2.labels_name == "E"
+
+
+def test_available_labels():
+    assert lT2.available_labels() == ["E", "Ep", "Er", "El", "Extoderms"]
+
+
+def test_change_labels():
+    lT2.change_labels("Ep")
+    assert lT2.labels[19] == "alla"
+    assert lT2.labels[9] == "right1"
+
+    lT2.change_labels("test", {19: "a", 9: "b"})
+    assert lT2.labels[19] == "a"
+    assert lT2.labels[9] == "b"
+
+    lT2.change_labels("Ep", only_first_node_in_chain=True)
+    assert lT2.labels == {
+        0: "right1",
+        1: "right1",
+        40: "right1",
+        16: "left",
+        19: "alla",
+        24: "left",
+        25: "left",
+    }

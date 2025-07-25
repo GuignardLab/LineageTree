@@ -14,6 +14,8 @@ from ._basics._modifier import (
     remove_nodes,
 )
 from ._basics._navigation import (
+    available_labels,
+    change_labels,
     find_leaves,
     get_all_chains_of_subtree,
     get_ancestor_at_t,
@@ -104,6 +106,8 @@ LineageTree.plot_subtree = plot_subtree
 LineageTree.calculate_dtw = calculate_dtw
 
 # Navigation functions
+LineageTree.available_labels = available_labels
+LineageTree.change_labels = change_labels
 LineageTree.find_leaves = find_leaves
 LineageTree.get_all_chains_of_subtree = get_all_chains_of_subtree
 LineageTree.get_ancestor_at_t = get_ancestor_at_t

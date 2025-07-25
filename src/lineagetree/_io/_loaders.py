@@ -763,7 +763,7 @@ def read_from_tgmm_xml(
 
 
 def read_from_mastodon(
-    path: str, tag_set: int | None = None, name: None | str = None
+    path: str, tag_set: str | None = None, name: str | None = None
 ) -> LineageTree:
     """Read a maston lineage tree.
 
@@ -771,8 +771,9 @@ def read_from_mastodon(
     ----------
     path : str
         path to the mastodon file
-    tag_set : int, optional
-        The tag set that will be used to label.
+    tag_set : str, optional
+        If specified, `tag_set` will be used for labeling the cells
+        Otherwise a random tag set will be used
     name : str, optional
         The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
         will be the name attribute, otherwise the name will be the stem of the file path.
@@ -793,20 +794,12 @@ def read_from_mastodon(
     for succ, pred in zip(links[:, 1], links[:, 0]):
         predecessor[int(succ)] = int(pred)
 
-    label = {}
-    all_tags = mr.read_tags(spots, links)
-    properties = {}
-    for tags in all_tags:
-        properties[tags["name"]] = {
-            tag["id"]: tag["label"] for tag in tags["tags"]
-        }
+    _, properties, _ = mr.read_tags()
 
-    if isinstance(tag_set, int):
-        tags = all_tags[tag_set]
-        for tag in tags["tags"]:
-            label[tag["id"]] = tag["label"]
-    elif isinstance(tag_set, str) and tag_set in properties:
-        label = properties[tag_set]
+    if isinstance(tag_set, str) and tag_set in properties:
+        labels = properties[tag_set]
+    elif 0 < len(properties):
+        labels_name, labels = next(iter(properties.items()))
 
     if not name:
         if isinstance(path, Path):
@@ -816,11 +809,13 @@ def read_from_mastodon(
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
+
     return LineageTree(
         predecessor=predecessor,
         time=time,
         pos=pos,
-        label=label,
+        labels=labels,
+        labels_name=labels_name,
         name=name,
         **properties,
     )
@@ -833,7 +828,7 @@ def read_from_mastodon_csv(
 
     Parameters
     ----------
-    paths : list[str]
+    paths : list of strings
         list of paths to the csv files
     name : None or str, optional
         The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute

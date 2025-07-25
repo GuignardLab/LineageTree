@@ -40,7 +40,7 @@ dependencies = [
     "matplotlib",
     "edist",
     "svgwrite",
-    "micromastodonreader",
+    "Micro-Mastodon-Reader",
 ]
 
 [project.optional-dependencies]
