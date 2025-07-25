@@ -458,12 +458,13 @@ def change_labels(
     only_first_node_in_chain : bool, default=True
         If `True` only labels the first node of the chains
     """
-
+    store_new_labels = True
     if new_labels_name is not None:
         lT.labels_name = new_labels_name
         if new_labels_dict is None:
             if new_labels_name in lT.__dict__:
                 new_labels_dict = lT.__dict__[new_labels_name]
+                store_new_labels = False
             else:
                 raise AttributeError(
                     f"{new_labels_name} is not in the properties of {lT.name}"
@@ -486,6 +487,8 @@ def change_labels(
             )
         else:
             lT._labels = {n: new_labels_dict[n] for n in labelled_cells}
+            if store_new_labels:
+                lT.__dict__[new_labels_name] = lT._labels
             return
 
     lT.labels_name = ""
