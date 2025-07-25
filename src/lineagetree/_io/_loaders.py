@@ -9,6 +9,7 @@ from pathlib import Path
 from warnings import warn
 
 import numpy as np
+from micromastodonreader import MicroMastodonReader
 from packaging.version import Version
 
 from ..lineage_tree import LineageTree
@@ -781,39 +782,47 @@ def read_from_mastodon(
     LineageTree
         lineage tree
     """
-    from mastodon_reader import MastodonReader
 
-    mr = MastodonReader(path)
+    mr = MicroMastodonReader(path)
     spots, links = mr.read_tables()
 
+    nodes = list(range(len(spots)))
+    pos = dict(zip(nodes, spots[:, :3], strict=True))
+    time = dict(zip(nodes, spots[:, 3], strict=True))
+    predecessor = {}
+    for succ, pred in zip(links[:, 1], links[:, 0]):
+        predecessor[int(succ)] = int(pred)
+
     label = {}
-    time = {}
-    pos = {}
-    successor = {}
+    all_tags = mr.read_tags(spots, links)
+    properties = {}
+    for tags in all_tags:
+        properties[tags["name"]] = {
+            tag["id"]: tag["label"] for tag in tags["tags"]
+        }
 
-    for c in spots.iloc:
-        unique_id = c.name
-        x, y, z = c.x, c.y, c.z
-        t = c.t
-        time[unique_id] = t
-        pos[unique_id] = np.array([x, y, z])
-
-    for e in links.iloc:
-        source = e.source_idx
-        target = e.target_idx
-        successor.setdefault(source, []).append(target)
     if isinstance(tag_set, int):
-        tags = mr.read_tags(spots, links)[tag_set]
+        tags = all_tags[tag_set]
         for tag in tags["tags"]:
             label[tag["id"]] = tag["label"]
+    elif isinstance(tag_set, str) and tag_set in properties:
+        label = properties[tag_set]
 
     if not name:
-        tmp_name = Path(path).stem
+        if isinstance(path, Path):
+            tmp_name = path.stem
+        else:
+            tmp_name = Path(path).stem
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
     return LineageTree(
-        successor=successor, time=time, pos=pos, label=label, name=name
+        predecessor=predecessor,
+        time=time,
+        pos=pos,
+        label=label,
+        name=name,
+        **properties,
     )
 
 

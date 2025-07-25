@@ -37,10 +37,10 @@ classifiers = [
 dependencies = [
     "scipy>=1.9",
     "numpy>=1.23",
-    "mastodon-reader",
     "matplotlib",
     "edist",
     "svgwrite",
+    "micromastodonreader",
 ]
 
 [project.optional-dependencies]
@@ -63,7 +63,7 @@ test = [
 
 [project.urls]
 "Bug Tracker" = "https://github.com/GuignardLab/LineageTree/issues"
-Documentation = "https://github.com/GuignardLab/LineageTree#README.md"
+"Documentation" = "https://github.com/GuignardLab/LineageTree#README.md"
 "Source Code" = "https://github.com/GuignardLab/LineageTree"
 "User Support" = "https://github.com/GuignardLab/LineageTree/issues"
 
