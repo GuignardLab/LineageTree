@@ -149,10 +149,13 @@ def labels(lT: LineageTree) -> dict[int, str]:
     """Dictionary that maps a node to its label"""
     if not hasattr(lT, "_labels"):
         if hasattr(lT, "node_name"):
+            lT.labels_name = "node_name"
             lT._labels = {
-                i: lT.node_name.get(i, "Unlabeled") for i in lT.roots
+                chain[0]: lT.node_name.get(chain[0], "Unlabeled")
+                for chain in lT.all_chains
             }
         else:
+            lT.labels_name = ""
             lT._labels = {
                 root: "Unlabeled"
                 for root in lT.roots
