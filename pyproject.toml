@@ -126,3 +126,12 @@ unresolved-import = "ignore"
 [tool.pytest.ini_options]
 addopts = "--cov"
 
+[tool.coverage.run]
+source = ["src"]
+
+[tool.coverage.report]
+omit = [
+    "*/test/*",
+    "*/.vscode/*",
+    "*/site-packages/*"
+]
