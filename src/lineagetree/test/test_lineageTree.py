@@ -641,7 +641,7 @@ def test_mastodon_labeling():
 
 
 def test_available_labels():
-    assert lT2.available_labels() == ["E", "Ep", "Er", "El", "Extoderms"]
+    assert lT2.get_available_labels() == ["E", "Ep", "Er", "El", "Extoderms"]
 
 
 def test_change_labels():
