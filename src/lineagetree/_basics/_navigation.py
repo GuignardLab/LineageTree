@@ -397,7 +397,7 @@ def get_subtree(lT: LineageTree, node_list: set[int]) -> LineageTree:
     )
 
 
-def available_labels(lT: LineageTree) -> list[str]:
+def get_available_labels(lT: LineageTree) -> list[str]:
     """Returns the list all the available label dictionaries
 
     Returns
@@ -425,7 +425,7 @@ def change_labels(
     new_labels_name: str | None = None,
     new_labels_dict: dict[int, str] | None = None,
     only_first_node_in_chain: bool = False,
-):
+) -> None:
     """Change the dictionary that serves at labels with
     the `LineageTree` attribute `new_labels_name`.
     It has to be a dictionary mapping node id to string.
@@ -438,10 +438,6 @@ def change_labels(
     instead of all the nodes of the chain.
     That can help readability in the napari plugin reLAX.
 
-    .. warning:: The labels are changed in place.
-        Therefore, the former labels dictionary was not
-        saved it is lost.
-
     Parameters
     ----------
     lT : LineageTree
@@ -450,7 +446,7 @@ def change_labels(
         (the list of potential dictionaries can be found
         with `lT.available_labels`)
         If `new_labels_name` is not provided,
-        the labels are reset
+        the labels are reset to `"Unlabeleld"`
     new_labels_dict : dictionary mapping integers to strings, optional
         The new names as a dictionary mapping each named node id to its string label
         If not provided and lT has a fitting attribute named `new_labels_name`,
@@ -489,12 +485,11 @@ def change_labels(
             lT._labels = {n: new_labels_dict[n] for n in labelled_cells}
             if store_new_labels:
                 lT.__dict__[new_labels_name] = lT._labels
-            return
-
-    lT.labels_name = ""
-    lT._labels = {
-        root: "Unlabeled"
-        for root in lT.roots
-        for leaf in lT.find_leaves(root)
-        if abs(lT._time[leaf] - lT._time[root]) >= abs(lT.t_e - lT.t_b) / 4
-    }
+    else:
+        lT.labels_name = ""
+        lT._labels = {
+            root: "Unlabeled"
+            for root in lT.roots
+            for leaf in lT.find_leaves(root)
+            if abs(lT._time[leaf] - lT._time[root]) >= abs(lT.t_e - lT.t_b) / 4
+        }
