@@ -11,9 +11,9 @@ from lineagetree import (
     tree_approximation,
 )
 
-lT1 = read_from_mamut_xml("test/data/test-mamut.xml")
-lT2 = read_from_mastodon("test/data/test.mastodon")
-lt = LineageTree.load("test/data/demo.lT")
+lT1 = read_from_mamut_xml("tests/data/test-mamut.xml")
+lT2 = read_from_mastodon("tests/data/test.mastodon")
+lt = LineageTree.load("tests/data/demo.lT")
 
 
 def test_read_MaMuT_xml():
@@ -121,7 +121,7 @@ def test_time_resolution():
 
 
 def test_loading():
-    lT = LineageTree.load("test/data/test-mamut.lT")
+    lT = LineageTree.load("tests/data/test-mamut.lT")
     assert lT.time_resolution == 0
     lT.time_resolution = 1.51
     assert lT.time_resolution == 1.5
