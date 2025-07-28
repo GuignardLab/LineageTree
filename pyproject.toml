@@ -127,7 +127,7 @@ unresolved-import = "ignore"
 addopts = "--cov"
 
 [tool.coverage.run]
-source = ["src"]
+source = ["lineagetree"]
 
 [tool.coverage.report]
 omit = [
