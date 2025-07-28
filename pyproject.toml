@@ -122,7 +122,6 @@ root = ["./src", ]
 
 [tool.ty.rules]
 unresolved-import = "ignore"
-
 [tool.coverage.run]
 source = ["lineagetree"]
 
