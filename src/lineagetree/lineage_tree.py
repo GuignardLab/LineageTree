@@ -7,9 +7,68 @@ from __future__ import annotations
 import importlib.metadata
 import warnings
 from collections.abc import Iterable, Sequence
+from packaging.version import Version
+from ._basics.utils import CompatibleUnpickler
+
 
 import numpy as np
 
+from ._measure._dynamic_time_warping import (
+    calculate_dtw,
+)
+from ._basics._modifier import (
+    _add_node,
+    add_chain,
+    add_root,
+    get_next_id,
+    modifier,
+    remove_nodes,
+)
+from ._basics._navigation import (
+    change_labels,
+    find_leaves,
+    get_all_chains_of_subtree,
+    get_ancestor_at_t,
+    get_ancestor_with_attribute,
+    get_available_labels,
+    get_chain_of_node,
+    get_labelled_ancestor,
+    get_predecessors,
+    get_subtree,
+    get_subtree_nodes,
+    get_successors,
+    nodes_at_t,
+)
+from ._basics._plot import (
+    _create_dict_of_plots,
+    draw_tree_graph,
+    plot_all_lineages,
+    plot_dtw_heatmap,
+    plot_dtw_trajectory,
+    plot_subtree,
+)
+from ._measure._spatial import (
+    compute_k_nearest_neighbours,
+    compute_spatial_density,
+    compute_spatial_edges,
+    get_gabriel_graph,
+    get_idx3d,
+)
+from ._measure._uted import (
+    clear_comparisons,
+    labelled_mappings,
+    norm_dict,
+    plot_tree_distance_graphs,
+    unordered_tree_edit_distance,
+    unordered_tree_edit_distances_at_time_t,
+)
+from ._io._writers import (
+    _get_height,
+    write,
+    write_to_binary,
+    write_to_svg,
+    write_to_tlp,
+)
 from ._basics._properties import (
     all_chains,
     depth,
@@ -50,6 +109,64 @@ class LineageTree:
     all_chains = all_chains
     time_nodes = time_nodes
     parenting = parenting
+
+    # Modifier functions
+    _add_node = _add_node
+    add_chain = add_chain
+    add_root = add_root
+    get_next_id = get_next_id
+    modifier = modifier
+    remove_nodes = remove_nodes
+
+    # Writer functions
+    _get_height = _get_height
+    write = write
+    write_to_binary = write_to_binary
+    write_to_svg = write_to_svg
+    write_to_tlp = write_to_tlp
+
+    # Spatial functions
+    get_idx3d = get_idx3d
+    get_gabriel_graph = get_gabriel_graph
+    compute_k_nearest_neighbours = compute_k_nearest_neighbours
+    compute_spatial_edges = compute_spatial_edges
+    compute_spatial_density = compute_spatial_density
+
+    # Uted functions
+    clear_comparisons = clear_comparisons
+    labelled_mappings = labelled_mappings
+    norm_dict = norm_dict
+    unordered_tree_edit_distances_at_time_t = (
+        unordered_tree_edit_distances_at_time_t
+    )
+    unordered_tree_edit_distance = unordered_tree_edit_distance
+    plot_tree_distance_graphs = plot_tree_distance_graphs
+
+    # Plot functions
+    _create_dict_of_plots = _create_dict_of_plots
+    draw_tree_graph = draw_tree_graph
+    plot_all_lineages = plot_all_lineages
+    plot_dtw_heatmap = plot_dtw_heatmap
+    plot_dtw_trajectory = plot_dtw_trajectory
+    plot_subtree = plot_subtree
+
+    # DTW functions
+    calculate_dtw = calculate_dtw
+
+    # Navigation functions
+    get_available_labels = get_available_labels
+    change_labels = change_labels
+    find_leaves = find_leaves
+    get_all_chains_of_subtree = get_all_chains_of_subtree
+    get_ancestor_at_t = get_ancestor_at_t
+    get_ancestor_with_attribute = get_ancestor_with_attribute
+    get_chain_of_node = get_chain_of_node
+    get_labelled_ancestor = get_labelled_ancestor
+    get_predecessors = get_predecessors
+    get_subtree = get_subtree
+    get_subtree_nodes = get_subtree_nodes
+    get_successors = get_successors
+    nodes_at_t = nodes_at_t
 
     def __eq__(self, other) -> bool:
         if isinstance(other, LineageTree):
@@ -115,6 +232,56 @@ class LineageTree:
         if "_time" not in state:
             state["_time"] = state["time"]
         self.__dict__.update(state)
+
+    @classmethod
+    def load(clf, fname: str):
+        """Loading a lineage tree from a '.lT' file.
+
+        Parameters
+        ----------
+        fname : str
+            path to and name of the file to read
+
+        Returns
+        -------
+        LineageTree
+            loaded file
+        """
+        with open(fname, "br") as f:
+            lT = CompatibleUnpickler(f).load()
+            f.close()
+        if not hasattr(lT, "__version__") or Version(lT.__version__) < Version(
+            "2.0.0"
+        ):
+            properties = {
+                prop_name: prop
+                for prop_name, prop in lT.__dict__.items()
+                if (isinstance(prop, dict) or prop_name == "_time_resolution")
+                and prop_name
+                not in [
+                    "successor",
+                    "predecessor",
+                    "time",
+                    "_successor",
+                    "_predecessor",
+                    "_time",
+                    "pos",
+                    "labels",
+                ]
+                + LineageTree._dynamic_properties
+                + LineageTree._protected_dynamic_properties
+            }
+            lT = LineageTree(
+                successor=lT._successor,
+                time=lT._time,
+                pos=lT.pos,
+                name=lT.name if hasattr(lT, "name") else None,
+                **properties,
+            )
+        if not hasattr(lT, "time_resolution"):
+            lT.time_resolution = 1
+
+        return lT
 
     def __init__(
         self,

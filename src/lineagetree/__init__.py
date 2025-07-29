@@ -1,5 +1,4 @@
 __version__ = "2.0.2"
-from . import _assembly  # noqa: F401
 from .lineage_tree import LineageTree
 from ._io._loaders import (
     read_from_ASTEC,
