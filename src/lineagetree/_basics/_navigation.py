@@ -366,8 +366,13 @@ def nodes_at_t(
         r = [r]
     if t is None:
         t = lT.t_e
-    to_do = list(r)
+    to_do = []
     final_nodes = []
+    for root in r:
+        if lT.time[root] == t:
+            final_nodes.append(root)
+        else:
+            to_do.append(root)
     while len(to_do) > 0:
         curr = to_do.pop()
         for _next in lT._successor[curr]:
