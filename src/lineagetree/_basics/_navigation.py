@@ -361,27 +361,19 @@ def nodes_at_t(
         list of ids of the nodes at time `t` spawned by `r`
     """
     if not r and r != 0:
-        r = {root for root in lT.roots if lT.time[root] <= t}
+        r = [root for root in lT.roots if lT.time[root] <= t]
     if isinstance(r, int):
         r = [r]
     if t is None:
         t = lT.t_e
-    to_do = []
+    to_do = list(r)
     final_nodes = []
-    for root in r:
-        if lT.time[root] == t:
-            final_nodes.append(root)
-        else:
-            to_do.append(root)
-    while len(to_do) > 0:
+    while 0 < len(to_do):
         curr = to_do.pop()
-        for _next in lT._successor[curr]:
-            if lT._time[_next] < t:
-                to_do.append(_next)
-            elif lT._time[_next] == t:
-                final_nodes.append(_next)
-    if not final_nodes:
-        return list(r)
+        if lT._time[curr] == t:
+            final_nodes.append(curr)
+        elif lT._time[curr] < t:
+            to_do.extend(lT.successor[curr])
     return final_nodes
 
 
