@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 from edist import uted
 
 from .tree_approximation import TreeApproximationTemplate
-from ._basics.utils import convert_style_to_number
+from ._core.utils import convert_style_to_number
 
 if TYPE_CHECKING:
     from edist.alignment import Alignment

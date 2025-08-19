@@ -8,165 +8,29 @@ import importlib.metadata
 import warnings
 from collections.abc import Iterable, Sequence
 from packaging.version import Version
-from ._basics.utils import CompatibleUnpickler
-
-
 import numpy as np
 
-from ._measure._dynamic_time_warping import (
-    calculate_dtw,
-)
-from ._basics._modifier import (
-    _add_node,
-    add_chain,
-    add_root,
-    get_next_id,
-    modifier,
-    remove_nodes,
-)
-from ._basics._navigation import (
-    change_labels,
-    find_leaves,
-    get_all_chains_of_subtree,
-    get_ancestor_at_t,
-    get_ancestor_with_attribute,
-    get_available_labels,
-    get_chain_of_node,
-    get_labelled_ancestor,
-    get_predecessors,
-    get_subtree,
-    get_subtree_nodes,
-    get_successors,
-    nodes_at_t,
-)
-from ._basics._plot import (
-    _create_dict_of_plots,
-    draw_tree_graph,
-    plot_all_lineages,
-    plot_dtw_heatmap,
-    plot_dtw_trajectory,
-    plot_subtree,
-)
-from ._measure._spatial import (
-    compute_k_nearest_neighbours,
-    compute_spatial_density,
-    compute_spatial_edges,
-    get_gabriel_graph,
-    get_idx3d,
-)
-from ._measure._uted import (
-    clear_comparisons,
-    labelled_mappings,
-    norm_dict,
-    plot_tree_distance_graphs,
-    unordered_tree_edit_distance,
-    unordered_tree_edit_distances_at_time_t,
-)
-from ._io._writers import (
-    _get_height,
-    write,
-    write_to_binary,
-    write_to_svg,
-    write_to_tlp,
-)
-from ._basics._properties import (
-    all_chains,
-    depth,
-    edges,
-    labels,
-    leaves,
-    nodes,
-    number_of_nodes,
-    parenting,
-    predecessor,
-    roots,
-    successor,
-    t_b,
-    t_e,
-    time,
-    time_nodes,
-    time_resolution,
-)
+from ._core.utils import CompatibleUnpickler
+from ._mixins.properties_mixin import PropertiesMixin
+from ._mixins.modifier_mixin import ModifierMixin
+from ._mixins.navigation_mixin import NavigationMixin
+from ._mixins.plot_mixin import PlotMixin
+from ._mixins.spatial_mixin import SpatialMixin
+from ._mixins.analysis_mixin import AnalysisMixin
+from ._mixins.io_mixin import IOMixin
+from ._core.validation import TreeValidator
 
 
-class LineageTree:
-
-    # The properties are defined in the `_properties.py` file
-    # and assigned to the class here.
-    successor = successor
-    predecessor = predecessor
-    time = time
-    t_b = t_b
-    t_e = t_e
-    nodes = nodes
-    number_of_nodes = number_of_nodes
-    depth = depth
-    roots = roots
-    leaves = leaves
-    edges = edges
-    labels = labels
-    time_resolution = time_resolution
-    all_chains = all_chains
-    time_nodes = time_nodes
-    parenting = parenting
-
-    # Modifier functions
-    _add_node = _add_node
-    add_chain = add_chain
-    add_root = add_root
-    get_next_id = get_next_id
-    modifier = modifier
-    remove_nodes = remove_nodes
-
-    # Writer functions
-    _get_height = _get_height
-    write = write
-    write_to_binary = write_to_binary
-    write_to_svg = write_to_svg
-    write_to_tlp = write_to_tlp
-
-    # Spatial functions
-    get_idx3d = get_idx3d
-    get_gabriel_graph = get_gabriel_graph
-    compute_k_nearest_neighbours = compute_k_nearest_neighbours
-    compute_spatial_edges = compute_spatial_edges
-    compute_spatial_density = compute_spatial_density
-
-    # Uted functions
-    clear_comparisons = clear_comparisons
-    labelled_mappings = labelled_mappings
-    norm_dict = norm_dict
-    unordered_tree_edit_distances_at_time_t = (
-        unordered_tree_edit_distances_at_time_t
-    )
-    unordered_tree_edit_distance = unordered_tree_edit_distance
-    plot_tree_distance_graphs = plot_tree_distance_graphs
-
-    # Plot functions
-    _create_dict_of_plots = _create_dict_of_plots
-    draw_tree_graph = draw_tree_graph
-    plot_all_lineages = plot_all_lineages
-    plot_dtw_heatmap = plot_dtw_heatmap
-    plot_dtw_trajectory = plot_dtw_trajectory
-    plot_subtree = plot_subtree
-
-    # DTW functions
-    calculate_dtw = calculate_dtw
-
-    # Navigation functions
-    get_available_labels = get_available_labels
-    change_labels = change_labels
-    find_leaves = find_leaves
-    get_all_chains_of_subtree = get_all_chains_of_subtree
-    get_ancestor_at_t = get_ancestor_at_t
-    get_ancestor_with_attribute = get_ancestor_with_attribute
-    get_chain_of_node = get_chain_of_node
-    get_labelled_ancestor = get_labelled_ancestor
-    get_predecessors = get_predecessors
-    get_subtree = get_subtree
-    get_subtree_nodes = get_subtree_nodes
-    get_successors = get_successors
-    nodes_at_t = nodes_at_t
+class LineageTree(
+    PropertiesMixin,
+    ModifierMixin,
+    NavigationMixin,
+    PlotMixin,
+    SpatialMixin,
+    AnalysisMixin,
+    IOMixin,
+):
+    """A lineage tree data structure with comprehensive analysis capabilities."""
 
     def __eq__(self, other) -> bool:
         if isinstance(other, LineageTree):
@@ -322,6 +186,9 @@ class LineageTree:
         """
         self.__version__ = importlib.metadata.version("lineagetree")
         self.name = str(name) if name is not None else None
+
+        self._validator = TreeValidator(self)
+
         if successor is not None and predecessor is not None:
             raise ValueError(
                 "You cannot have both successors and predecessors."
@@ -384,7 +251,7 @@ class LineageTree:
         for leaf in set(self._predecessor).difference(self._successor):
             self._successor[leaf] = ()
 
-        if self.__check_for_cycles():
+        if self._validator.check_for_cycles():
             raise ValueError(
                 "Cycles were found in the tree, there should not be any."
             )
