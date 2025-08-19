@@ -130,5 +130,6 @@ source = ["lineagetree"]
 omit = [
     "*/test/*",
     "*/.vscode/*",
-    "*/site-packages/*"
+    "*/site-packages/*",
+    "*/_io/*",
 ]

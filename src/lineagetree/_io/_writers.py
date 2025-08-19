@@ -456,69 +456,6 @@ def write_to_tlp(
         f.close()
 
 
-def write_to_binary(
-    lT: LineageTree, fname: str, starting_points: list[int] | None = None
-) -> None:
-    """Writes the lineage tree (a forest) as a binary structure
-    (assuming it is a binary tree, it would not work for *n* ary tree with 2 < *n*).
-    The binary file is composed of 3 sequences of numbers and
-    a header specifying the size of each of these sequences.
-    The first sequence, *number_sequence*, represents the lineage tree
-    as a DFT preporder transversal list. -1 signifying a leaf and -2 a branching
-    The second sequence, *time_sequence*, represent the starting time of each tree.
-    The third sequence, *pos_sequence*, reprensent the 3D coordinates of the objects.
-    The header specify the size of each of these sequences.
-    Each size is stored as a long long
-    The *number_sequence* is stored as a list of long long (0 -> 2^(8*8)-1)
-    The *time_sequence* is stored as a list of unsigned short (0 -> 2^(8*2)-1)
-    The *pos_sequence* is stored as a list of double.
-
-    Parameters
-    ----------
-    fname : str
-        name of the binary file
-    starting_points : list of int, optional
-        list of the roots to be written.
-        If `None`, all roots are written, default value, None
-    """
-    if starting_points is None:
-        starting_points = list(lT.roots)
-    number_sequence = [-1]
-    pos_sequence = []
-    time_sequence = []
-    for c in starting_points:
-        time_sequence.append(lT._time.get(c, 0))
-        to_treat = [c]
-        while to_treat:
-            curr_c = to_treat.pop()
-            number_sequence.append(curr_c)
-            pos_sequence += list(lT.pos[curr_c])
-            if lT._successor[curr_c] == ():
-                number_sequence.append(-1)
-            elif len(lT._successor[curr_c]) == 1:
-                to_treat += lT._successor[curr_c]
-            else:
-                number_sequence.append(-2)
-                to_treat += lT._successor[curr_c]
-    remaining_nodes = set(lT.nodes) - set(number_sequence)
-
-    for c in remaining_nodes:
-        time_sequence.append(lT._time.get(c, 0))
-        number_sequence.append(c)
-        pos_sequence += list(lT.pos[c])
-        number_sequence.append(-1)
-
-    with open(fname, "wb") as f:
-        f.write(struct.pack("q", len(number_sequence)))
-        f.write(struct.pack("q", len(time_sequence)))
-        f.write(struct.pack("q", len(pos_sequence)))
-        f.write(struct.pack("q" * len(number_sequence), *number_sequence))
-        f.write(struct.pack("H" * len(time_sequence), *time_sequence))
-        f.write(struct.pack("d" * len(pos_sequence), *pos_sequence))
-
-        f.close()
-
-
 def write(lT: LineageTree, fname: str) -> None:
     """Write a lineage tree on disk as an .lT file.
 

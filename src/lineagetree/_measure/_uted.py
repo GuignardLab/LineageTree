@@ -12,7 +12,7 @@ from matplotlib import colormaps
 from matplotlib import pyplot as plt
 
 from ..tree_approximation import TreeApproximationTemplate, tree_style
-from .._basics.utils import convert_style_to_number
+from .._core.utils import convert_style_to_number
 
 if TYPE_CHECKING:
     from edist.alignment import Alignment
