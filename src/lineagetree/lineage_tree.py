@@ -42,52 +42,6 @@ class LineageTree(
         else:
             return False
 
-    def __check_cc_cycles(self, n: int) -> tuple[bool, set[int]]:
-        """Check if the connected component of a given node `n` has a cycle.
-
-        Returns
-        -------
-        bool
-            True if the tree has cycles, False otherwise.
-        set of int
-            The set of nodes that have been checked.
-        """
-        to_do = [n]
-        no_cycle = True
-        already_done = set()
-        while to_do and no_cycle:
-            current = to_do.pop(-1)
-            if current not in already_done:
-                already_done.add(current)
-            else:
-                no_cycle = False
-            to_do.extend(self._successor[current])
-        to_do = list(self._predecessor[n])
-        while to_do and no_cycle:
-            current = to_do.pop(-1)
-            if current not in already_done:
-                already_done.add(current)
-            else:
-                no_cycle = False
-            to_do.extend(self._predecessor[current])
-        return not no_cycle, already_done
-
-    def __check_for_cycles(self) -> bool:
-        """Check if the tree has cycles.
-
-        Returns
-        -------
-        bool
-            True if the tree has cycles, False otherwise.
-        """
-        to_do = set(self.nodes)
-        found_cycle = False
-        while to_do and not found_cycle:
-            current = to_do.pop()
-            found_cycle, done = self.__check_cc_cycles(current)
-            to_do.difference_update(done)
-        return found_cycle
-
     def __setstate__(self, state):
         if "_successor" not in state:
             state["_successor"] = state["successor"]
