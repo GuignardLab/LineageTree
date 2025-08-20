@@ -962,6 +962,140 @@ class lineageTree:
 
             f.close()
 
+    def write_to_geff(
+        self,
+        path: str,
+        axis_names: list[str] | None = None,
+        axis_units: list[str | None] | None = None,
+        axis_types: list[str | None] | None = None,
+    ) -> None:
+        """Write a LineageTree to GEFF format file.
+
+        The GEFF (Graph Exchange File Format) is a zarr-based format for storing 
+        spatiotemporal graphs with rich metadata. This function converts a LineageTree
+        to a NetworkX graph and writes it using the geff library.
+
+        Parameters
+        ----------
+        path : str
+            Path where the GEFF zarr directory/file should be created
+        axis_names : list[str], optional
+            Names of the spatial and temporal axes. If None, will be inferred from
+            the position data and time information. Default order is ['t', 'x', 'y', 'z']
+            depending on the dimensionality of the position data.
+        axis_units : list[str | None], optional
+            Units for each axis. If None, defaults will be used.
+        axis_types : list[str | None], optional
+            Types for each axis (e.g., 'time', 'space'). If None, defaults will be used.
+
+        Raises
+        ------
+        ImportError
+            If the geff library is not installed
+        ValueError
+            If the LineageTree has inconsistent position dimensionality
+        """
+        try:
+            import geff
+            import networkx as nx
+        except ImportError as e:
+            raise ImportError(
+                "geff and networkx libraries are required to write GEFF files. "
+                "Install them with: pip install geff networkx"
+            ) from e
+
+        # Create a directed NetworkX graph
+        graph = nx.DiGraph()
+        
+        # Determine position dimensionality and axis names if not provided
+        if axis_names is None:
+            # Check position dimensionality
+            if self.pos:
+                sample_pos = next(iter(self.pos.values()))
+                pos_dims = len(sample_pos)
+                
+                # Build axis names based on dimensionality
+                axis_names = ['t']  # Always include time
+                if pos_dims >= 1:
+                    axis_names.append('x')
+                if pos_dims >= 2:
+                    axis_names.append('y')
+                if pos_dims >= 3:
+                    axis_names.append('z')
+            else:
+                # No position data, just time
+                axis_names = ['t']
+        
+        # Prepare batch node data for efficient creation
+        nodes_with_attrs = []
+        coord_names = ['x', 'y', 'z']
+        
+        # Get node properties that are not edge properties (pre-filter)
+        node_props = {prop_name: getattr(self, prop_name) 
+                      for prop_name in self._custom_property_list 
+                      if not prop_name.startswith('edge_')}
+        
+        for node_id in self.nodes:
+            node_attrs = {}
+            
+            # Add time information
+            if node_id in self.time:
+                node_attrs['t'] = self.time[node_id]
+            
+            # Add position information (batch coordinate processing)
+            if node_id in self.pos:
+                pos = self.pos[node_id]
+                for i, coord in enumerate(pos):
+                    if i < len(coord_names):
+                        node_attrs[coord_names[i]] = float(coord)
+            
+            # Add custom node properties (use pre-filtered properties)
+            for prop_name, prop_dict in node_props.items():
+                if isinstance(prop_dict, dict) and node_id in prop_dict:
+                    node_attrs[prop_name] = prop_dict[node_id]
+            
+            nodes_with_attrs.append((node_id, node_attrs))
+        
+        # Batch add all nodes at once
+        graph.add_nodes_from(nodes_with_attrs)
+        
+        # Prepare batch edge data for efficient creation
+        edges_with_attrs = []
+        
+        # Get edge properties (pre-filter and process)
+        edge_props = {}
+        for prop_name in self._custom_property_list:
+            if prop_name.startswith('edge_'):
+                original_prop_name = prop_name[5:]  # Remove "edge_" prefix
+                edge_props[original_prop_name] = getattr(self, prop_name)
+        
+        # Build edges with attributes
+        for source_node, targets in self.successor.items():
+            for target_node in targets:
+                edge_attrs = {}
+                
+                # Add custom edge properties (use pre-processed edge properties)
+                for original_prop_name, prop_dict in edge_props.items():
+                    if (isinstance(prop_dict, dict) and 
+                        source_node in prop_dict and 
+                        isinstance(prop_dict[source_node], dict) and
+                        target_node in prop_dict[source_node]):
+                        edge_attrs[original_prop_name] = prop_dict[source_node][target_node]
+                
+                edges_with_attrs.append((source_node, target_node, edge_attrs))
+        
+        # Batch add all edges at once
+        graph.add_edges_from(edges_with_attrs)
+        
+        # Write the graph to GEFF format
+        geff.write_nx(
+            graph, 
+            path, 
+            axis_units=axis_units,
+            axis_types=axis_types,
+            axis_names=axis_names,
+        )
+
     def write(self, fname: str) -> None:
         """Write a lineage tree on disk as an .lT file.
 

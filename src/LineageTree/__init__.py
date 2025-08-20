@@ -12,6 +12,7 @@ from .loaders import (
     read_from_txt_for_celegans,
     read_from_txt_for_celegans_BAO,
     read_from_txt_for_celegans_CAO,
+    read_from_geff,
 )
 
 __all__ = (
@@ -27,4 +28,5 @@ __all__ = (
     "read_from_mastodon",
     "read_from_txt_for_celegans",
     "read_from_txt_for_celegans_CAO",
+    "read_from_geff",
 )

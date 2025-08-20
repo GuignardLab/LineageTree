@@ -972,3 +972,129 @@ def read_from_mamut_xml(
         name=name,
         **properties,
     )
+
+
+def read_from_geff(
+    path: str, name: None | str = None
+) -> lineageTree:
+    """Read a lineage tree from a GEFF format file.
+
+    The GEFF (Graph Exchange File Format) is a zarr-based format for storing 
+    spatiotemporal graphs with rich metadata. This function reads a GEFF file
+    and converts it to a LineageTree.
+
+    Parameters
+    ----------
+    path : str
+        Path to the GEFF zarr directory/file
+    name : None or str, optional
+        The name attribute of the lineageTree file. If given a non-empty string, 
+        the value of the attribute will be the name attribute, otherwise the name 
+        will be the stem of the file path.
+
+    Returns
+    -------
+    lineageTree
+        lineage tree
+
+    Raises
+    ------
+    ImportError
+        If the geff library is not installed
+    ValueError
+        If the GEFF file contains undirected graphs (lineage trees must be directed)
+    """
+    try:
+        import geff
+    except ImportError as e:
+        raise ImportError(
+            "geff library is required to read GEFF files. "
+            "Install it with: pip install geff"
+        ) from e
+
+    # Read the graph using geff
+    graph, metadata = geff.read_nx(path, validate=True)
+    
+    # Check if graph is directed (required for lineage trees)
+    if not metadata.directed:
+        raise ValueError(
+            "GEFF file contains an undirected graph. "
+            "Lineage trees must be directed graphs."
+        )
+    
+    # Convert NetworkX graph to LineageTree format
+    successor = {}
+    pos = {}
+    time = {}
+    properties = {}
+    
+    # Extract node data
+    for node_id, node_data in graph.nodes(data=True):
+        # Handle position - look for spatial coordinates
+        position_coords = []
+        
+        # Try to get spatial coordinates in order: x, y, z
+        for coord in ['x', 'y', 'z']:
+            if coord in node_data:
+                position_coords.append(float(node_data[coord]))
+        
+        # Only add position if we have at least one spatial coordinate
+        if position_coords:
+            pos[node_id] = np.array(position_coords)
+        
+        # Handle time coordinate
+        if 't' in node_data:
+            time[node_id] = int(node_data['t'])
+        
+        # Handle other properties
+        for prop_name, prop_value in node_data.items():
+            if prop_name not in ['x', 'y', 'z', 't']:
+                node_prop_name = f"{prop_name}_NODE_PROPS_GEFF"
+                if node_prop_name not in properties:
+                    properties[node_prop_name] = {}
+                properties[node_prop_name][node_id] = prop_value
+    
+    # Extract edge data to build successor relationships
+    for source, target, edge_data in graph.edges(data=True):
+        if source not in successor:
+            successor[source] = []
+        successor[source].append(target)
+        
+        # Handle edge properties by storing them as node-to-node mappings
+        # This is more consistent with how LineageTree expects properties
+        for prop_name, prop_value in edge_data.items():
+            # geff stores edge and node properties separately, but LineageTree
+            # does not differentiate between them, so we prefix edge properties
+            # with "edge_" to avoid conflicts with node properties.
+            edge_prop_name = f"{prop_name}_EDGE_PROPS_GEFF"
+            if edge_prop_name not in properties:
+                properties[edge_prop_name] = {}
+            
+            # Store edge properties as nested dictionaries: source -> {target: value}
+            if source not in properties[edge_prop_name]:
+                properties[edge_prop_name][source] = {}
+            properties[edge_prop_name][source][target] = prop_value
+
+    # Take care of leaf nodes
+    for node in graph.nodes:
+        if node not in successor:
+            successor[node] = ()
+    
+    # Set default name if not provided
+    if not name:
+        tmp_name = Path(path).stem
+        if name == "":
+            warn(f"Name set to default {tmp_name}", stacklevel=2)
+        name = tmp_name
+
+    if 'name' in properties:
+        properties['props_name'] = properties.pop('name')
+    
+    # Create lineageTree
+    return lineageTree(
+        successor=successor,
+        time=time,
+        pos=pos,
+        name=name,
+        **properties,
+    )
