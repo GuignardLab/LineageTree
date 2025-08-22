@@ -60,7 +60,8 @@ doc = [
 test = [
     "pytest",
     "pytest-cov",
-    "binarymeshformat"
+    "binarymeshformat",
+    "trimesh",
 ]
 
 [project.urls]

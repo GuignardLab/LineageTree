@@ -135,7 +135,7 @@ def read_from_bmf(
         lineageTree
             lineage tree
     """
-
+    # TODO: add check that binarymeshformat and trimesh are installed
     tracks = bmf.loadMeshTracks(file_path)
     predecessor = {}
     times = {}
