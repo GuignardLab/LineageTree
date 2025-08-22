@@ -29,6 +29,7 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.sparse import dok_array
 from scipy.spatial import Delaunay, KDTree, distance
 
+from . import __version__
 from .tree_approximation import TreeApproximationTemplate, tree_style
 from .utils import (
     convert_style_to_number,
@@ -306,7 +307,6 @@ class lineageTree:
                     "predecessor",
                     "_successor",
                     "_predecessor",
-                    "_time",
                 ]:
                     attr_value.pop(node, ())
             if self._predecessor.get(node):
@@ -355,6 +355,10 @@ class lineageTree:
     def nodes(self) -> frozenset[int]:
         """Nodes of the tree"""
         return frozenset(self._successor.keys())
+
+    @dynamic_property
+    def number_of_nodes(self) -> int:
+        return len(self.nodes)
 
     @dynamic_property
     def depth(self) -> dict[int, int]:
@@ -966,7 +970,7 @@ class lineageTree:
         fname : str
             path to and name of the file to save
         """
-        if os.path.splitext(fname)[-1] != ".lT":
+        if os.path.splitext(fname)[-1].upper() != ".LT":
             fname = os.path.extsep.join((fname, "lT"))
         if hasattr(self, "_protected_predecessor"):
             del self._protected_predecessor
@@ -1001,7 +1005,7 @@ class lineageTree:
             properties = {
                 prop_name: prop
                 for prop_name, prop in lT.__dict__.items()
-                if isinstance(prop, dict)
+                if (isinstance(prop, dict) or prop_name == "_time_resolution")
                 and prop_name
                 not in [
                     "successor",
@@ -2667,7 +2671,7 @@ class lineageTree:
         self,
         t: int,
         r: int | Iterable[int] | None = None,
-    ) -> list:
+    ) -> list[int]:
         """
         Returns the list of nodes at time `t` that are spawn by the node(s) `r`.
 
@@ -2680,8 +2684,8 @@ class lineageTree:
 
         Returns
         -------
-        list
-            list of nodes at time `t` spawned by `r`
+        list of int
+            list of ids of the nodes at time `t` spawned by `r`
         """
         if not r and r != 0:
             r = {root for root in self.roots if self.time[root] <= t}
@@ -3348,6 +3352,25 @@ class lineageTree:
 
         return distance, fig
 
+    def get_subtree(self, node_list: set[int]) -> lineageTree:
+        new_successors = {
+            n: tuple(vi for vi in self.successor[n] if vi in node_list)
+            for n in node_list
+        }
+        return lineageTree(
+            successor=new_successors,
+            time=self._time,
+            pos=self.pos,
+            name=self.name,
+            root_leaf_value=[
+                (),
+            ],
+            **{
+                name: self.__dict__[name]
+                for name in self._custom_property_list
+            },
+        )
+
     def __init__(
         self,
         *,
@@ -3385,7 +3408,7 @@ class lineageTree:
             Supported keyword arguments are dictionaries assigning nodes to any custom property.
             The property must be specified for every node, and named differently from lineageTree's own attributes.
         """
-        self.__version__ = importlib.metadata.version("LineageTree")
+        self.__version__ = __version__
         self.name = str(name) if name is not None else None
         if successor is not None and predecessor is not None:
             raise ValueError(
@@ -3454,7 +3477,7 @@ class lineageTree:
                 "Cycles were found in the tree, there should not be any."
             )
 
-        if pos is None:
+        if pos is None or len(pos) == 0:
             self.pos = {}
         else:
             if self.nodes.difference(pos) != set():
@@ -3462,7 +3485,9 @@ class lineageTree:
             self.pos = {
                 node: np.array(position) for node, position in pos.items()
             }
-
+        if "labels" in kwargs:
+            self._labels = kwargs["labels"]
+            kwargs.pop("labels")
         if time is None:
             if starting_time is None:
                 starting_time = 0
@@ -3471,7 +3496,7 @@ class lineageTree:
                     f"Attribute `starting_time` was a `{type(starting_time)}`, has been casted as an `int`.",
                     stacklevel=2,
                 )
-            self._time = {node: starting_time for node in self.roots}
+            self._time = dict.fromkeys(self.roots, starting_time)
             queue = list(self.roots)
             for node in queue:
                 for succ in self._successor[node]:
@@ -3510,6 +3535,7 @@ class lineageTree:
                     "Provided times are not strictly increasing. Setting times to default."
                 )
         # custom properties
+        self._custom_property_list = []
         for name, d in kwargs.items():
             if name in self.__dict__:
                 warnings.warn(
@@ -3517,5 +3543,6 @@ class lineageTree:
                 )
                 continue
             setattr(self, name, d)
+            self._custom_property_list.append(name)
         if not hasattr(self, "_comparisons"):
             self._comparisons = {}

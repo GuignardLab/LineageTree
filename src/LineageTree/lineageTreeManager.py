@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import pickle as pkl
 import warnings
-from collections.abc import Callable
+from collections.abc import Callable, Generator, Iterable
 from functools import partial
 from typing import TYPE_CHECKING, Literal
 
@@ -35,17 +35,26 @@ if TYPE_CHECKING:
 class lineageTreeManager:
     norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
 
-    def __init__(self):
-        self.lineagetrees = {}
-        self.lineageTree_counter = 0
-        self.registered = {}
-        self._comparisons = {}
+    def __init__(self, lineagetree_list: Iterable[lineageTree] = ()):
+        """Creates a lineageTreeManager
+        :TODO: write the docstring
 
-    def __next__(self):
+        Parameters
+        ----------
+        lineagetree_list: Iterable of lineageTree
+            List of lineage trees to be in the lineageTreeManager
+        """
+        self.lineagetrees: dict[str, lineageTree] = {}
+        self.lineageTree_counter: int = 0
+        self._comparisons: dict = {}
+        for lT in lineagetree_list:
+            self.add(lT)
+
+    def __next__(self) -> int:
         self.lineageTree_counter += 1
         return self.lineageTree_counter - 1
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Returns how many lineagetrees are in the manager.
 
         Returns
@@ -55,12 +64,10 @@ class lineageTreeManager:
         """
         return len(self.lineagetrees)
 
-    def __iter__(
-        self,
-    ):
+    def __iter__(self) -> Generator[tuple[str, lineageTree]]:
         yield from self.lineagetrees.items()
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> lineageTree:
         if key in self.lineagetrees:
             return self.lineagetrees[key]
         else:
@@ -122,7 +129,7 @@ class lineageTreeManager:
                 "Please add a LineageTree object or add time resolution to the LineageTree added."
             )
 
-    def __add__(self, other):
+    def __add__(self, other: lineageTree):
         self.add(other)
 
     def write(self, fname: str):
@@ -133,13 +140,20 @@ class lineageTreeManager:
         fname : str
             The path and name of the file that is to be saved.
         """
-        if os.path.splitext(fname)[-1] != ".ltM":
-            fname = os.path.extsep.join((fname, "ltM"))
+        if os.path.splitext(fname)[-1].upper() != ".LTM":
+            fname = os.path.extsep.join((fname, "lTM"))
+        for _, lT in self:
+            if hasattr(lT, "_protected_predecessor"):
+                del lT._protected_predecessor
+            if hasattr(lT, "_protected_successor"):
+                del lT._protected_successor
+            if hasattr(lT, "_protected_time"):
+                del lT._protected_time
         with open(fname, "bw") as f:
             pkl.dump(self, f)
             f.close()
 
-    def remove_embryo(self, key):
+    def remove_embryo(self, key: str):
         """Removes the embryo from the manager.
 
         Parameters
@@ -414,14 +428,9 @@ class lineageTreeManager:
         -------
         Alignment
             The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
-        --
-        ΟΡ
-        --
-
-        Alignment
-            The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.`
-        tuple(tree,tree)
+        tuple(tree,tree), optional
             The two trees that have been mapped to each other.
+            Returned if `return_norms` is `True`
         """
 
         parameters = (
@@ -657,28 +666,28 @@ class lineageTreeManager:
                         matched_right.append(node_2)
                         l_node_2 = tree2.lT.get_chain_of_node(node_2)[-1]
                         matched_right.append(l_node_2)
-                        colors1[
-                            node_1
-                        ] = self.__calculate_distance_of_sub_tree(
-                            node_1,
-                            tree1.lT,
-                            node_2,
-                            tree2.lT,
-                            btrc,
-                            corres1,
-                            corres2,
-                            delta_tmp,
-                            self.norm_dict[norm],
-                            tree1.get_norm(node_1),
-                            tree2.get_norm(node_2),
+                        colors1[node_1] = (
+                            self.__calculate_distance_of_sub_tree(
+                                node_1,
+                                tree1.lT,
+                                node_2,
+                                tree2.lT,
+                                btrc,
+                                corres1,
+                                corres2,
+                                delta_tmp,
+                                self.norm_dict[norm],
+                                tree1.get_norm(node_1),
+                                tree2.get_norm(node_2),
+                            )
                         )
                         colors2[node_2] = colors1[node_1]
-                        colors1[
-                            tree1.lT.get_chain_of_node(node_1)[-1]
-                        ] = colors1[node_1]
-                        colors2[
-                            tree2.lT.get_chain_of_node(node_2)[-1]
-                        ] = colors2[node_2]
+                        colors1[tree1.lT.get_chain_of_node(node_1)[-1]] = (
+                            colors1[node_1]
+                        )
+                        colors2[tree2.lT.get_chain_of_node(node_2)[-1]] = (
+                            colors2[node_2]
+                        )
 
                         if tree1.lT.get_chain_of_node(node_1)[-1] != node_1:
                             matched_left.append(
