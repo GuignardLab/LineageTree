@@ -9,6 +9,7 @@ from LineageTree import (
     read_from_mamut_xml,
     read_from_mastodon,
     tree_approximation,
+    read_from_geff,
 )
 
 lT1 = read_from_mamut_xml("src/LineageTree/test/data/test-mamut.xml")
@@ -632,3 +633,205 @@ def test_get_ancestor_with():
     assert lt.get_labelled_ancestor(
         list(lt.nodes)[0]
     ) == lt.get_ancestor_with_attribute(list(lt.nodes)[0], "labels")
+
+
+@pytest.fixture(scope="session")
+def test_write_to_geff(tmp_path_factory):
+    """Test fixture that creates a GEFF file for testing read functionality."""
+    tmp_path = str(tmp_path_factory.mktemp("geff_test")) + ".geff"
+    
+    # Use the existing lt lineage tree and add some test properties
+    lt_test = lt
+    
+    # Add custom node properties for testing
+    lt_test.test_property = {node: float(node * 2.5) for node in lt_test.nodes}
+    lt_test.string_property = {node: f"node_{node}" for node in lt_test.nodes}
+
+    # Add custom edge properties (using the expected format)
+    lt_test.edge_test_prop = {}
+    for source, targets in lt_test.successor.items():
+        if targets:
+            lt_test.edge_test_prop[source] = {}
+            for target in targets:
+                lt_test.edge_test_prop[source][target] = source + target
+    
+    # Register custom properties
+    lt_test._custom_property_list.extend(["test_property", "string_property", "edge_test_prop"])
+
+    # Write to GEFF
+    lt_test.write_to_geff(tmp_path)
+    return tmp_path, lt_test
+
+
+def test_read_from_geff_basic(test_write_to_geff):
+    """Test basic read functionality and round-trip consistency."""
+    geff_path, original_tree = test_write_to_geff
+    
+    # Read back the tree
+    loaded_tree = read_from_geff(geff_path)
+    
+    # Test basic structure preservation
+    assert len(loaded_tree.nodes) == len(original_tree.nodes)
+    assert len(loaded_tree.edges) == len(original_tree.edges)
+    assert len(loaded_tree.roots) == len(original_tree.roots)
+    
+    # Test that all nodes are present
+    assert set(loaded_tree.nodes) == set(original_tree.nodes)
+    
+    # Test that graph structure is preserved
+    for node in original_tree.nodes:
+        assert set(loaded_tree.successor.get(node, [])) == set(original_tree.successor.get(node, []))
+        assert set(loaded_tree.predecessor.get(node, [])) == set(original_tree.predecessor.get(node, []))
+
+
+def test_geff_time_preservation(test_write_to_geff):
+    """Test that time information is correctly preserved."""
+    geff_path, original_tree = test_write_to_geff
+    loaded_tree = read_from_geff(geff_path)
+    
+    for node in original_tree.nodes:
+        assert loaded_tree.time[node] == original_tree.time[node]
+
+
+def test_geff_position_preservation(test_write_to_geff):
+    """Test that position information is correctly preserved."""
+    geff_path, original_tree = test_write_to_geff
+    loaded_tree = read_from_geff(geff_path)
+    
+    for node in original_tree.nodes:
+        if node in original_tree.pos:
+            assert node in loaded_tree.pos
+            np.testing.assert_array_almost_equal(
+                loaded_tree.pos[node], 
+                original_tree.pos[node]
+            )
+
+
+def test_geff_custom_properties_preservation(test_write_to_geff):
+    """Test that custom node and edge properties are preserved."""
+    geff_path, original_tree = test_write_to_geff
+    loaded_tree = read_from_geff(geff_path)
+    
+    # Test node properties
+    assert hasattr(loaded_tree, 'test_property')
+    assert hasattr(loaded_tree, 'string_property')
+    
+    for node in original_tree.nodes:
+        if node in original_tree.test_property:
+            assert loaded_tree.test_property[node] == original_tree.test_property[node]
+        if node in original_tree.string_property:
+            assert loaded_tree.string_property[node] == original_tree.string_property[node]
+    
+    # Test edge properties (they should be renamed with _EDGE_PROPS_GEFF suffix)
+    edge_prop_name = "edge_test_prop"
+    assert hasattr(loaded_tree, edge_prop_name)
+    
+    for source, targets_dict in original_tree.edge_test_prop.items():
+        if source in getattr(loaded_tree, edge_prop_name):
+            for target, value in targets_dict.items():
+                assert getattr(loaded_tree, edge_prop_name)[source][target] == value
+
+
+def test_geff_axis_parameters(tmp_path):
+    """Test writing with custom axis parameters."""
+    # Use the existing lt lineage tree
+    lt_test = lt
+    
+    geff_path = str(tmp_path / "test_geff_axis.geff")
+    
+    # Test with custom axis names, units, and types
+    axis_names = ['t', 'x', 'y']
+    axis_units = ['second', 'micrometer', 'micrometer']
+    axis_types = ['time', 'space', 'space']
+    
+    # This should not raise an error
+    lt_test.write_to_geff(
+        geff_path,
+        axis_names=axis_names,
+        axis_units=axis_units,
+        axis_types=axis_types
+    )
+    
+    # Read back and verify it works
+    loaded_tree = read_from_geff(geff_path)
+    assert len(loaded_tree.nodes) == len(lt_test.nodes)
+
+
+def test_geff_empty_tree(tmp_path):
+    """Test GEFF operations with an empty tree."""
+    empty_tree = lineageTree()
+    
+    geff_path = str(tmp_path / "test_empty_geff.geff")
+    
+    # Writing empty tree should work
+    empty_tree.write_to_geff(geff_path)
+    
+    # Reading it back should work
+    loaded_tree = read_from_geff(geff_path)
+    assert len(loaded_tree.nodes) == 0
+    assert len(loaded_tree.edges) == 0
+
+
+def test_geff_complex_properties(test_write_to_geff, tmp_path):
+    """Test GEFF with various property types."""
+    geff_path, original_tree = test_write_to_geff
+    
+    # Add properties with different data types
+    original_tree.int_property = {node: int(node) for node in original_tree.nodes}
+    original_tree.float_property = {node: float(node) + 0.5 for node in original_tree.nodes}
+    original_tree.bool_property = {node: bool(node % 2) for node in original_tree.nodes}
+    
+    # Write and read back
+    geff_path_complex = str(tmp_path / "complex_properties.geff")
+    original_tree.write_to_geff(geff_path_complex)
+    loaded_tree = read_from_geff(geff_path_complex)
+    
+    # Verify properties are preserved with correct types
+    for node in original_tree.nodes:
+        if hasattr(loaded_tree, 'int_property') and node in loaded_tree.int_property:
+            assert loaded_tree.int_property[node] == original_tree.int_property[node]
+        if hasattr(loaded_tree, 'float_property') and node in loaded_tree.float_property:
+            assert abs(loaded_tree.float_property[node] - original_tree.float_property[node]) < 1e-10
+
+
+def test_geff_name_attribute(test_write_to_geff):
+    """Test that the name attribute is handled correctly."""
+    geff_path, original_tree = test_write_to_geff
+    
+    # Test with explicit name
+    loaded_tree_with_name = read_from_geff(geff_path, name="test_tree")
+    assert loaded_tree_with_name.name == "test_tree"
+    
+    # Test with None name (should use path stem)
+    loaded_tree_auto_name = read_from_geff(geff_path, name=None)
+    # The name should be derived from the path
+    import os
+    expected_name = os.path.splitext(os.path.basename(geff_path))[0]
+    assert loaded_tree_auto_name.name == expected_name
+
+
+def test_geff_roundtrip_equivalence(test_write_to_geff, tmp_path):
+    """Test that multiple round-trips maintain data integrity."""
+    geff_path, original_tree = test_write_to_geff
+    
+    # First round-trip
+    loaded_tree1 = read_from_geff(geff_path)
+    
+    # Second round-trip
+    geff_path2 = str(tmp_path / "round2.geff")
+    loaded_tree1.write_to_geff(geff_path2)
+    loaded_tree2 = read_from_geff(geff_path2)
+    
+    # Third round-trip
+    geff_path3 = str(tmp_path / "round3.geff")
+    loaded_tree2.write_to_geff(geff_path3)
+    loaded_tree3 = read_from_geff(geff_path3)
+    
+    # All trees should have the same structure
+    assert len(loaded_tree1.nodes) == len(loaded_tree2.nodes) == len(loaded_tree3.nodes)
+    assert len(loaded_tree1.edges) == len(loaded_tree2.edges) == len(loaded_tree3.edges)
+    
+    # Node sets should be identical
+    assert set(loaded_tree1.nodes) == set(loaded_tree2.nodes) == set(loaded_tree3.nodes)
+    # Edge sets should be identical
+    assert set(loaded_tree1.edges) == set(loaded_tree2.edges) == set(loaded_tree3.edges)
