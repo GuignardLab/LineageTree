@@ -1028,6 +1028,24 @@ def read_from_geff(
     time = {}
     properties = {}
     
+    # First pass: identify property name conflicts between nodes and edges
+    node_prop_names = set()
+    edge_prop_names = set()
+    
+    # Collect all node property names (excluding spatial/temporal coordinates)
+    for node_id, node_data in graph.nodes(data=True):
+        for prop_name in node_data.keys():
+            if prop_name not in ['x', 'y', 'z', 't']:
+                node_prop_names.add(prop_name)
+    
+    # Collect all edge property names
+    for source, target, edge_data in graph.edges(data=True):
+        for prop_name in edge_data.keys():
+            edge_prop_names.add(prop_name)
+    
+    # Find conflicting property names that appear in both nodes and edges
+    conflicting_props = node_prop_names & edge_prop_names
+    
     # Extract node data
     for node_id, node_data in graph.nodes(data=True):
         # Handle position - look for spatial coordinates
@@ -1049,7 +1067,12 @@ def read_from_geff(
         # Handle other properties
         for prop_name, prop_value in node_data.items():
             if prop_name not in ['x', 'y', 'z', 't']:
-                node_prop_name = f"{prop_name}_NODE_PROPS_GEFF"
+                # Only add suffix if there's a naming conflict
+                if prop_name in conflicting_props:
+                    node_prop_name = f"{prop_name}_NODE_PROPS_GEFF"
+                else:
+                    node_prop_name = prop_name
+                
                 if node_prop_name not in properties:
                     properties[node_prop_name] = {}
                 properties[node_prop_name][node_id] = prop_value
@@ -1063,10 +1086,12 @@ def read_from_geff(
         # Handle edge properties by storing them as node-to-node mappings
         # This is more consistent with how LineageTree expects properties
         for prop_name, prop_value in edge_data.items():
-            # geff stores edge and node properties separately, but LineageTree
-            # does not differentiate between them, so we prefix edge properties
-            # with "edge_" to avoid conflicts with node properties.
-            edge_prop_name = f"{prop_name}_EDGE_PROPS_GEFF"
+            # Only add suffix if there's a naming conflict
+            if prop_name in conflicting_props:
+                edge_prop_name = f"{prop_name}_EDGE_PROPS_GEFF"
+            else:
+                edge_prop_name = prop_name
+            
             if edge_prop_name not in properties:
                 properties[edge_prop_name] = {}
             

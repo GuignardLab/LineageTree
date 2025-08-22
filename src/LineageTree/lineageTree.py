@@ -14,6 +14,7 @@ from collections.abc import Callable, Iterable, Sequence
 from functools import partial, wraps
 from itertools import combinations
 from numbers import Number
+import re
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal
 
@@ -975,6 +976,14 @@ class lineageTree:
         spatiotemporal graphs with rich metadata. This function converts a LineageTree
         to a NetworkX graph and writes it using the geff library.
 
+        Currently, LineageTree stores node and edge properties in the same dictionary,
+        which prevents clear separation, while GEFF stores them separately. The
+        convention chosen here is that a GEFF file loaded into a LineageTree will 
+        have all node properties stored in the `*_NODE_PROPS_GEFF` attributes,
+        and all edge properties stored in the `*_EDGE_PROPS_GEFF` attributes.
+        Here, for writing, this pattern is used to separate node and edge properties,
+        and properties that do not follow this pattern will be written as node properties.
+
         Parameters
         ----------
         path : str
@@ -1030,10 +1039,21 @@ class lineageTree:
         nodes_with_attrs = []
         coord_names = ['x', 'y', 'z']
         
-        # Get node properties that are not edge properties (pre-filter)
-        node_props = {prop_name: getattr(self, prop_name) 
-                      for prop_name in self._custom_property_list 
-                      if not prop_name.startswith('edge_')}
+        # Get node properties and edge properties based on naming and structure convention
+        def _strip_suffix(name: str) -> str:
+            return re.sub(r'_(?:EDGE|NODE)_PROPS_GEFF$', '', name)
+
+        node_props = {}
+        edge_props = {}
+
+        for name in self._custom_property_list:
+            props_data = getattr(self, name)
+            if props_data:
+                if name.endswith('_EDGE_PROPS_GEFF') or self.__has_edge_props_structure(props_data):
+                    edge_props[_strip_suffix(name)] = props_data
+                elif name.endswith('_NODE_PROPS_GEFF') or self.__has_node_props_structure(props_data):
+                    node_props[_strip_suffix(name)] = props_data
+
         
         for node_id in self.nodes:
             node_attrs = {}
@@ -1062,13 +1082,6 @@ class lineageTree:
         # Prepare batch edge data for efficient creation
         edges_with_attrs = []
         
-        # Get edge properties (pre-filter and process)
-        edge_props = {}
-        for prop_name in self._custom_property_list:
-            if prop_name.startswith('edge_'):
-                original_prop_name = prop_name[5:]  # Remove "edge_" prefix
-                edge_props[original_prop_name] = getattr(self, prop_name)
-        
         # Build edges with attributes
         for source_node, targets in self.successor.items():
             for target_node in targets:
@@ -1095,6 +1108,37 @@ class lineageTree:
             axis_types=axis_types,
             axis_names=axis_names,
         )
+
+    def __has_edge_props_structure(self, prop_dict: dict) -> bool:
+        """Check if a property dictionary has the structure of edge properties."""
+        # Fast path: cheap exact-type checks (also excludes bool, which is a subclass of int)
+        if type(prop_dict) is not dict:
+            return False
+
+        dict_type = dict  # local bindings to avoid global lookups in hot loop
+        int_type = int
+
+        for k, v in prop_dict.items():
+            if type(k) is not int_type or type(v) is not dict_type:
+                return False
+            # iterate keys directly; .keys() would create a view object
+            for sk in v:
+                if type(sk) is not int_type:
+                    return False
+        return True
+
+    def __has_node_props_structure(self, prop_dict: dict) -> bool:
+        """Check if a property dictionary has the structure of node properties."""
+        # Fast path: cheap exact-type checks (also excludes bool, which is a subclass of int)
+        if type(prop_dict) is not dict:
+            return False
+
+        int_type = int
+
+        for k in prop_dict:
+            if type(k) is not int_type:
+                return False
+        return True
 
     def write(self, fname: str) -> None:
         """Write a lineage tree on disk as an .lT file.
