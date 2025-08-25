@@ -7,6 +7,7 @@ from functools import wraps
 def _strip_first_param_from_doc(doc: str, first_param: str) -> str:
     """
     Best-effort removal for NumPy docstrings.
+    Only removes the first parameter if it's "lT: LineageTree".
     Leaves other styles unchanged if patterns aren't found.
     """
     if not doc:
@@ -56,7 +57,9 @@ def _strip_first_param_from_doc(doc: str, first_param: str) -> str:
                 if lines[i].strip() and ":" in lines[i]:
                     # Get the indentation of this line
                     current_indent = len(lines[i]) - len(lines[i].lstrip())
-                    param_name = lines[i].split(":", 1)[0].strip()
+                    param_line = lines[i].strip()
+                    param_name = param_line.split(":", 1)[0].strip()
+                    param_type = param_line.split(":", 1)[1].strip() if ":" in param_line else ""
                     param_start = i
                     i += 1
                     
@@ -72,8 +75,11 @@ def _strip_first_param_from_doc(doc: str, first_param: str) -> str:
                             # Same or less indented - end of this parameter
                             break
                     
-                    # If this is not the first parameter, keep it
-                    if param_name != first_param:
+                    # Only remove the parameter if it's "lT" with "LineageTree" type
+                    should_remove = "LineageTree" in param_type or param_type == "LineageTree"
+                    
+                    # If this is not the parameter to remove, keep it
+                    if not should_remove:
                         parsed_params.extend(lines[param_start:i])
                 else:
                     # Not a parameter entry - we've reached the end of parameters section
