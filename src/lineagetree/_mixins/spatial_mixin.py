@@ -1,4 +1,4 @@
-from .._measure._spatial import (
+from ..measure.spatial import (
     compute_k_nearest_neighbours,
     compute_spatial_density,
     compute_spatial_edges,

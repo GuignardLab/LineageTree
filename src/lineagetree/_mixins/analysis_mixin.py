@@ -1,5 +1,5 @@
-from .._measure._dynamic_time_warping import calculate_dtw
-from .._measure._uted import (
+from ..measure.dynamic_time_warping import calculate_dtw
+from ..measure.uted import (
     clear_comparisons,
     labelled_mappings,
     norm_dict,
