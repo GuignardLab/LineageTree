@@ -17,6 +17,8 @@ def get_idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     t : int
         time
 
@@ -55,6 +57,8 @@ def get_gabriel_graph(lT: LineageTree, t: int) -> dict[int, set[int]]:
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     t : int
         time
 
@@ -118,6 +122,8 @@ def compute_spatial_density(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     t_b : int, optional
         starting time to look at, default first time point
     t_e : int, optional
@@ -156,6 +162,8 @@ def compute_k_nearest_neighbours(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     k : float
         number of nearest neighours
 
@@ -196,6 +204,8 @@ def compute_spatial_edges(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     th : float, default=50
         distance to consider neighbors
 

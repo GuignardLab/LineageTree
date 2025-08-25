@@ -81,6 +81,8 @@ def add_root(lT: LineageTree, t: int, pos: list | None = None) -> int:
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     t :int
         The timepoint the node is going to be added.
     pos : list
@@ -129,6 +131,8 @@ def _add_node(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     succ : list
         list of ids of the nodes the new node is a successor to
     pred : list
@@ -173,6 +177,8 @@ def remove_nodes(lT: LineageTree, group: int | set | list) -> None:
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     group : set of int or list of int or int
         One or more nodes that are to be removed.
     """

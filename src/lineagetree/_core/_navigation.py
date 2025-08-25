@@ -21,6 +21,8 @@ def get_predecessors(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     x : int
         id of the node to compute
     depth : int
@@ -75,6 +77,8 @@ def get_successors(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     x : int
         id of the node to compute
     depth : int, optional
@@ -119,6 +123,8 @@ def get_chain_of_node(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     x : int
         id of the node to compute
     depth : int, optional
@@ -150,6 +156,8 @@ def get_all_chains_of_subtree(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     node : int
         The node from which we want to get its chains.
     end_time : int, optional
@@ -178,6 +186,8 @@ def find_leaves(lT: LineageTree, roots: int | Iterable) -> set[int]:
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     roots : int or Iterable
         The roots of the trees spawning the leaves
 
@@ -213,6 +223,8 @@ def get_subtree_nodes(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     x : int
         id of root node
     preorder : bool, default=False
@@ -255,6 +267,8 @@ def get_ancestor_at_t(lT: LineageTree, n: int, time: int | None = None) -> int:
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     n : int
         node for which to look the ancestor
     time : int, optional
@@ -288,6 +302,8 @@ def get_labelled_ancestor(lT: LineageTree, node: int) -> int:
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     node : int
         The id of the node
 
@@ -314,6 +330,8 @@ def get_ancestor_with_attribute(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     node : int
         The id of the node
 
@@ -350,6 +368,8 @@ def nodes_at_t(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     t : int
         target time, if `None` goes as far as possible
     r : int or Iterable of int, optional
@@ -399,6 +419,11 @@ def get_subtree(lT: LineageTree, node_list: set[int]) -> LineageTree:
 
 def get_available_labels(lT: LineageTree) -> list[str]:
     """Returns the list all the available label dictionaries
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree instance.
 
     Returns
     -------

@@ -19,6 +19,8 @@ def _get_height(lT: LineageTree, c: int, done: dict) -> float:
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     c : int
         id of a node in a lineage tree from which the height will be computed from
     done : dict mapping int to list of two int
@@ -59,6 +61,8 @@ def write_to_svg(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     file_name : str
         filesystem filename valid for `open()`
     roots : list of int, defaults to `lT.roots`
@@ -277,6 +281,8 @@ def write_to_tlp(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     fname : str
         path to the tulip file to create
     t_min : int, default=-1
@@ -460,6 +466,8 @@ def write(lT: LineageTree, fname: str) -> None:
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     fname : str
         path to and name of the file to save
     """

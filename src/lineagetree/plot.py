@@ -91,6 +91,8 @@ def draw_tree_graph(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     hier : dict mapping int to tuple of int
         Dictionary that contains the positions of all nodes.
     lnks_tms : dict mapping string to dictionaries mapping int to list or int
@@ -172,6 +174,8 @@ def _create_dict_of_plots(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     node : int or Iterable of int, optional
         The id of the node/nodes to produce the simple graphs, if not provided or None will
         calculate the dicts for every root that starts before 'start_time'
@@ -219,6 +223,8 @@ def plot_all_lineages(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     nodes : list, optional
         The nodes spawning the graphs to be plotted.
     last_time_point_to_consider : int, optional
@@ -344,6 +350,8 @@ def plot_subtree(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     node : int
         The id of the node that is going to be plotted.
     end_time : int, optional
@@ -428,6 +436,8 @@ def plot_dtw_heatmap(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     nodes1 : int
         node to compare distance
     nodes2 : int
@@ -528,6 +538,8 @@ def plot_dtw_trajectory(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     nodes1 : int
         node to compare distance
     nodes2 : int
