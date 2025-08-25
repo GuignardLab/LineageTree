@@ -4,7 +4,7 @@ import types
 from functools import wraps
 
 
-def _strip_first_param_from_doc(doc: str, first_param: str) -> str:
+def _strip_first_param_from_doc(doc: str) -> str:
     """
     Best-effort removal for NumPy docstrings.
     Only removes the first parameter if it's "lT: LineageTree".
