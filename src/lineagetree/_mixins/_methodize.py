@@ -106,13 +106,12 @@ def methodize(func):
     Usage:
         Class.func = methodize(func)
     """
-    first_param = next(iter(inspect.signature(func).parameters), None)
 
     @wraps(func)
     def _method(self, *args, **kwargs):
         return func(self, *args, **kwargs)
     
-    _method.__doc__ = _strip_first_param_from_doc(func.__doc__ or "", first_param or "self")
+    _method.__doc__ = _strip_first_param_from_doc(func.__doc__ or "")
 
     return _method
 
