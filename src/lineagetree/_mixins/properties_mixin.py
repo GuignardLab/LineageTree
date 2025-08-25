@@ -17,8 +17,10 @@ from .._core._properties import (
     time_resolution,
 )
 
+from ._methodize import AutoMethodizeMeta
 
-class PropertiesMixin:
+
+class PropertiesMixin(metaclass=AutoMethodizeMeta):
     """Mixin for tree properties and basic structure."""
 
     successor = successor

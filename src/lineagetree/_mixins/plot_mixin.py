@@ -7,8 +7,10 @@ from ..plot import (
     plot_subtree,
 )
 
+from ._methodize import AutoMethodizeMeta
 
-class PlotMixin:
+
+class PlotMixin(metaclass=AutoMethodizeMeta):
     """Mixin for plotting functionality."""
 
     _create_dict_of_plots = _create_dict_of_plots

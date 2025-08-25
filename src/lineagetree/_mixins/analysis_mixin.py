@@ -8,8 +8,10 @@ from ..measure.uted import (
     unordered_tree_edit_distances_at_time_t,
 )
 
+from ._methodize import AutoMethodizeMeta
 
-class AnalysisMixin:
+
+class AnalysisMixin(metaclass=AutoMethodizeMeta):
     """Mixin for analysis operations (DTW, UTED)."""
 
     # DTW functions

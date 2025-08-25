@@ -6,8 +6,10 @@ from ..measure.spatial import (
     get_idx3d,
 )
 
+from ._methodize import AutoMethodizeMeta
 
-class SpatialMixin:
+
+class SpatialMixin(metaclass=AutoMethodizeMeta):
     """Mixin for spatial analysis operations."""
 
     get_idx3d = get_idx3d

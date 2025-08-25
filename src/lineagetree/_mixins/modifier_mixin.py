@@ -7,8 +7,10 @@ from .._core._modifier import (
     remove_nodes,
 )
 
+from ._methodize import AutoMethodizeMeta
 
-class ModifierMixin:
+
+class ModifierMixin(metaclass=AutoMethodizeMeta):
     """Mixin for tree modification operations."""
 
     _add_node = _add_node

@@ -14,8 +14,10 @@ from .._core._navigation import (
     nodes_at_t,
 )
 
+from ._methodize import AutoMethodizeMeta
 
-class NavigationMixin:
+
+class NavigationMixin(metaclass=AutoMethodizeMeta):
     """Mixin for tree navigation operations."""
 
     get_available_labels = get_available_labels
