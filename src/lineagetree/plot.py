@@ -8,10 +8,10 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
 
-from .utils import create_links_and_chains, hierarchical_pos
+from ._core.utils import create_links_and_chains, hierarchical_pos
 
 if TYPE_CHECKING:
-    from ..lineage_tree import LineageTree
+    from .lineage_tree import LineageTree
 
 
 def __plot_nodes(

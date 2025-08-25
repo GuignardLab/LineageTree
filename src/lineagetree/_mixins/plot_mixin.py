@@ -1,4 +1,4 @@
-from .._core._plot import (
+from ..plot import (
     _create_dict_of_plots,
     draw_tree_graph,
     plot_all_lineages,
