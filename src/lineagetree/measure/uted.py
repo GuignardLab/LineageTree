@@ -38,6 +38,8 @@ def unordered_tree_edit_distances_at_time_t(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     t : int
         time to look at
     end_time : int
@@ -94,6 +96,8 @@ def __calculate_distance_of_sub_tree(
     TODO ITS BOUND TO CHANGE
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     node1 : int
         The root of the first subtree
     node2 : int
@@ -159,6 +163,8 @@ def __unordereded_backtrace(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     n1 : int
         id of the first node to compare
     n2 : int
@@ -271,6 +277,8 @@ def unordered_tree_edit_distance(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     n1 : int
         id of the first node to compare
     n2 : int
@@ -358,6 +366,8 @@ def plot_tree_distance_graphs(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     n1 : int
         id of the first node to compare
     n2 : int
@@ -546,6 +556,8 @@ def labelled_mappings(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     n1 : int
         id of the first node to compare
     n2 : int

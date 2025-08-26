@@ -37,7 +37,6 @@ def __calculate_diag_line(dist_mat: np.ndarray) -> tuple[float, float]:
 
 # Reference: https://github.com/kamperh/lecture_dtw_notebook/blob/main/dtw.ipynb
 def __dp(
-    lT: LineageTree,
     dist_mat: np.ndarray,
     start_d: int = 0,
     back_d: int = 0,
@@ -200,6 +199,8 @@ def __interpolate(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     chain1 : list of int
         list of nodes of the first chain to compare
     chain2 : list of int
@@ -271,6 +272,8 @@ def calculate_dtw(
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     nodes1 : int
         node to compare distance
     nodes2 : int
@@ -324,7 +327,6 @@ def calculate_dtw(
     dist_mat = distance.cdist(pos_chain1, pos_chain2, "euclidean")
 
     path, cost_mat, final_cost = __dp(
-        lT,
         dist_mat,
         start_d,
         back_d,
