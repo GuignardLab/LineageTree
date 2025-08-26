@@ -116,7 +116,7 @@ def read_from_bmf(
     pos_multipliers: tuple[float, float, float] = (1.0, 1.0, 1.0),
     translation: tuple[float, float, float] = (0.0, 0.0, 0.0),
     name: None | str = None,
-) -> lineageTree:
+) -> LineageTree:
     """Read a lineage tree from a bmf file.
 
     Parameters
@@ -130,12 +130,12 @@ def read_from_bmf(
         translation : tuple of float, default=(0.0, 0.0, 0.0)
             translation for the x, y, z coordinates
         name : None or str, optional
-           The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
+           The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
            will be the name attribute, otherwise the name will be the stem of the file path.
 
     Returns
     -------
-        lineageTree
+        LineageTree
             lineage tree
     """
     # TODO: add check that binarymeshformat and trimesh are installed
@@ -162,7 +162,7 @@ def read_from_bmf(
 
     kwargs = {"mesh": lT_mesh} if store_meshes else {}
 
-    lT = lineageTree(
+    lT = LineageTree(
         predecessor=predecessor,
         time=times,
         pos=pos,
