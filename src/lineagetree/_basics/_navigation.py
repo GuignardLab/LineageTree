@@ -360,8 +360,8 @@ def nodes_at_t(
     list of int
         list of ids of the nodes at time `t` spawned by `r`
     """
-    if not r and r != 0:
-        r = [root for root in lT.roots if lT.time[root] <= t]
+    if r is None:
+        return lT.time_nodes.get(t, [])
     if isinstance(r, int):
         r = [r]
     if t is None:
