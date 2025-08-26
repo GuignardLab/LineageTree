@@ -588,16 +588,8 @@ def test_non_return_functions():
 
 
 def test_nodes_at_t():
-    assert sorted(lT1.nodes_at_t(0)) == sorted(
-        [
-            110832,
-            132129,
-            168322,
-            173618,
-            110826,
-            132063,
-        ]
-    )
+    assert lT1.nodes_at_t(None, 110832) == [123641]
+    assert lT1.nodes_at_t(65, 110832) == [112436]
 
 
 def test_calculate_dtw():

@@ -361,7 +361,7 @@ def get_ancestor_with_attribute(
 def nodes_at_t(
     lT: LineageTree,
     t: int,
-    r: int | Iterable[int] | None = None,
+    r: int | Iterable[int],
 ) -> list[int]:
     """
     Returns the list of nodes at time `t` that are spawn by the node(s) `r`.
@@ -372,7 +372,7 @@ def nodes_at_t(
         The LineageTree instance.
     t : int
         target time, if `None` goes as far as possible
-    r : int or Iterable of int, optional
+    r : int or Iterable of int
         id or list of ids of the spawning node
 
     Returns
@@ -380,23 +380,18 @@ def nodes_at_t(
     list of int
         list of ids of the nodes at time `t` spawned by `r`
     """
-    if not r and r != 0:
-        r = {root for root in lT.roots if lT.time[root] <= t}
     if isinstance(r, int):
         r = [r]
     if t is None:
         t = lT.t_e
     to_do = list(r)
     final_nodes = []
-    while len(to_do) > 0:
+    while 0 < len(to_do):
         curr = to_do.pop()
-        for _next in lT._successor[curr]:
-            if lT._time[_next] < t:
-                to_do.append(_next)
-            elif lT._time[_next] == t:
-                final_nodes.append(_next)
-    if not final_nodes:
-        return list(r)
+        if lT._time[curr] == t:
+            final_nodes.append(curr)
+        elif lT._time[curr] < t:
+            to_do.extend(lT.successor[curr])
     return final_nodes
 
 

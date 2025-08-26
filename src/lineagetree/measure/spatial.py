@@ -31,7 +31,7 @@ def get_idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
         If the query in the kdtree gives you the value `i`,
         then it corresponds to the id in the tree `to_check_lT[i]`
     """
-    to_check_lT = list(lT.nodes_at_t(t=t))
+    to_check_lT = list(lT.time_nodes[t])
 
     if not hasattr(lT, "kdtrees"):
         lT.kdtrees = {}
@@ -175,7 +175,7 @@ def compute_k_nearest_neighbours(
     """
     lT.kn_graph = {}
     for t in set(lT._time.values()):
-        nodes = lT.nodes_at_t(t)
+        nodes = lT.time_nodes[t]
         if 1 < len(nodes):
             use_k = k if k < len(nodes) else len(nodes)
             idx3d, nodes = lT.get_idx3d(t)
@@ -216,7 +216,7 @@ def compute_spatial_edges(
     """
     lT.th_edges = {}
     for t in set(lT._time.values()):
-        nodes = lT.nodes_at_t(t)
+        nodes = lT.time_nodes[t]
         idx3d, nodes = lT.get_idx3d(t)
         neighbs = idx3d.query_ball_tree(idx3d, th)
         out = dict(zip(nodes, [set(nodes[ni]) for ni in neighbs], strict=True))

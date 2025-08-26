@@ -23,7 +23,7 @@ def to_motile(
     if not crop:
         crop = lT.t_e
     for time in range(crop):
-        for time_node in lT.nodes_at_t(time):
+        for time_node in lT.time_nodes[time]:
             fmt.add_node(
                 time_node,
                 t=lT.time[time_node],

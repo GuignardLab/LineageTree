@@ -65,7 +65,7 @@ def unordered_tree_edit_distances_at_time_t(
     elif t in lT.uted and not recompute:
         return lT.uted[t]
     lT.uted[t] = {}
-    roots = lT.nodes_at_t(t=t)
+    roots = lT.time_nodes[t]
     for n1, n2 in combinations(roots, 2):
         key = tuple(sorted((n1, n2)))
         lT.uted[t][key] = lT.unordered_tree_edit_distance(
