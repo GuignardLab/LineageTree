@@ -3,17 +3,17 @@ import warnings
 import numpy as np
 import pytest
 
-from LineageTree import (
-    lineageTree,
-    lineageTreeManager,
+from lineagetree import (
+    LineageTree,
+    LineageTreeManager,
     read_from_mamut_xml,
     read_from_mastodon,
     tree_approximation,
 )
 
-lT1 = read_from_mamut_xml("src/LineageTree/test/data/test-mamut.xml")
-lT2 = read_from_mastodon("src/LineageTree/test/data/test.mastodon")
-lt = lineageTree.load("src/LineageTree/test/data/demo.lT")
+lT1 = read_from_mamut_xml("tests/data/test-mamut.xml")
+lT2 = read_from_mastodon("tests/data/test.mastodon")
+lt = LineageTree.load("tests/data/demo.lT")
 
 
 def test_read_MaMuT_xml():
@@ -37,7 +37,7 @@ def test_write(tmp_path_factory):
 
 
 def test_load(test_write):
-    lt2 = lineageTree.load(str(test_write))
+    lt2 = LineageTree.load(str(test_write))
     assert lt2._comparisons == {(1, 2): 30}
     assert lt.labels[list(lt.nodes)[0]] == "test"
     assert lt == lt2
@@ -48,7 +48,7 @@ def test_all_chains():
 
 
 def test_uted_2levels_vs_3levels():
-    lT = lineageTree()
+    lT = LineageTree()
     t1 = lT.add_root(0)
     first_level_end = lT.add_chain(t1, 10, True)
 
@@ -93,7 +93,7 @@ def test_uted_2levels_vs_3levels():
 
 
 def test_adding_nodes():
-    lT = lineageTree()
+    lT = LineageTree()
     t1 = lT.add_root(0)
     first_level_end = lT.add_chain(t1, 9, downstream=True)
 
@@ -104,7 +104,7 @@ def test_adding_nodes():
 
 
 def test_removing_nodes():
-    lT = lineageTree()
+    lT = LineageTree()
     t1 = lT.add_root(0)
     first_level_end = lT.add_chain(t1, 9, downstream=True)
 
@@ -115,20 +115,20 @@ def test_removing_nodes():
 
 
 def test_time_resolution():
-    lT = lineageTree()
+    lT = LineageTree()
     lT.time_resolution = 3
     assert lT.time_resolution == 3
 
 
 def test_loading():
-    lT = lineageTree.load("src/LineageTree/test/data/test-mamut.lT")
+    lT = LineageTree.load("tests/data/test-mamut.lT")
     assert lT.time_resolution == 0
     lT.time_resolution = 1.51
     assert lT.time_resolution == 1.5
 
 
 def test_cross_comparison():
-    lT_1 = lineageTree()
+    lT_1 = LineageTree()
     t1 = lT_1.add_root(0)
     first_level_end = lT_1.add_chain(t1, 9, downstream=True)
     node_1 = lT_1.get_chain_of_node(t1)[0]
@@ -142,7 +142,7 @@ def test_cross_comparison():
     lT_1.add_chain(second_level_2, 10, downstream=True)
     lT_1.time_resolution = 5
 
-    lT_2 = lineageTree()
+    lT_2 = LineageTree()
     t2 = lT_2.add_root(0)
     first_level_end = lT_2.add_chain(t2, 4, downstream=True)
     node_2 = lT_2.get_chain_of_node(t2)[0]
@@ -156,7 +156,7 @@ def test_cross_comparison():
     lT_2.add_chain(second_level_2, 5, downstream=True)
     lT_2.time_resolution = 10
 
-    lTm1 = lineageTreeManager()
+    lTm1 = LineageTreeManager()
     lTm1.add(lT_1, name="embryo_1")
     lTm1.add(lT_2, name="embryo_2")
     assert lT_2.time_resolution == lT_2._time_resolution / 10
@@ -213,7 +213,7 @@ def test_cross_comparison():
         )
         == 0
     )
-    lT_3 = lineageTree()
+    lT_3 = LineageTree()
     t1 = lT_3.add_root(0)
     first_level_end = lT_3.add_chain(t1, 4, downstream=True)
     node_3 = lT_3.get_chain_of_node(t1)[0]
@@ -292,7 +292,7 @@ def test_plots():
 
 
 def test_removing_embryos_from_manager():
-    lT_1 = lineageTree()
+    lT_1 = LineageTree()
     t1 = lT_1.add_root(0)
     first_level_end = lT_1.add_chain(t1, 9, downstream=True)
 
@@ -305,7 +305,7 @@ def test_removing_embryos_from_manager():
     lT_1.add_chain(second_level_2, 10, downstream=True)
     lT_1.time_resolution = 5
 
-    lT_2 = lineageTree()
+    lT_2 = LineageTree()
     t2 = lT_2.add_root(0)
     first_level_end = lT_2.add_chain(t2, 4, downstream=True)
 
@@ -318,7 +318,7 @@ def test_removing_embryos_from_manager():
     lT_2.add_chain(second_level_2, 5, downstream=True)
     lT_2.time_resolution = 10
 
-    lTm1 = lineageTreeManager()
+    lTm1 = LineageTreeManager()
     lTm1.add(lT_1, name="embryo_1")
     lTm1.add(lT_2, name="embryo_2")
     lTm1.remove_embryo("embryo_1")
@@ -329,7 +329,7 @@ def test_removing_embryos_from_manager():
 
 
 def test_successor():
-    test_lT = lineageTree(
+    test_lT = LineageTree(
         successor={
             1: (2,),
             2: (3, 100),
@@ -342,7 +342,7 @@ def test_successor():
             101: (),
         }
     )
-    lT = lineageTree(
+    lT = LineageTree(
         successor={
             1: (2,),
             2: (3, 100),
@@ -360,7 +360,7 @@ def test_successor():
 
 
 def test_predecessor():
-    test_lT = lineageTree(
+    test_lT = LineageTree(
         successor={
             1: (2,),
             2: (3, 100),
@@ -373,7 +373,7 @@ def test_predecessor():
             101: (),
         }
     )
-    lT = lineageTree(
+    lT = LineageTree(
         predecessor={
             2: (1,),
             3: [2],
@@ -389,7 +389,7 @@ def test_predecessor():
 
 
 def test_empty():
-    lineageTree()
+    LineageTree()
 
 
 def test_time_warning():
@@ -397,7 +397,7 @@ def test_time_warning():
         "error"
     )  # raises warnings as errors so we can catch them when expected
     with pytest.raises(UserWarning) as excinfo:
-        lineageTree(successor={0: (1,)}, time={0: 1, 1: 2}, starting_time=3)
+        LineageTree(successor={0: (1,)}, time={0: 1, 1: 2}, starting_time=3)
     assert (
         str(excinfo.value)
         == "Both `time` and `starting_time` were provided, `starting_time` was ignored."
@@ -407,7 +407,7 @@ def test_time_warning():
 
 def test_bad_leaf():
     with pytest.raises(ValueError) as excinfo:
-        lineageTree(
+        LineageTree(
             successor={
                 1: (2,),
                 2: (3, 100),
@@ -430,13 +430,13 @@ def test_bad_leaf():
 
 def test_multiple_predecessors():
     with pytest.raises(ValueError) as excinfo:
-        lineageTree(successor={2: (1,), 3: (2,), 4: (2,)})
+        LineageTree(successor={2: (1,), 3: (2,), 4: (2,)})
     assert str(excinfo.value) == "Node can have at most one predecessor."
 
 
 def test_bad_root_leaf_value():
     with pytest.raises(ValueError) as excinfo:
-        lineageTree(successor={1: (2,), 2: set()}, root_leaf_value=set())
+        LineageTree(successor={1: (2,), 2: set()}, root_leaf_value=set())
     assert (
         str(excinfo.value)
         == "root_leaf_value should have at least one element."
@@ -445,7 +445,7 @@ def test_bad_root_leaf_value():
 
 def test_successor_and_predecessor():
     with pytest.raises(ValueError) as excinfo:
-        lineageTree(successor={1: (2, 3)}, predecessor={2: 1, 3: 1})
+        LineageTree(successor={1: (2, 3)}, predecessor={2: 1, 3: 1})
     assert (
         str(excinfo.value)
         == "You cannot have both successors and predecessors."
@@ -454,7 +454,7 @@ def test_successor_and_predecessor():
 
 def test_cycles():
     with pytest.raises(ValueError) as excinfo:
-        lineageTree(successor={0: (1,), 1: (0,)})
+        LineageTree(successor={0: (1,), 1: (0,)})
     assert (
         str(excinfo.value)
         == "Cycles were found in the tree, there should not be any."
@@ -494,7 +494,7 @@ def test_next_id():
 
 
 def test_dynamic_property():
-    lT = lineageTree()
+    lT = LineageTree()
     assert lT.nodes == frozenset()
     t1 = lT.add_root(0)
     assert lT.nodes == frozenset({1})
@@ -588,16 +588,8 @@ def test_non_return_functions():
 
 
 def test_nodes_at_t():
-    assert sorted(lT1.nodes_at_t(0)) == sorted(
-        [
-            110832,
-            132129,
-            168322,
-            173618,
-            110826,
-            132063,
-        ]
-    )
+    assert lT1.nodes_at_t(None, 110832) == [123641]
+    assert lT1.nodes_at_t(65, 110832) == [112436]
 
 
 def test_calculate_dtw():
@@ -632,3 +624,34 @@ def test_get_ancestor_with():
     assert lt.get_labelled_ancestor(
         list(lt.nodes)[0]
     ) == lt.get_ancestor_with_attribute(list(lt.nodes)[0], "labels")
+
+
+def test_mastodon_labeling():
+    assert lT2.labels[25] == "p"
+    assert lT2.labels[40] == "p(2)"
+    assert lT2.labels_name == "E"
+
+
+def test_available_labels():
+    assert lT2.get_available_labels() == ["E", "Ep", "Er", "El", "Extoderms"]
+
+
+def test_change_labels():
+    lT2.change_labels("Ep")
+    assert lT2.labels[19] == "alla"
+    assert lT2.labels[9] == "right1"
+
+    lT2.change_labels("test", {19: "a", 9: "b"})
+    assert lT2.labels[19] == "a"
+    assert lT2.labels[9] == "b"
+
+    lT2.change_labels("Ep", only_first_node_in_chain=True)
+    assert lT2.labels == {
+        0: "right1",
+        1: "right1",
+        40: "right1",
+        16: "left",
+        19: "alla",
+        24: "left",
+        25: "left",
+    }

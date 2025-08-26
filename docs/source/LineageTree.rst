@@ -12,10 +12,10 @@ LineageTree.lineageTree module
    :show-inheritance:
    :undoc-members:
 
-LineageTree.lineageTreeManager module
+LineageTree.LineageTreeManager module
 -------------------------------------
 
-.. automodule:: LineageTree.lineageTreeManager
+.. automodule:: LineageTree.LineageTreeManager
    :members:
    :show-inheritance:
    :undoc-members:
