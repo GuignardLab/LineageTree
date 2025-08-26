@@ -57,6 +57,119 @@ def create_links_and_chains(
     return {"links": links, "times": times, "root": roots}
 
 
+def _find_leaves_and_depths_iterative(lnks_tms: dict, root: int) -> tuple[list[int], dict[int, int]]:
+    """Find all leaves and calculate depths for all nodes using iterative approach."""
+    leaves = []
+    depths = {}
+    
+    # Stack for DFS: (node, current_depth, parent_depth)
+    stack = [(root, 0, 0)]
+    visited = set()
+    
+    while stack:
+        node, current_depth, parent_depth = stack.pop()
+        
+        if node in visited:
+            continue
+        visited.add(node)
+        
+        node_depth = parent_depth + lnks_tms["times"].get(node, 0)
+        depths[node] = parent_depth
+        
+        succ = lnks_tms["links"].get(node, [])
+        
+        if not succ:  # This is a leaf
+            leaves.append(node)
+        else:
+            # Add children to stack (reverse order to maintain left-to-right traversal)
+            for child in reversed(succ):
+                stack.append((child, current_depth + 1, node_depth))
+    
+    return leaves, depths
+
+
+def _calculate_leaf_positions(leaves: list[int], width: int, xcenter: int) -> dict[int, float]:
+    """Calculate uniform x-positions for leaves."""
+    num_leaves = len(leaves)
+    if num_leaves == 1:
+        return {leaves[0]: xcenter}
+    
+    leaf_spacing = width / (num_leaves - 1)
+    return {
+        leaf: xcenter - width/2 + i * leaf_spacing 
+        for i, leaf in enumerate(leaves)
+    }
+
+
+def _assign_positions_iterative(
+    lnks_tms: dict, 
+    root: int, 
+    depths: dict[int, int], 
+    leaf_x_positions: dict[int, float],
+    vert_gap: int,
+    ycenter: int
+) -> dict[int, list[float]]:
+    """Assign positions to nodes using iterative post-order traversal."""
+    pos_node = {}
+    
+    # First pass: build parent-child relationships and find processing order
+    children_map = {}
+    all_nodes = set()
+    stack = [root]
+    
+    while stack:
+        node = stack.pop()
+        if node in all_nodes:
+            continue
+        all_nodes.add(node)
+        
+        succ = lnks_tms["links"].get(node, [])
+        children_map[node] = succ
+        
+        for child in succ:
+            stack.append(child)
+    
+    # Post-order traversal using two stacks
+    stack1 = [root]
+    stack2 = []
+    
+    while stack1:
+        node = stack1.pop()
+        stack2.append(node)
+        
+        for child in children_map.get(node, []):
+            stack1.append(child)
+    
+    # Process nodes in post-order (children before parents)
+    while stack2:
+        node = stack2.pop()
+        succ = children_map.get(node, [])
+        
+        if not succ:  # This is a leaf
+            pos_node[node] = [
+                leaf_x_positions[node], 
+                ycenter - depths[node] * vert_gap
+            ]
+        else:
+            # Position based on children
+            if len(succ) == 1:
+                # Single child: place directly above
+                pos_node[node] = [
+                    pos_node[succ[0]][0],
+                    ycenter - depths[node] * vert_gap
+                ]
+            else:
+                # Multiple children: place at center of children
+                child_x_positions = [pos_node[child][0] for child in succ]
+                center_x = sum(child_x_positions) / len(child_x_positions)
+                pos_node[node] = [
+                    center_x,
+                    ycenter - depths[node] * vert_gap
+                ]
+    
+    return pos_node
+
+
 def hierarchical_pos(
     lnks_tms: dict, root, width=1000, vert_gap=2, xcenter=0, ycenter=0
 ) -> dict[int, list[float]] | None:
@@ -87,74 +200,17 @@ def hierarchical_pos(
     if root not in lnks_tms["times"]:
         return None
     
-    # First pass: find all leaves and calculate y-positions
-    def find_leaves_and_depths(node, current_depth=0):
-        """Find all leaves and calculate depths for all nodes."""
-        succ = lnks_tms["links"].get(node, [])
-        node_depth = current_depth + lnks_tms["times"].get(node, 0)
-        
-        if not succ:  # This is a leaf
-            return [node], {node: node_depth}
-        
-        all_leaves = []
-        all_depths = {node: current_depth}
-        
-        for child in succ:
-            child_leaves, child_depths = find_leaves_and_depths(child, node_depth)
-            all_leaves.extend(child_leaves)
-            all_depths.update(child_depths)
-        
-        return all_leaves, all_depths
-    
-    leaves, depths = find_leaves_and_depths(root)
+    # Find all leaves and calculate depths
+    leaves, depths = _find_leaves_and_depths_iterative(lnks_tms, root)
     
     # Calculate uniform x-positions for leaves
-    num_leaves = len(leaves)
-    if num_leaves == 1:
-        leaf_spacing = 0
-        leaf_x_positions = {leaves[0]: xcenter}
-    else:
-        leaf_spacing = width / (num_leaves - 1)
-        leaf_x_positions = {
-            leaf: xcenter - width/2 + i * leaf_spacing 
-            for i, leaf in enumerate(leaves)
-        }
+    leaf_x_positions = _calculate_leaf_positions(leaves, width, xcenter)
     
-    # Second pass: assign positions bottom-up
-    pos_node = {}
+    # Assign positions using iterative approach
+    pos_node = _assign_positions_iterative(
+        lnks_tms, root, depths, leaf_x_positions, vert_gap, ycenter
+    )
     
-    def assign_positions(node):
-        """Assign positions working from leaves up to root."""
-        succ = lnks_tms["links"].get(node, [])
-        
-        if not succ:  # This is a leaf
-            pos_node[node] = [
-                leaf_x_positions[node], 
-                ycenter - depths[node] * vert_gap
-            ]
-            return
-        
-        # First assign positions to all children
-        for child in succ:
-            assign_positions(child)
-        
-        # Position this node based on its children
-        if len(succ) == 1:
-            # Single child: place directly above
-            pos_node[node] = [
-                pos_node[succ[0]][0],
-                ycenter - depths[node] * vert_gap
-            ]
-        else:
-            # Multiple children: place at the center of children
-            child_x_positions = [pos_node[child][0] for child in succ]
-            center_x = sum(child_x_positions) / len(child_x_positions)
-            pos_node[node] = [
-                center_x,
-                ycenter - depths[node] * vert_gap
-            ]
-    
-    assign_positions(root)
     return pos_node
 
 
