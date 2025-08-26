@@ -11,6 +11,7 @@ import matplotlib.colors as mcolors
 import numpy as np
 from matplotlib import colormaps
 
+from .lineage_tree import LineageTree
 from .tree_approximation import tree_style
 
 try:
@@ -23,28 +24,26 @@ except ImportError:
 import matplotlib.pyplot as plt
 from edist import uted
 
-from LineageTree import lineageTree
-from LineageTree.tree_approximation import TreeApproximationTemplate
-
-from .utils import convert_style_to_number
+from .tree_approximation import TreeApproximationTemplate
+from ._core.utils import convert_style_to_number
 
 if TYPE_CHECKING:
     from edist.alignment import Alignment
 
 
-class lineageTreeManager:
+class LineageTreeManager:
     norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
 
-    def __init__(self, lineagetree_list: Iterable[lineageTree] = ()):
-        """Creates a lineageTreeManager
+    def __init__(self, lineagetree_list: Iterable[LineageTree] = ()):
+        """Creates a LineageTreeManager
         :TODO: write the docstring
 
         Parameters
         ----------
-        lineagetree_list: Iterable of lineageTree
-            List of lineage trees to be in the lineageTreeManager
+        lineagetree_list: Iterable of LineageTree
+            List of lineage trees to be in the LineageTreeManager
         """
-        self.lineagetrees: dict[str, lineageTree] = {}
+        self.lineagetrees: dict[str, LineageTree] = {}
         self.lineageTree_counter: int = 0
         self._comparisons: dict = {}
         for lT in lineagetree_list:
@@ -64,10 +63,10 @@ class lineageTreeManager:
         """
         return len(self.lineagetrees)
 
-    def __iter__(self) -> Generator[tuple[str, lineageTree]]:
+    def __iter__(self) -> Generator[tuple[str, LineageTree]]:
         yield from self.lineagetrees.items()
 
-    def __getitem__(self, key: str) -> lineageTree:
+    def __getitem__(self, key: str) -> LineageTree:
         if key in self.lineagetrees:
             return self.lineagetrees[key]
         else:
@@ -95,7 +94,7 @@ class lineageTreeManager:
                 "You cannot calculate the greatest common divisor of time resolutions with an empty manager."
             )
 
-    def add(self, other_tree: lineageTree, name: str = ""):
+    def add(self, other_tree: LineageTree, name: str = ""):
         """Function that adds a new lineagetree object to the class.
         Can be added either by .add or by using the + operator. If a name is
         specified it will also add it as this specific name, otherwise it will
@@ -110,7 +109,7 @@ class lineageTreeManager:
             (Usually lineageTrees have the name of the path they are read from,
             so this is going to be the name most of the times.)
         """
-        if isinstance(other_tree, lineageTree):
+        if isinstance(other_tree, LineageTree):
             for tree in self.lineagetrees.values():
                 if tree == other_tree:
                     return False
@@ -129,7 +128,7 @@ class lineageTreeManager:
                 "Please add a LineageTree object or add time resolution to the LineageTree added."
             )
 
-    def __add__(self, other: lineageTree):
+    def __add__(self, other: LineageTree):
         self.add(other)
 
     def write(self, fname: str):
@@ -169,7 +168,7 @@ class lineageTreeManager:
         self.lineagetrees.pop(key, None)
 
     @classmethod
-    def load(cls, fname: str) -> lineageTreeManager:
+    def load(cls, fname: str) -> LineageTreeManager:
         """Loading a lineage tree Manager from a ".ltm" file.
 
         Parameters
@@ -179,7 +178,7 @@ class lineageTreeManager:
 
         Returns
         -------
-        lineageTreeManager
+        LineageTreeManager
             loaded file
         """
         with open(fname, "br") as f:
@@ -313,9 +312,9 @@ class lineageTreeManager:
     def __calculate_distance_of_sub_tree(
         self,
         node1: int,
-        lT1: lineageTree,
+        lT1: LineageTree,
         node2: int,
-        lT2: lineageTree,
+        lT2: LineageTree,
         alignment: Alignment,
         corres1: dict,
         corres2: dict,
@@ -333,11 +332,11 @@ class lineageTreeManager:
         ----------
         node1 : int
             The root of the first subtree
-        lT1 : lineageTree
+        lT1 : LineageTree
             The dataset the first lineage exists
         node2 : int
             The root of the first subtree
-        lT2 : lineageTree
+        lT2 : LineageTree
             The dataset the second lineage exists
         alignment : Alignment
             The alignment of the subtree
@@ -505,7 +504,7 @@ class lineageTreeManager:
         embryo_2: str,
         end_time1: int | None = None,
         end_time2: int | None = None,
-        norm: Literal["max", "sum", None] = "max",
+        norm: Literal["max", "sum"] | None = "max",
         style: (
             Literal["simple", "normalized_simple", "full", "downsampled"]
             | type[TreeApproximationTemplate]

@@ -14,9 +14,9 @@ authors = [
 maintainers = [
     {name = "Léo Guignard", email = "leo.guignard@univ-amu.fr"}
 ]
-name = "LineageTree"
+name = "lineagetree"
 description = "Structure for Lineage Trees"
-version = "2.0.3"
+version = "3.0.0"
 license = "MIT"
 license-files = [ "LICENSE" ]
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -37,17 +37,16 @@ classifiers = [
 dependencies = [
     "scipy>=1.9",
     "numpy>=1.23",
-    "mastodon-reader",
     "matplotlib",
     "edist",
     "svgwrite",
+    "Micro-Mastodon-Reader",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest",
     "pytest-cov",
-    "tox",
     "black",
     "ruff",
     "bumpver",
@@ -64,7 +63,7 @@ test = [
 
 [project.urls]
 "Bug Tracker" = "https://github.com/GuignardLab/LineageTree/issues"
-Documentation = "https://github.com/GuignardLab/LineageTree#README.md"
+"Documentation" = "https://github.com/GuignardLab/LineageTree#README.md"
 "Source Code" = "https://github.com/GuignardLab/LineageTree"
 "User Support" = "https://github.com/GuignardLab/LineageTree/issues"
 
@@ -76,7 +75,7 @@ profile = "black"
 line_length = 79
 
 [tool.bumpver]
-current_version = "2.0.3"
+current_version = "3.0.0"
 version_pattern = "MAJOR.MINOR.PATCH[-TAG]"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
@@ -88,33 +87,12 @@ push = false
     'current_version = "{version}"',
     'version = "{version}"',
 ]
-"src/LineageTree/__init__.py" = [
+"src/lineagetree/__init__.py" = [
     '__version__ = "{version}"',
 ]
 
 [tool.ruff]
 line-length = 79
-lint.select = [
-    "E", "F", "W", #flake8
-    "UP", # pyupgrade
-    "I", # isort
-    "BLE", # flake8-blind-exception
-    "B", # flake8-bugbear
-    "A", # flake8-builtins
-    "C4", # flake8-comprehensions
-    "ISC", # flake8-implicit-str-concat
-    "G", # flake8-logging-format
-    "PIE", # flake8-pie
-    "SIM", # flake8-simplify
-    "I", # imports
-    "T201", # print statements
-    "ERA001", #commented out code
-]
-lint.ignore = [
-    "E501", # line too long. let black handle this
-    "SIM300", # yoda conditions
-]
-
 exclude = [
     ".bzr",
     ".direnv",
@@ -137,16 +115,21 @@ exclude = [
     "*_vendor*",
 ]
 
-target-version = "py310"
+target-version = "py313"
 
-[tool.ty.src]
-root = "./src"
+[tool.ty.environment]
+root = ["./src", ]
 
 [tool.ty.rules]
 unresolved-import = "ignore"
 
-[tool.pytest.ini_options]
-addopts = "--cov"
+[tool.coverage.run]
+source = ["lineagetree"]
 
-[report]
-show_missing=true
+[tool.coverage.report]
+omit = [
+    "*/test/*",
+    "*/.vscode/*",
+    "*/site-packages/*",
+    "*/_io/*",
+]

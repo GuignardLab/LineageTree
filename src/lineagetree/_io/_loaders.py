@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import csv
 import os
 import pickle as pkl
@@ -7,8 +9,9 @@ from pathlib import Path
 from warnings import warn
 
 import numpy as np
+from micromastodonreader import MicroMastodonReader
 
-from .lineageTree import lineageTree
+from ..lineage_tree import LineageTree
 
 IMPLICIT_L_T = {
     "AB": "P0",
@@ -99,7 +102,7 @@ def read_from_csv(
     link: int = 1,
     delim: str = ",",
     name: None | str = None,
-) -> lineageTree:
+) -> LineageTree:
     """Read a lineage tree from a csv file with the following format:
     id, time, z, y, x, id, pred_id, lin_id
 
@@ -114,12 +117,12 @@ def read_from_csv(
         delim : str, default=","
             delimiter used in the csv file
         name : None or str, optional
-           The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
+           The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
            will be the name attribute, otherwise the name will be the stem of the file path.
 
     Returns
     -------
-        lineageTree
+        LineageTree
             lineage tree
     """
     with open(file_path) as f:
@@ -160,7 +163,7 @@ def read_from_csv(
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-    return lineageTree(successor=successor, time=time, pos=pos, name=name)
+    return LineageTree(successor=successor, time=time, pos=pos, name=name)
 
 
 def _read_from_ASTEC_xml(file_path: str):
@@ -215,7 +218,7 @@ def _read_from_ASTEC_pkl(file_path: str, eigen: bool = False):
 
 def read_from_ASTEC(
     file_path: str, eigen: bool = False, name: None | str = None
-) -> lineageTree:
+) -> LineageTree:
     """
     Read an `xml` or `pkl` file produced by the ASTEC algorithm.
 
@@ -226,12 +229,12 @@ def read_from_ASTEC(
     eigen : bool, default=False
         whether or not to read the eigen values, default False
     name : None or str, optional
-        The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
+        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
         will be the name attribute, otherwise the name will be the stem of the file path.
 
     Returns
     -------
-    lineageTree
+    LineageTree
         lineage tree
     """
 
@@ -329,27 +332,27 @@ def read_from_ASTEC(
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-    return lineageTree(
+    return LineageTree(
         successor=successor, time=time, pos=pos, name=name, **properties
     )
 
 
-def read_from_binary(fname: str, name: None | str = None) -> lineageTree:
+def read_from_binary(fname: str, name: None | str = None) -> LineageTree:
     """
-    Reads a binary lineageTree file name.
-    Format description: see lineageTree.to_binary
+    Reads a binary LineageTree file name.
+    Format description: see LineageTree.to_binary
 
     Parameters
     ----------
     fname : string
         path to the binary file
     name : None or str, optional
-        The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
+        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
         will be the name attribute, otherwise the name will be the stem of the file path.
 
     Returns
     -------
-    lineageTree
+    LineageTree
         lineage tree
     """
     q_size = struct.calcsize("q")
@@ -444,12 +447,12 @@ def read_from_binary(fname: str, name: None | str = None) -> lineageTree:
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-    return lineageTree(successor=successor, time=time, pos=pos, name=name)
+    return LineageTree(successor=successor, time=time, pos=pos, name=name)
 
 
 def read_from_txt_for_celegans(
     file: str, name: None | str = None
-) -> lineageTree:
+) -> LineageTree:
     """
     Read a C. elegans lineage tree
 
@@ -458,12 +461,12 @@ def read_from_txt_for_celegans(
     file : str
         Path to the file to read
     name : None or str, optional
-        The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
+        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
         will be the name attribute, otherwise the name will be the stem of the file path.
 
     Returns
     -------
-    lineageTree
+    LineageTree
         lineage tree
     """
     with open(file) as f:
@@ -505,7 +508,7 @@ def read_from_txt_for_celegans(
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
     properties = {"_labels": _labels}
-    return lineageTree(
+    return LineageTree(
         successor=successor, time=time, pos=pos, name=name, **properties
     )
 
@@ -516,7 +519,7 @@ def read_from_txt_for_celegans_CAO(
     raw_size: np.ndarray | None = None,
     shape: float | None = None,
     name: str | None = None,
-) -> lineageTree:
+) -> LineageTree:
     """
     Read a C. elegans lineage tree from Cao et al.
 
@@ -525,12 +528,12 @@ def read_from_txt_for_celegans_CAO(
     file : str
         Path to the file to read
     name : None or str, optional
-        The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
+        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
         will be the name attribute, otherwise the name will be the stem of the file path.
 
     Returns
     -------
-    lineageTree
+    LineageTree
         lineage tree
     """
 
@@ -595,14 +598,14 @@ def read_from_txt_for_celegans_CAO(
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-    return lineageTree(
+    return LineageTree(
         successor=successor, time=time, pos=pos, label=label, name=name
     )
 
 
 def read_from_txt_for_celegans_BAO(
     path: str, name: None | str = None
-) -> lineageTree:
+) -> LineageTree:
     """Read a C. elegans Bao file from http://digital-development.org
 
     Parameters
@@ -610,12 +613,12 @@ def read_from_txt_for_celegans_BAO(
     file : str
         Path to the file to read
     name : str, optional
-        The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
+        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
         will be the name attribute, otherwise the name will be the stem of the file path.
 
     Returns
     -------
-    lineageTree
+    LineageTree
         lineage tree
     """
     cell_times = {}
@@ -651,7 +654,7 @@ def read_from_txt_for_celegans_BAO(
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-    return lineageTree(
+    return LineageTree(
         successor=successor, starting_time=0, name=name, **properties
     )
 
@@ -662,7 +665,7 @@ def read_from_tgmm_xml(
     te: int,
     z_mult: float = 1.0,
     name: None | str = None,
-) -> lineageTree:
+) -> LineageTree:
     """Reads a lineage tree from TGMM xml output.
 
     Parameters
@@ -681,12 +684,12 @@ def read_from_tgmm_xml(
     z_mult : float, default=1.0
         aspect ratio
     name : str, optional
-        The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
+        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
         will be the name attribute, otherwise the name will be the stem of the file path.
 
     Returns
     -------
-    lineageTree
+    LineageTree
         lineage tree
     """
     unique_id = 0
@@ -752,83 +755,86 @@ def read_from_tgmm_xml(
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-    return lineageTree(
+    return LineageTree(
         successor=successor, time=time, pos=pos, name=name, **properties
     )
 
 
 def read_from_mastodon(
-    path: str, tag_set: int | None = None, name: None | str = None
-) -> lineageTree:
+    path: str, tag_set: str | None = None, name: str | None = None
+) -> LineageTree:
     """Read a maston lineage tree.
 
     Parameters
     ----------
     path : str
         path to the mastodon file
-    tag_set : int, optional
-        The tag set that will be used to label.
+    tag_set : str, optional
+        If specified, `tag_set` will be used for labeling the cells
+        Otherwise a random tag set will be used
     name : str, optional
-        The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
+        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
         will be the name attribute, otherwise the name will be the stem of the file path.
 
     Returns
     -------
-    lineageTree
+    LineageTree
         lineage tree
     """
-    from mastodon_reader import MastodonReader
 
-    mr = MastodonReader(path)
+    mr = MicroMastodonReader(path)
     spots, links = mr.read_tables()
 
-    label = {}
-    time = {}
-    pos = {}
-    successor = {}
+    nodes = list(range(len(spots)))
+    pos = dict(zip(nodes, spots[:, :3], strict=True))
+    time = dict(zip(nodes, spots[:, 3], strict=True))
+    predecessor = {}
+    for succ, pred in zip(links[:, 1], links[:, 0]):
+        predecessor[int(succ)] = int(pred)
 
-    for c in spots.iloc:
-        unique_id = c.name
-        x, y, z = c.x, c.y, c.z
-        t = c.t
-        time[unique_id] = t
-        pos[unique_id] = np.array([x, y, z])
+    _, properties, _ = mr.read_tags()
 
-    for e in links.iloc:
-        source = e.source_idx
-        target = e.target_idx
-        successor.setdefault(source, []).append(target)
-    if isinstance(tag_set, int):
-        tags = mr.read_tags(spots, links)[tag_set]
-        for tag in tags["tags"]:
-            label[tag["id"]] = tag["label"]
+    if isinstance(tag_set, str) and tag_set in properties:
+        labels = properties[tag_set]
+    elif 0 < len(properties):
+        labels_name, labels = next(iter(properties.items()))
 
     if not name:
-        tmp_name = Path(path).stem
+        if isinstance(path, Path):
+            tmp_name = path.stem
+        else:
+            tmp_name = Path(path).stem
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-    return lineageTree(
-        successor=successor, time=time, pos=pos, label=label, name=name
+
+    return LineageTree(
+        predecessor=predecessor,
+        time=time,
+        pos=pos,
+        labels=labels,
+        labels_name=labels_name,
+        name=name,
+        **properties,
     )
 
 
 def read_from_mastodon_csv(
     paths: list[str], name: None | str = None
-) -> lineageTree:
+) -> LineageTree:
     """Read a lineage tree from a mastodon csv.
 
     Parameters
     ----------
-    paths : list[str]
+    paths : list of strings
         list of paths to the csv files
     name : None or str, optional
-        The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
+        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
         will be the name attribute, otherwise the name will be the stem of the file path.
 
     Returns
     -------
-    lineageTree
+    LineageTree
         lineage tree
     """
     spots = []
@@ -868,14 +874,14 @@ def read_from_mastodon_csv(
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
 
-    return lineageTree(
+    return LineageTree(
         successor=successor, time=time, pos=pos, label=label, name=name
     )
 
 
 def read_from_mamut_xml(
     path: str, xml_attributes: list[str] | None = None, name: None | str = None
-) -> lineageTree:
+) -> LineageTree:
     """Read a lineage tree from a MaMuT xml.
 
     Parameters
@@ -883,12 +889,12 @@ def read_from_mamut_xml(
     path : str
         path to the MaMut xml
     name : None or str, optional
-        The name attribute of the lineageTree file. If given a non-empty string, the value of the attribute
+        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
         will be the name attribute, otherwise the name will be the stem of the file path.
 
     Returns
     -------
-    lineageTree
+    LineageTree
         lineage tree
     """
     tree = ET.parse(path)
@@ -965,7 +971,7 @@ def read_from_mamut_xml(
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
 
-    return lineageTree(
+    return LineageTree(
         successor=successor,
         time=time,
         pos=pos,

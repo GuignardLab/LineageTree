@@ -1,10 +1,17 @@
-from collections.abc import Iterable
+from __future__ import annotations
 
-from LineageTree import lineageTree, tree_approximation
+import pickle
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
+
+from ..tree_approximation import TreeApproximationTemplate
+
+if TYPE_CHECKING:
+    from ..lineage_tree import LineageTree
 
 
 def create_links_and_chains(
-    lT: lineageTree,
+    lT: LineageTree,
     roots: int | Iterable | None = None,
     end_time: int | None = None,
 ) -> dict[str, dict]:
@@ -14,8 +21,8 @@ def create_links_and_chains(
 
     Parameters
     ----------
-    lT : lineageTree
-        The lineagetree that the user is working on
+    lT : LineageTree
+        The LineageTree that the user is working on
     roots : int or Iterable, optional
         The root/s from which the tree/s will be generated, if 'None' all the roots will be selected.
     end_time : int, optional
@@ -215,7 +222,7 @@ def hierarchical_pos(
 
 
 def convert_style_to_number(
-    style: str | tree_approximation.TreeApproximationTemplate,
+    style: str | TreeApproximationTemplate,
     downsample: int | None,
 ) -> int:
     """Converts tree_style and downsampling to a single number.
@@ -241,8 +248,17 @@ def convert_style_to_number(
     if style == "downsampled" and downsample is not None:
         return downsample
     elif not isinstance(style, str) and issubclass(
-        style, tree_approximation.TreeApproximationTemplate
+        style, TreeApproximationTemplate
     ):
         return hash(style.__name__)
     else:
         return style_dict[style]
+
+
+class CompatibleUnpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        if module == "LineageTree.lineageTree" and name == "lineageTree":
+            from lineagetree import LineageTree
+
+            return LineageTree
+        return super().find_class(module, name)
