@@ -8,7 +8,6 @@ from .._core._navigation import (
     get_chain_of_node,
     get_labelled_ancestor,
     get_predecessors,
-    get_subtree,
     get_subtree_nodes,
     get_successors,
     nodes_at_t,
@@ -29,7 +28,6 @@ class NavigationMixin(metaclass=AutoMethodizeMeta):
     get_chain_of_node = get_chain_of_node
     get_labelled_ancestor = get_labelled_ancestor
     get_predecessors = get_predecessors
-    get_subtree = get_subtree
     get_subtree_nodes = get_subtree_nodes
     get_successors = get_successors
     nodes_at_t = nodes_at_t

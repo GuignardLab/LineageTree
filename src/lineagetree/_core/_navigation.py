@@ -395,23 +395,6 @@ def nodes_at_t(
     return final_nodes
 
 
-def get_subtree(lT: LineageTree, node_list: set[int]) -> LineageTree:
-    new_successors = {
-        n: tuple(vi for vi in lT.successor[n] if vi in node_list)
-        for n in node_list
-    }
-    return LineageTree(
-        successor=new_successors,
-        time=lT._time,
-        pos=lT.pos,
-        name=lT.name,
-        root_leaf_value=[
-            (),
-        ],
-        **{name: lT.__dict__[name] for name in lT._custom_property_list},
-    )
-
-
 def get_available_labels(lT: LineageTree) -> list[str]:
     """Returns the list all the available label dictionaries
 

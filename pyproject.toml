@@ -132,4 +132,5 @@ omit = [
     "*/.vscode/*",
     "*/site-packages/*",
     "*/_io/*",
+    "*/_methodize.py",
 ]
