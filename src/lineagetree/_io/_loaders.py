@@ -982,7 +982,7 @@ def read_from_mamut_xml(
 
 def read_from_geff(
     path: str, name: None | str = None
-) -> lineageTree:
+) -> LineageTree:
     """Read a lineage tree from a GEFF format file.
 
     The GEFF (Graph Exchange File Format) is a zarr-based format for storing 
@@ -994,13 +994,13 @@ def read_from_geff(
     path : str
         Path to the GEFF zarr directory/file
     name : None or str, optional
-        The name attribute of the lineageTree file. If given a non-empty string, 
+        The name attribute of the LineageTree file. If given a non-empty string, 
         the value of the attribute will be the name attribute, otherwise the name 
         will be the stem of the file path.
 
     Returns
     -------
-    lineageTree
+    LineageTree
         lineage tree
 
     Raises
@@ -1121,8 +1121,8 @@ def read_from_geff(
     if 'name' in properties:
         properties['props_name'] = properties.pop('name')
     
-    # Create lineageTree
-    return lineageTree(
+    # Create LineageTree
+    return LineageTree(
         successor=successor,
         time=time,
         pos=pos,
