@@ -16,7 +16,7 @@ maintainers = [
 ]
 name = "lineagetree"
 description = "Structure for Lineage Trees"
-version = "3.0.0"
+version = "3.0.2"
 license = "MIT"
 license-files = [ "LICENSE" ]
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -75,7 +75,7 @@ profile = "black"
 line_length = 79
 
 [tool.bumpver]
-current_version = "3.0.0"
+current_version = "3.0.2"
 version_pattern = "MAJOR.MINOR.PATCH[-TAG]"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
@@ -132,4 +132,5 @@ omit = [
     "*/.vscode/*",
     "*/site-packages/*",
     "*/_io/*",
+    "*/_methodize.py",
 ]

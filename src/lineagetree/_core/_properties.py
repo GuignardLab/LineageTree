@@ -208,7 +208,7 @@ def _m(lT: LineageTree, i, j):
         elif not lT._predecessor[j]:
             lT._tmp_parenting[(i, j)] = np.inf
         else:  # the distance between i and j is the distance between i and pred(j) + 1
-            lT._tmp_parenting[(i, j)] = lT.m(i, lT._predecessor[j][0]) + 1
+            lT._tmp_parenting[(i, j)] = _m(lT, i, lT._predecessor[j][0]) + 1
             lT._parenting[i, j] = lT._tmp_parenting[(i, j)]
             lT._parenting[j, i] = -lT._tmp_parenting[(i, j)]
     return lT._tmp_parenting[(i, j)]
@@ -222,6 +222,6 @@ def parenting(lT: LineageTree):
         for i, j in combinations(lT.nodes, 2):
             if lT._time[j] < lT.time[i]:
                 i, j = j, i
-            lT._tmp_parenting[(i, j)] = lT._m(i, j)
+            lT._tmp_parenting[(i, j)] = _m(lT, i, j)
         del lT._tmp_parenting
     return lT._parenting
