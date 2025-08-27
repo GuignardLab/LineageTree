@@ -113,16 +113,13 @@ def number_of_nodes(lT: LineageTree) -> int:
 @dynamic_property
 def depth(lT: LineageTree) -> dict[int, int]:
     """The depth of each node in the lineage tree"""
-    _depth = {}
-    for leaf in lT.leaves:
-        _depth[leaf] = 1
-        while leaf in lT._predecessor and lT._predecessor[leaf]:
-            parent = lT._predecessor[leaf][0]
-            current_depth = _depth.get(parent, 0)
-            _depth[parent] = max(_depth[leaf] + 1, current_depth)
-            leaf = parent
-    for root in lT.roots - set(_depth):
-        _depth[root] = 1
+    _depth = {r: 0 for r in lT.roots}
+    for root in lT.roots:
+        to_do = list(lT.successor[root])
+        while to_do:
+            current = to_do.pop()
+            _depth[current] = _depth[lT.predecessor[current][0]] + 1
+            to_do.extend(lT.successor[current])
     return _depth
 
 

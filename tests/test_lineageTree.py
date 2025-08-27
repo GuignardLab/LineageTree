@@ -483,7 +483,8 @@ def test_time_nodes():
 
 
 def test_depth():
-    assert lT1.depth[128223] == 99
+    assert lT1.depth == lT1.time
+    assert lT2.depth != lT2.time
 
 
 def test_leaves():
