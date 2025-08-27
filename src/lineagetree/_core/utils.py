@@ -79,7 +79,7 @@ def _find_leaves_and_depths_iterative(lnks_tms: dict, root: int) -> tuple[list[i
     leaves : list of int
         List of leaf node ids.
     depths : dict mapping int to int
-        Dictionary mapping node ids to their depth in the tree.
+        Dictionary mapping all node ids to their depth in the tree.
     """
     leaves = []
     depths = {}
@@ -88,19 +88,18 @@ def _find_leaves_and_depths_iterative(lnks_tms: dict, root: int) -> tuple[list[i
     stack = [(root, 0)]
     
     while stack:
-        node, parent_depth = stack.pop()
+        parent_node, parent_depth = stack.pop()
+        depths[parent_node] = parent_depth
          
-        node_depth = parent_depth + lnks_tms["times"].get(node, 0)
-        depths[node] = parent_depth
+        child_depth = parent_depth + lnks_tms["times"].get(parent_node, 0)
         
-        succ = lnks_tms["links"].get(node, [])
-        
+        succ = lnks_tms["links"].get(parent_node, [])
         if not succ:  # This is a leaf
-            leaves.append(node)
+            leaves.append(parent_node)
         else:
             # Add children to stack (reverse order to maintain left-to-right traversal)
             for child in reversed(succ):
-                stack.append((child, node_depth))
+                stack.append((child, child_depth))
     
     return leaves, depths
 
