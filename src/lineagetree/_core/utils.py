@@ -96,7 +96,7 @@ def _find_leaves_and_depths_iterative(lnks_tms: dict, root: int) -> tuple[list[i
         succ = lnks_tms["links"].get(parent_node, [])
         if not succ:  # This is a leaf
             leaves.append(parent_node)
-        else:
+        else: #TODO solve problem of children at same depth as parent
             # Add children to stack (reverse order to maintain left-to-right traversal)
             for child in reversed(succ):
                 stack.append((child, child_depth))
@@ -157,7 +157,7 @@ def _assign_positions_iterative(
                 pos_node[succ[0]][0],
                 ycenter - depths[node] * vert_gap
             ]
-        else:
+        else:  #TODO solve problem of children at same depth as parent
             # Multiple children: place at center of children
             child_x_positions = [pos_node[child][0] for child in succ]
             center_x = sum(child_x_positions) / len(child_x_positions)
