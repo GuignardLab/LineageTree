@@ -101,6 +101,38 @@ class LineageTree(
 
         return lT
 
+    def get_subtree(self, node_list: set[int]) -> LineageTree:
+        """Create a new lineage tree that has the same edges and properties
+        as the given lineage tree. Only the nodes in `node_list` are considered.
+
+        Parameters
+        ----------
+        node_list : Iterator of int
+            Iterator over the nodes to keep
+
+        Returns
+        -------
+        LineageTree
+            The subtree lineage tree
+        """
+        new_successors = {
+            n: tuple(vi for vi in self.successor[n] if vi in node_list)
+            for n in node_list
+        }
+        return LineageTree(
+            successor=new_successors,
+            time=self._time,
+            pos=self.pos,
+            name=self.name,
+            root_leaf_value=[
+                (),
+            ],
+            **{
+                name: self.__dict__[name]
+                for name in self._custom_property_list
+            },
+        )
+
     def __init__(
         self,
         *,

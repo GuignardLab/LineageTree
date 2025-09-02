@@ -482,6 +482,23 @@ def test_time_nodes():
     assert all_cells == set()
 
 
+def test_depth():
+    assert lT1.depth == lT1.time
+    assert lT2.depth != lT2.time
+
+
+def test_leaves():
+    assert list(lT1.leaves)[0] == 181669
+
+
+def test_edges():
+    assert lT1.edges[0] == (106632, 106589)
+
+
+def test_parenting():
+    assert lT2.parenting[0, 2] == 1
+
+
 def test_equality():
     assert lT1 == lT1
     assert lT2 == lT2
@@ -525,6 +542,15 @@ def test_get_all_chains_of_subtree():
         lT1.get_chain_of_node(173618)
         == lT1.get_all_chains_of_subtree(173618)[0]
     )
+
+
+def test_get_ancestor_with_attribute():
+    lT1.label.pop(178353)
+    assert lT1.get_ancestor_with_attribute(178353, "label") == 178336
+
+
+def test_get_subtree():
+    assert lT1.get_subtree(lT1.nodes) == lT1
 
 
 def test_find_leaves():

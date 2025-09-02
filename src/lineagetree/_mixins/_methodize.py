@@ -66,7 +66,6 @@ def _strip_first_param_from_doc(doc: str) -> str:
                     # Get the indentation of this line
                     current_indent = len(lines[i]) - len(lines[i].lstrip())
                     param_line = lines[i].strip()
-                    param_name = param_line.split(":", 1)[0].strip()
                     param_type = (
                         param_line.split(":", 1)[1].strip()
                         if ":" in param_line
