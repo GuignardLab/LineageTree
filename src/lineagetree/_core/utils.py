@@ -97,7 +97,7 @@ def _find_leaves_and_depths_iterative(lnks_tms: dict, root: int) -> tuple[list[i
          
         if not succ:  # This is a leaf
             leaves.append(parent_node)
-        else: #TODO solve problem of children at same depth as parent
+        else:
             if len(succ) == 1: # in this case, times[parent_node] is equal to the length of the chain
                 child_depth = parent_depth + times[parent_node] - 1
             else: # in this case, times[parent_node] is 0
