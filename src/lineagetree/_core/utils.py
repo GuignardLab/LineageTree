@@ -162,7 +162,7 @@ def _assign_positions_iterative(
                 pos_node[succ[0]][0],
                 ycenter - depths[node] * vert_gap
             ]
-        else:  #TODO solve problem of children at same depth as parent
+        else:
             # Multiple children: place at center of children
             child_x_positions = [pos_node[child][0] for child in succ]
             center_x = sum(child_x_positions) / len(child_x_positions)
