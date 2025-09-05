@@ -83,20 +83,25 @@ def _find_leaves_and_depths_iterative(lnks_tms: dict, root: int) -> tuple[list[i
     """
     leaves = []
     depths = {}
+
+    times = lnks_tms["times"]
+    links = lnks_tms["links"]
     
-    # Stack for DFS: (node, current_depth, parent_depth)
+    # Stack for DFS: (node, parent_depth)
     stack = [(root, 0)]
     
     while stack:
         parent_node, parent_depth = stack.pop()
         depths[parent_node] = parent_depth
+        succ = links.get(parent_node, [])
          
-        child_depth = parent_depth + lnks_tms["times"].get(parent_node, 0)
-        
-        succ = lnks_tms["links"].get(parent_node, [])
         if not succ:  # This is a leaf
             leaves.append(parent_node)
         else: #TODO solve problem of children at same depth as parent
+            if len(succ) == 1: # in this case, times[parent_node] is equal to the length of the chain
+                child_depth = parent_depth + times[parent_node] - 1
+            else: # in this case, times[parent_node] is 0
+                child_depth = parent_depth + 1
             # Add children to stack (reverse order to maintain left-to-right traversal)
             for child in reversed(succ):
                 stack.append((child, child_depth))
