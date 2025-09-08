@@ -232,7 +232,7 @@ def plot_all_lineages(
         For example if start_time is 10, then all trees that begin
         on tp 10 or before are calculated. Defaults to None, where
         it will plot all the roots that exist on `lT.t_b`.
-    nrows : int, default=2
+    nrows : int, default=1
         How many rows of plots should be printed.
     figsize : tuple, default=(10, 15)
         The size of the figure.
@@ -327,7 +327,7 @@ def plot_all_lineages(
             },
         )
     [figure.delaxes(ax) for ax in flat_axes if not ax.has_data()]
-    return flat_axes[0].get_figure(), flat_axes, ax2root
+    return flat_axes[0].get_figure(), axes, ax2root
 
 
 def plot_subtree(
