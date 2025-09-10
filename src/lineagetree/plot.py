@@ -211,7 +211,7 @@ def plot_all_lineages(
     lT: LineageTree,
     nodes: list | None = None,
     last_time_point_to_consider: int | None = None,
-    nrows: int = 2,
+    nrows: int = 1,
     figsize: tuple[int, int] = (10, 15),
     dpi: int = 100,
     fontsize: int = 15,
@@ -232,7 +232,7 @@ def plot_all_lineages(
         For example if start_time is 10, then all trees that begin
         on tp 10 or before are calculated. Defaults to None, where
         it will plot all the roots that exist on `lT.t_b`.
-    nrows : int, default=2
+    nrows : int, default=1
         How many rows of plots should be printed.
     figsize : tuple, default=(10, 15)
         The size of the figure.
@@ -290,7 +290,7 @@ def plot_all_lineages(
             raise Exception(
                 f"Not enough axes, they should be at least {len(graphs)}."
             )
-    flat_axes = axes.flatten()
+    flat_axes = axes.flatten() if hasattr(axes, "flatten") else [axes]
     ax2root = {}
     min_width, min_height = float("inf"), float("inf")
     for ax in flat_axes:
@@ -326,8 +326,8 @@ def plot_all_lineages(
                 "edgecolor": "green",
             },
         )
-    [figure.delaxes(ax) for ax in axes.flatten() if not ax.has_data()]
-    return axes.flatten()[0].get_figure(), axes, ax2root
+    [figure.delaxes(ax) for ax in flat_axes if not ax.has_data()]
+    return flat_axes[0].get_figure(), axes, ax2root
 
 
 def plot_subtree(
