@@ -7,7 +7,6 @@ from itertools import combinations
 from typing import TYPE_CHECKING, Literal
 
 import matplotlib.colors as mcolors
-from edist import uted
 from matplotlib import colormaps
 from matplotlib import pyplot as plt
 
