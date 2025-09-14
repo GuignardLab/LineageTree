@@ -59,6 +59,8 @@ doc = [
 test = [
     "pytest",
     "pytest-cov",
+]
+meshes = [
     "binarymeshformat",
     "trimesh",
 ]
