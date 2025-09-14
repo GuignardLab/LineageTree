@@ -5,7 +5,6 @@ import csv
 import os
 import pickle as pkl
 import struct
-import trimesh
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from warnings import warn
@@ -98,16 +97,19 @@ ASTEC_KEYDICTIONARY = {
 }
 
 
-def _load_trimesh_from_bmfmesh(bmfmesh, pos_multipliers, translation):
+def _load_meshdict_from_bmfmesh(bmfmesh, pos_multipliers, translation):
 
-    points = np.array(bmfmesh.positions).reshape(-1, 3)[:,::-1]
-    triangles = np.array(bmfmesh.triangles).reshape(-1, 3)
+    vertices = np.array(bmfmesh.positions).reshape(-1, 3)[:,::-1]
+    faces = np.array(bmfmesh.triangles).reshape(-1, 3)
 
     pos_multipliers = np.array(pos_multipliers, dtype=float)
     translation = np.array(translation, dtype=float)
-    points = points * pos_multipliers + translation
+    vertices = vertices * pos_multipliers + translation
 
-    return trimesh.Trimesh(points, triangles)
+    return { # could be a class
+        'vertices': vertices,
+        'faces': faces
+    }
 
 
 def read_from_bmf(
@@ -148,7 +150,7 @@ def read_from_bmf(
     for track in tracks:
         pred = None
         for t, mesh in track.meshes.items():
-            mesh = _load_trimesh_from_bmfmesh(mesh, pos_multipliers, translation)
+            mesh = _load_meshdict_from_bmfmesh(mesh, pos_multipliers, translation)
             pos[cell_id] = mesh.center_mass
             
             if store_meshes:
