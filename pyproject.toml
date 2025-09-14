@@ -59,6 +59,7 @@ doc = [
 test = [
     "pytest",
     "pytest-cov",
+    "binarymeshformat",
 ]
 meshes = [
     "binarymeshformat",
