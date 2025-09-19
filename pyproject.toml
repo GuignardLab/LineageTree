@@ -41,6 +41,7 @@ dependencies = [
     "edist",
     "svgwrite",
     "Micro-Mastodon-Reader",
+    "binarymeshformat",
 ]
 
 [project.optional-dependencies]
@@ -59,10 +60,6 @@ doc = [
 test = [
     "pytest",
     "pytest-cov",
-    "binarymeshformat",
-]
-meshes = [
-    "binarymeshformat",
 ]
 
 [project.urls]
