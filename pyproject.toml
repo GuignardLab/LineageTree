@@ -41,6 +41,7 @@ dependencies = [
     "edist",
     "svgwrite",
     "Micro-Mastodon-Reader",
+    "binarymeshformat",
 ]
 
 [project.optional-dependencies]

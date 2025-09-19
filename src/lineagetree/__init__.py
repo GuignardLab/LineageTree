@@ -3,6 +3,7 @@ from .lineage_tree import LineageTree
 from ._io._loaders import (
     read_from_ASTEC,
     read_from_binary,
+    read_from_bmf,
     read_from_csv,
     read_from_mamut_xml,
     read_from_mastodon,
@@ -21,6 +22,7 @@ __all__ = (
     "read_from_txt_for_celegans_BAO",
     "read_from_ASTEC",
     "read_from_binary",
+    "read_from_bmf",
     "read_from_csv",
     "read_from_mamut_xml",
     "read_from_mastodon_csv",

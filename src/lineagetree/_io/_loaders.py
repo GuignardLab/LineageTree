@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import binarymeshformat as bmf
 import csv
 import os
 import pickle as pkl
@@ -94,6 +95,84 @@ ASTEC_KEYDICTIONARY = {
     "problematic_cells": ["problematic_cells"],
     "unknown_key": ["unknown_key"],
 }
+
+
+def _load_meshdict_from_bmfmesh(bmfmesh, pos_multipliers, translation):
+
+    vertices = np.array(bmfmesh.positions).reshape(-1, 3)[:,::-1]
+    faces = np.array(bmfmesh.triangles).reshape(-1, 3)
+
+    pos_multipliers = np.array(pos_multipliers, dtype=float)
+    translation = np.array(translation, dtype=float)
+    vertices = vertices * pos_multipliers + translation
+
+    return { # could be a class
+        'vertices': vertices,
+        'faces': faces
+    }
+
+
+def read_from_bmf(
+    file_path: str,
+    store_meshes: bool = False,
+    pos_multipliers: tuple[float, float, float] = (1.0, 1.0, 1.0),
+    translation: tuple[float, float, float] = (0.0, 0.0, 0.0),
+    name: None | str = None,
+) -> LineageTree:
+    """Read a lineage tree from a bmf file.
+
+    Parameters
+    ----------
+        file_path : str
+            path to the bmf file
+        store_meshes : bool, default=False
+            whether to stores the meshes in the LineageTree or not.
+        pos_multipliers : tuple of float, default=(1.0, 1.0, 1.0)
+            multipliers for the x, y, z coordinates
+        translation : tuple of float, default=(0.0, 0.0, 0.0)
+            translation for the x, y, z coordinates
+        name : None or str, optional
+           The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
+           will be the name attribute, otherwise the name will be the stem of the file path.
+
+    Returns
+    -------
+        LineageTree
+            lineage tree
+    """
+    tracks = bmf.loadMeshTracks(file_path)
+    predecessor = {}
+    times = {}
+    pos = {}
+    lT_mesh = {}
+    cell_id = 1
+    for track in tracks:
+        pred = None
+        for t, mesh in track.meshes.items():
+            mesh = _load_meshdict_from_bmfmesh(mesh, pos_multipliers, translation)
+            pos[cell_id] = mesh.center_mass
+            
+            if store_meshes:
+                lT_mesh[cell_id] = mesh
+            
+            predecessor[cell_id] = (pred,)
+            pred = cell_id
+            times[cell_id] = t
+
+            cell_id += 1
+
+    kwargs = {"mesh": lT_mesh} if store_meshes else {}
+
+    lT = LineageTree(
+        predecessor=predecessor,
+        time=times,
+        pos=pos,
+        root_leaf_value=[(None,)],
+        name=name if name else Path(file_path).stem,
+        **kwargs,
+    )
+
+    return lT
 
 
 def read_from_csv(
