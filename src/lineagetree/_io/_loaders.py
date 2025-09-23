@@ -1059,7 +1059,7 @@ def read_from_mamut_xml(
     )
 
 
-LOADERS = {
+LOADERS = { # put all formats in smaller case
     "bmf": {"BMF loader": read_from_bmf},
     "csv": {"Standard CSV loader": read_from_csv, "Mastodon CSV loader": read_from_mastodon_csv},
     "binary": {"Binary loader": read_from_binary},
