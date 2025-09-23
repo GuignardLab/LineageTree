@@ -12,6 +12,7 @@ from ._io._loaders import (
     read_from_txt_for_celegans,
     read_from_txt_for_celegans_BAO,
     read_from_txt_for_celegans_CAO,
+    LOADERS,
 )
 from .lineage_tree_manager import LineageTreeManager
 
@@ -29,4 +30,5 @@ __all__ = (
     "read_from_mastodon",
     "read_from_txt_for_celegans",
     "read_from_txt_for_celegans_CAO",
+    "LOADERS",
 )
