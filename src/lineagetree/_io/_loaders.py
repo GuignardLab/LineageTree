@@ -177,7 +177,7 @@ def read_from_bmf(
 
 def read_from_csv(
     file_path: str,
-    z_mult: float,
+    z_mult: float = 1,
     link: int = 1,
     delim: str = ",",
     name: None | str = None,
@@ -1063,7 +1063,11 @@ LOADERS = {
     "bmf": {"BMF loader": read_from_bmf},
     "csv": {"Standard CSV loader": read_from_csv, "Mastodon CSV loader": read_from_mastodon_csv},
     "binary": {"Binary loader": read_from_binary},
-    "xml": {"TGMM XML loader": read_from_tgmm_xml, "MaMuT XML loader": read_from_mamut_xml, "ASTEC XML loader": read_from_ASTEC},
+    "xml": {
+        # "TGMM XML loader": read_from_tgmm_xml, # commented out because it requires a specific file format
+        "MaMuT XML loader": read_from_mamut_xml,
+        "ASTEC XML loader": read_from_ASTEC,
+    },
     "mastodon": {"Mastodon loader": read_from_mastodon},
     "pkl": {"ASTEC PKL loader": read_from_ASTEC},
     "txt": {
