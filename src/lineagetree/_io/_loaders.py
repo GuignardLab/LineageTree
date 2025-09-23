@@ -108,7 +108,8 @@ def _load_meshdict_from_bmfmesh(bmfmesh, pos_multipliers, translation):
 
     return { # could be a class
         'vertices': vertices,
-        'faces': faces
+        'faces': faces,
+        'center_mass': np.mean(vertices, axis=0),
     }
 
 
@@ -150,7 +151,7 @@ def read_from_bmf(
         pred = None
         for t, mesh in track.meshes.items():
             mesh = _load_meshdict_from_bmfmesh(mesh, pos_multipliers, translation)
-            pos[cell_id] = mesh.center_mass
+            pos[cell_id] = mesh["center_mass"]
             
             if store_meshes:
                 lT_mesh[cell_id] = mesh
