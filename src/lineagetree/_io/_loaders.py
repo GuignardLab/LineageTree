@@ -99,17 +99,14 @@ ASTEC_KEYDICTIONARY = {
 
 def _load_meshdict_from_bmfmesh(bmfmesh, pos_multipliers, translation):
 
-    vertices = np.array(bmfmesh.positions).reshape(-1, 3)[:,::-1]
+    vertices = np.array(bmfmesh.positions).reshape(-1, 3)[:, ::-1]
     faces = np.array(bmfmesh.triangles).reshape(-1, 3)
 
     pos_multipliers = np.array(pos_multipliers, dtype=float)
     translation = np.array(translation, dtype=float)
     vertices = vertices * pos_multipliers + translation
 
-    return { # could be a class
-        'vertices': vertices,
-        'faces': faces
-    }
+    return {"vertices": vertices, "faces": faces}  # could be a class
 
 
 def read_from_bmf(
@@ -149,12 +146,14 @@ def read_from_bmf(
     for track in tracks:
         pred = None
         for t, mesh in track.meshes.items():
-            mesh = _load_meshdict_from_bmfmesh(mesh, pos_multipliers, translation)
+            mesh = _load_meshdict_from_bmfmesh(
+                mesh, pos_multipliers, translation
+            )
             pos[cell_id] = mesh.center_mass
-            
+
             if store_meshes:
                 lT_mesh[cell_id] = mesh
-            
+
             predecessor[cell_id] = (pred,)
             pred = cell_id
             times[cell_id] = t
@@ -1059,16 +1058,16 @@ def read_from_mamut_xml(
     )
 
 
-LOADERS = { # put all formats in smaller case
+LOADERS = {  # put all formats in smaller case
     "bmf": {
-        "BMF loader": read_from_bmf
+        "BMF loader": read_from_bmf,
     },
     "csv": {
         "Standard CSV loader": read_from_csv,
-        "Mastodon CSV loader": read_from_mastodon_csv
+        "Mastodon CSV loader": read_from_mastodon_csv,
     },
     "binary": {
-        "Binary loader": read_from_binary
+        "Binary loader": read_from_binary,
     },
     "xml": {
         # "TGMM XML loader": read_from_tgmm_xml, # commented out because it requires a specific file format
@@ -1076,10 +1075,10 @@ LOADERS = { # put all formats in smaller case
         "ASTEC XML loader": read_from_ASTEC,
     },
     "mastodon": {
-        "Mastodon loader": read_from_mastodon
+        "Mastodon loader": read_from_mastodon,
     },
     "pkl": {
-        "ASTEC PKL loader": read_from_ASTEC
+        "ASTEC PKL loader": read_from_ASTEC,
     },
     "txt": {
         "C. elegans loader": read_from_txt_for_celegans,
