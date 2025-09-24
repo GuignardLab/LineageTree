@@ -6,10 +6,12 @@ from collections import deque
 from typing import TYPE_CHECKING, Iterable, Callable
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline
+from hashlib import sha256
+import pickle
 
 from edist import uted
 
-from .deltas import (
+from .delta_functions import (
     delta_normalized_difference,
     delta_nd_norm,
     delta_difference,
@@ -88,6 +90,16 @@ class ApproximatedTree:
 class TreeApproximatorTemplate(ABC):
     delta: Callable = None
     available_norms = {"max", "sum"}
+    _storable = False
+
+    def get_state(self):
+        if self._storable:
+            data = (self.__class__.__name__,) + tuple(self._attributes)
+            return sha256(pickle.dumps(data)).hexdigest()
+        else:
+            raise NotImplementedError(
+                "This Approximator cannot be serialized."
+            )
 
     @abstractmethod
     def build_approximated_tree(
@@ -101,6 +113,7 @@ class TreeApproximatorTemplate(ABC):
         self,
         approximated_tree1: ApproximatedTree,
         approximated_tree2: ApproximatedTree,
+        return_serial: bool = False,
     ) -> Alignment:
         """
         Computes the optimal mapping between
@@ -126,7 +139,10 @@ class TreeApproximatorTemplate(ABC):
             approximated_tree2.adjacency_list,
             delta=self.delta,
         )
-        return backtrace
+        if return_serial:
+            return (backtrace,)
+        else:
+            return backtrace
 
     def compute_uted_distance(
         self,
@@ -177,6 +193,8 @@ class TreeApproximatorTemplate(ABC):
         return backtrace.cost(
             approximated_tree1.nodes, approximated_tree2.nodes, delta
         )
+
+    def reconstruct_backtrace(self, tree1, tree2, backtrace): ...
 
     def get_norm(
         self,
@@ -303,6 +321,8 @@ class SimpleTreeTimed(TreeApproximatorTemplate):
 
     def __init__(self, delta: Callable | None = None):
         self.delta = delta or delta_normalized_difference
+        self._storable = True
+        self._attributes = [self.delta.__name__]
 
 
 class SimpleTreeGeneral(TreeApproximatorTemplate):
@@ -319,14 +339,12 @@ class SimpleTreeGeneral(TreeApproximatorTemplate):
     The default delta for this approximation is the L2 norm
     """
 
-    @staticmethod
     def build_approximated_tree(
+        self,
         lT: LineageTree,
         root: int,
         end_time: int | None = None,
         time_resolution: float = None,
-        properties: dict[int, float] = None,
-        aggregator: Callable = np.nanmean,
         *_,
         **__,
     ) -> ApproximatedTree:
@@ -381,18 +399,26 @@ class SimpleTreeGeneral(TreeApproximatorTemplate):
                     to_do.extend(_next)
                 else:
                     out_dict[current] = []
-                final_properties[current] = aggregator(
-                    [properties.get(node, np.nan) for node in cycle], axis=0
+                final_properties[current] = self.aggregator(
+                    [self.property_dict.get(node, np.nan) for node in cycle],
+                    axis=0,
                 )
                 if np.isnan(final_properties[current]).any():
                     final_properties[current] = np.zeros_like(
-                        list(properties.values())[0]
+                        list(self.property_dict.values())[0]
                     )
 
         return ApproximatedTree(out_dict, final_properties)
 
-    def __init__(self, delta: Callable = None):
+    def __init__(
+        self,
+        delta: Callable = None,
+        property_dict: dict[int, float] = None,
+        aggregator: Callable = np.nanmean,
+    ):
         self.delta = delta or delta_nd_norm
+        self.property_dict = property_dict
+        self.aggregator = aggregator
 
 
 class DownsampledTree(TreeApproximatorTemplate):
@@ -467,6 +493,10 @@ class DownsampledTree(TreeApproximatorTemplate):
 
     def __init__(self, delta: Callable = None):
         self.delta = delta
+        self._storable = True
+        self._attributes = [
+            self.delta if self.delta is None else self.delta.__name__
+        ]
 
 
 class ResampledTree(TreeApproximatorTemplate):
@@ -675,6 +705,10 @@ class FullTree(TreeApproximatorTemplate):
         delta: Callable = None,
     ):
         self.delta = delta
+        self._storable = True
+        self._attributes = [
+            self.delta if self.delta is None else self.delta.__name__
+        ]
 
 
 TREE_APPROXIMATORS: dict[str, type[TreeApproximatorTemplate]] = {

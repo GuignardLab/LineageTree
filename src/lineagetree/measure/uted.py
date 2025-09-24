@@ -188,30 +188,33 @@ def __unordereded_backtrace(
             A list of the two trees that have been mapped to each other.
     """
 
-    parameters = (
-        end_time,
-        convert_style_to_number(style=style, downsample=downsample),
-    )
-    n1, n2 = sorted([n1, n2])
-    lT._comparisons.setdefault(parameters, {})
-    if len(lT._comparisons) > 100:
-        warnings.warn(
-            "More than 100 comparisons are saved, use clear_comparisons() to delete them.",
-            stacklevel=2,
-        )
+    # parameters = (
+    #     end_time,
+    #     convert_style_to_number(style=style, downsample=downsample),
+    # )
+    # n1, n2 = sorted([n1, n2])
+    # lT._comparisons.setdefault(parameters, {})
+    # if len(lT._comparisons) > 100:
+    #     warnings.warn(
+    #         "More than 100 comparisons are saved, use clear_comparisons() to delete them.",
+    #         stacklevel=2,
+    #     )
     if isinstance(style, str):
         Approximator = TREE_APPROXIMATORS[style]
     elif issubclass(style, TreeApproximatorTemplate):
         Approximator = style
     else:
         raise ValueError("Please use a valid approximation.")
+
     approximator = Approximator()
-    tree1 = approximator(
+
+    tree1 = approximator.build_approximated_tree(
         lT=lT, root=n1, end_time=end_time, downsample=downsample
     )
-    tree2 = approximator(
-        lT=lT, root=n1, end_time=end_time, downsample=downsample
+    tree2 = approximator.build_approximated_tree(
+        lT=lT, root=n2, end_time=end_time, downsample=downsample
     )
+
     if len(tree1.nodes) == len(tree2.nodes) == 0:
         lT._comparisons[parameters][(n1, n2)] = {
             "alignment": (),
@@ -238,7 +241,7 @@ def unordered_tree_edit_distance(
     style: (
         Literal["simple", "normalized_simple", "full", "downsampled"]
         | type[TreeApproximatorTemplate]
-    ) = "simple",
+    ) = "normalized_simple",
     downsample: int = 2,
     return_norms: bool = False,
 ) -> float | tuple[float, tuple[float, float]]:
@@ -273,22 +276,9 @@ def unordered_tree_edit_distance(
     float
         The normalized unordered tree edit distance between `n1` and `n2`
     """
-    parameters = (
-        end_time,
-        convert_style_to_number(style=style, downsample=downsample),
+    (backtrace, (tree1, tree2), approximator) = __unordereded_backtrace(
+        lT, n1, n2, end_time, style, downsample
     )
-    n1, n2 = sorted([n1, n2])
-    lT._comparisons.setdefault(parameters, {})
-    if lT._comparisons[parameters].get((n1, n2)):
-        tmp = lT._comparisons[parameters][(n1, n2)]
-    else:
-        tmp = __unordereded_backtrace(
-            lT, n1, n2, end_time, norm, style, downsample
-        )
-    backtrace = tmp["alignment"]
-    tree1, tree2 = tmp["trees"]
-    approximator = tmp["approximator"]
-
     if norm not in TREE_APPROXIMATORS.get(style, style).available_norms:
         raise ValueError(
             "Select a viable normalization method:"
@@ -296,11 +286,10 @@ def unordered_tree_edit_distance(
         )
     cost = approximator.compute_uted_distance(tree1, tree2, backtrace)
 
-    norm = "tuple" if return_norms else norm
-    norm_values = approximator.get_norm(tree1, tree2, norm_type=norm)
     if return_norms:
-        return cost, norm_values
-    return cost / norm_values
+        return cost, approximator.get_norm(tree1, tree2, norm_type="tuple")
+    else:
+        return cost / approximator.get_norm(tree1, tree2, norm_type=norm)
 
 
 def plot_tree_distance_graphs(
