@@ -106,12 +106,16 @@ def _load_meshdict_from_bmfmesh(bmfmesh, pos_multipliers, translation):
     translation = np.array(translation, dtype=float)
     vertices = vertices * pos_multipliers + translation
 
-    return {"vertices": vertices, "faces": faces}  # could be a class
+    return { # could be a class
+        'vertices': vertices,
+        'faces': faces,
+        'center_mass': np.mean(vertices, axis=0),
+    }
 
 
 def read_from_bmf(
     file_path: str,
-    store_meshes: bool = False,
+    store_meshes: bool = True,
     pos_multipliers: tuple[float, float, float] = (1.0, 1.0, 1.0),
     translation: tuple[float, float, float] = (0.0, 0.0, 0.0),
     name: None | str = None,
@@ -146,11 +150,9 @@ def read_from_bmf(
     for track in tracks:
         pred = None
         for t, mesh in track.meshes.items():
-            mesh = _load_meshdict_from_bmfmesh(
-                mesh, pos_multipliers, translation
-            )
-            pos[cell_id] = mesh.center_mass
-
+            mesh = _load_meshdict_from_bmfmesh(mesh, pos_multipliers, translation)
+            pos[cell_id] = mesh["center_mass"]
+            
             if store_meshes:
                 lT_mesh[cell_id] = mesh
 
