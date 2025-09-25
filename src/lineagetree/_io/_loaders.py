@@ -115,7 +115,7 @@ def _load_meshdict_from_bmfmesh(bmfmesh, pos_multipliers, translation):
 
 def read_from_bmf(
     file_path: str,
-    store_meshes: bool = False,
+    store_meshes: bool = True,
     pos_multipliers: tuple[float, float, float] = (1.0, 1.0, 1.0),
     translation: tuple[float, float, float] = (0.0, 0.0, 0.0),
     name: None | str = None,
