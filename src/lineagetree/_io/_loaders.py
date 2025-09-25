@@ -99,7 +99,7 @@ ASTEC_KEYDICTIONARY = {
 
 def _load_meshdict_from_bmfmesh(bmfmesh, pos_multipliers, translation):
 
-    vertices = np.array(bmfmesh.positions).reshape(-1, 3)[:,::-1]
+    vertices = np.array(bmfmesh.positions).reshape(-1, 3)[:, ::-1]
     faces = np.array(bmfmesh.triangles).reshape(-1, 3)
 
     pos_multipliers = np.array(pos_multipliers, dtype=float)
@@ -155,7 +155,7 @@ def read_from_bmf(
             
             if store_meshes:
                 lT_mesh[cell_id] = mesh
-            
+
             predecessor[cell_id] = (pred,)
             pred = cell_id
             times[cell_id] = t
@@ -178,7 +178,7 @@ def read_from_bmf(
 
 def read_from_csv(
     file_path: str,
-    z_mult: float,
+    z_mult: float = 1,
     link: int = 1,
     delim: str = ",",
     name: None | str = None,
@@ -1058,3 +1058,33 @@ def read_from_mamut_xml(
         name=name,
         **properties,
     )
+
+
+LOADERS = {  # put all formats in smaller case
+    "bmf": {
+        "BMF loader": read_from_bmf,
+    },
+    "csv": {
+        "Standard CSV loader": read_from_csv,
+        "Mastodon CSV loader": read_from_mastodon_csv,
+    },
+    "binary": {
+        "Binary loader": read_from_binary,
+    },
+    "xml": {
+        # "TGMM XML loader": read_from_tgmm_xml, # commented out because it requires a specific file format
+        "MaMuT XML loader": read_from_mamut_xml,
+        "ASTEC XML loader": read_from_ASTEC,
+    },
+    "mastodon": {
+        "Mastodon loader": read_from_mastodon,
+    },
+    "pkl": {
+        "ASTEC PKL loader": read_from_ASTEC,
+    },
+    "txt": {
+        "C. elegans loader": read_from_txt_for_celegans,
+        "C. elegans CAO loader": read_from_txt_for_celegans_CAO,
+        "C. elegans BAO loader": read_from_txt_for_celegans_BAO,
+    },
+}
