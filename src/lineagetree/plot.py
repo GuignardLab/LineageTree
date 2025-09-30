@@ -144,8 +144,8 @@ def draw_tree_graph(
             default_color=default_color,
             **kwargs,
         )
-    if not color_of_edges:
-        color_of_edges = color_of_nodes
+    if color_of_edges is None:
+        color_of_edges = default_color
     __plot_edges(
         hier,
         lnks_tms,
