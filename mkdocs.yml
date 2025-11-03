@@ -18,13 +18,21 @@ theme:
   - navigation.path
   - navigation.expand
   - content.code.annotate
+markdown_extensions:
+  - toc:
+      permalink: true
+  - tables
+  - pymdownx.superfences   
 plugins:
 - mkdocstrings:
     handlers:
       python:
+        setup_commands:
+            - import os, sys
+            - sys.path.append(os.path.abspath("._io"))
         options:
-          show_submodules: true
           docstring_style: numpy
+          
 nav:
   - Home: index.md
   - Getting started:

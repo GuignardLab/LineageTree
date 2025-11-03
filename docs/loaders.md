@@ -1,5 +1,5 @@
 
-# Loaders
+### Premade Loaders
 
 Multiple well known formats are ready for import out of the box:
 
@@ -25,7 +25,7 @@ Other attributes that can be used to initiate a lineageTree file apart from the 
 
 - **kwargs: Any other dictionary provided during imaging can be loaded into lineageTree. The format is {unique_id: value}
 
-### Example of loading and template with **kwargs
+### Custom Loaders
 
 ```python
 
@@ -82,4 +82,6 @@ def template_load(path, name=None):
    )
 ```
 
-:::LineageTree.loaders
+### API reference for existing loaders
+
+#### ::: lineagetree._io

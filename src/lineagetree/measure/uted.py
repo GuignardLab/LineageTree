@@ -138,6 +138,13 @@ def __calculate_distance_of_sub_tree(
 
 
 def clear_comparisons(lT: LineageTree):
+    """Clears the comparisons saved on the LineageTree object.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree object
+    """
     lT._comparisons.clear()
 
 

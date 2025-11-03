@@ -124,14 +124,52 @@ This section is focused on showcasing the advantages and disadvantages of the tr
 
 ![synthetic_trees](./images/synthetic_trees.png)
 
-## Tree distance Graphs
+<!-- ### API reference
+
+#### :::lineagetree.measure.unordered_tree_edit_distance
+#### :::lineagetree.measure.unordered_tree_edit_distances_at_time_t
+#### :::lineagetree.measure.clear_comparisons -->
+## API reference for uted
+
+### ::: lineagetree.measure
+    options:
+      filters:
+        - "^unordered_tree_edit_distance$"
+        - "^unordered_tree_edit_distances_at_time_t$"
+        - "^clear_comparisons$"
+
+
+## Using the Matching Component of UTED
+
+UTED calculates distances between two tree graphs by matching their nodes. Extracting the matched nodes provides important information, particularly for labeled datasets. For example, when calculating the distance between two embryos, we can identify which clone or sublineage in one embryo corresponds to a clone or sublineage in the other. To support this, UTED includes functions specifically designed to find the matching between two lineages.
+
+#### API
+
+#### ::: lineagetree.measure
+    options:
+      filters:
+        - "^labelled_mappings$"
+
+
+
+### Tree distance Graphs
 
 <p style="text-align: justify;">
 
-The distance value is a very useful metric to check the similarity of two lineages, however its just a distance, it does not give you further information. A user should not only know how similar a tree is to another, but also which sublineages/subtrees are similar and which are not! Fortunately, we realized that we can extract important information during an important step of the algorithm, the matched pairs created during the mapping process and plot them into a new graph, called the tree distance graph. To produce these graphs, we color each chain that has been mapped with the value of the subtree spawned by these chains, showing a metric that can be interpreted as the quality of mapping. Such graphs can show two very significant things:
+The distance value is a useful metric for quantifying the similarity between two lineages, but it does not provide detailed information about which sublineages are similar or different. To address this, UTED generates tree distance graphs by leveraging the matched pairs produced during the mapping process.
+
+In these graphs, each matched chain is colored according to the value of its subtree, providing a visual representation of mapping quality. Tree distance graphs reveal two important aspects:
+
+- Variance: The color spectrum highlights the distances of mapped chains. Colors representing good mappings indicate low variance during development.
+
+- Gain or Loss of Function: Unmapped regions indicate lineages that exist in one tree but not the other. This may reflect biological differences, such as the emergence or loss of a lineage, or it may point to data quality issues.
 </p>
-- Variance: Such graphs will use a spectrum of colors to show the distances that are mapped and how well their mapping is, so colors that correspond to the good mapping indicate small variance during development.
+![add_an_example](./images/image39151.png)
 
-- Gain or loss of function, the unmapped regions can be interpreted as regions, where no region of one tree corresponds to the one with unmapped (of course this may also happen due to a bad dataset), which means that there is a lineage that does not exist in the other, a new lineage, the organism gained or lost a function!
 
-![add_an_example](tree_distance_graph.png)
+#### API
+
+#### ::: lineagetree.measure
+    options:
+      filters:
+        - "^plot_tree_distance_graphs$"

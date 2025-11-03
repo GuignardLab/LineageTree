@@ -7,3 +7,7 @@ Usually, tracked lineages contain hundreds of thousands of nodes, thus calculati
 ![viz](./images/2_trees.png)
 
 This way, the whole lineage can be plotted efficiently, even if the second graph is more representative of the truth.
+
+### API Reference
+
+#### ::: lineagetree.plot
