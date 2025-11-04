@@ -1,4 +1,4 @@
-from .deltas import (
+from .delta_functions import (
     delta_normalized_difference,
     delta_nd_norm,
     delta_difference,
