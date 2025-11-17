@@ -84,4 +84,7 @@ def template_load(path, name=None):
 
 ### API reference for existing loaders
 
-#### ::: lineagetree._io
+#### ::: lineagetree
+            options:
+                filters:
+                    - "^read_"

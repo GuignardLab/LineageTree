@@ -20,4 +20,9 @@ __all__ = (
     "unordered_tree_edit_distances_at_time_t",
     "plot_tree_distance_graphs",
     "labelled_mappings",
+    "compute_k_nearest_neighbours",
+    "compute_spatial_density",
+    "compute_spatial_edges",
+    "get_gabriel_graph",
+    "calculate_dtw",
 )
