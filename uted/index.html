@@ -12,11 +12,11 @@
         <link rel="prev" href="../viz/">
       
       
-        <link rel="next" href="../api/">
+        <link rel="next" href="../dtw/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.15">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.23">
     
     
       
@@ -24,7 +24,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.84d31ad4.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
@@ -47,6 +47,8 @@
     
     
       <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../styles/extra.css">
     
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -148,6 +150,46 @@
     
     
     
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
     
   </nav>
   
@@ -213,46 +255,6 @@
   
   
   
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    Getting started
-    
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2">
-            <span class="md-nav__icon md-icon"></span>
-            Getting started
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
     <li class="md-nav__item">
       <a href="../getting-started/" class="md-nav__link">
         
@@ -268,10 +270,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
   
@@ -291,11 +292,25 @@
     </li>
   
 
-              
-            
-          </ul>
-        </nav>
+    
       
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Core Utility
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -352,6 +367,46 @@
   
   
   
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Analysis
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Analysis
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
     <li class="md-nav__item md-nav__item--active">
       
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
@@ -401,18 +456,27 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#different-tree-approximations" class="md-nav__link">
+  <a href="#why-uted" class="md-nav__link">
     <span class="md-ellipsis">
-      Different Tree approximations
+      Why UTED?
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-need-for-normalization" class="md-nav__link">
+  <a href="#different-tree-approximations-making-uted-faster" class="md-nav__link">
     <span class="md-ellipsis">
-      The need for normalization
+      Different Tree approximations - making UTED faster
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-need-for-normalization-making-uted-interpretable" class="md-nav__link">
+    <span class="md-ellipsis">
+      The need for normalization - Making UTED interpretable
     </span>
   </a>
   
@@ -428,6 +492,16 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#using-the-matching-component-of-uted" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using the Matching Component of UTED
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using the Matching Component of UTED">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#tree-distance-graphs" class="md-nav__link">
     <span class="md-ellipsis">
       Tree distance Graphs
@@ -435,10 +509,138 @@
   </a>
   
 </li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      API reference
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lineagetree.measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      measure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lineagetree.measure.clear_comparisons" class="md-nav__link">
+    <span class="md-ellipsis">
+      clear_comparisons
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lineagetree.measure.unordered_tree_edit_distance" class="md-nav__link">
+    <span class="md-ellipsis">
+      unordered_tree_edit_distance
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lineagetree.measure.unordered_tree_edit_distances_at_time_t" class="md-nav__link">
+    <span class="md-ellipsis">
+      unordered_tree_edit_distances_at_time_t
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lineagetree.measure.plot_tree_distance_graphs" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_tree_distance_graphs
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lineagetree.measure.labelled_mappings" class="md-nav__link">
+    <span class="md-ellipsis">
+      labelled_mappings
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
       
     </ul>
   
 </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dtw/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Dynamic Time Warping
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../spatial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Spatial
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
       
     </li>
   
@@ -493,18 +695,27 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#different-tree-approximations" class="md-nav__link">
+  <a href="#why-uted" class="md-nav__link">
     <span class="md-ellipsis">
-      Different Tree approximations
+      Why UTED?
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-need-for-normalization" class="md-nav__link">
+  <a href="#different-tree-approximations-making-uted-faster" class="md-nav__link">
     <span class="md-ellipsis">
-      The need for normalization
+      Different Tree approximations - making UTED faster
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-need-for-normalization-making-uted-interpretable" class="md-nav__link">
+    <span class="md-ellipsis">
+      The need for normalization - Making UTED interpretable
     </span>
   </a>
   
@@ -520,11 +731,95 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#using-the-matching-component-of-uted" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using the Matching Component of UTED
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using the Matching Component of UTED">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#tree-distance-graphs" class="md-nav__link">
     <span class="md-ellipsis">
       Tree distance Graphs
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      API reference
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lineagetree.measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      measure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lineagetree.measure.clear_comparisons" class="md-nav__link">
+    <span class="md-ellipsis">
+      clear_comparisons
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lineagetree.measure.unordered_tree_edit_distance" class="md-nav__link">
+    <span class="md-ellipsis">
+      unordered_tree_edit_distance
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lineagetree.measure.unordered_tree_edit_distances_at_time_t" class="md-nav__link">
+    <span class="md-ellipsis">
+      unordered_tree_edit_distances_at_time_t
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lineagetree.measure.plot_tree_distance_graphs" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_tree_distance_graphs
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lineagetree.measure.labelled_mappings" class="md-nav__link">
+    <span class="md-ellipsis">
+      labelled_mappings
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -544,40 +839,49 @@
 
 
 
-<h1 id="introduction-to-unordered-tree-edit-distance-uted">Introduction to Unordered Tree Edit Distance (UTED)</h1>
-<p>While visual inspection allows for identifying similarities and differences between lineages, it is insufficient for scientific analysis. Therefore, mathematical tools are required to objectively analyze and compare such structures. This module focuses on finding such patterns across lineages using an unordered tree edit distance (UTED) algorithm developed by [citation]. UTED computes the minimum distance between two trees by transforming one into the other using the fewest possible operations: addition of a node, removal of a node, and matching two nodes (also referred to as substitution). </p>
+<h1 id="introduction-to-unordered-tree-edit-distance-uted">Introduction to Unordered Tree Edit Distance (UTED)<a class="headerlink" href="#introduction-to-unordered-tree-edit-distance-uted" title="Permanent link">&para;</a></h1>
+<p>While visual inspection allows for identifying similarities and differences between lineages, it is insufficient for scientific analysis. Therefore, mathematical tools are required to objectively analyze and compare such structures. This module focuses on finding such patterns across lineages using an unordered tree edit distance (UTED) algorithm developed by [citation]. UTED computes the minimum number of operations to transform one tree to the other. In simpler words, how many nodes do we have to add or remove to transform one tree so that it has the same branches as the other one. Apart from adding and removing nodes the algorithm mayh also substitute nodes with no cost. The fact the algorithm can substitute nodes without any cost means that this algorithm just checks the topology. Summarizing there are 3 operations that will be used for transforming trees:</p>
+<ul>
+<li><strong>Adding nodes</strong>: The same cost as removing</li>
+<li><strong>Removing nodes</strong>: The same cost as adding nodes</li>
+<li><strong>Substituting/Matching nodes</strong>: Usually less cost than adding/removing the nodes being compared.</li>
+</ul>
+<hr />
+<h2 id="why-uted">Why UTED?<a class="headerlink" href="#why-uted" title="Permanent link">&para;</a></h2>
+<p>There are multiple algorithms that specialize in comparing tree graphs, like the ones used in phylogeny research, why is this the one we focus on? All these algorithms require the label of the node, thus instead of transforming one tree to the other in terms of topology they aim to create the exact same tree. These algorithms would find great use in organisms like <strong><em>C. Elegans</em></strong> where all of their lineages have been thoroughly studied. Other specimens may not have such a simplistic and well studied development so it is impossible to label them correctly.</p>
 <p>UTED is label agnostic, meaning it can compare lineages without needing any prior knowledge of the naming of the cell, meaning that 2 daughter cells are born equal, however this strength comes with a significant drawback: the algorithm must map nodes from one tree to another which makes time consumed scale exponentially to the number of nodes, because there are many possible mappings. This pairing always respects the hierarchical structure of the trees; thus, nodes that exist at a specific depth will only be mapped to nodes of the same depth or greater. </p>
 <p><img alt="uted_explanation" src="../images/uted_explanation.png" /></p>
-<h2 id="different-tree-approximations">Different Tree approximations</h2>
-<p>To address this computational challenge, we developed 4 approaches that reduce the number of nodes, while preserving accuracy. 2 of these also alter the behaviour of UTED, so it is crucial to understand the mechanisms and implications of each approach:</p>
+<hr />
+<h2 id="different-tree-approximations-making-uted-faster">Different Tree approximations - making UTED faster<a class="headerlink" href="#different-tree-approximations-making-uted-faster" title="Permanent link">&para;</a></h2>
+<p>To address this computational challenge, we developed 3 approaches that reduce the number of nodes, while preserving accuracy. 2 of these also alter the behaviour of UTED, so it is crucial to understand the mechanisms and implications of each approach:</p>
 <ol>
 <li>
-<p><strong>Normal Tree</strong>: This algorithm is the simplest, as the dataset without changes is used to produce the distance. So the algorithm will either:</p>
+<p><strong>Original Tree</strong>: This algorithm is the simplest, as the dataset is used without changes to produce the distance. So the algorithm will either:</p>
 <ul>
 <li><strong>Match</strong> a node, where the cost will be 0</li>
-<li><strong>Add</strong> a node to either of the trees for a cost of 1</li>
-<li><strong>Remove</strong> a node from either of the trees for a cost of 1.</li>
+<li><strong>Add/Remove</strong> a node to/from a tree, costing 1.</li>
 </ul>
-<p>Normal tree is the most accurate, but it does not scale well with time, meaning that computation time scales exponentially with the number of nodes.</p>
+<p>Normal tree is the most accurate, but it does not scale well with big datasets, meaning that computation time scales exponentially with the number of nodes.</p>
 </li>
 <li>
-<p><strong>Downsampled Tree</strong>: This algorithm reconstructs the tree but skips nodes every n time points, so the result will be similar to the first tree but with fewer nodes.</p>
+<p><strong>Downsampled Tree</strong>: This algorithm reconstructs the tree but skips nodes every n time points, so the result will be similar to the first tree but with less accuracy. In other words, it simulates the same dataset with bigger time resolution, meaning less points.</p>
 <ul>
 <li><strong>Match</strong> a node, where the cost will be 0</li>
-<li><strong>Add</strong> a node to either of the trees for a cost of 1 </li>
-<li><strong>Remove</strong> a node from either of the trees for a cost of 1.</li>
+<li><strong>Add/Remove</strong> a node to/from a tree, costing 1.</li>
 </ul>
-<p>Downsampled Tree is slightly less accurate or equal to normal tree, but much faster</p>
+<p>Downsampled Tree is slightly less accurate or equal (according to the downsampling rate) to normal tree, but much faster.</p>
 </li>
 <li>
-<p><strong>Reduced Tree</strong>: This algorithm will reconstruct the trees, but every chain will be replaced with a node of the same length. This approximation completely changes the behaviour of the algorithm, as it will match whole chains with other chains and not just nodes. Such an algorithm may be extremely useful for fast but not precise results, however some biological question may be better answered using this algorithm.</p>
-<ul>
-<li><strong>Match</strong> a node, the cost will be the absolute difference of the length of the 2 chains</li>
-<li><strong>Add</strong> a node, will add a node of size equal to the length of the existing chain, so the cost will be the value of the length of the chain.</li>
-<li><strong>Remove</strong> a node, will remove a node of size equal to the length of the existing chain, so the cost will be the value of the length of the chain.</li>
-</ul>
-<p>This algorithm is extremely lightweight and fast; however, the score is different than the normal tree. Some users may prefer this algorithm due to its capability of comparing chains instead of nodes, making it easily interpretable. Many other developers use the same or similar algorithms to this one [novel metrics, deeplineage citation] </p>
+<p><strong>Reduced Tree</strong>: This algorithm will reconstruct the trees, but every chain will be replaced with a node of a length attribute that will have the same value as the chains length. Meaning that the number of nodes in the new trees will be equal to the number of chains in the original lineage.</p>
 </li>
+</ol>
+<p>This approximation completely changes the behaviour of the algorithm, as it will match whole chains with other chains and not just nodes. Such an algorithm may be extremely useful for fast but not precise results, however some biological question may be better answered using this algorithm.</p>
+<pre><code>- **Substitute** a node, the cost will be the absolute difference of the length of the 2 chains
+- **Add/Remove** a node, will add/remove a node of size equal to the length of the existing chain, so the cost will be the value of the length of the chain.
+
+This algorithm is extremely lightweight and fast; however, the score is different than the normal tree. Some users may prefer this algorithm due to its capability of comparing chains instead of nodes, making it easily interpretable. Many other developers use the same or similar algorithms to this one [novel metrics, deeplineage citation]
+</code></pre>
+<ol>
 <li>
 <p><strong>Bound Reduced Tree</strong>: This algorithm will use the same tree as the reduced tree, however the edit operations are modified so that big chains that have similar length will be easier to be matched together. Has the strengths of reduced tree, but the resulting distance is closer to the that of the normal tree.</p>
 <ul>
@@ -590,94 +894,949 @@
 </ol>
 <p><img alt="tree_styles" src="../images/tree_styles.png" /></p>
 <p>To inspect any style:</p>
-<pre><code class="language-python">from LineageTree import tree_styles
-tree_styles.tree_style[&quot;simple&quot;].value(parameters)
-</code></pre>
-<h2 id="the-need-for-normalization">The need for normalization</h2>
-<p>Uted produces distances in the range of zero to infinity, meaning that the results are not easily interpretable. For instance, 2 visually similar, large trees may have a difference of 1000 nodes, but 2 small, dissimilar trees may only have a difference of 10 nodes. This makes the results of this algorithm confusing and its application very limited. To enhance the use of this algorithm, we developed a way to normalize these distances so that the results are bound between 0 and 1 using the number of nodes of the trees. Each tree style employs its own way of normalization.</p>
-<ol>
-<li>
-<p><strong>Normal</strong>: The distance of 2 trees is divided by the max or the sum of the number of nodes of the trees used.</p>
-</li>
-<li>
-<p><strong>Downsampled</strong>: The distance of 2 trees is divided by the max or the sum of the number of nodes of the downsapled tree.</p>
-</li>
-<li>
-<p><strong>Reduced</strong>: The distance of 2 trees is divided by the max or the sum of the number of nodes of the trees used before being converted to the reduced form ( Equal to the sum of all the node sizes after the conversion).</p>
-</li>
-</ol>
-<p>4.<strong>Normalized Reduced</strong>: The distance of 2 trees is divided by the max or the sum of the number of chains that exist in each tree.</p>
-<p>Normalization in general</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">LineageTree</span><span class="w"> </span><span class="kn">import</span> <span class="n">tree_styles</span>
+<span class="n">tree_styles</span><span class="o">.</span><span class="n">tree_style</span><span class="p">[</span><span class="s2">&quot;simple&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="the-need-for-normalization-making-uted-interpretable">The need for normalization - Making UTED interpretable<a class="headerlink" href="#the-need-for-normalization-making-uted-interpretable" title="Permanent link">&para;</a></h2>
+<p>For biological uses UTED is great to measure similarity of 2 trees, but UTED produces distances in the range of zero to infinity, meaning that the results are not easily interpretable. Having this in mind two large trees that look similar may have a bigger distance than two relatively small, but very disimilar trees. Thus, to bound these distances and convert them to a similarity measure we created 2 normalization algorithms:</p>
 <ul>
-<li>
-<p>Max: This way of normalization produces values that are well distributed along the [0,1] axis, however, trees that show extreme disimilarity may produce values slightly bigger than one (1.16 max). However, most of the time, the compared trees are not that different, so it is a rare occasion.</p>
-</li>
-<li>
-<p>Sum: This way of normalization bounds the values between [0,1];  however, most trees will be distributed along the [0,0.5] axis, meaning it's more difficult to distinguish the similar trees from the dissimilar. </p>
-</li>
+<li><strong>Sum</strong>: The maximum distance between 2 random trees is the cost to convert one tree to null and then create the other tree from null.</li>
+<li><strong>Max</strong>: The result distance is divided by the cost to create the largest of the 2 trees from scratch, this algorithm primarily produces results in the range of 0 and 1, but sometimes for very disimilar trees the result may be greater than 1.</li>
 </ul>
+<!-- 1. **Normal**: The distance of 2 trees is divided by the max or the sum of the number of nodes of the trees used.
+
+2. **Downsampled**: The distance of 2 trees is divided by the max or the sum of the number of nodes of the downsapled tree.
+
+3. **Reduced**: The distance of 2 trees is divided by the max or the sum of the number of nodes of the trees used before being converted to the reduced form ( Equal to the sum of all the node sizes after the conversion).
+
+4.**Normalized Reduced**: The distance of 2 trees is divided by the max or the sum of the number of chains that exist in each tree. -->
+
 <p>Template to create new styles:</p>
-<pre><code class="language-python">from LineageTree import lineageTree
-from LineageTree.tree_styles import abstract_trees
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">LineageTree</span><span class="w"> </span><span class="kn">import</span> <span class="n">lineageTree</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">LineageTree.tree_styles</span><span class="w"> </span><span class="kn">import</span> <span class="n">abstract_trees</span>
 
-class tree_style_template(abstract_trees):
+<span class="k">class</span><span class="w"> </span><span class="nc">tree_style_template</span><span class="p">(</span><span class="n">abstract_trees</span><span class="p">):</span>
 
-   ### The user has to implement these methods
+   <span class="c1">### The user has to implement these methods</span>
 
-   def get_tree(self)-&gt; tuple[dict[int, list], dict[int, int | float]]:
-       out_dict = {}
-       times_or_other_attribute = {}
-       ... # If time_scale exists for cross embryo comparison use it here
-       return (out_dict, # The hierarchy of the nodes should be a dict(unique_node:[successors])
-               times_or_other_attribute) # An attribute that may be used for comparisons.
+   <span class="k">def</span><span class="w"> </span><span class="nf">get_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">],</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]]:</span>
+       <span class="n">out_dict</span> <span class="o">=</span> <span class="p">{}</span>
+       <span class="n">times_or_other_attribute</span> <span class="o">=</span> <span class="p">{}</span>
+       <span class="o">...</span> <span class="c1"># If time_scale exists for cross embryo comparison use it here</span>
+       <span class="k">return</span> <span class="p">(</span><span class="n">out_dict</span><span class="p">,</span> <span class="c1"># The hierarchy of the nodes should be a dict(unique_node:[successors])</span>
+               <span class="n">times_or_other_attribute</span><span class="p">)</span> <span class="c1"># An attribute that may be used for comparisons.</span>
 
-   def _edist_format(self, adj_dict): # This methods seldom needs changing, creates the adjacency matrix 
-       return super()._edist_format(adj_dict)# and provides the corresponding nodes that between lt and the tree style
+   <span class="k">def</span><span class="w"> </span><span class="nf">_edist_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adj_dict</span><span class="p">):</span> <span class="c1"># This methods seldom needs changing, creates the adjacency matrix </span>
+       <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_edist_format</span><span class="p">(</span><span class="n">adj_dict</span><span class="p">)</span><span class="c1"># and provides the corresponding nodes that between lt and the tree style</span>
 
-   def delta(self, x, y, corres1, corres2, times1, times2)-&gt; int|float:
-       if x is None and y is None:
-           return 0
-       if x is None: # Cost for removing a node
-           return times2[corres2[y]]
-       if y is None: # Cost for adding a node
-           return times1[corres1[x]]
-       len_x = times1[corres1[x]]
-       len_y = times2[corres2[y]]
-       return abs(len_x - len_y) # Cost for matching a node
+   <span class="k">def</span><span class="w"> </span><span class="nf">delta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">corres1</span><span class="p">,</span> <span class="n">corres2</span><span class="p">,</span> <span class="n">times1</span><span class="p">,</span> <span class="n">times2</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">int</span><span class="o">|</span><span class="nb">float</span><span class="p">:</span>
+       <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">y</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+           <span class="k">return</span> <span class="mi">0</span>
+       <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># Cost for removing a node</span>
+           <span class="k">return</span> <span class="n">times2</span><span class="p">[</span><span class="n">corres2</span><span class="p">[</span><span class="n">y</span><span class="p">]]</span>
+       <span class="k">if</span> <span class="n">y</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># Cost for adding a node</span>
+           <span class="k">return</span> <span class="n">times1</span><span class="p">[</span><span class="n">corres1</span><span class="p">[</span><span class="n">x</span><span class="p">]]</span>
+       <span class="n">len_x</span> <span class="o">=</span> <span class="n">times1</span><span class="p">[</span><span class="n">corres1</span><span class="p">[</span><span class="n">x</span><span class="p">]]</span>
+       <span class="n">len_y</span> <span class="o">=</span> <span class="n">times2</span><span class="p">[</span><span class="n">corres2</span><span class="p">[</span><span class="n">y</span><span class="p">]]</span>
+       <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="n">len_x</span> <span class="o">-</span> <span class="n">len_y</span><span class="p">)</span> <span class="c1"># Cost for matching a node</span>
 
-   def get_norm(self)-&gt;int|float:
-       ... # how will the normalization work, should return a function that
-       ... # calculates the norm for every subtree of the starting tree
-       return value
+   <span class="k">def</span><span class="w"> </span><span class="nf">get_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">int</span><span class="o">|</span><span class="nb">float</span><span class="p">:</span>
+       <span class="o">...</span> <span class="c1"># how will the normalization work, should return a function that</span>
+       <span class="o">...</span> <span class="c1"># calculates the norm for every subtree of the starting tree</span>
+       <span class="k">return</span> <span class="n">value</span>
 
-   @staticmethod
-   def handle_resolutions(
-       time_resolution1: float | int,
-       time_resolution2: float | int,
-       gcd, #the greatest common divisor of all the time resolutions of datasets in the manager.
-       downsample: int,
-   ) -&gt; tuple[int | float, int | float]: #Needed for cross embryo analysis
-       ...
-       return (time_resolution_fix_for_dataset_1   # This list will be used as the time scale
-               ,time_resolution_fix_for_dataset_2) # parameter when comparing.
-</code></pre>
-<h2 id="testing-the-approximations">Testing the approximations</h2>
+   <span class="nd">@staticmethod</span>
+   <span class="k">def</span><span class="w"> </span><span class="nf">handle_resolutions</span><span class="p">(</span>
+       <span class="n">time_resolution1</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span>
+       <span class="n">time_resolution2</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span>
+       <span class="n">gcd</span><span class="p">,</span> <span class="c1">#the greatest common divisor of all the time resolutions of datasets in the manager.</span>
+       <span class="n">downsample</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+   <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]:</span> <span class="c1">#Needed for cross embryo analysis</span>
+       <span class="o">...</span>
+       <span class="k">return</span> <span class="p">(</span><span class="n">time_resolution_fix_for_dataset_1</span>   <span class="c1"># This list will be used as the time scale</span>
+               <span class="p">,</span><span class="n">time_resolution_fix_for_dataset_2</span><span class="p">)</span> <span class="c1"># parameter when comparing.</span>
+</code></pre></div>
+<h2 id="testing-the-approximations">Testing the approximations<a class="headerlink" href="#testing-the-approximations" title="Permanent link">&para;</a></h2>
 <p>This section is focused on showcasing the advantages and disadvantages of the tree approximations shown in the previous section. </p>
 <p><img alt="synthetic_trees" src="../images/synthetic_trees.png" /></p>
-<h2 id="tree-distance-graphs">Tree distance Graphs</h2>
+<h2 id="using-the-matching-component-of-uted">Using the Matching Component of UTED<a class="headerlink" href="#using-the-matching-component-of-uted" title="Permanent link">&para;</a></h2>
+<p>UTED calculates distances between two tree graphs by matching their nodes. Extracting the matched nodes provides important information, particularly for labeled datasets. For example, when calculating the distance between two embryos, we can identify which clone or sublineage in one embryo corresponds to a clone or sublineage in the other. To support this, UTED includes functions specifically designed to find the matching between two lineages.</p>
+<h3 id="tree-distance-graphs">Tree distance Graphs<a class="headerlink" href="#tree-distance-graphs" title="Permanent link">&para;</a></h3>
 <p style="text-align: justify;">
 
-The distance value is a very useful metric to check the similarity of two lineages, however its just a distance, it does not give you further information. A user should not only know how similar a tree is to another, but also which sublineages/subtrees are similar and which are not! Fortunately, we realized that we can extract important information during an important step of the algorithm, the matched pairs created during the mapping process and plot them into a new graph, called the tree distance graph. To produce these graphs, we color each chain that has been mapped with the value of the subtree spawned by these chains, showing a metric that can be interpreted as the quality of mapping. Such graphs can show two very significant things:
+The distance value is a useful metric for quantifying the similarity between two lineages, but it does not provide detailed information about which sublineages are similar or different. To address this, UTED generates tree distance graphs by leveraging the matched pairs produced during the mapping process.
+
+In these graphs, each matched chain is colored according to the value of its subtree, providing a visual representation of mapping quality. Tree distance graphs reveal two important aspects:
+
+- Variance: The color spectrum highlights the distances of mapped chains. Colors representing good mappings indicate low variance during development.
+
+- Gain or Loss of Function: Unmapped regions indicate lineages that exist in one tree but not the other. This may reflect biological differences, such as the emergence or loss of a lineage, or it may point to data quality issues.
 </p>
-<ul>
-<li>
-<p>Variance: Such graphs will use a spectrum of colors to show the distances that are mapped and how well their mapping is, so colors that correspond to the good mapping indicate small variance during development.</p>
-</li>
-<li>
-<p>Gain or loss of function, the unmapped regions can be interpreted as regions, where no region of one tree corresponds to the one with unmapped (of course this may also happen due to a bad dataset), which means that there is a lineage that does not exist in the other, a new lineage, the organism gained or lost a function!</p>
-</li>
+<p><img alt="example" src="../images/image39151.png" /></p>
+<h2 id="api-reference">API reference<a class="headerlink" href="#api-reference" title="Permanent link">&para;</a></h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<a id="lineagetree.measure"></a>
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="lineagetree.measure.clear_comparisons" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">clear_comparisons</span><span class="p">(</span><span class="n">lT</span><span class="p">:</span> <span class="n">LineageTree</span><span class="p">)</span></code>
+
+<a href="#lineagetree.measure.clear_comparisons" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Clears the comparisons saved on the LineageTree object.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>lT</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="LineageTree (lineagetree.lineage_tree.LineageTree)" href="../api/#lineagetree.LineageTree">LineageTree</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The LineageTree object</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="lineagetree.measure.unordered_tree_edit_distance" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">unordered_tree_edit_distance</span><span class="p">(</span><span class="n">lT</span><span class="p">:</span> <span class="n">LineageTree</span><span class="p">,</span> <span class="n">n1</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n2</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">end_time</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">norm</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;max&#39;</span><span class="p">,</span> <span class="s1">&#39;sum&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;max&#39;</span><span class="p">,</span> <span class="n">style</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;simple&#39;</span><span class="p">,</span> <span class="s1">&#39;normalized_simple&#39;</span><span class="p">,</span> <span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;downsampled&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="nb">type</span><span class="p">[</span><span class="n">TreeApproximationTemplate</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;simple&#39;</span><span class="p">,</span> <span class="n">downsample</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">return_norms</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span></code>
+
+<a href="#lineagetree.measure.unordered_tree_edit_distance" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
+by two nodes <code>n1</code> and <code>n2</code>. The topology of the trees are compared and the matching
+cost is given by the function delta (see edist doc for more information).
+The distance is normed by the function norm that takes the two list of nodes
+spawned by the trees <code>n1</code> and <code>n2</code>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>lT</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="LineageTree (lineagetree.lineage_tree.LineageTree)" href="../api/#lineagetree.LineageTree">LineageTree</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The LineageTree instance.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>n1</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>id of the first node to compare</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>n2</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>id of the second node to compare</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>end_time</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The final time point the comparison algorithm will take into account.
+If None or not provided all nodes will be taken into account.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>norm</code>
+            </td>
+            <td>
+                  <code>(&#39;max&#39;, &#39;sum&#39;)</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The normalization method to use, defaults to 'max'.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#34;max&#34;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>style</code>
+            </td>
+            <td>
+                  <code>(&#39;simple&#39;, &#39;normalized_simple&#39;, &#39;full&#39;, &#39;downsampled&#39;)</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Which tree approximation is going to be used for the comparisons.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#34;simple&#34;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>downsample</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The downsample factor for the downsampled tree approximation.
+Used only when <code>style="downsampled"</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>2</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The normalized unordered tree edit distance between <code>n1</code> and <code>n2</code></p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="lineagetree.measure.unordered_tree_edit_distances_at_time_t" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">unordered_tree_edit_distances_at_time_t</span><span class="p">(</span><span class="n">lT</span><span class="p">:</span> <span class="n">LineageTree</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">end_time</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">style</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;simple&#39;</span><span class="p">,</span> <span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;downsampled&#39;</span><span class="p">,</span> <span class="s1">&#39;normalized_simple&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="nb">type</span><span class="p">[</span><span class="n">TreeApproximationTemplate</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;simple&#39;</span><span class="p">,</span> <span class="n">downsample</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">norm</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;max&#39;</span><span class="p">,</span> <span class="s1">&#39;sum&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;max&#39;</span><span class="p">,</span> <span class="n">recompute</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="nb">float</span><span class="p">]</span></code>
+
+<a href="#lineagetree.measure.unordered_tree_edit_distances_at_time_t" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Compute all the pairwise unordered tree edit distances from Zhang 996 between the trees spawned at time <code>t</code></p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>lT</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="LineageTree (lineagetree.lineage_tree.LineageTree)" href="../api/#lineagetree.LineageTree">LineageTree</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The LineageTree instance.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>t</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>time to look at</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>end_time</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The final time point the comparison algorithm will take into account.
+If None all nodes will be taken into account.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>style</code>
+            </td>
+            <td>
+                  <code>(&#39;simple&#39;, &#39;full&#39;, &#39;downsampled&#39;, &#39;normalized_simple&#39;)</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Which tree approximation is going to be used for the comparisons.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#34;simple&#34;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>downsample</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The downsample factor for the downsampled tree approximation.
+Used only when <code>style="downsampled"</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>2</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>norm</code>
+            </td>
+            <td>
+                  <code>(&#39;max&#39;, &#39;sum&#39;)</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The normalization method to use.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#34;max&#34;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>recompute</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, forces to recompute the distances</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>dict mapping a tuple of tuple that contains 2 ints to float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>a dictionary that maps a pair of node ids at time <code>t</code> to their unordered tree edit distance</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="lineagetree.measure.plot_tree_distance_graphs" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">plot_tree_distance_graphs</span><span class="p">(</span><span class="n">lT</span><span class="p">:</span> <span class="n">LineageTree</span><span class="p">,</span> <span class="n">n1</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n2</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">end_time</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">norm</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;max&#39;</span><span class="p">,</span> <span class="s1">&#39;sum&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;max&#39;</span><span class="p">,</span> <span class="n">style</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;simple&#39;</span><span class="p">,</span> <span class="s1">&#39;normalized_simple&#39;</span><span class="p">,</span> <span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;downsampled&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="nb">type</span><span class="p">[</span><span class="n">TreeApproximationTemplate</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;simple&#39;</span><span class="p">,</span> <span class="n">downsample</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">colormap</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;cool&#39;</span><span class="p">,</span> <span class="n">default_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">lw</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">,</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]</span></code>
+
+<a href="#lineagetree.measure.plot_tree_distance_graphs" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Plots the subtrees compared and colors them according to the quality of the matching of their subtree.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>lT</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="LineageTree (lineagetree.lineage_tree.LineageTree)" href="../api/#lineagetree.LineageTree">LineageTree</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The LineageTree instance.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>n1</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>id of the first node to compare</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>n2</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>id of the second node to compare</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>end_time</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The final time point the comparison algorithm will take into account.
+If None all nodes will be taken into account.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>norm</code>
+            </td>
+            <td>
+                  <code>(&#39;max&#39;, &#39;sum&#39;)</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The normalization method to use.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#34;max&#34;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>style</code>
+            </td>
+            <td>
+                  <code>&#34;simple&#34;, &#34;full&#34;, &#34;downsampled&#34;, &#34;normalized_simple</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Which tree approximation is going to be used for the comparisons.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#34;simple&#34;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>downsample</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The downsample factor for the downsampled tree approximation.
+Used only when <code>style="downsampled"</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>2</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>colormap</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The colormap used for matched nodes, defaults to "cool"</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#34;cool&#34;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>default_color</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The color of the unmatched nodes, defaults to "black"</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;black&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>size</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The size of the nodes, defaults to 10</p>
+              </div>
+            </td>
+            <td>
+                  <code>10</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>lw</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The width of the edges, defaults to 0.3</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.3</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>ax</code>
+            </td>
+            <td>
+                  <code><span title="np.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The axes used, if not provided another set of axes is produced, defaults to None</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="matplotlib.pyplot.Figure">Figure</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The figure of the plot</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="matplotlib.pyplot.Axes">Axes</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The axes of the plot</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="lineagetree.measure.labelled_mappings" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">labelled_mappings</span><span class="p">(</span><span class="n">lT</span><span class="p">:</span> <span class="n">LineageTree</span><span class="p">,</span> <span class="n">n1</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n2</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">end_time</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">norm</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;max&#39;</span><span class="p">,</span> <span class="s1">&#39;sum&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;max&#39;</span><span class="p">,</span> <span class="n">style</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;simple&#39;</span><span class="p">,</span> <span class="s1">&#39;normalized_simple&#39;</span><span class="p">,</span> <span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;downsampled&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="nb">type</span><span class="p">[</span><span class="n">TreeApproximationTemplate</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;simple&#39;</span><span class="p">,</span> <span class="n">downsample</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span></code>
+
+<a href="#lineagetree.measure.labelled_mappings" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the labels or IDs of all the nodes in the subtrees compared.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>lT</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="LineageTree (lineagetree.lineage_tree.LineageTree)" href="../api/#lineagetree.LineageTree">LineageTree</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The LineageTree instance.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>n1</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>id of the first node to compare</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>n2</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>id of the second node to compare</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>end_time</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The final time point the comparison algorithm will take into account.
+If None or not provided all nodes will be taken into account.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>norm</code>
+            </td>
+            <td>
+                  <code>(&#39;max&#39;, &#39;sum&#39;)</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The normalization method to use, defaults to 'max'.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#34;max&#34;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>style</code>
+            </td>
+            <td>
+                  <code>&#34;simple&#34;, &#34;full&#34;, &#34;downsampled&#34;, &#34;normalized_simple</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Which tree approximation is going to be used for the comparisons, defaults to 'simple'.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#34;simple&#34;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>downsample</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The downsample factor for the downsampled tree approximation.
+Used only when <code>style="downsampled"</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>2</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>dict mapping str to list of str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <ul>
+<li>'matched' The labels of the matched nodes of the alignment.</li>
+<li>'unmatched' The labels of the unmatched nodes of the alginment.</li>
 </ul>
-<p><img alt="add_an_example" src="tree_distance_graph.png" /></p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 
 
@@ -726,10 +1885,10 @@ The distance value is a very useful metric to check the similarity of two lineag
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.path", "navigation.expand", "content.code.annotate"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.path", "navigation.expand", "content.code.annotate"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.56ea9cef.min.js"></script>
+      <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>
       
     
   </body>

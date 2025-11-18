@@ -12,11 +12,11 @@
         <link rel="prev" href="../getting-started/">
       
       
-        <link rel="next" href="../loaders/">
+        <link rel="next" href="../core/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.15">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.23">
     
     
       
@@ -24,7 +24,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.84d31ad4.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
@@ -47,6 +47,8 @@
     
     
       <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../styles/extra.css">
     
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -74,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#trees" class="md-skip">
+        <a href="#tree-graphs" class="md-skip">
           Skip to content
         </a>
       
@@ -148,6 +150,46 @@
     
     
     
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
     
   </nav>
   
@@ -211,46 +253,6 @@
       
   
   
-    
-  
-  
-  
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    Getting started
-    
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_2">
-            <span class="md-nav__icon md-icon"></span>
-            Getting started
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
   
   
     <li class="md-nav__item">
@@ -268,10 +270,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
     
@@ -323,117 +324,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#trees" class="md-nav__link">
+  <a href="#tree-graphs" class="md-nav__link">
     <span class="md-ellipsis">
-      Trees
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#nodes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Nodes
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#edges" class="md-nav__link">
-    <span class="md-ellipsis">
-      Edges
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#successors" class="md-nav__link">
-    <span class="md-ellipsis">
-      Successors
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#predecessors" class="md-nav__link">
-    <span class="md-ellipsis">
-      Predecessors
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#roots" class="md-nav__link">
-    <span class="md-ellipsis">
-      Roots
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#leaves" class="md-nav__link">
-    <span class="md-ellipsis">
-      Leaves
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#divisions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Divisions
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#chains" class="md-nav__link">
-    <span class="md-ellipsis">
-      Chains
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#subtree" class="md-nav__link">
-    <span class="md-ellipsis">
-      Subtree
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#siblings" class="md-nav__link">
-    <span class="md-ellipsis">
-      Siblings
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#time" class="md-nav__link">
-    <span class="md-ellipsis">
-      Time
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#time-resolution" class="md-nav__link">
-    <span class="md-ellipsis">
-      Time resolution
+      Tree Graphs
     </span>
   </a>
   
@@ -446,11 +339,25 @@
     </li>
   
 
-              
-            
-          </ul>
-        </nav>
+    
       
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Core Utility
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -505,6 +412,46 @@
   
   
   
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Analysis
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Analysis
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href="../uted/" class="md-nav__link">
         
@@ -517,6 +464,60 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dtw/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Dynamic Time Warping
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../spatial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Spatial
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -568,117 +569,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#trees" class="md-nav__link">
+  <a href="#tree-graphs" class="md-nav__link">
     <span class="md-ellipsis">
-      Trees
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#nodes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Nodes
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#edges" class="md-nav__link">
-    <span class="md-ellipsis">
-      Edges
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#successors" class="md-nav__link">
-    <span class="md-ellipsis">
-      Successors
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#predecessors" class="md-nav__link">
-    <span class="md-ellipsis">
-      Predecessors
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#roots" class="md-nav__link">
-    <span class="md-ellipsis">
-      Roots
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#leaves" class="md-nav__link">
-    <span class="md-ellipsis">
-      Leaves
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#divisions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Divisions
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#chains" class="md-nav__link">
-    <span class="md-ellipsis">
-      Chains
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#subtree" class="md-nav__link">
-    <span class="md-ellipsis">
-      Subtree
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#siblings" class="md-nav__link">
-    <span class="md-ellipsis">
-      Siblings
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#time" class="md-nav__link">
-    <span class="md-ellipsis">
-      Time
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#time-resolution" class="md-nav__link">
-    <span class="md-ellipsis">
-      Time resolution
+      Tree Graphs
     </span>
   </a>
   
@@ -703,93 +596,120 @@
   <h1>Glossary</h1>
 
 <p>This tool may interest individuals with and without a background in computer science, so all users need to become familiar with the nomenclature used by LineageTree. To that end, this glossary defines the terms used throughout the project.</p>
+<hr />
 <ul>
 <li>
-<h3 id="trees">Trees</h3>
-</li>
+<h2 id="tree-graphs">Tree Graphs<a class="headerlink" href="#tree-graphs" title="Permanent link">&para;</a></h2>
+ A tree graph is a hierarchical acyclic graph that contains nodes and edges, <strong>LineageTree is a tree graph</strong> that has at most 2 successors for one node. To create a demo tree the user can call</li>
 </ul>
-<p>A tree is a hierarchical acyclic graph that contains nodes and edges, lineageTree works with at most 2 successors for one node. To create a demo tree the user can call</p>
-<pre><code class="language-python">from lineagetree import LineageTree
-lT = LineageTree(successors= {i:[i+1] for i in range(10)})
-</code></pre>
-<p><img alt="Image for glossary" src="../images/glossary_image.png" /></p>
-<blockquote>
-<p>The differences between a biological lineage and a LineageTree lineage</p>
-</blockquote>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">lineagetree</span><span class="w"> </span><span class="kn">import</span> <span class="n">LineageTree</span>
+<span class="n">lT</span> <span class="o">=</span> <span class="n">LineageTree</span><span class="p">(</span><span class="n">successors</span><span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)})</span>
+</code></pre></div>
+<!-- 
+ ![Image for glossary](./images/glossary_image.png)
+> The differences between a biological lineage and a LineageTree.
+
+- ### Nodes
+ The **smallest part of a LineageTree**, a point that may or may not connect to others. The set of all the nodes may be accessed by ```lT.nodes```
+
+- ### Edges
+ The object that **connects 2 nodes**, in the case of the tree its also directed (goes one way). The edges may be accessed through ```lT.edges```
+
+- ### Successors
+ The successor of a **node n in timepoint t is the node n' in timepoint t+1** and is connected to the node n. The immutable dictionary (MappingProxy) of all the successors may be accessed by ```lT.successor```
+
+- ### Predecessors
+ The predecessor of a **node n in timepoint t is the node n' in timepoint t-1** and is connected to the node n. The immutable dictionary (MappingProxy) of all the predecessors may be accessed by ```lT.predecessor```
+
+- ### Roots
+ The root of a tree is **a node that has no predecessors**. In the case of lineageTree the root has an empty tuple as predecessor. LineageTree allows for many roots to exist in the same file. The set of roots may be accessed by using ```lT.roots```
+
+- ### Leaves
+ The leaf of a tree is **a node that has no successors**. In the case of lineageTree the leaf has an empty tuple as a successor. The set of leaves may be accessed through ```lT.leaves```
+
+- ### Chains
+ A **tree segment**, where **all nodes are between a division or root and a division or a leaf**. To access a chain that contains a specific node `n`, the user may use:``` lT.get_chain_of_node(n) ```
+ A continuous subset of a chain may be referred to as a subchain or a path, which is not a chain.
+
+- ### Divisions
+ An event where **one node has 2 successors** instead of one. There is no direct way to access a division; however, the node that is before a division (or after) is always at the end or start of a chain (except for the cases that the chain contains a leaf or a root)
+
+- ### Subtree
+ Any segment of a tree that is also a tree. The function ```lT.get_sub_tree(node)``` will return a list of all the nodes contained inside the subtree.
+
+- ### Siblings
+ **Two nodes that have the same predecessor**. Often used for chains where the first node of each chain has the same predecessor as the other one.
+
+- ### Time
+ The time point at which the nodes exist. This property concerns time points and is not real time.
+ The immutable dictionary (MappingProxy) containing the time information for all the nodes may be accessed through ```lT.times```.
+
+- ### Time resolution
+ How long one time point lasts, relevant only for comparisons across lineages. This attribute can be a property or inspected by ```lT.time_resolution```.
+
+ -->
+
+<div class="split-container">
+  <div >
+
 <ul>
-<li>
-<h3 id="nodes">Nodes</h3>
-</li>
+
+  <li>
+    <p><strong>Nodes:</strong> The smallest part of a LineageTree, representing a point (usually a cell at a timepoint). All nodes can be accessed with <code>lT.nodes</code>.</p>
+  </li>
+
+  <li>
+    <p><strong>Edges:</strong> Objects that connect two nodes. In a lineage tree the edges are directed. All edges can be accessed with <code>lT.edges</code>.</p>
+  </li>
+
+  <li>
+    <p><strong>Successors:</strong> The successor of a node n at time t is the node n' at time t+1 that connects from n. The mapping of all successors can be accessed with <code>lT.successor</code>.</p>
+  </li>
+
+  <li>
+    <p><strong>Predecessors:</strong> The predecessor of a node n at time t is the node n' at time t−1 that connects into n. The mapping of all predecessors can be accessed with <code>lT.predecessor</code>.</p>
+  </li>
+
+  <li>
+    <p><strong>Roots:</strong> A node with no predecessors. In LineageTree, a root has an empty tuple as predecessor. Multiple roots may exist. All roots can be accessed with <code>lT.roots</code>.</p>
+  </li>
+
+  <li>
+    <p><strong>Leaves:</strong> A node with no successors. In LineageTree, a leaf has an empty tuple as successor. All leaves can be accessed with <code>lT.leaves</code>.</p>
+  </li>
+
+  <li>
+    <p><strong>Chains:</strong> A tree segment where all nodes lie between a root or division and a division or leaf. The chain containing node <code>n</code> can be accessed with <code>lT.get_chain_of_node(n)</code>. A continuous part of a chain is a subchain or path.</p>
+  </li>
+
+  <li>
+    <p><strong>Divisions:</strong> Events where one node has two successors instead of one. Divisions are inferred because the node before a division is at the end of a chain.</p>
+  </li>
+
+  <li>
+    <p><strong>Subtree:</strong> Any tree segment that is itself a tree. The subtree rooted at a given node can be retrieved with <code>lT.get_sub_tree(node)</code>.</p>
+  </li>
+
+  <li>
+    <p><strong>Siblings:</strong> Two nodes that share the same predecessor. Often refers to the first nodes of chains originating from the same division.</p>
+  </li>
+
+  <li>
+    <p><strong>Time:</strong> The discrete timepoint at which nodes exist (not real time). All node → time information can be accessed with <code>lT.times</code>.</p>
+  </li>
+
+  <li>
+    <p><strong>Time resolution:</strong> The duration represented by one timepoint. Useful for comparing different lineages. This value can be accessed via <code>lT.time_resolution</code>.</p>
+  </li>
+
 </ul>
-<p>The smallest part of a tree, a point that may or may not connect to others. The set of all the nodes may be accessed by <code>lT.nodes</code></p>
-<ul>
-<li>
-<h3 id="edges">Edges</h3>
-</li>
-</ul>
-<p>The lTect that connects 2 nodes, in the case of the tree its also directed (goes one way). The edges may be accessed throug <code>lT.edges</code></p>
-<ul>
-<li>
-<h3 id="successors">Successors</h3>
-</li>
-</ul>
-<p>The successor of a node n is a node connected with an edge to the node n that exists one level (timepoint) lower than n. The immutable dictionary (MappingProxy) of all the successors may be accessed by <code>lT.successor</code></p>
-<ul>
-<li>
-<h3 id="predecessors">Predecessors</h3>
-</li>
-</ul>
-<p>The predecessor of a node n is a node connected to the node that exists one time point higher than n. The immutable dictionary (MappingProxy) of all the predecessors may be accessed by <code>lT.predecessor</code></p>
-<ul>
-<li>
-<h3 id="roots">Roots</h3>
-</li>
-</ul>
-<p>The root of a tree is a node that has no predecessors. In the case of lineageTree the root has an empty tuple as predecessor. LineageTree allows for many roots to exist in the same file. The set of roots may be accessed by using <code>lT.roots</code></p>
-<ul>
-<li>
-<h3 id="leaves">Leaves</h3>
-</li>
-</ul>
-<p>The leaf of a tree is a node that has no successors. In the case of lineageTree the leaf has an empty tuple as a successor. The set of leaves may be accessed through <code>lT.leaves</code></p>
-<ul>
-<li>
-<h3 id="divisions">Divisions</h3>
-</li>
-</ul>
-<p>An event where one node has 2 successors instead of one. There is no direct way to access a division; however, the node that is before a division (or after) is always at the end or start of a chain (except for the cases that the chain contains a leaf or a root)</p>
-<ul>
-<li>
-<h3 id="chains">Chains</h3>
-</li>
-</ul>
-<p>A tree segment, where all nodes are between a division or root and a division or a leaf. To access a chain that contains a specific node <code>n</code>, the user may use:<code>lT.get_chain_of_node(n)</code>
-A continuous subset of a chain may be referred to as a subchain or a path, which is not a chain.</p>
-<ul>
-<li>
-<h3 id="subtree">Subtree</h3>
-</li>
-</ul>
-<p>Any segment of a tree that is also a tree. Using the function <code>lT.get_sub_tree(node)</code> will not provide a new lineageTree but a list of all the nodes contained inside the subtree.</p>
-<ul>
-<li>
-<h3 id="siblings">Siblings</h3>
-</li>
-</ul>
-<p>Two nodes that have the same predecessor. Often used for chains where the first node of each chain has the same predecessor as the other one.</p>
-<ul>
-<li>
-<h3 id="time">Time</h3>
-</li>
-</ul>
-<p>The time point at which the nodes exist. This property concerns time points and is not real time.
- The immutable dictionary (MappingProxy) containing the time information for all the nodes may be accessed through <code>lT.times</code>.</p>
-<ul>
-<li>
-<h3 id="time-resolution">Time resolution</h3>
-</li>
-</ul>
-<p>How long one time point lasts, relevant only for comparisons across lineages. This attribute can be a property or inspected by <code>lT.time_resolution</code>.</p>
+
+
+  </div>
+  <div class="fixed-right">
+    <img src="../images/glossary_image.png" alt="My Image"> 
+  </div>
+</div>
 
 
 
@@ -838,10 +758,10 @@ A continuous subset of a chain may be referred to as a subchain or a path, which
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.path", "navigation.expand", "content.code.annotate"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.path", "navigation.expand", "content.code.annotate"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.56ea9cef.min.js"></script>
+      <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>
       
     
   </body>

@@ -14,7 +14,7 @@
       
       
       <link rel="icon" href="assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.15">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.23">
     
     
       
@@ -22,7 +22,7 @@
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.342714a4.min.css">
+      <link rel="stylesheet" href="assets/stylesheets/main.84d31ad4.min.css">
       
         
         <link rel="stylesheet" href="assets/stylesheets/palette.06af60db.min.css">
@@ -45,6 +45,8 @@
     
     
       <link rel="stylesheet" href="assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="styles/extra.css">
     
     <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -145,6 +147,46 @@
       <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
     
     
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
     
     
   </nav>
@@ -249,6 +291,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#unordered-tree-edit-distance-uted" class="md-nav__link">
+    <span class="md-ellipsis">
+      Unordered Tree Edit Distance (UTED)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#quick-installation" class="md-nav__link">
     <span class="md-ellipsis">
       Quick Installation
@@ -280,46 +331,6 @@
   
   
   
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    Getting started
-    
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2">
-            <span class="md-nav__icon md-icon"></span>
-            Getting started
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
     <li class="md-nav__item">
       <a href="getting-started/" class="md-nav__link">
         
@@ -335,10 +346,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
   
@@ -358,11 +368,25 @@
     </li>
   
 
-              
-            
-          </ul>
-        </nav>
+    
       
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Core Utility
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -417,6 +441,46 @@
   
   
   
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Analysis
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Analysis
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href="uted/" class="md-nav__link">
         
@@ -429,6 +493,60 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="dtw/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Dynamic Time Warping
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="spatial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Spatial
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -491,6 +609,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#unordered-tree-edit-distance-uted" class="md-nav__link">
+    <span class="md-ellipsis">
+      Unordered Tree Edit Distance (UTED)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#quick-installation" class="md-nav__link">
     <span class="md-ellipsis">
       Quick Installation
@@ -524,25 +651,32 @@
 
 
 
-<h1 id="welcome-to-lineagetree-documentation">Welcome to LineageTree Documentation</h1>
-<p>LineageTree is a Python framework specialized in cell tracking data. It supports importing standard or custom formats and comprehensive processing and comparison analysis capabilities.</p>
-<h2 id="why-should-i-use-lineagetree">Why should I use LineageTree?</h2>
+<h1 id="welcome-to-lineagetree-documentation">Welcome to LineageTree Documentation<a class="headerlink" href="#welcome-to-lineagetree-documentation" title="Permanent link">&para;</a></h1>
+<p>LineageTree is a Python framework specialized in analyzing cell tracking data. It supports standard or custom tracking data formats and allows temporal and spatial analysis.</p>
+<hr />
+<h2 id="why-should-i-use-lineagetree">Why should I use LineageTree?<a class="headerlink" href="#why-should-i-use-lineagetree" title="Permanent link">&para;</a></h2>
 <p style="text-align: justify;">
 
-How does a cluster of cells become organized? Do cells move and divide randomly until an organism starts to exist? People from multiple fields have worked tirelessly to answer such questions, resulting in better microscopy techniques to image embryos developing in real time and software that allows users to track nuclei or particles inside the organisms. Many scientists have developed algorithms analyzing the positions of all these particles, however, there is a lack of software that takes time and division patterns into account. LineageTree offers out-of-the-box algorithms to compare lineage data to extract results on the similarity of lineages. It also offers a strong enough backbone for the user to build their algorithms to analyze time and spatial data. One type of lineage data analysis is lineage comparison, which can provide useful information on how variable the development of an organism is, or extract information on fate gain or loss, or check for symmetric lineages in one organism. A napari plugin called [ReLAX](http://127.0.0.1:8000/). accompanies this framework, where the user can explore a digital clone of the embryo on both spatial and image data (4D 3D+time), label different lineages, and perform systematic comparison analysis on imported lineages.
-Using LineageTree the user can:
+Understanding how a cluster of cells becomes a structured organism is a central question in developmental biology. Modern microscopy now allows researchers to image embryos in real time, and many tools exist for tracking nuclei or particles over time. However, most available software focuses primarily on spatial positions and lacks robust support for analyzing temporal structure and division patterns within lineages. LineageTree offers out-of-the-box algorithms to compare lineage data using both temporal and spatial information, while offers a strong enough backbone for the user to build their own algorithms.
 </p>
 
+<p>Using LineageTree the user can:</p>
 <ul>
-<li>Import any tracking format (link to loaders)</li>
-<li>Perform analysis on the data ( link to tree_styles) (maybe talk a bit about the spatial algorithms)?</li>
-<li>Perform unordered tree edit distance analysis using different heuristics (tree_Styles)</li>
-<li>Visualize lineages imported (plot_node, plot_lineages)</li>
+<li><a href="loaders/">Import any tracking format</a></li>
+<li>Perform <a href="spatial/">spatial</a> analysis on the data</li>
+<li>Perform <a href="uted/">unordered tree edit distance analysis</a> using different heuristics </li>
+<li><a href="viz/">Visualize lineages</a> imported</li>
 </ul>
-<h2 id="quick-installation">Quick Installation</h2>
-<pre><code class="language-python">pip install LineageTree
-</code></pre>
-<h2 id="content">Content</h2>
+<hr />
+<h2 id="unordered-tree-edit-distance-uted">Unordered Tree Edit Distance (UTED)<a class="headerlink" href="#unordered-tree-edit-distance-uted" title="Permanent link">&para;</a></h2>
+<p>One of the core analysis algorithms provided by this module is UTED, an approach designed to quantify how similar or dissimilar two lineages are. Calculating lineage distances is a powerful way to analyze developmental variability, identify fate gain or loss, and detect lineage symmetry within a single organism.</p>
+<p>This framework is complemented by the napari plugin <a href="https://guignardlab.github.io/napari-relax/">ReLAX</a>. ReLAX allows users to explore a digital clone of the embryo in both space and time, annotate lineages, and perform systematic comparisons on imported lineage data. Together, these tools offer an integrated environment for visualizing, labeling, and analyzing lineage structures with temporal and spatial context.</p>
+<!-- </p> -->
+
+<h2 id="quick-installation">Quick Installation<a class="headerlink" href="#quick-installation" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">pip</span> <span class="n">install</span> <span class="n">LineageTree</span>
+</code></pre></div>
+<h2 id="content">Content<a class="headerlink" href="#content" title="Permanent link">&para;</a></h2>
 <p><a href="getting-started/">Getting started</a>: Installation guide</p>
 <p><a href="glossary/">Glossary</a>: Contains all the different nomenclature the project is using and shows the connection with biological lineages.</p>
 
@@ -593,10 +727,10 @@ Using LineageTree the user can:
     
     
       
-      <script id="__config" type="application/json">{"base": ".", "features": ["navigation.path", "navigation.expand", "content.code.annotate"], "search": "assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": ".", "features": ["navigation.path", "navigation.expand", "content.code.annotate"], "search": "assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="assets/javascripts/bundle.56ea9cef.min.js"></script>
+      <script src="assets/javascripts/bundle.f55a23d4.min.js"></script>
       
     
   </body>

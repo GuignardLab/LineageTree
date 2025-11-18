@@ -1,0 +1,201 @@
+
+.scrollable-left4 {
+  flex: 0 0 45%;             /* left column width */
+  display: flex;              /* make it a flex container */
+  flex-direction: column;     /* stack text vertically */
+  justify-content: center;    /* vertical centering inside left column */
+  align-items: flex-start;
+  text-align: left ;
+  height: auto;
+  padding-right: 2rem;
+}
+
+.fixed-right4 {
+  flex: 0 0 600px;            /* right column width */
+  display: flex;               /* flex for vertical centering */
+  flex-direction: column;
+  justify-content: center;     /* vertical centering inside right column */
+  align-items: right;         /* horizontal centering of image */
+  height: 100%;                /* match parent container height */
+  padding: 0;                  /* optional */
+}
+
+.fixed-right4 img {
+  max-width: 150%;
+  max-height: 150%;
+  object-fit: contain;
+}
+
+
+.scrollable-left1 {
+  flex: 0 0 50%;             /* left column width */
+  display: flex;              /* make it a flex container */
+  flex-direction: column;     /* stack text vertically */
+  justify-content: center;    /* vertical centering inside left column */
+  align-items: flex-start;
+  text-align: left ;
+  height: auto;
+  padding-right: 2rem;
+}
+
+.fixed-right1 {
+  flex: 0 0 500px;            /* right column width */
+  display: flex;               /* flex for vertical centering */
+  flex-direction: column;
+  justify-content: center;     /* vertical centering inside right column */
+  align-items: center;         /* horizontal centering of image */
+  height: 100%;                /* match parent container height */
+  padding: 0;                  /* optional */
+}
+
+.fixed-right1 img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.fixed-right3 {
+  flex: 1;          /* right column width */
+  display: flex;            
+  flex-direction: column;
+  justify-content: flex-start;  /* align to top */
+  align-items: flex-start;      /* align to left */
+  height: 350%;                
+  padding: 0;
+  position: sticky;
+
+}
+
+.fixed-right3 img {
+  width: 300%;                 /* or any size you like */
+  flex: none;
+}
+.split-container3 {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  max-width: auto;
+  min-height: 10vh;
+  /* overflow: hidden; */
+}
+
+
+
+.split-container {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  /* max-width: 1500px; */
+  min-height: 90vh;
+  /* overflow: hidden; */
+}
+
+.scrollable-left {
+  flex: 0 0 10%;
+  /* overflow-y: scroll; */
+  height: 100vh;
+  padding-right: 2rem;
+}
+
+.fixed-right {
+  flex: 0 0 500px;       /* width of the image area */
+  position: sticky;
+  top: 0;                 /* stick to top of viewport */
+  height: 100vh;
+  display: flex;
+  flex-direction: column; /* align items from top */
+  align-items: center;    /* horizontal centering */
+  justify-content: flex-start; /* push content to top */
+  padding-top: 5rem;      /* optional spacing from top */
+  overflow-y: auto;
+}
+
+.fixed-right img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+}
+.split-container1 {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  max-width: 1500px;
+  min-height: 10vh;
+  /* overflow: hidden; */
+  }
+/* Right sidebar flush to the right window edge */
+.md-sidebar--secondary {
+    right: 0 !important;          /* flush against right edge */
+    width: 200px;                 /* adjust width as needed */
+    padding-left: 2rem;
+    padding-right: 0;
+}
+
+
+/* Make main content respect the new sidebar width */
+.md-main {
+    margin-right: 1px !important;  /* same as .md-sidebar--secondary width */
+}
+
+/* Optional: scrollable right sidebar */
+.md-sidebar--secondary {
+    height: calc(100vh - var(--md-header-height));
+    overflow-y: auto;
+}
+
+/* Optional: reduce gap between content and sidebar */
+.md-main__inner {
+    max-width: calc(100% - 150px) !important;  /* content width minus sidebar */
+}
+
+
+@media (max-width: 1024px) {
+  /* Tablets and medium screens */
+  .split-container1 {
+    flex-direction: column;       /* stack text over image */
+    align-items: center;
+    max-height: none;
+  }
+
+  .scrollable-left1 {
+    flex: 1 1 auto;
+    width: 100%;
+    padding-right: 0;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  .fixed-right1 {
+    flex: 1 1 auto;
+    width: 80%;
+    height: auto;
+  }
+
+  .fixed-right1 img {
+    max-width: 80%;
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Mobile phones */
+  .split-container1 {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .scrollable-left1 {
+    width: 100%;
+    padding: 1rem;
+  }
+
+  .fixed-right1 {
+    width: 100%;
+    height: auto;
+    padding: 0;
+  }
+
+  .fixed-right1 img {
+    max-width: 90%;
+    max-height: 200px;
+  }
+}
