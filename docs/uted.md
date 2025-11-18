@@ -2,15 +2,15 @@
 
 While visual inspection allows for identifying similarities and differences between lineages, it is insufficient for scientific analysis. Therefore, mathematical tools are required to objectively analyze and compare such structures. This module focuses on finding such patterns across lineages using an unordered tree edit distance (UTED) algorithm developed by [citation]. UTED computes the minimum number of operations to transform one tree to the other. In simpler words, how many nodes do we have to add or remove to transform one tree so that it has the same branches as the other one. Apart from adding and removing nodes the algorithm mayh also substitute nodes with no cost. The fact the algorithm can substitute nodes without any cost means that this algorithm just checks the topology. Summarizing there are 3 operations that will be used for transforming trees:
 
-- Adding nodes: The same cost as removing
-- Removing nodes: The same cost as adding nodes
-- Substituting/Matching nodes: Usually less cost than adding/removing the nodes being compared.
+- **Adding nodes**: The same cost as removing
+- **Removing nodes**: The same cost as adding nodes
+- **Substituting/Matching nodes**: Usually less cost than adding/removing the nodes being compared.
 
 ---
 
 ## Why UTED?
 
-There are multiple algorithms that specialize in comparing tree graphs, like the ones used in phylogeny research, why is this the one we focus on? All these algorithms require the label of the node, thus instead of transforming one tree to the other in terms of topology they aim to create the exact same tree. These algorithms would find great use in organisms like ***C. Elegans*** where all of their lineages have been thoroughly studied. Other specimens may not have such a simplistic development so it is impossible to label them correctly.
+There are multiple algorithms that specialize in comparing tree graphs, like the ones used in phylogeny research, why is this the one we focus on? All these algorithms require the label of the node, thus instead of transforming one tree to the other in terms of topology they aim to create the exact same tree. These algorithms would find great use in organisms like ***C. Elegans*** where all of their lineages have been thoroughly studied. Other specimens may not have such a simplistic and well studied development so it is impossible to label them correctly.
 
 UTED is label agnostic, meaning it can compare lineages without needing any prior knowledge of the naming of the cell, meaning that 2 daughter cells are born equal, however this strength comes with a significant drawback: the algorithm must map nodes from one tree to another which makes time consumed scale exponentially to the number of nodes, because there are many possible mappings. This pairing always respects the hierarchical structure of the trees; thus, nodes that exist at a specific depth will only be mapped to nodes of the same depth or greater. 
 
@@ -36,7 +36,7 @@ To address this computational challenge, we developed 3 approaches that reduce t
 
     Downsampled Tree is slightly less accurate or equal (according to the downsampling rate) to normal tree, but much faster.
 
-3. **Reduced Tree**: This algorithm will reconstruct the trees, but every chain will be replaced with a node of the same length. Meaning that the number of nodes in the new trees will be equal to the number of chains in the original lineage.
+3. **Reduced Tree**: This algorithm will reconstruct the trees, but every chain will be replaced with a node of a length attribute that will have the same value as the chains length. Meaning that the number of nodes in the new trees will be equal to the number of chains in the original lineage.
 
 This approximation completely changes the behaviour of the algorithm, as it will match whole chains with other chains and not just nodes. Such an algorithm may be extremely useful for fast but not precise results, however some biological question may be better answered using this algorithm.
 
@@ -63,11 +63,14 @@ from LineageTree import tree_styles
 tree_styles.tree_style["simple"].value(parameters)
 ```
 
+---
+
 ## The need for normalization - Making UTED interpretable
 
-For biological uses UTED is great to measure similarity of 2 trees, but UTED produces distances in the range of zero to infinity, meaning that the results are not easily interpretable. Having this in mind two large trees that look similar may have a bigger distance than two relatively small, but very disimilar trees. Thus, to bound these distances and convert them to a similarity measure we created 2 normalization algorithms. 
+For biological uses UTED is great to measure similarity of 2 trees, but UTED produces distances in the range of zero to infinity, meaning that the results are not easily interpretable. Having this in mind two large trees that look similar may have a bigger distance than two relatively small, but very disimilar trees. Thus, to bound these distances and convert them to a similarity measure we created 2 normalization algorithms:
 
-- **Sum**: The maximum distance between 2 random trees is the cost to convert one tree to null and then create the other tree from null. 
+- **Sum**: The maximum distance between 2 random trees is the cost to convert one tree to null and then create the other tree from null.
+- **Max**: The result distance is divided by the cost to create the largest of the 2 trees from scratch, this algorithm primarily produces results in the range of 0 and 1, but sometimes for very disimilar trees the result may be greater than 1.
 
 
 <!-- 1. **Normal**: The distance of 2 trees is divided by the max or the sum of the number of nodes of the trees used.
@@ -77,12 +80,6 @@ For biological uses UTED is great to measure similarity of 2 trees, but UTED pro
 3. **Reduced**: The distance of 2 trees is divided by the max or the sum of the number of nodes of the trees used before being converted to the reduced form ( Equal to the sum of all the node sizes after the conversion).
 
 4.**Normalized Reduced**: The distance of 2 trees is divided by the max or the sum of the number of chains that exist in each tree. -->
-
-Normalization in general
-
-- Max: This way of normalization produces values that are well distributed along the [0,1] axis, however, trees that show extreme disimilarity may produce values slightly bigger than one (1.16 max). However, most of the time, the compared trees are not that different, so it is a rare occasion.
-
-- Sum: This way of normalization bounds the values between [0,1];  however, most trees will be distributed along the [0,0.5] axis, meaning it's more difficult to distinguish the similar trees from the dissimilar. 
 
 Template to create new styles:
 
@@ -138,12 +135,6 @@ This section is focused on showcasing the advantages and disadvantages of the tr
 
 ![synthetic_trees](./images/synthetic_trees.png)
 
-<!-- ### API reference
-
-#### :::lineagetree.measure.unordered_tree_edit_distance
-#### :::lineagetree.measure.unordered_tree_edit_distances_at_time_t
-#### :::lineagetree.measure.clear_comparisons -->
-
 
 ## Using the Matching Component of UTED
 
@@ -164,10 +155,10 @@ In these graphs, each matched chain is colored according to the value of its sub
 
 - Gain or Loss of Function: Unmapped regions indicate lineages that exist in one tree but not the other. This may reflect biological differences, such as the emergence or loss of a lineage, or it may point to data quality issues.
 </p>
-![add_an_example](./images/image39151.png)
+![example](./images/image39151.png)
 
 
-## API 
+## API reference
 
 ### ::: lineagetree.measure
         options:

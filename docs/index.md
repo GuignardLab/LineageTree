@@ -8,21 +8,25 @@ LineageTree is a Python framework specialized in analyzing cell tracking data. I
 
 <p style="text-align: justify;">
 
-How does a cluster of cells become organized? Do cells move and divide randomly until an organism starts to exist? People from multiple fields have worked tirelessly to answer such questions, resulting in better microscopy techniques to image embryos developing in real time and software that allows users to track nuclei or particles inside the organisms. Many scientists have developed algorithms analyzing the positions of all these particles, however, there is a lack of software that takes time and division patterns into account. LineageTree offers out-of-the-box algorithms to compare lineage data to extract results on the similarity of lineages. It also offers a strong enough backbone for the user to build their algorithms to analyze temporal and spatial data.
+Understanding how a cluster of cells becomes a structured organism is a central question in developmental biology. Modern microscopy now allows researchers to image embryos in real time, and many tools exist for tracking nuclei or particles over time. However, most available software focuses primarily on spatial positions and lacks robust support for analyzing temporal structure and division patterns within lineages. LineageTree offers out-of-the-box algorithms to compare lineage data using both temporal and spatial information, while offers a strong enough backbone for the user to build their own algorithms.
 </p>
-<!-- <p style="text-align: justify;"> -->
----
-## Unordered Tree Edit Distance (UTED)
-
-One type of lineage data analysis is distance calculation, ehich means to find how similar or disimilar 2 lineages may be. This amalysis can provide useful information on how variable the development of an organism is, or extract information on fate gain or loss, or check for symmetric lineages in one organism. A napari plugin called [ReLAX](https://guignardlab.github.io/napari-relax/). accompanies this framework, where the user can explore a digital clone of the embryo on both spatial and temporal data, label different lineages, and perform systematic comparison analysis on imported lineages.
-<!-- </p> -->
 
 Using LineageTree the user can:
 
 - [Import any tracking format](./loaders.md)
-- Perform spatial analysis on the data
+- Perform [spatial](./spatial.md) analysis on the data
 - Perform [unordered tree edit distance analysis](./uted.md) using different heuristics 
 - [Visualize lineages](./viz.md) imported
+
+---
+## Unordered Tree Edit Distance (UTED)
+
+One of the core analysis algorithms provided by this module is UTED, an approach designed to quantify how similar or dissimilar two lineages are. Calculating lineage distances is a powerful way to analyze developmental variability, identify fate gain or loss, and detect lineage symmetry within a single organism.
+
+This framework is complemented by the napari plugin [ReLAX](https://guignardlab.github.io/napari-relax/). ReLAX allows users to explore a digital clone of the embryo in both space and time, annotate lineages, and perform systematic comparisons on imported lineage data. Together, these tools offer an integrated environment for visualizing, labeling, and analyzing lineage structures with temporal and spatial context.
+<!-- </p> -->
+
+
 
 ## Quick Installation
 
