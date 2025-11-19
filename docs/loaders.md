@@ -13,7 +13,12 @@ Multiple well known formats are ready for import out of the box:
 
 The user may also decide to import their custom format. The bare minimum inormation needed to create a Lineage tree is the hierarchy of the nodes, which is a Python dictionary of the successors or the predecessors shown in the example:
 
- ```successor/predecessor : {unique_node_id (int) : [next_unique_node_ids (int)]}```
+ ```successor/predecessor : {unique_node_id (int) : [next_unique_node_ids (int)]}
+
+    lT = Lineagetree(successor= successor) 
+    ###or### 
+    LineageTree(predecessor= predecessor)
+ ```
 
 Other attributes that can be used to initiate a lineageTree file apart from the hierarchy dictionary are:
 
@@ -49,7 +54,7 @@ def template_load(path, name=None):
    # Step 2: Build the relationship dictionary
    relations = {}
    for unique_id in data:
-       related_ids = data.get_neighbour(unique_id) # <- Implement this function or change the block according to format
+       related_ids = data.get_descendantsr(unique_id) # <- Implement this function or change the block according to format
        if related_ids:
            relations[unique_id] = related_ids
 

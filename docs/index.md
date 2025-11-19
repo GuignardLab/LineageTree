@@ -8,7 +8,7 @@ LineageTree is a Python framework specialized in analyzing cell tracking data. I
 
 <p style="text-align: justify;">
 
-Understanding how a cluster of cells becomes a structured organism is a central question in developmental biology. Modern microscopy now allows researchers to image embryos in real time, and many tools exist for tracking nuclei or particles over time. However, most available software focuses primarily on spatial positions and lacks robust support for analyzing temporal structure and division patterns within lineages. LineageTree offers out-of-the-box algorithms to compare lineage data using both temporal and spatial information, while offers a strong enough backbone for the user to build their own algorithms.
+Understanding how a cluster of cells becomes a structured organism is a central question in developmental biology. Modern microscopy now allows researchers to image embryos in real time, and many tools exist for tracking nuclei or particles over time. However, most available software focuses primarily on spatial positions and lacks robust support for analyzing temporal structure and division patterns within lineages. LineageTree offers out-of-the-box algorithms to compare cell lineage data using both temporal and spatial information, while offers a strong enough backbone for the user to build their own algorithms.
 </p>
 
 Using LineageTree the user can:
