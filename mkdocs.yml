@@ -25,21 +25,20 @@ markdown_extensions:
   - tables
   - pymdownx.superfences   
 plugins:
-- search
-- mkdocstrings:
-    handlers:
-      python:            
-        options:
-          special_members: []   # <--- disable all auto-included dunder methods
-          docstring_style: numpy
-          show_source: false
-          follow_imports: true
-          show_signature_annotations: true
-          members_order: source
-          heading_level: 2
-          filters:
-              - "!^__.*__$"     # exclude __dunder__ methods
-              - "!^_.*"         # exclude _private methods
+  - search
+  - mkdocstrings:
+      handlers:
+        python:            
+          options:
+            docstring_style: numpy
+            show_source: false
+            follow_imports: true
+            show_signature_annotations: true
+            members_order: source
+            heading_level: 2
+            filters:
+                - "!^__.*__$"     # exclude __dunder__ methods
+                - "!^_.*"         # exclude _private methods
 extra_css:
   - styles/extra.css
 

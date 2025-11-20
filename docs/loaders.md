@@ -91,5 +91,6 @@ def template_load(path, name=None):
 
 #### ::: lineagetree
             options:
+                summary: true
                 filters:
                     - "^read_"

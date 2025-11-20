@@ -3,7 +3,7 @@ This tool may interest individuals with and without a background in computer sci
 
 ---
 
-- ## Tree Graphs
+## Tree Graphs
  A tree graph is a hierarchical acyclic graph that contains nodes and edges, **LineageTree is a tree graph** that has at most 2 successors for one node. To create a demo tree the user can call
  
 ```python

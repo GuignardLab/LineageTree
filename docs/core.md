@@ -1,28 +1,41 @@
 ## LineageTree properties
 
-### ::: lineagetree._core
-        options:
-            filters:
-            - "depth"
-            - "edges"
-            - "labels"
-            - "leaves"
-            - "nodes"
-            - "number_of_nodes"
-            - "parenting"
-            - "predecessor"
-            - "roots"
-            - "successor"
-            - "t_b"
-            - "t_e"
-            - "time"
-            - "time_nodes"
-            - "time_resolution"
+The core properties of a LineageTree. The user may access them by ```lT.property```.
+
+## LineageTree properties
+
+::: lineagetree._core
+    options:
+        summary: true
+        group_by_category: false
+        show_signature_annotations: true
+        members:
+            - successor
+            - predecessor
+            - time
+            - t_b
+            - t_e
+            - nodes
+            - number_of_nodes
+            - depth
+            - roots
+            - leaves
+            - edges
+            - labels
+            - time_resolution
+            - all_chains
+            - time_nodes
+            - parenting
+        show_source: true
+
 
 ## LineageTree navigation functions
 
-### ::: lineagetree._core
+Functions to access different data that is available in LineageTree.
+
+#### ::: lineagetree._core
         options:
+            summary: true
             filters:
                 - "change_labels"
                 - "find_leaves"
