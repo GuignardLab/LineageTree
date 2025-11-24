@@ -266,8 +266,8 @@
 
 /* Style the function signature differently */
 .doc-signature {
-    background-color: #f8fafc;
-    border-left: 3px solid #3b82f6;
+    /* background-color: #f8fafc; */
+    /* border-left: 3px solid #3b82f6; */
     padding: 0.8em 1em;
     border-radius: 4px;
     font-family: 'Courier New', monospace;
