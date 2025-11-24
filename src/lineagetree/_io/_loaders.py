@@ -871,17 +871,17 @@ def read_from_mastodon(
     pos = dict(zip(nodes, spots[:, :3], strict=True))
     time = dict(zip(nodes, spots[:, 3], strict=True))
     predecessor = {}
+    labels, labels_name = {}, []
+
     for succ, pred in zip(links[:, 1], links[:, 0]):
         predecessor[int(succ)] = int(pred)
 
     _, properties, _ = mr.read_tags()
 
     if isinstance(tag_set, str) and tag_set in properties:
-        labels, labels_name = properties[tag_set], {}
+        labels = properties[tag_set]
     elif 0 < len(properties):
         labels_name, labels = next(iter(properties.items()))
-    else:
-        labels, labels_name = {}, []
 
     if not name:
         if isinstance(path, Path):
