@@ -106,10 +106,10 @@ def _load_meshdict_from_bmfmesh(bmfmesh, pos_multipliers, translation):
     translation = np.array(translation, dtype=float)
     vertices = vertices * pos_multipliers + translation
 
-    return { # could be a class
-        'vertices': vertices,
-        'faces': faces,
-        'center_mass': np.mean(vertices, axis=0),
+    return {  # could be a class
+        "vertices": vertices,
+        "faces": faces,
+        "center_mass": np.mean(vertices, axis=0),
     }
 
 
@@ -150,9 +150,11 @@ def read_from_bmf(
     for track in tracks:
         pred = None
         for t, mesh in track.meshes.items():
-            mesh = _load_meshdict_from_bmfmesh(mesh, pos_multipliers, translation)
+            mesh = _load_meshdict_from_bmfmesh(
+                mesh, pos_multipliers, translation
+            )
             pos[cell_id] = mesh["center_mass"]
-            
+
             if store_meshes:
                 lT_mesh[cell_id] = mesh
 
@@ -875,9 +877,11 @@ def read_from_mastodon(
     _, properties, _ = mr.read_tags()
 
     if isinstance(tag_set, str) and tag_set in properties:
-        labels = properties[tag_set]
+        labels, labels_name = properties[tag_set], {}
     elif 0 < len(properties):
         labels_name, labels = next(iter(properties.items()))
+    else:
+        labels, labels_name = {}, []
 
     if not name:
         if isinstance(path, Path):
