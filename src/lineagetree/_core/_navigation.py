@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 import warnings
+import numpy as np
 
 if TYPE_CHECKING:
     from ..lineage_tree import LineageTree
@@ -380,7 +381,9 @@ def nodes_at_t(
     list of int
         list of ids of the nodes at time `t` spawned by `r`
     """
-    if isinstance(r, int):
+    if isinstance(r, Iterable):
+        r = list(r)
+    else:
         r = [r]
     if t is None:
         t = lT.t_e
