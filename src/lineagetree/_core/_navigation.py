@@ -380,7 +380,9 @@ def nodes_at_t(
     list of int
         list of ids of the nodes at time `t` spawned by `r`
     """
-    if isinstance(r, int):
+    if isinstance(r, Iterable):
+        r = list(r)
+    else:
         r = [r]
     if t is None:
         t = lT.t_e
