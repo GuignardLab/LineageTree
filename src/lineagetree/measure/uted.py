@@ -6,6 +6,7 @@ from functools import partial
 from itertools import combinations
 from typing import TYPE_CHECKING, Literal
 
+import numpy as np
 import matplotlib.colors as mcolors
 from edist import uted
 from matplotlib import colormaps
@@ -360,6 +361,8 @@ def plot_tree_distance_graphs(
     size: float = 10,
     lw: float = 0.3,
     ax: list[plt.Axes] | None = None,
+    vmin=None,
+    vmax=None,
 ) -> tuple[plt.figure, plt.Axes]:
     """
     Plots the subtrees compared and colors them according to the quality of the matching of their subtree.
@@ -509,7 +512,11 @@ def plot_tree_distance_graphs(
     if ax is None:
         fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True)
     cmap = colormaps[colormap]
-    c_norm = mcolors.Normalize(0, 1)
+    if vmin is None:
+        vmin = np.percentile(list(colors.values()), 5)
+    if vmax is None:
+        vmax = np.percentile(list(colors.values()), 95)
+    c_norm = mcolors.Normalize(vmin, vmax)
     colors = {c: cmap(c_norm(v)) for c, v in colors.items()}
     lT.plot_subtree(
         lT.get_ancestor_at_t(n1),
