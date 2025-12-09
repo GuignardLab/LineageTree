@@ -143,6 +143,7 @@ class LineageTree(
         pos: dict[int, Iterable] | None = None,
         name: str | None = None,
         root_leaf_value: Sequence | None = None,
+        spatial_resolution: Sequence | None = None,
         **kwargs,
     ):
         """Create a LineageTree object from minimal information, without reading from a file.
@@ -312,3 +313,15 @@ class LineageTree(
             self._custom_property_list.append(name)
         if not hasattr(self, "_comparisons"):
             self._comparisons = {}
+
+        spatia_dimension = len(self.pos[next(iter(self.nodes))])
+        if spatial_resolution is not None:
+            if len(spatial_resolution) == spatia_dimension:
+                self.spatial_resolution = np.array(spatial_resolution)
+            else:
+                raise ValueError(
+                    "The spatial resolution should have the same dimension as the one of the positions:\n"
+                    f"{len(spatial_resolution)=}, spatial dimension={spatia_dimension}"
+                )
+        else:
+            self.spatial_resolution = np.ones(spatia_dimension)
