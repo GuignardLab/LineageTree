@@ -98,6 +98,8 @@ class LineageTree(
             )
         if not hasattr(lT, "time_resolution"):
             lT.time_resolution = 1
+        if not hasattr(lT, "spatial_resolution"):
+            lT.spatial_resolution = np.ones(3)
 
         return lT
 
@@ -314,8 +316,12 @@ class LineageTree(
         if not hasattr(self, "_comparisons"):
             self._comparisons = {}
 
-        spatia_dimension = len(self.pos[next(iter(self.nodes))])
-        if spatial_resolution is not None:
+        spatia_dimension = (
+            len(self.pos[next(iter(self.nodes))])
+            if self.nodes and self.pos
+            else 3
+        )
+        if self.nodes and spatial_resolution is not None:
             if len(spatial_resolution) == spatia_dimension:
                 self.spatial_resolution = np.array(spatial_resolution)
             else:
@@ -324,4 +330,6 @@ class LineageTree(
                     f"{len(spatial_resolution)=}, spatial dimension={spatia_dimension}"
                 )
         else:
-            self.spatial_resolution = np.ones(spatia_dimension)
+            self.spatial_resolution = spatial_resolution or np.ones(
+                spatia_dimension
+            )
