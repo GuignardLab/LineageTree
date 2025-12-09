@@ -395,6 +395,11 @@ def plot_tree_distance_graphs(
         The width of the edges, defaults to 0.3
     ax : np.ndarray, optional
         The axes used, if not provided another set of axes is produced, defaults to None
+    vmin, vmax: float, optional
+        Values within the range ``[vmin, vmax]`` from the input data will be
+        linearly mapped to ``[0, 1]``.
+        *vmin* defaults to the 0.05 quantile of the values of the unordered tree edist distances of the subtrees.
+        *vmax* defaults to the 0.95 quantile of the values of the unordered tree edist distances of the subtrees.
 
     Returns
     -------
