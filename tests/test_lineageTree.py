@@ -428,6 +428,62 @@ def test_bad_leaf():
     )
 
 
+def test_spatial_resolution():
+    successor_dict = {
+        1: (2,),
+        2: (3, 100),
+        100: (101,),
+        0: (1,),
+        10: (0,),
+        5: (),
+        3: (),
+        4: (),
+        101: (),
+    }
+    test_lT = LineageTree(
+        successor=successor_dict,
+        pos=dict(
+            zip(
+                successor_dict.keys(),
+                np.random.random((len(successor_dict), 3)),
+                strict=True,
+            )
+        ),
+        spatial_resolution=[1, 1, 1],
+    )
+    assert (test_lT.spatial_resolution == [1, 1, 1]).all()
+
+
+def test_wrong_spatial_resolution():
+    successor_dict = {
+        1: (2,),
+        2: (3, 100),
+        100: (101,),
+        0: (1,),
+        10: (0,),
+        5: (),
+        3: (),
+        4: (),
+        101: (),
+    }
+    with pytest.raises(ValueError) as excinfo:
+        LineageTree(
+            successor=successor_dict,
+            pos=dict(
+                zip(
+                    successor_dict.keys(),
+                    np.random.random((len(successor_dict), 3)),
+                    strict=True,
+                )
+            ),
+            spatial_resolution=[1, 1],
+        )
+    assert (
+        str(excinfo.value)
+        == "The spatial resolution should have the same dimension as the one of the positions:\nlen(spatial_resolution)=2, spatial dimension=3"
+    )
+
+
 def test_multiple_predecessors():
     with pytest.raises(ValueError) as excinfo:
         LineageTree(successor={2: (1,), 3: (2,), 4: (2,)})
