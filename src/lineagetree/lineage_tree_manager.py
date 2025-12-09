@@ -515,6 +515,8 @@ class LineageTreeManager:
         size: float = 10,
         lw: float = 0.3,
         ax: np.ndarray | None = None,
+        vmin=None,
+        vmax=None,
     ) -> tuple[plt.figure, plt.Axes]:
         """
         Plots the subtrees compared and colors them according to the quality of the matching of their subtree.
@@ -552,6 +554,11 @@ class LineageTreeManager:
             The width of the edges, defaults to 0.3
         ax : np.ndarray, optional
             The axes used, if not provided another set of axes is produced, defaults to None
+        vmin, vmax: float, optional
+            Values within the range ``[vmin, vmax]`` from the input data will be
+            linearly mapped to ``[0, 1]``.
+            *vmin* defaults to the 0.05 quantile of the values of the unordered tree edist distances of the subtrees.
+            *vmax* defaults to the 0.95 quantile of the values of the unordered tree edist distances of the subtrees.
 
         Returns
         -------
@@ -699,7 +706,11 @@ class LineageTreeManager:
         if ax is None:
             fig, ax = plt.subplots(nrows=1, ncols=2)
         cmap = colormaps[colormap]
-        c_norm = mcolors.Normalize(0, 1)
+        if vmin is None:
+            vmin = np.percentile(list(colors1.values()), 5)
+        if vmax is None:
+            vmax = np.percentile(list(colors1.values()), 95)
+        c_norm = mcolors.Normalize(vmin, vmax)
         colors1 = {c: cmap(c_norm(v)) for c, v in colors1.items()}
         colors2 = {c: cmap(c_norm(v)) for c, v in colors2.items()}
         tree1.lT.plot_subtree(
