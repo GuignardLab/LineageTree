@@ -445,10 +445,21 @@ def plot_tree_distance_graphs(
     matched_right = []
     matched_left = []
     colors = {}
+    second_lT = lT.get_subtree(lT.get_subtree_nodes(n2))
+
     if style not in ("full", "downsampled"):
         for m in btrc:
             if m._left != -1 and m._right != -1:
-                cyc1 = lT.get_chain_of_node(corres1[m._left])
+                node_1 = corres1[m._left]
+                node_2 = corres1[m._right]
+                if node_1 not in lT.roots and node_2 not in lT.roots:
+                    if lT.successor[lT.predecessor[node_1][0]].index(
+                        node_1
+                    ) != lT.successor[lT.predecessor[node_2][0]].index(node_2):
+                        second_lT._successor[lT.predecessor[node_2][0]] = list(
+                            reversed(lT.successor[lT.predecessor[node_2][0]])
+                        )
+                cyc1 = lT.get_chain_of_node(node_1)
                 if len(cyc1) > 1:
                     node_1, *_, l_node_1 = cyc1
                     matched_left.append(node_1)
@@ -457,7 +468,7 @@ def plot_tree_distance_graphs(
                     node_1 = l_node_1 = cyc1.pop()
                     matched_left.append(node_1)
 
-                cyc2 = lT.get_chain_of_node(corres2[m._right])
+                cyc2 = lT.get_chain_of_node(node_2)
                 if len(cyc2) > 1:
                     node_2, *_, l_node_2 = cyc2
                     matched_right.append(node_2)
@@ -487,6 +498,15 @@ def plot_tree_distance_graphs(
             if m._left != -1 and m._right != -1:
                 node_1 = corres1[m._left]
                 node_2 = corres2[m._right]
+                # node_first_tree = corres1[m._left]
+                # node_second_tree = corres1[m._right]
+                if node_1 not in lT.roots and node_2 not in lT.roots:
+                    if lT.successor[lT.predecessor[node_1][0]].index(
+                        node_1
+                    ) != lT.successor[lT.predecessor[node_2][0]].index(node_2):
+                        second_lT._successor[lT.predecessor[node_2][0]] = list(
+                            reversed(lT.successor[lT.predecessor[node_2][0]])
+                        )
 
                 if (
                     lT.get_chain_of_node(node_1)[0] == node_1
