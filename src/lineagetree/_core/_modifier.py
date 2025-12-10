@@ -96,7 +96,8 @@ def add_root(lT: LineageTree, t: int, pos: list | None = None) -> int:
     lT._successor[C_next] = ()
     lT._predecessor[C_next] = ()
     lT._time[C_next] = t
-    lT.pos[C_next] = pos if isinstance(pos, list) else []
+    if isinstance(pos, (list, tuple)):
+        lT.pos[C_next] = list(pos)
     lT._changed_roots = True
     return C_next
 
