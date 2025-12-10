@@ -20,13 +20,14 @@ def __plot_nodes(
     color: str | dict | list,
     size: int | float,
     ax: plt.Axes,
+    leaves: set,
     default_color: str = "black",
     **kwargs,
 ) -> None:
     """
     Private method that plots the nodes of the tree.
     """
-
+    hier = {k: v for k, v in hier.items() if k not in leaves}
     if isinstance(color, dict):
         color = [color.get(k, default_color) for k in hier]
     elif isinstance(color, str | list):
@@ -142,6 +143,7 @@ def draw_tree_graph(
             size=size,
             ax=ax,
             default_color=default_color,
+            leaves={k for k, v in lnks_tms["links"].items() if not v},
             **kwargs,
         )
     if not color_of_edges:
