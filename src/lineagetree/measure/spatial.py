@@ -40,7 +40,7 @@ def get_idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
         data_corres = {}
         data = []
         for i, C in enumerate(to_check_lT):
-            data.append(tuple(lT.pos[C]))
+            data.append(tuple(lT.pos[C] * lT.spatial_resolution))
             data_corres[i] = C
         idx3d = KDTree(data)
         lT.kdtrees[t] = idx3d
