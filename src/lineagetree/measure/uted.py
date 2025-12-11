@@ -454,9 +454,17 @@ def plot_tree_distance_graphs(
                 node_1 = corres1[m._left]
                 node_2 = corres2[m._right]
                 if node_1 not in lT.roots and node_2 not in lT.roots:
-                    if lT.successor[lT.predecessor[node_1][0]].index(
+                    if lT.predecessor[node_2][
+                        0
+                    ] not in to_reverse_back and lT.successor[
+                        lT.predecessor[node_1][0]
+                    ].index(
                         node_1
-                    ) != lT.successor[lT.predecessor[node_2][0]].index(node_2):
+                    ) != lT.successor[
+                        lT.predecessor[node_2][0]
+                    ].index(
+                        node_2
+                    ):
                         lT._successor[lT.predecessor[node_2][0]] = list(
                             reversed(lT.successor[lT.predecessor[node_2][0]])
                         )
@@ -501,9 +509,17 @@ def plot_tree_distance_graphs(
                 node_1 = corres1[m._left]
                 node_2 = corres2[m._right]
                 if node_1 not in lT.roots and node_2 not in lT.roots:
-                    if lT.successor[lT.predecessor[node_1][0]].index(
+                    if lT.predecessor[node_2][
+                        0
+                    ] not in to_reverse_back and lT._successor[
+                        lT.predecessor[node_1][0]
+                    ].index(
                         node_1
-                    ) != lT.successor[lT.predecessor[node_2][0]].index(node_2):
+                    ) != lT._successor[
+                        lT.predecessor[node_2][0]
+                    ].index(
+                        node_2
+                    ):
                         lT._successor[lT.predecessor[node_2][0]] = list(
                             reversed(lT.successor[lT.predecessor[node_2][0]])
                         )
@@ -570,6 +586,7 @@ def plot_tree_distance_graphs(
     )
     for node in to_reverse_back:
         lT._successor[node] = list(reversed(lT._successor[node]))
+
     cax = fig.add_axes([0.25, 0.10, 0.50, 0.01])
     for x in ax:
         for s in x.spines.values():
