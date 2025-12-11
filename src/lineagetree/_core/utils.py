@@ -57,10 +57,12 @@ def create_links_and_chains(
             else:
                 links[curr] = []
             succ = lT._successor.get(last)
-            if succ:
+            if succ and lT.time[succ[0]] < end_time:
                 times[cyc[-1]] = 0
                 to_do.update(succ)
-            links[last] = succ
+                links[last] = succ
+            else:
+                links[last] = []
     return {"links": links, "times": times, "root": roots}
 
 
