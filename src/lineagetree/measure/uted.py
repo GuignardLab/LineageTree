@@ -7,6 +7,7 @@ from functools import partial
 from itertools import combinations
 from typing import TYPE_CHECKING, Literal
 
+import matplotlib as mpl
 import numpy as np
 import matplotlib.colors as mcolors
 from edist import uted
@@ -569,6 +570,14 @@ def plot_tree_distance_graphs(
     )
     for node in to_reverse_back:
         lT._successor[node] = list(reversed(lT._successor[node]))
+    cax = fig.add_axes([0.25, 0.10, 0.50, 0.01])
+    for x in ax:
+        for s in x.spines.values():
+            s.set_visible(False)
+    sm = mpl.cm.ScalarMappable(cmap=cmap, norm=c_norm)
+    sm.set_array([])
+    fig.colorbar(sm, cax=cax, orientation="horizontal")
+
     return ax[0].get_figure(), ax
 
 
