@@ -628,9 +628,13 @@ class LineageTreeManager:
                         node_1 not in tree1.lT.roots
                         and node_2 not in tree2.lT.roots
                     ):
-                        if tree1.lT.successor[
+                        if tree2.lT.predecessor[
+                            node_2
+                        ] not in to_reverse_back and tree1.lT.successor[
                             tree1.lT.predecessor[node_1][0]
-                        ].index(node_1) != tree2.lT.successor[
+                        ].index(
+                            node_1
+                        ) != tree2.lT.successor[
                             tree2.lT.predecessor[node_2][0]
                         ].index(
                             node_2
@@ -693,9 +697,13 @@ class LineageTreeManager:
                         node_1 not in tree1.lT.roots
                         and node_2 not in tree2.lT.roots
                     ):
-                        if tree1.lT.successor[
+                        if tree2.lT.predecessor[
+                            node_2
+                        ] not in to_reverse_back and tree1.lT.successor[
                             tree1.lT.predecessor[node_1][0]
-                        ].index(node_1) != tree2.lT.successor[
+                        ].index(
+                            node_1
+                        ) != tree2.lT.successor[
                             tree2.lT.predecessor[node_2][0]
                         ].index(
                             node_2
@@ -712,10 +720,11 @@ class LineageTreeManager:
                             to_reverse_back.append(
                                 tree2.lT.predecessor[node_2][0]
                             )
-                    if (
-                        tree1.lT.get_chain_of_node(node_1)[0] == node_1
-                        or tree2.lT.get_chain_of_node(node_2)[0] == node_2
-                        and (node_1 not in colors1 or node_2 not in colors2)
+
+                    if not colors1.get(
+                        tree1.lT.get_chain_of_node(node_1)[0]
+                    ) or not colors2.get(
+                        tree2.lT.get_chain_of_node(node_2)[0]
                     ):
                         matched_left.append(node_1)
                         l_node_1 = tree1.lT.get_chain_of_node(node_1)[-1]
@@ -738,6 +747,14 @@ class LineageTreeManager:
                                 tree2.get_norm(node_2),
                             )
                         )
+                        for n1 in tree1.lT.get_chain_of_node(node_1):
+                            colors1[n1] = colors1[
+                                tree1.lT.get_chain_of_node(node_1)[0]
+                            ]
+                        for n2 in tree2.lT.get_chain_of_node(node_2):
+                            colors2[n2] = colors1[
+                                tree1.lT.get_chain_of_node(node_1)[0]
+                            ]
                         colors2[node_2] = colors1[node_1]
                         colors1[tree1.lT.get_chain_of_node(node_1)[-1]] = (
                             colors1[node_1]
@@ -746,14 +763,6 @@ class LineageTreeManager:
                             colors2[node_2]
                         )
 
-                        if tree1.lT.get_chain_of_node(node_1)[-1] != node_1:
-                            matched_left.append(
-                                tree1.lT.get_chain_of_node(node_1)[-1]
-                            )
-                        if tree2.lT.get_chain_of_node(node_2)[-1] != node_2:
-                            matched_right.append(
-                                tree2.lT.get_chain_of_node(node_2)[-1]
-                            )
         if ax is None:
             fig, ax = plt.subplots(nrows=1, ncols=2)
         cmap = colormaps[colormap]

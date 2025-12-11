@@ -506,8 +506,8 @@ def plot_tree_distance_graphs(
     else:
         for m in btrc:
             if m._left != -1 and m._right != -1:
-                node_1 = corres1[m._left]
-                node_2 = corres2[m._right]
+                node_1 = lT.get_chain_of_node(corres1[m._left])[0]
+                node_2 = lT.get_chain_of_node(corres2[m._right])[0]
                 if node_1 not in lT.roots and node_2 not in lT.roots:
                     if lT.predecessor[node_2][
                         0
@@ -525,32 +525,33 @@ def plot_tree_distance_graphs(
                         )
                         to_reverse_back.append(lT.predecessor[node_2][0])
 
-                if (
-                    lT.get_chain_of_node(node_1)[0] == node_1
-                    or lT.get_chain_of_node(node_2)[0] == node_2
-                    and (node_1 not in colors or node_2 not in colors)
-                ):
+                if not colors.get(
+                    lT.get_chain_of_node(node_1)[0]
+                ) or not colors.get(lT.get_chain_of_node(node_2)[0]):
                     matched_left.append(node_1)
                     l_node_1 = lT.get_chain_of_node(node_1)[-1]
                     matched_left.append(l_node_1)
                     matched_right.append(node_2)
                     l_node_2 = lT.get_chain_of_node(node_2)[-1]
                     matched_right.append(l_node_2)
-                    colors[node_1] = __calculate_distance_of_sub_tree(
-                        lT,
-                        node_1,
-                        node_2,
-                        btrc,
-                        corres1,
-                        corres2,
-                        delta_tmp,
-                        lT.norm_dict[norm],
-                        tree1.get_norm(node_1),
-                        tree2.get_norm(node_2),
+                    colors[lT.get_chain_of_node(node_1)[0]] = (
+                        __calculate_distance_of_sub_tree(
+                            lT,
+                            node_1,
+                            node_2,
+                            btrc,
+                            corres1,
+                            corres2,
+                            delta_tmp,
+                            lT.norm_dict[norm],
+                            tree1.get_norm(node_1),
+                            tree2.get_norm(node_2),
+                        )
                     )
-                    colors[l_node_1] = colors[node_1]
-                    colors[node_2] = colors[node_1]
-                    colors[l_node_2] = colors[node_1]
+                    for n1 in lT.get_chain_of_node(node_1):
+                        colors[n1] = colors[lT.get_chain_of_node(node_1)[0]]
+                    for n2 in lT.get_chain_of_node(node_2):
+                        colors[n2] = colors[lT.get_chain_of_node(node_1)[0]]
     if ax is None:
         fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True)
     cmap = colormaps[colormap]
