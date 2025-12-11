@@ -30,7 +30,7 @@ def __plot_nodes(
     """
     hier_no_leaves = copy.copy(hier)
     for leaf in leaves:
-        hier_no_leaves.pop(key, None)
+        hier_no_leaves.pop(leaf, None)
     if isinstance(color, dict):
         color = [color.get(k, default_color) for k in hier_no_leaves]
     elif isinstance(color, str | list):
