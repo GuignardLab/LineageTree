@@ -33,11 +33,11 @@ lT = LineageTree(successors= {i:[i+1] for i in range(10)})
   </li>
 
   <li>
-    <p><strong>Roots:</strong> A node with no predecessors. In LineageTree, a root has an empty tuple as predecessor. Multiple roots may exist. All roots can be accessed with <code>lT.roots</code>.</p>
+    <p><strong>Roots:</strong> Nodes with no predecessors. In LineageTree, by deafualt, a root has an empty tuple as predecessor. Multiple roots may exist. All roots can be accessed with <code>lT.roots</code>.</p>
   </li>
 
   <li>
-    <p><strong>Leaves:</strong> A node with no successors. In LineageTree, a leaf has an empty tuple as successor. All leaves can be accessed with <code>lT.leaves</code>.</p>
+    <p><strong>Leaves:</strong> Nodes with no successors. In LineageTree, by deafualt, a leaf has an empty tuple as successor. All leaves can be accessed with <code>lT.leaves</code>.</p>
   </li>
 
   <li>
