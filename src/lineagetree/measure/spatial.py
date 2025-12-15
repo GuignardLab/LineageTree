@@ -172,27 +172,34 @@ def compute_k_nearest_neighbours(
     dict mapping int to set of int
         dictionary that maps
         a node id to its `k` nearest neighbors
+    dict mapping int to set of float
+        dictionary that maps
+        a node id to the distances of its `k` nearest neighbors
     """
     lT.kn_graph = {}
-    for t in set(lT._time.values()):
-        nodes = lT.time_nodes[t]
+    k = k + 1
+    for t, nodes in lT.time_nodes.items():
         if 1 < len(nodes):
             use_k = k if k < len(nodes) else len(nodes)
             idx3d, nodes = lT.get_idx3d(t)
             pos = [lT.pos[c] for c in nodes]
-            _, neighbs = idx3d.query(pos, use_k)
+            distances, neighbs = idx3d.query(pos, use_k)
             out = dict(
                 zip(
                     nodes,
-                    map(set, nodes[neighbs]),
+                    map(set, nodes[[neighb[1:] for neighb in neighbs]]),
+                    strict=True,
+                )
+            )
+            out_distances = dict(
+                zip(
+                    nodes,
+                    map(set, [dist[1:] for dist in distances]),
                     strict=True,
                 )
             )
             lT.kn_graph.update(out)
-        else:
-            n = nodes.pop
-            lT.kn_graph.update({n: {n}})
-    return lT.kn_graph
+    return lT.kn_graph, out_distances
 
 
 def compute_spatial_edges(
