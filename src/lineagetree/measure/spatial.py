@@ -177,6 +177,7 @@ def compute_k_nearest_neighbours(
         a node id to the distances of its `k` nearest neighbors
     """
     lT.kn_graph = {}
+    lT.kn_distances = {}
     k = k + 1
     for t, nodes in lT.time_nodes.items():
         if 1 < len(nodes):
@@ -199,7 +200,8 @@ def compute_k_nearest_neighbours(
                 )
             )
             lT.kn_graph.update(out)
-    return lT.kn_graph, out_distances
+            lT.kn_distances.update(out_distances)
+    return lT.kn_graph, lT.kn_distances
 
 
 def compute_spatial_edges(

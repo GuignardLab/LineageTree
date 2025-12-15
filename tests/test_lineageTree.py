@@ -623,15 +623,24 @@ def test_spatial_density():
 
 
 def test_compute_k_nearest_neighbours():
-    assert lT1.compute_k_nearest_neighbours()[169994] == {
+    assert lT1.compute_k_nearest_neighbours()[0][169994] == {
         108588,
         114722,
         129276,
         139163,
         148361,
         165681,
-        169994,
         178396,
+    }
+    print(lT1.compute_k_nearest_neighbours()[1][169994])
+    assert lT1.compute_k_nearest_neighbours()[1][169994] == {
+        np.float64(34.39062611344147),
+        np.float64(50.72494649405221),
+        np.float64(58.97813932274096),
+        np.float64(71.4891082395894),
+        np.float64(80.50930277501162),
+        np.float64(171.6539282020323),
+        np.float64(173.50879512331872),
     }
 
 
