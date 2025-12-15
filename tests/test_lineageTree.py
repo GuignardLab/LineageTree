@@ -632,7 +632,6 @@ def test_compute_k_nearest_neighbours():
         165681,
         178396,
     }
-    print(lT1.compute_k_nearest_neighbours()[1][169994])
     assert lT1.compute_k_nearest_neighbours()[1][169994] == {
         np.float64(34.39062611344147),
         np.float64(50.72494649405221),
