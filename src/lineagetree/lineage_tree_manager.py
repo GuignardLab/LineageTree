@@ -617,10 +617,41 @@ class LineageTreeManager:
         matched_left = []
         colors1 = {}
         colors2 = {}
+        to_reverse_back = []
+
         if style not in ("full", "downsampled"):
             for m in btrc:
                 if m._left != -1 and m._right != -1:
-                    cyc1 = tree1.lT.get_chain_of_node(corres1[m._left])
+                    node_1 = corres1[m._left]
+                    node_2 = corres2[m._right]
+                    if (
+                        node_1 not in tree1.lT.roots
+                        and node_2 not in tree2.lT.roots
+                    ):
+                        if tree2.lT.predecessor[
+                            node_2
+                        ] not in to_reverse_back and tree1.lT.successor[
+                            tree1.lT.predecessor[node_1][0]
+                        ].index(
+                            node_1
+                        ) != tree2.lT.successor[
+                            tree2.lT.predecessor[node_2][0]
+                        ].index(
+                            node_2
+                        ):
+                            tree2.lT._successor[
+                                tree2.lT.predecessor[node_2][0]
+                            ] = list(
+                                reversed(
+                                    tree2.lT.successor[
+                                        tree2.lT.predecessor[node_2][0]
+                                    ]
+                                )
+                            )
+                            to_reverse_back.append(
+                                tree2.lT.predecessor[node_2][0]
+                            )
+                    cyc1 = tree1.lT.get_chain_of_node(node_1)
                     if len(cyc1) > 1:
                         node_1, *_, l_node_1 = cyc1
                         matched_left.append(node_1)
@@ -629,7 +660,7 @@ class LineageTreeManager:
                         node_1 = l_node_1 = cyc1.pop()
                         matched_left.append(node_1)
 
-                    cyc2 = tree2.lT.get_chain_of_node(corres2[m._right])
+                    cyc2 = tree2.lT.get_chain_of_node(node_2)
                     if len(cyc2) > 1:
                         node_2, *_, l_node_2 = cyc2
                         matched_right.append(node_2)
@@ -659,12 +690,41 @@ class LineageTreeManager:
         else:
             for m in btrc:
                 if m._left != -1 and m._right != -1:
+
                     node_1 = tree1.lT.get_chain_of_node(corres1[m._left])[0]
                     node_2 = tree2.lT.get_chain_of_node(corres2[m._right])[0]
                     if (
-                        tree1.lT.get_chain_of_node(node_1)[0] == node_1
-                        or tree2.lT.get_chain_of_node(node_2)[0] == node_2
-                        and (node_1 not in colors1 or node_2 not in colors2)
+                        node_1 not in tree1.lT.roots
+                        and node_2 not in tree2.lT.roots
+                    ):
+                        if tree2.lT.predecessor[
+                            node_2
+                        ] not in to_reverse_back and tree1.lT.successor[
+                            tree1.lT.predecessor[node_1][0]
+                        ].index(
+                            node_1
+                        ) != tree2.lT.successor[
+                            tree2.lT.predecessor[node_2][0]
+                        ].index(
+                            node_2
+                        ):
+                            tree2.lT._successor[
+                                tree2.lT.predecessor[node_2][0]
+                            ] = list(
+                                reversed(
+                                    tree2.lT.successor[
+                                        tree2.lT.predecessor[node_2][0]
+                                    ]
+                                )
+                            )
+                            to_reverse_back.append(
+                                tree2.lT.predecessor[node_2][0]
+                            )
+
+                    if not colors1.get(
+                        tree1.lT.get_chain_of_node(node_1)[0]
+                    ) or not colors2.get(
+                        tree2.lT.get_chain_of_node(node_2)[0]
                     ):
                         matched_left.append(node_1)
                         l_node_1 = tree1.lT.get_chain_of_node(node_1)[-1]
@@ -687,6 +747,14 @@ class LineageTreeManager:
                                 tree2.get_norm(node_2),
                             )
                         )
+                        for n1 in tree1.lT.get_chain_of_node(node_1):
+                            colors1[n1] = colors1[
+                                tree1.lT.get_chain_of_node(node_1)[0]
+                            ]
+                        for n2 in tree2.lT.get_chain_of_node(node_2):
+                            colors2[n2] = colors1[
+                                tree1.lT.get_chain_of_node(node_1)[0]
+                            ]
                         colors2[node_2] = colors1[node_1]
                         colors1[tree1.lT.get_chain_of_node(node_1)[-1]] = (
                             colors1[node_1]
@@ -695,14 +763,6 @@ class LineageTreeManager:
                             colors2[node_2]
                         )
 
-                        if tree1.lT.get_chain_of_node(node_1)[-1] != node_1:
-                            matched_left.append(
-                                tree1.lT.get_chain_of_node(node_1)[-1]
-                            )
-                        if tree2.lT.get_chain_of_node(node_2)[-1] != node_2:
-                            matched_right.append(
-                                tree2.lT.get_chain_of_node(node_2)[-1]
-                            )
         if ax is None:
             fig, ax = plt.subplots(nrows=1, ncols=2)
         cmap = colormaps[colormap]
@@ -733,6 +793,10 @@ class LineageTreeManager:
             lw=lw,
             ax=ax[1],
         )
+        for node in to_reverse_back:
+            tree2.lT._successor[node] = list(
+                reversed(tree2.lT._successor[node])
+            )
         return ax[0].get_figure(), ax
 
     def labelled_mappings(
