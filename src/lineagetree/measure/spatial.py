@@ -188,14 +188,14 @@ def compute_k_nearest_neighbours(
             out = dict(
                 zip(
                     nodes,
-                    map(set, nodes[[neighb[1:] for neighb in neighbs]]),
+                    nodes[neighbs[:, 1:]],
                     strict=True,
                 )
             )
             out_distances = dict(
                 zip(
                     nodes,
-                    map(set, [dist[1:] for dist in distances]),
+                    distances[:, 1:],
                     strict=True,
                 )
             )
