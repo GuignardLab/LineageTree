@@ -4,6 +4,7 @@ from ..measure.spatial import (
     compute_spatial_edges,
     get_gabriel_graph,
     get_idx3d,
+    compute_neighbours_in_radius,
 )
 
 from ._methodize import AutoMethodizeMeta
@@ -17,3 +18,4 @@ class SpatialMixin(metaclass=AutoMethodizeMeta):
     compute_k_nearest_neighbours = compute_k_nearest_neighbours
     compute_spatial_edges = compute_spatial_edges
     compute_spatial_density = compute_spatial_density
+    compute_neighbours_in_radius = compute_neighbours_in_radius
