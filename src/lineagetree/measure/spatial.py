@@ -176,7 +176,7 @@ def compute_spatial_density(
     """
     s_vol = 4 / 3.0 * np.pi * th**3
     spatial_density = {
-        k: v / s_vol
+        k: (v + 1) / s_vol
         for k, v in lT.compute_neighbours_in_radius(t_b, t_e, th).items()
     }
     return spatial_density
