@@ -111,6 +111,44 @@ def get_gabriel_graph(lT: LineageTree, t: int) -> dict[int, set[int]]:
     return lT.Gabriel_graph[t]
 
 
+def compute_neighbours_in_radius(
+    lT: LineageTree,
+    t_b: int | None = None,
+    t_e: int | None = None,
+    th: float = 50,
+) -> dict[int, float]:
+    """Computes the number of neighbours for nodes between `t_b` and `t_e`.
+    The results is stored in `lT.neighbours` and returned.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree instance.
+    t_b : int, optional
+        starting time to look at, default first time point
+    t_e : int, optional
+        ending time to look at, default last time point
+    th : float, default=50
+        size of the neighbourhood
+
+    Returns
+    -------
+    dict mapping int to float
+        dictionary that maps a node id to its spatial density
+    """
+    neighbours = {}
+    if t_b is None:
+        t_b = lT.t_b
+    if t_e is None:
+        t_e = lT.t_e
+    time_range = set(range(t_b, t_e)).intersection(lT._time.values())
+    for t in time_range:
+        idx3d, nodes = lT.get_idx3d(t)
+        nb_ni = [(len(ni) - 1) for ni in idx3d.query_ball_tree(idx3d, th)]
+        neighbours.update(dict(zip(nodes, nb_ni, strict=True)))
+    return neighbours
+
+
 def compute_spatial_density(
     lT: LineageTree,
     t_b: int | None = None,
@@ -136,21 +174,12 @@ def compute_spatial_density(
     dict mapping int to float
         dictionary that maps a node id to its spatial density
     """
-    if not hasattr(lT, "spatial_density"):
-        lT.spatial_density = {}
     s_vol = 4 / 3.0 * np.pi * th**3
-    if t_b is None:
-        t_b = lT.t_b
-    if t_e is None:
-        t_e = lT.t_e
-    time_range = set(range(t_b, t_e)).intersection(lT._time.values())
-    for t in time_range:
-        idx3d, nodes = lT.get_idx3d(t)
-        nb_ni = [
-            (len(ni) - 1) / s_vol for ni in idx3d.query_ball_tree(idx3d, th)
-        ]
-        lT.spatial_density.update(dict(zip(nodes, nb_ni, strict=True)))
-    return lT.spatial_density
+    spatial_density = {
+        k: (v + 1) / s_vol
+        for k, v in lT.compute_neighbours_in_radius(t_b, t_e, th).items()
+    }
+    return spatial_density
 
 
 def compute_k_nearest_neighbours(
