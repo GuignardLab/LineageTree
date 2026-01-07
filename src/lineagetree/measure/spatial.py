@@ -1,4 +1,5 @@
 from __future__ import annotations
+from warnings import warn, catch_warnings, simplefilter
 
 from itertools import combinations
 from typing import TYPE_CHECKING
@@ -49,7 +50,9 @@ def get_idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
     return idx3d, np.array(to_check_lT)
 
 
-def get_gabriel_graph(lT: LineageTree, t: int) -> dict[int, set[int]]:
+def get_gabriel_graph(
+    lT: LineageTree, t: int | None = None
+) -> dict[int, set[int]]:
     """Build the Gabriel graph of the given graph for time point `t`.
     The Garbiel graph is then stored in `lT.Gabriel_graph` and returned.
 
@@ -59,8 +62,8 @@ def get_gabriel_graph(lT: LineageTree, t: int) -> dict[int, set[int]]:
     ----------
     lT : LineageTree
         The LineageTree instance.
-    t : int
-        time
+    t : int or None
+        time, if time is set to 'None' the gabriel graph will be calculated for all timepoints, defaults to None.
 
     Returns
     -------
@@ -70,7 +73,17 @@ def get_gabriel_graph(lT: LineageTree, t: int) -> dict[int, set[int]]:
     if not hasattr(lT, "Gabriel_graph"):
         lT.Gabriel_graph = {}
 
-    if lT.time_nodes[t] - lT.Gabriel_graph.keys():
+    if t and len(lT.time_nodes[t]) < 5:
+        warn("Need more than 5 timepoints")
+        return lT.Gabriel_graph
+
+    if t is None:
+        with catch_warnings():
+            simplefilter("ignore")
+            for time in lT.time_nodes:
+                get_gabriel_graph(lT, time)
+
+    elif lT.time_nodes[t] - lT.Gabriel_graph.keys():
         _, nodes = lT.get_idx3d(t)
 
         data_corres = {}
