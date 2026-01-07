@@ -70,7 +70,7 @@ def get_gabriel_graph(lT: LineageTree, t: int) -> dict[int, set[int]]:
     if not hasattr(lT, "Gabriel_graph"):
         lT.Gabriel_graph = {}
 
-    if t not in lT.Gabriel_graph:
+    if lT.time_nodes[t] - lT.Gabriel_graph.keys():
         _, nodes = lT.get_idx3d(t)
 
         data_corres = {}
@@ -106,9 +106,9 @@ def get_gabriel_graph(lT: LineageTree, t: int) -> dict[int, set[int]]:
                         data_corres[e1]
                     )
 
-        lT.Gabriel_graph[t] = Gabriel_graph
+        lT.Gabriel_graph.update(Gabriel_graph)
 
-    return lT.Gabriel_graph[t]
+    return lT.Gabriel_graph
 
 
 def compute_neighbours_in_radius(
