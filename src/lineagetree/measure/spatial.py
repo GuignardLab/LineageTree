@@ -2,7 +2,7 @@ from __future__ import annotations
 from warnings import warn, catch_warnings, simplefilter
 
 from itertools import combinations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 import numpy as np
 from scipy.spatial import Delaunay, KDTree
@@ -51,7 +51,7 @@ def get_idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
 
 
 def get_gabriel_graph(
-    lT: LineageTree, t: int | None = None
+    lT: LineageTree, time: int | Iterable[int] | None = None
 ) -> dict[int, set[int]]:
     """Build the Gabriel graph of the given graph for time point `t`.
     The Garbiel graph is then stored in `lT.Gabriel_graph` and returned.
@@ -62,8 +62,9 @@ def get_gabriel_graph(
     ----------
     lT : LineageTree
         The LineageTree instance.
-    t : int or None
-        time, if time is set to 'None' the gabriel graph will be calculated for all timepoints, defaults to None.
+    time : int or Iterable of int, optional
+        time or iterable of times.
+        If not given the gabriel graph will be calculated for all timepoints.
 
     Returns
     -------
@@ -73,53 +74,56 @@ def get_gabriel_graph(
     if not hasattr(lT, "Gabriel_graph"):
         lT.Gabriel_graph = {}
 
-    if t and len(lT.time_nodes[t]) < 5:
-        warn("Need more than 5 timepoints")
-        return lT.Gabriel_graph
+    if time is None:
+        time = lT.time_nodes.keys()
+    elif not isinstance(time, Iterable):
+        time = [time]
 
-    if t is None:
-        with catch_warnings():
-            simplefilter("ignore")
-            for time in lT.time_nodes:
-                get_gabriel_graph(lT, time)
+    for t in time:
+        if lT.time_nodes[t] - lT.Gabriel_graph.keys():
+            nodes = np.fromiter(list(lT.time_nodes[t]), dtype=int)
 
-    elif lT.time_nodes[t] - lT.Gabriel_graph.keys():
-        _, nodes = lT.get_idx3d(t)
+            data_corres = {}
+            data = []
+            for i, C in enumerate(nodes):
+                data.append(lT.pos[C])
+                data_corres[i] = C
 
-        data_corres = {}
-        data = []
-        for i, C in enumerate(nodes):
-            data.append(lT.pos[C])
-            data_corres[i] = C
+            delaunay_graph = {}
 
-        tmp = Delaunay(data)
+            # The delaunay triangulation is only usefult to compute
+            # when the number of points is higher than the spatial dimension + 1
+            if len(data[0]) + 1 < len(data):
+                tmp = Delaunay(data)
+                for N in tmp.simplices:
+                    for e1, e2 in combinations(np.sort(N), 2):
+                        delaunay_graph.setdefault(e1, set()).add(e2)
+                        delaunay_graph.setdefault(e2, set()).add(e1)
+            # When there are fewer nodes than the number of dimensions + 2
+            # The Delaunay is the complete graph
+            else:
+                for e1, e2 in combinations(data_corres, 2):
+                    delaunay_graph.setdefault(e1, set()).add(e2)
+                    delaunay_graph.setdefault(e2, set()).add(e1)
 
-        delaunay_graph = {}
+            Gabriel_graph = {}
 
-        for N in tmp.simplices:
-            for e1, e2 in combinations(np.sort(N), 2):
-                delaunay_graph.setdefault(e1, set()).add(e2)
-                delaunay_graph.setdefault(e2, set()).add(e1)
-
-        Gabriel_graph = {}
-
-        for e1, neighbs in delaunay_graph.items():
-            for ni in neighbs:
-                if not any(
-                    np.linalg.norm((data[ni] + data[e1]) / 2 - data[i])
-                    < np.linalg.norm(data[ni] - data[e1]) / 2
-                    for i in delaunay_graph[e1].intersection(
-                        delaunay_graph[ni]
-                    )
-                ):
-                    Gabriel_graph.setdefault(data_corres[e1], set()).add(
-                        data_corres[ni]
-                    )
-                    Gabriel_graph.setdefault(data_corres[ni], set()).add(
-                        data_corres[e1]
-                    )
-
-        lT.Gabriel_graph.update(Gabriel_graph)
+            for e1, neighbs in delaunay_graph.items():
+                for ni in neighbs:
+                    if not any(
+                        np.linalg.norm((data[ni] + data[e1]) / 2 - data[i])
+                        < np.linalg.norm(data[ni] - data[e1]) / 2
+                        for i in delaunay_graph[e1].intersection(
+                            delaunay_graph[ni]
+                        )
+                    ):
+                        Gabriel_graph.setdefault(data_corres[e1], set()).add(
+                            data_corres[ni]
+                        )
+                        Gabriel_graph.setdefault(data_corres[ni], set()).add(
+                            data_corres[e1]
+                        )
+            lT.Gabriel_graph.update(Gabriel_graph)
 
     return lT.Gabriel_graph
 
