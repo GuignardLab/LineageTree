@@ -70,7 +70,7 @@ def get_gabriel_graph(lT: LineageTree, t: int) -> dict[int, set[int]]:
     if not hasattr(lT, "Gabriel_graph"):
         lT.Gabriel_graph = {}
 
-    if lT.time_nodes[t] - lT.Gabriel_graph.keys() != 0:
+    if lT.time_nodes[t] - lT.Gabriel_graph.keys():
         _, nodes = lT.get_idx3d(t)
 
         data_corres = {}
