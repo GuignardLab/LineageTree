@@ -585,6 +585,11 @@ def test_idx3d():
 def test_gabriel_graph():
     gg = lT1.get_gabriel_graph(0)
     assert gg[173618] == {110832, 168322}
+    gg_all = lT1.get_gabriel_graph()
+    gg_all_2 = {}
+    for t in lT1.time_nodes:
+        gg_all_2.update(lT1.get_gabriel_graph(t))
+    assert gg_all == gg_all_2
 
 
 def test_get_chain_of_node():
