@@ -81,7 +81,7 @@ def get_gabriel_graph(
 
     for t in time:
         if lT.time_nodes[t] - lT.Gabriel_graph.keys():
-            nodes = np.fromiter(list(lT.time_nodes[t]), dtype=int)
+            nodes = lT.time_nodes[t]
 
             data_corres = {}
             data = []
@@ -161,8 +161,13 @@ def compute_neighbours_in_radius(
     time_range = set(range(t_b, t_e)).intersection(lT._time.values())
     for t in time_range:
         idx3d, nodes = lT.get_idx3d(t)
-        nb_ni = [(len(ni) - 1) for ni in idx3d.query_ball_tree(idx3d, th)]
-        neighbours.update(dict(zip(nodes, nb_ni, strict=True)))
+        idx = [ni for ni in idx3d.query_ball_tree(idx3d, th)]
+        neighbours.update(
+            {
+                node: set(nodes[nb_idx]) - {node}
+                for node, nb_idx in zip(nodes, idx)
+            }
+        )
     return neighbours
 
 
@@ -193,7 +198,7 @@ def compute_spatial_density(
     """
     s_vol = 4 / 3.0 * np.pi * th**3
     spatial_density = {
-        k: (v + 1) / s_vol
+        k: (len(v) + 1) / s_vol
         for k, v in lT.compute_neighbours_in_radius(t_b, t_e, th).items()
     }
     return spatial_density

@@ -626,7 +626,9 @@ def test_spatial_density():
     assert np.isclose(
         lT1.compute_spatial_density(0, th=40)[110832], 7.460387957432594e-06
     )
-    assert lT1.compute_neighbours_in_radius(0, th=40)[110832] == 1
+    assert lT1.compute_neighbours_in_radius(0, th=40)[110832] == {
+        np.int64(110826)
+    }
 
 
 def test_compute_k_nearest_neighbours():
