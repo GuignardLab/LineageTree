@@ -428,6 +428,62 @@ def test_bad_leaf():
     )
 
 
+def test_spatial_resolution():
+    successor_dict = {
+        1: (2,),
+        2: (3, 100),
+        100: (101,),
+        0: (1,),
+        10: (0,),
+        5: (),
+        3: (),
+        4: (),
+        101: (),
+    }
+    test_lT = LineageTree(
+        successor=successor_dict,
+        pos=dict(
+            zip(
+                successor_dict.keys(),
+                np.random.random((len(successor_dict), 3)),
+                strict=True,
+            )
+        ),
+        spatial_resolution=[1, 1, 1],
+    )
+    assert (test_lT.spatial_resolution == [1, 1, 1]).all()
+
+
+def test_wrong_spatial_resolution():
+    successor_dict = {
+        1: (2,),
+        2: (3, 100),
+        100: (101,),
+        0: (1,),
+        10: (0,),
+        5: (),
+        3: (),
+        4: (),
+        101: (),
+    }
+    with pytest.raises(ValueError) as excinfo:
+        LineageTree(
+            successor=successor_dict,
+            pos=dict(
+                zip(
+                    successor_dict.keys(),
+                    np.random.random((len(successor_dict), 3)),
+                    strict=True,
+                )
+            ),
+            spatial_resolution=[1, 1],
+        )
+    assert (
+        str(excinfo.value)
+        == "The spatial resolution should have the same dimension as the one of the positions:\nlen(spatial_resolution)=2, spatial dimension=3"
+    )
+
+
 def test_multiple_predecessors():
     with pytest.raises(ValueError) as excinfo:
         LineageTree(successor={2: (1,), 3: (2,), 4: (2,)})
@@ -529,6 +585,11 @@ def test_idx3d():
 def test_gabriel_graph():
     gg = lT1.get_gabriel_graph(0)
     assert gg[173618] == {110832, 168322}
+    gg_all = lT1.get_gabriel_graph()
+    gg_all_2 = {}
+    for t in lT1.time_nodes:
+        gg_all_2.update(lT1.get_gabriel_graph(t))
+    assert gg_all == gg_all_2
 
 
 def test_get_chain_of_node():
@@ -562,21 +623,29 @@ def test_get_subtree_nodes():
 
 
 def test_spatial_density():
-    density = list(lT1.compute_spatial_density(0, th=40).values())
-    assert np.count_nonzero(density) == 1669
+    assert np.isclose(
+        lT1.compute_spatial_density(0, th=40)[110832], 7.460387957432594e-06
+    )
+    assert lT1.compute_neighbours_in_radius(0, th=40)[110832] == 1
 
 
 def test_compute_k_nearest_neighbours():
-    assert lT1.compute_k_nearest_neighbours()[169994] == {
-        108588,
-        114722,
-        129276,
-        139163,
-        148361,
-        165681,
-        169994,
-        178396,
-    }
+    assert (
+        lT1.compute_k_nearest_neighbours()[0][169994]
+        == [178396, 139163, 165681, 148361, 129276, 114722, 108588]
+    ).all()
+    assert np.allclose(
+        lT1.compute_k_nearest_neighbours()[1][169994],
+        [
+            34.39062611,
+            50.72494649,
+            58.97813932,
+            71.48910824,
+            80.50930278,
+            171.6539282,
+            173.50879512,
+        ],
+    )
 
 
 def test_compute_spatial_edges():

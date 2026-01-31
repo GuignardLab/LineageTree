@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from functools import wraps
 from typing import TYPE_CHECKING
+import numpy as np
 
 if TYPE_CHECKING:
     from ..lineage_tree import LineageTree
@@ -96,7 +97,8 @@ def add_root(lT: LineageTree, t: int, pos: list | None = None) -> int:
     lT._successor[C_next] = ()
     lT._predecessor[C_next] = ()
     lT._time[C_next] = t
-    lT.pos[C_next] = pos if isinstance(pos, list) else []
+    if isinstance(pos, (list, tuple)):
+        lT.pos[C_next] = np.array(pos)
     lT._changed_roots = True
     return C_next
 

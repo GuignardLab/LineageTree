@@ -1,7 +1,8 @@
 from __future__ import annotations
+from warnings import warn, catch_warnings, simplefilter
 
 from itertools import combinations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 import numpy as np
 from scipy.spatial import Delaunay, KDTree
@@ -40,7 +41,7 @@ def get_idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
         data_corres = {}
         data = []
         for i, C in enumerate(to_check_lT):
-            data.append(tuple(lT.pos[C]))
+            data.append(tuple(lT.pos[C] * lT.spatial_resolution))
             data_corres[i] = C
         idx3d = KDTree(data)
         lT.kdtrees[t] = idx3d
@@ -49,7 +50,9 @@ def get_idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
     return idx3d, np.array(to_check_lT)
 
 
-def get_gabriel_graph(lT: LineageTree, t: int) -> dict[int, set[int]]:
+def get_gabriel_graph(
+    lT: LineageTree, time: int | Iterable[int] | None = None
+) -> dict[int, set[int]]:
     """Build the Gabriel graph of the given graph for time point `t`.
     The Garbiel graph is then stored in `lT.Gabriel_graph` and returned.
 
@@ -59,8 +62,9 @@ def get_gabriel_graph(lT: LineageTree, t: int) -> dict[int, set[int]]:
     ----------
     lT : LineageTree
         The LineageTree instance.
-    t : int
-        time
+    time : int or Iterable of int, optional
+        time or iterable of times.
+        If not given the gabriel graph will be calculated for all timepoints.
 
     Returns
     -------
@@ -70,45 +74,96 @@ def get_gabriel_graph(lT: LineageTree, t: int) -> dict[int, set[int]]:
     if not hasattr(lT, "Gabriel_graph"):
         lT.Gabriel_graph = {}
 
-    if t not in lT.Gabriel_graph:
-        _, nodes = lT.get_idx3d(t)
+    if time is None:
+        time = lT.time_nodes.keys()
+    elif not isinstance(time, Iterable):
+        time = [time]
 
-        data_corres = {}
-        data = []
-        for i, C in enumerate(nodes):
-            data.append(lT.pos[C])
-            data_corres[i] = C
+    for t in time:
+        if lT.time_nodes[t] - lT.Gabriel_graph.keys():
+            nodes = np.fromiter(list(lT.time_nodes[t]), dtype=int)
 
-        tmp = Delaunay(data)
+            data_corres = {}
+            data = []
+            for i, C in enumerate(nodes):
+                data.append(lT.pos[C])
+                data_corres[i] = C
 
-        delaunay_graph = {}
+            delaunay_graph = {}
 
-        for N in tmp.simplices:
-            for e1, e2 in combinations(np.sort(N), 2):
-                delaunay_graph.setdefault(e1, set()).add(e2)
-                delaunay_graph.setdefault(e2, set()).add(e1)
+            # The delaunay triangulation is only usefult to compute
+            # when the number of points is higher than the spatial dimension + 1
+            if len(data[0]) + 1 < len(data):
+                tmp = Delaunay(data)
+                for N in tmp.simplices:
+                    for e1, e2 in combinations(np.sort(N), 2):
+                        delaunay_graph.setdefault(e1, set()).add(e2)
+                        delaunay_graph.setdefault(e2, set()).add(e1)
+            # When there are fewer nodes than the number of dimensions + 2
+            # The Delaunay is the complete graph
+            else:
+                for e1, e2 in combinations(data_corres, 2):
+                    delaunay_graph.setdefault(e1, set()).add(e2)
+                    delaunay_graph.setdefault(e2, set()).add(e1)
 
-        Gabriel_graph = {}
+            Gabriel_graph = {}
 
-        for e1, neighbs in delaunay_graph.items():
-            for ni in neighbs:
-                if not any(
-                    np.linalg.norm((data[ni] + data[e1]) / 2 - data[i])
-                    < np.linalg.norm(data[ni] - data[e1]) / 2
-                    for i in delaunay_graph[e1].intersection(
-                        delaunay_graph[ni]
-                    )
-                ):
-                    Gabriel_graph.setdefault(data_corres[e1], set()).add(
-                        data_corres[ni]
-                    )
-                    Gabriel_graph.setdefault(data_corres[ni], set()).add(
-                        data_corres[e1]
-                    )
+            for e1, neighbs in delaunay_graph.items():
+                for ni in neighbs:
+                    if not any(
+                        np.linalg.norm((data[ni] + data[e1]) / 2 - data[i])
+                        < np.linalg.norm(data[ni] - data[e1]) / 2
+                        for i in delaunay_graph[e1].intersection(
+                            delaunay_graph[ni]
+                        )
+                    ):
+                        Gabriel_graph.setdefault(data_corres[e1], set()).add(
+                            data_corres[ni]
+                        )
+                        Gabriel_graph.setdefault(data_corres[ni], set()).add(
+                            data_corres[e1]
+                        )
+            lT.Gabriel_graph.update(Gabriel_graph)
 
-        lT.Gabriel_graph[t] = Gabriel_graph
+    return lT.Gabriel_graph
 
-    return lT.Gabriel_graph[t]
+
+def compute_neighbours_in_radius(
+    lT: LineageTree,
+    t_b: int | None = None,
+    t_e: int | None = None,
+    th: float = 50,
+) -> dict[int, float]:
+    """Computes the number of neighbours for nodes between `t_b` and `t_e`.
+    The results is stored in `lT.neighbours` and returned.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree instance.
+    t_b : int, optional
+        starting time to look at, default first time point
+    t_e : int, optional
+        ending time to look at, default last time point
+    th : float, default=50
+        size of the neighbourhood
+
+    Returns
+    -------
+    dict mapping int to float
+        dictionary that maps a node id to its spatial density
+    """
+    neighbours = {}
+    if t_b is None:
+        t_b = lT.t_b
+    if t_e is None:
+        t_e = lT.t_e
+    time_range = set(range(t_b, t_e)).intersection(lT._time.values())
+    for t in time_range:
+        idx3d, nodes = lT.get_idx3d(t)
+        nb_ni = [(len(ni) - 1) for ni in idx3d.query_ball_tree(idx3d, th)]
+        neighbours.update(dict(zip(nodes, nb_ni, strict=True)))
+    return neighbours
 
 
 def compute_spatial_density(
@@ -136,21 +191,12 @@ def compute_spatial_density(
     dict mapping int to float
         dictionary that maps a node id to its spatial density
     """
-    if not hasattr(lT, "spatial_density"):
-        lT.spatial_density = {}
     s_vol = 4 / 3.0 * np.pi * th**3
-    if t_b is None:
-        t_b = lT.t_b
-    if t_e is None:
-        t_e = lT.t_e
-    time_range = set(range(t_b, t_e)).intersection(lT._time.values())
-    for t in time_range:
-        idx3d, nodes = lT.get_idx3d(t)
-        nb_ni = [
-            (len(ni) - 1) / s_vol for ni in idx3d.query_ball_tree(idx3d, th)
-        ]
-        lT.spatial_density.update(dict(zip(nodes, nb_ni, strict=True)))
-    return lT.spatial_density
+    spatial_density = {
+        k: (v + 1) / s_vol
+        for k, v in lT.compute_neighbours_in_radius(t_b, t_e, th).items()
+    }
+    return spatial_density
 
 
 def compute_k_nearest_neighbours(
@@ -172,27 +218,36 @@ def compute_k_nearest_neighbours(
     dict mapping int to set of int
         dictionary that maps
         a node id to its `k` nearest neighbors
+    dict mapping int to set of float
+        dictionary that maps
+        a node id to the distances of its `k` nearest neighbors
     """
     lT.kn_graph = {}
-    for t in set(lT._time.values()):
-        nodes = lT.time_nodes[t]
+    lT.kn_distances = {}
+    k = k + 1
+    for t, nodes in lT.time_nodes.items():
         if 1 < len(nodes):
             use_k = k if k < len(nodes) else len(nodes)
             idx3d, nodes = lT.get_idx3d(t)
             pos = [lT.pos[c] for c in nodes]
-            _, neighbs = idx3d.query(pos, use_k)
+            distances, neighbs = idx3d.query(pos, use_k)
             out = dict(
                 zip(
                     nodes,
-                    map(set, nodes[neighbs]),
+                    nodes[neighbs[:, 1:]],
+                    strict=True,
+                )
+            )
+            out_distances = dict(
+                zip(
+                    nodes,
+                    distances[:, 1:],
                     strict=True,
                 )
             )
             lT.kn_graph.update(out)
-        else:
-            n = nodes.pop
-            lT.kn_graph.update({n: {n}})
-    return lT.kn_graph
+            lT.kn_distances.update(out_distances)
+    return lT.kn_graph, lT.kn_distances
 
 
 def compute_spatial_edges(

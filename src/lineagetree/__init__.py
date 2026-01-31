@@ -1,4 +1,4 @@
-__version__ = "3.0.4"
+__version__ = "3.1.0"
 from .lineage_tree import LineageTree
 from ._io._loaders import (
     read_from_ASTEC,
