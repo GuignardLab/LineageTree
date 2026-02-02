@@ -199,3 +199,138 @@
     max-height: 200px;
   }
 }
+
+/* Style function/method names */
+.doc-heading code {
+    font-size: 1.1em;
+    font-weight: 600;
+    /* color: #2563eb;
+    background-color: #eff6ff; */
+    padding: 0.2em 0.5em;
+    border-radius: 4px;
+}
+
+/* Style the main docstring text */
+.doc-contents > p,
+.doc-contents > .admonition {
+    font-style: italic;
+    /* font-size: 0.9em; */
+    color: #64748b;
+    line-height: 1.6;
+}
+
+/* Keep code blocks in docstrings normal (not italic) */
+.doc-contents pre,
+.doc-contents code {
+    font-style: normal;
+    /* font-size: 0.85em; */
+}
+
+/* Style parameter descriptions */
+.doc-parameters .doc-parameter-description,
+.doc-returns .doc-return-description {
+    font-style: italic;
+    font-size: 0.88em;
+    color: #64748b;
+}
+
+/* Keep parameter names normal */
+.doc-parameter-name {
+    font-style: normal;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+/* Style for Examples section */
+.doc-section-title {
+    font-weight: 600;
+    font-size: 1em;
+    margin-top: 1em;
+}
+
+/* Alternative: If you want ALL docstring content smaller and italic */
+.doc-contents {
+    font-style: italic;
+    /* font-size: 0.9em; */
+    color: #64748b;
+}
+
+/* But keep headings within docstrings normal */
+.doc-contents h1,
+.doc-contents h2,
+.doc-contents h3,
+.doc-contents h4 {
+    font-style: normal;
+    font-weight: 600;
+}
+
+/* Style the function signature differently */
+.doc-signature {
+    /* background-color: #f8fafc; */
+    /* border-left: 3px solid #3b82f6; */
+    padding: 0.8em 1em;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95em;
+}
+
+/* Force each parameter on its own line */
+.doc-signature .n,
+.doc-signature .p {
+    display: inline;
+}
+
+.doc-signature .sig-param {
+    display: block;
+    padding-left: 2em;
+    text-indent: -2em;
+    margin-left: 2em;
+}
+
+/* Keep opening parenthesis with function name */
+.doc-signature .sig-paren:first-of-type {
+    display: inline;
+}
+
+/* Style the parameter list container */
+.doc-signature .sig-param-decl {
+    display: block;
+    padding-left: 1.5em;
+}
+
+/* Add proper indentation */
+span.sig-param {
+    display: block;
+    margin-left: 2em;
+    text-indent: 0;
+}
+
+/* Hover effect for function names
+.doc-heading:hover code {
+    background-color: #dbeafe;
+    transition: background-color 0.2s ease;
+}
+
+/* Add horizontal line between functions/methods */
+/* .doc.doc-object:not(:first-child) {
+    margin-top: 3em;
+    padding-top: 2em;
+    border-top: 2px solid #e2e8f0; */
+*/
+
+/* Alternative: Dashed line */
+
+.doc.doc-object:not(:first-child) {
+    margin-top: 3em;
+    padding-top: 2em;
+    border-top: 2px dashed #cbd5e1;
+}
+
+
+/* Alternative: Thicker line with gradient */
+
+.doc.doc-object:not(:first-child) {
+    margin-top: 3em;
+    padding-top: 2em;
+    border-top: 3px solid #94a3b8;
+}
