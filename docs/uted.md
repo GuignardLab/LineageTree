@@ -6,7 +6,8 @@ While visual inspection allows for identifying similar and different lineages, i
 - **Removing nodes**: The same cost as adding nodes
 - **Substituting/Matching nodes**: Costs less than adding/removing the nodes being compared.
 
-**Adding, Removing and Matching/Substituting always respect hierarchy**. If a node `n1` is matched to a node `n2` the `descendants of n1` will **only** be matched with `descendants of n2`.
+Adding, Removing and Matching/Substituting always respect hierarchy. If a node `n1` is matched to a node `n2` the `descendants of n1` will **only** be matched with `descendants of n2`.
+
 ---
 
 ## Why UTED?

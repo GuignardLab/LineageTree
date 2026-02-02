@@ -124,6 +124,7 @@ nav:
   - Download and Import: getting-started.md
   - Glossary: glossary.md
   - Core Utility: core.md
+  - Initializing a LineageTree and accessing attributes: properties.md
   - Loaders: loaders.md
   - Visualization: viz.md
   - Analysis:
