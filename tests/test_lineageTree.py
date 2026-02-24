@@ -750,3 +750,24 @@ def test_change_labels():
         24: "left",
         25: "left",
     }
+
+
+def test_plot_chain_hist():
+    _, ax1 = lt.plot_chain_histogram()
+    _, ax2 = lt.plot_chain_histogram(with_leaves=True)
+    _, ax3 = lt.plot_chain_histogram(with_roots=True)
+    _, ax4 = lt.plot_chain_histogram(with_roots=True, with_leaves=True)
+    assert sum(p.get_height() for p in ax4.patches) == len(lt.all_chains)
+    assert sum(p.get_height() for p in ax3.patches) == (
+        len(lt.all_chains) - len(lt.leaves)
+    )
+    assert sum(p.get_height() for p in ax2.patches) == (
+        len(lt.all_chains) - len(lt.roots)
+    )
+    print(
+        sum(p.get_height() for p in ax1.patches),
+        len(lt.all_chains) - len(lt.leaves) - len(lt.roots),
+    )
+    assert sum(p.get_height() for p in ax1.patches) == (
+        len(lt.all_chains) - len(lt.leaves.union(lt.roots))
+    )

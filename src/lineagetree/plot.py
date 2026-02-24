@@ -741,3 +741,52 @@ def plot_dtw_trajectory(
         )
 
     return distance, fig
+
+
+def plot_chain_histogram(
+    lT: LineageTree,
+    *,
+    with_leaves: bool = False,
+    with_roots: bool = False,
+    bins: int = None,
+    color: str = "blue",
+    ax: plt.Axes | None = None,
+    **kwargs,
+):
+    """_summary_
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree instance.
+    with_leaves : bool, optional
+        Include the chains that contain leaves in the histogram, by default False
+    with_roots : bool, optional
+        Include the chains that contain roots in the histogram, by default False
+    bins : int, optional
+        Bins of tghe histogram, if none they are set automatically, by default None
+    color : str, optional
+        Color of the histogram, by default "blue"
+    ax : plt.Axes | None, optional
+        The plt.Axes instance, if None it creates a new Axes instance, by default None
+
+    Returns
+    -------
+    plt.Figure
+        The matplotlib figure
+    plt.Axes
+        The matplotlib axes
+    """
+
+    list_of_chains = [c for c in lT.all_chains]
+    if not with_roots:
+        list_of_chains = [c for c in list_of_chains if c[0] not in lT.roots]
+    if not with_leaves:
+        list_of_chains = [c for c in list_of_chains if c[-1] not in lT.leaves]
+    chain_lens = [len(c) for c in list_of_chains]
+    if not ax:
+        _, ax = plt.subplots(nrows=1, ncols=1, **kwargs)
+    else:
+        _, ax = plt.subplots()
+    ax.hist(chain_lens, bins, color=color)
+    return ax.get_figure(), ax
