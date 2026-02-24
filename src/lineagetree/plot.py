@@ -753,7 +753,7 @@ def plot_chain_histogram(
     ax: plt.Axes | None = None,
     **kwargs,
 ):
-    """_summary_
+    """Plot the histograms of the chains length of the dataset. By default the chains tha tcontain root or leaf ndoes are not included.
 
     Parameters
     ----------
