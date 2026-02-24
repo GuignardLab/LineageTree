@@ -1064,6 +1064,35 @@ def read_from_mamut_xml(
     )
 
 
+def read_from_swc(swc_path: Path | str) -> LineageTree:
+    """
+    Read a neuronal tree from a swc file
+    """
+    with open(swc_path) as f:
+        lines = f.readlines()
+
+    predecessor = {}
+    pos = {}
+    properties = {}
+    properties["radius"] = {}
+    properties["structure_id"] = {}
+    for line in lines:
+        line = line.strip()
+        if len(line) < 1 or line[0] == "#":
+            continue
+        id_, struct_id, x, y, z, rad, parent = [
+            eval(li) for li in line.split()
+        ]
+        predecessor[id_] = parent
+        pos[id_] = np.array([x, y, z])
+        properties["radius"][id_] = rad
+        properties["structure_id"][id_] = struct_id
+
+    return LineageTree(
+        predecessor=predecessor, pos=pos, root_leaf_value=(-1,), **properties
+    )
+
+
 LOADERS = {  # put all formats in smaller case
     "bmf": {
         "BMF loader": read_from_bmf,
@@ -1090,5 +1119,8 @@ LOADERS = {  # put all formats in smaller case
         "C. elegans loader": read_from_txt_for_celegans,
         "C. elegans CAO loader": read_from_txt_for_celegans_CAO,
         "C. elegans BAO loader": read_from_txt_for_celegans_BAO,
+    },
+    "swc": {
+        "Neurons format": read_from_swc,
     },
 }
