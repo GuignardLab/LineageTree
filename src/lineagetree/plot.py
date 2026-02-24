@@ -786,7 +786,5 @@ def plot_chain_histogram(
     chain_lens = [len(c) for c in list_of_chains]
     if not ax:
         _, ax = plt.subplots(nrows=1, ncols=1, **kwargs)
-    else:
-        _, ax = plt.subplots()
     ax.hist(chain_lens, bins, color=color)
     return ax.get_figure(), ax
