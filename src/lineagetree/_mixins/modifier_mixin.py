@@ -5,6 +5,7 @@ from .._core._modifier import (
     get_next_id,
     modifier,
     remove_nodes,
+    stabilise_positions,
 )
 
 from ._methodize import AutoMethodizeMeta
@@ -19,3 +20,4 @@ class ModifierMixin(metaclass=AutoMethodizeMeta):
     get_next_id = get_next_id
     modifier = modifier
     remove_nodes = remove_nodes
+    stabilise_positions = stabilise_positions

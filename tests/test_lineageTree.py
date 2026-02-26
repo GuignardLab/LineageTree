@@ -750,3 +750,10 @@ def test_change_labels():
         24: "left",
         25: "left",
     }
+
+
+def test_stabilise_positions():
+    lT1.stabilise_positions()
+    assert np.isclose(
+        lT1.pos[148361], np.array([1019.66762163, 400.25591182, 287.54520521])
+    ).all()
