@@ -764,7 +764,7 @@ def plot_chain_histogram(
     with_roots : bool, default=False
         Include the chains that contain roots in the histogram, by default False
     bins : int, optional
-        Bins of tghe histogram, if none they are set automatically, by default None
+        Bins of the histogram, if None they are set automatically, by default None
     color : str, default='blue'
         Color of the histogram, by default "blue"
     ax : plt.Axes | None, optional
