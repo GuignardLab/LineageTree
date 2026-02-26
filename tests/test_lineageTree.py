@@ -32,6 +32,9 @@ def test_read_MaMuT_xml():
     assert len(lT2.nodes) == 41
     assert len(lT2.successor) == 41
     assert len(lT2.find_leaves(40)) == 2
+    assert lT2.temporal
+    assert lT1.temporal
+    assert lt.temporal
 
 
 @pytest.fixture(scope="session")
