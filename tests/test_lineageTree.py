@@ -8,12 +8,19 @@ from lineagetree import (
     LineageTreeManager,
     read_from_mamut_xml,
     read_from_mastodon,
+    read_from_swc,
     tree_approximation,
 )
 
 lT1 = read_from_mamut_xml("tests/data/test-mamut.xml")
 lT2 = read_from_mastodon("tests/data/test.mastodon")
 lt = LineageTree.load("tests/data/demo.lT")
+
+
+def test_swc_reader():
+    lT3 = read_from_swc("tests/data/204-2-6nj.CNG.swc")
+    assert len(lT3.nodes) == 603
+    assert not lT3.temporal
 
 
 def test_read_MaMuT_xml():
@@ -25,6 +32,9 @@ def test_read_MaMuT_xml():
     assert len(lT2.nodes) == 41
     assert len(lT2.successor) == 41
     assert len(lT2.find_leaves(40)) == 2
+    assert lT2.temporal
+    assert lT1.temporal
+    assert lt.temporal
 
 
 @pytest.fixture(scope="session")

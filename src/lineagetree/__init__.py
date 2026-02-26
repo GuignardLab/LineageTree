@@ -1,4 +1,4 @@
-__version__ = "3.1.0"
+__version__ = "3.2.0"
 from .lineage_tree import LineageTree
 from ._io._loaders import (
     read_from_ASTEC,
@@ -12,6 +12,7 @@ from ._io._loaders import (
     read_from_txt_for_celegans,
     read_from_txt_for_celegans_BAO,
     read_from_txt_for_celegans_CAO,
+    read_from_swc,
     LOADERS,
 )
 from .lineage_tree_manager import LineageTreeManager
@@ -30,5 +31,6 @@ __all__ = (
     "read_from_mastodon",
     "read_from_txt_for_celegans",
     "read_from_txt_for_celegans_CAO",
+    "read_from_swc",
     "LOADERS",
 )
