@@ -1089,7 +1089,11 @@ def read_from_swc(swc_path: Path | str) -> LineageTree:
         properties["structure_id"][id_] = struct_id
 
     return LineageTree(
-        predecessor=predecessor, pos=pos, root_leaf_value=(-1,), **properties
+        predecessor=predecessor,
+        pos=pos,
+        root_leaf_value=(-1,),
+        temporal=False,
+        **properties,
     )
 
 

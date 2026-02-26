@@ -146,6 +146,7 @@ class LineageTree(
         name: str | None = None,
         root_leaf_value: Sequence | None = None,
         spatial_resolution: Sequence | None = None,
+        temporal: bool = True,
         **kwargs,
     ):
         """Create a LineageTree object from minimal information, without reading from a file.
@@ -169,12 +170,15 @@ class LineageTree(
         root_leaf_value : Iterable, optional
             Iterable of values of roots' predecessors and leaves' successors in the successor and predecessor dictionaries.
             Defaults are `[None, (), [], set()]`.
+        temporal : boolean, default `True`
+            Whether the tree structure has time
         **kwargs:
             Supported keyword arguments are dictionaries assigning nodes to any custom property.
             The property must be specified for every node, and named differently from LineageTree's own attributes.
         """
         self.__version__ = importlib.metadata.version("lineagetree")
         self.name = str(name) if name is not None else None
+        self._temporal = temporal
 
         self._validator = TreeValidator(self)
 

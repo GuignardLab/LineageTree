@@ -222,3 +222,10 @@ def parenting(lT: LineageTree):
             lT._tmp_parenting[(i, j)] = _m(lT, i, j)
         del lT._tmp_parenting
     return lT._parenting
+
+
+@property
+def temporal(lT: LineageTree):
+    if not hasattr(lT, "_temporal"):
+        lT._temporal = True
+    return lT._temporal

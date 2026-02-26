@@ -20,6 +20,7 @@ lt = LineageTree.load("tests/data/demo.lT")
 def test_swc_reader():
     lT3 = read_from_swc("tests/data/204-2-6nj.CNG.swc")
     assert len(lT3.nodes) == 603
+    assert not lT3.temporal
 
 
 def test_read_MaMuT_xml():
