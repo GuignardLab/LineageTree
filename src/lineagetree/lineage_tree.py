@@ -100,6 +100,8 @@ class LineageTree(
             lT.time_resolution = 1
         if not hasattr(lT, "spatial_resolution"):
             lT.spatial_resolution = np.ones(3)
+        if not hasattr(lT, "_temporal"):
+            lT._temporal = True
 
         return lT
 
