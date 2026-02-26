@@ -759,13 +759,13 @@ def plot_chain_histogram(
     ----------
     lT : LineageTree
         The LineageTree instance.
-    with_leaves : bool, optional
+    with_leaves : bool, default=False
         Include the chains that contain leaves in the histogram, by default False
-    with_roots : bool, optional
+    with_roots : bool, default=False
         Include the chains that contain roots in the histogram, by default False
     bins : int, optional
         Bins of tghe histogram, if none they are set automatically, by default None
-    color : str, optional
+    color : str, default='blue'
         Color of the histogram, by default "blue"
     ax : plt.Axes | None, optional
         The plt.Axes instance, if None it creates a new Axes instance, by default None
