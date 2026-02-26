@@ -1,5 +1,7 @@
 # LineageTree
 
+Documentation available at [LineageTree Documentation](https://guignardlab.github.io/LineageTree/)
+
 This library allows to import and work with cell (but not limited to cells) lineage trees.
 With LineageTree you can read from:
 

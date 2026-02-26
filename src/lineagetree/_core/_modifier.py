@@ -207,3 +207,164 @@ def remove_nodes(lT: LineageTree, group: int | set | list) -> None:
             lT._predecessor[p_node] = ()
         lT._predecessor.pop(node, ())
         lT._successor.pop(node, ())
+
+
+@staticmethod
+def compute_rigid_transform(A: np.ndarray, B: np.ndarray) -> np.ndarray:
+    """
+    Computes the rigid transformation (rotation + translation) between two paired 3D point clouds.
+
+    Parameters
+    ----------
+    A : (N, 3) numpy array
+        source point cloud.
+    B : (N, 3) numpy array
+        target point cloud.
+
+    Returns
+    -------
+    (4, 4) np.ndarray
+        the rigid transformation matrix in homogeneous coordinates
+    """
+    assert A.shape == B.shape, "Point clouds A and B must have the same shape."
+
+    # Compute centroids
+    centroid_A = np.mean(A, axis=0)
+    centroid_B = np.mean(B, axis=0)
+
+    # Center the point clouds
+    AA = A - centroid_A
+    BB = B - centroid_B
+
+    # Compute the covariance matrix
+    H = AA.T @ BB
+
+    # Compute the SVD
+    U, _, Vt = np.linalg.svd(H)
+
+    # Compute the rotation matrix
+    R = Vt.T @ U.T
+
+    # Ensure the rotation matrix is proper (no reflection)
+    if np.linalg.det(R) < 0:
+        Vt[-1, :] *= -1
+        R = Vt.T @ U.T
+
+    # Compute the translation vector
+    t = centroid_B - R @ centroid_A
+
+    m = np.identity(4)
+    m[:-1, :-1] = R
+    m[:-1, -1] = t
+
+    return m
+
+
+@staticmethod
+def iterative_composition(trsfs: list[np.ndarray]) -> list[np.ndarray]:
+    """
+    Iteratively compose multiple transformations in a list such that:
+    result[0] = identity
+    and
+    result[i] = result[i-1] @ trsfs[i - 1]
+
+    Parameters
+    ----------
+    trsfs : list of (N, N) np.ndarray
+        List of transformation matrices in homogeneous coordinates
+
+    Returns
+    -------
+    list of (N, N) np.ndarray
+        List of iteratively composed transformations
+    """
+    new_trsfs = [np.identity(4)]
+    for trsf in trsfs:
+        new_trsfs.append(new_trsfs[-1] @ trsf)
+    return new_trsfs
+
+
+@staticmethod
+def apply_trsf(m: np.ndarray, pos: np.ndarray):
+    """
+    Apply the transformation m to an array of positions.
+
+    Parameters
+    ----------
+    m : (N, N) np.ndarray
+        A transformation matrix in homogeneous coordinates
+        for positions in N-1 dimensions.
+
+    pos: (M, N-1) np.ndarray
+        A list of positions in N-1 dimensions to be transformed
+
+    Returns
+    -------
+    (M, N-1) np.array
+        A list of the original positions transformed by m
+    """
+    pos_padded = np.pad(pos, ((0, 0), (0, 1)), "constant", constant_values=1).T
+
+    return np.dot(m, pos_padded)[:-1].T
+
+
+@modifier
+def stabilise_positions(lT: LineageTree) -> dict[int, np.ndarray]:
+    """
+    Move node positions at each time point such that
+    the sum of the squared displacements between consecutive
+    time points is minimal.
+
+    The old positions are kept in `lT.old_pos`
+
+    .. warning: If there are strongly coordinated movements
+    there might be smootheded out significantly
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree instance.
+
+    Returns
+    -------
+    dict mapping int to np.ndarray
+        A dictionnary similar to lT.pos with the
+        registered positions
+    """
+    times = sorted(lT.time_nodes)
+    trsfs_i_j = []
+    # ok_cells = set([c for c, pos in lT.pos.items() if pos.shape == (3,)])
+
+    for t1 in times[:-1]:
+        nodes_i, nodes_j = [], []
+        for c in lT.time_nodes[t1]:
+            putative_next_n = lT.successor[c]
+            next_n = []
+            for ci in putative_next_n:
+                if 3 <= len(lT.pos.get(ci, [])):
+                    next_n.append(ci)
+            if 0 < len(next_n):
+                nodes_i.append(c)
+                nodes_j.append(next_n)
+
+        # nodes_i, nodes_j = zip(*[(c, tuple(ci for ci in lT.successor[c] if ci in ok_cells)) for c in lT.time_nodes[t1] if c in lT.successor and c in ok_cells])
+        pos_i = np.array([lT.pos[c] for c in nodes_i])
+        pos_j = np.array(
+            [np.mean([lT.pos[ci] for ci in c], axis=0) for c in nodes_j]
+        )
+
+        trsf_i_j = compute_rigid_transform(pos_j, pos_i)
+        trsfs_i_j.append(trsf_i_j)
+
+    final_trsfs = iterative_composition(trsfs_i_j)
+
+    new_pos = {}
+    for i, trsf in enumerate(final_trsfs):
+        nodes = lT.time_nodes[times[i]]
+        pos = np.array([lT.pos[c] for c in nodes])
+        new_pos.update(zip(nodes, apply_trsf(trsf, pos)))
+
+    lT.old_pos = lT.pos
+    lT.pos = new_pos
+
+    return new_pos

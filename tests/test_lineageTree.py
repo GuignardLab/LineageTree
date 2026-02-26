@@ -771,3 +771,8 @@ def test_plot_chain_hist():
     assert sum(p.get_height() for p in ax1.patches) == (
         len(lt.all_chains) - len(lt.leaves.union(lt.roots))
     )
+def test_stabilise_positions():
+    lT1.stabilise_positions()
+    assert np.isclose(
+        lT1.pos[148361], np.array([1019.66762163, 400.25591182, 287.54520521])
+    ).all()
