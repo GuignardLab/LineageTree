@@ -6,6 +6,7 @@ from .._core._modifier import (
     modifier,
     remove_nodes,
     stabilise_positions,
+    smooth_trajectories,
 )
 
 from ._methodize import AutoMethodizeMeta
@@ -21,3 +22,4 @@ class ModifierMixin(metaclass=AutoMethodizeMeta):
     modifier = modifier
     remove_nodes = remove_nodes
     stabilise_positions = stabilise_positions
+    smooth_trajectories = smooth_trajectories
