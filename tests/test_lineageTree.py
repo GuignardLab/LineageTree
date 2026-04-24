@@ -792,8 +792,8 @@ def test_stabilise_positions():
 
 
 def test_smoothing():
-    new_pos = lT1.smooth_trajectories()
+    new_pos = lt.smooth_trajectories()
     assert np.isclose(
-        new_pos[167326], np.array([1141.39662461, 351.05849588, 278.39832126])
+        new_pos[1552], np.array([462.15385069, 907.17562352, 419.54303692])
     ).all()
-    lT1.pos = lT1.old_pos
+    lt.pos = lt.old_pos
