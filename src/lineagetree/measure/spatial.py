@@ -1,11 +1,11 @@
 from __future__ import annotations
-from warnings import warn, catch_warnings, simplefilter
 
 from itertools import combinations
 from typing import TYPE_CHECKING, Iterable
 
 import numpy as np
 from scipy.spatial import Delaunay, KDTree
+from .._core._modifier import anchored_gaussian_smooth
 
 if TYPE_CHECKING:
     from ..lineage_tree import LineageTree
@@ -277,3 +277,289 @@ def compute_spatial_edges(
         out = dict(zip(nodes, [set(nodes[ni]) for ni in neighbs], strict=True))
         lT.th_edges.update({k: v.difference([k]) for k, v in out.items()})
     return lT.th_edges
+
+
+def _track_length(chain: np.ndarray, sigma: int = 1.5) -> float:
+    """Computes the anchored gaussian smooth of a chain and returns the distance travelled for a given chain.
+
+    Parameters
+    ----------
+    chain : np.ndarray
+        3D numpy array with the positions of all nodes in a chain.
+    sigma : int
+        Standard deviation of the Gaussian kernel used for smoothing.
+        Higher values produce stronger smoothing. Default is 1.5.
+    Returns
+    -------
+    float
+        The sum of all the distances from the start to the end of the chain, after the data has been smoothed or not.
+    """
+
+    chain = np.array(chain)
+    smoothed_chain = np.zeros_like(chain, dtype=float)
+    if sigma != 0:
+        smoothed_chain[:, 0] = anchored_gaussian_smooth(chain[:, 0], sigma)
+        smoothed_chain[:, 1] = anchored_gaussian_smooth(chain[:, 1], sigma)
+        smoothed_chain[:, 2] = anchored_gaussian_smooth(chain[:, 2], sigma)
+    else:
+        smoothed_chain = chain  # Not smoothed
+    distance_travelled = np.linalg.norm(
+        smoothed_chain[:-1] - smoothed_chain[1:], axis=0
+    )
+    return sum(distance_travelled)
+
+
+def get_track_length(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
+    """Returns the distance travelled for each chain.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree object.
+    sigma : float, optional
+        Standard deviation of the Gaussian kernel used for smoothing.
+        Higher values produce stronger smoothing, by default is 1.5.
+
+    Returns
+    -------
+    dict[int, float]
+        The distance travelled for each chain assigned to all of its nodes.
+    """
+    track_length = {}
+    for track in lT.all_chains:
+        data = np.array([lT.pos[c] for c in track])
+        dist = _track_length(data, sigma)
+        track_length.update({node: dist for node in track})
+    lT.track_length = track_length
+    return lT.track_length
+
+
+def get_duration(lT: LineageTree) -> dict[int, float]:
+    """The duration of each chain.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree object.
+
+    Returns
+    -------
+    dict[int,float]
+        The duration of each chain assigned to all of its nodes.
+    """
+    lT.duration = {
+        node: len(lT.get_chain_of_node(node)) * lT.time_resolution
+        for node in lT.nodes
+    }
+    return lT.duration
+
+
+def get_max_displacement(lT: LineageTree):
+    lT.max_displacement = {}
+    for chain in lT.all_chains:
+        root = lT.get_ancestor_at_t(chain[0])
+        if root not in lT.nodes:
+            continue
+        root_pos = lT.pos[root]
+        positions = np.array([lT.pos[c] for c in chain])
+        displacements = np.cumsum(np.linalg.norm((positions - root_pos), axis=1))
+        lT.max_displacement.update({node:disp for node, disp in zip(chain,displacements)})
+    return lT.max_displacement
+
+
+def get_speed(lT: LineageTree, sigma: int) -> dict[int, float]:
+
+    track_length = get_track_length(lT, sigma)
+    lT.speed = {
+        node: dist / lT.time_resolution for node, dist in track_length.items()
+    }
+    return lT.speed
+
+
+def get_displacement(lT: LineageTree):
+    displacement = {}
+    for chain in lT.all_chains:
+        displacement.update(
+            {
+                node: np.linalg.norm(lT.pos[chain[0]] - lT.pos[chain[-1]])
+                for node in chain
+            }
+        )
+    lT.displacement = displacement
+    return lT.displacement
+
+
+def get_velocity(lT: LineageTree):
+    disp = get_displacement(lT)
+    lT.velocity = {
+        node: dist / lT.time_resolution for node, dist in disp.items()
+    }
+    return lT.velocity
+
+
+def get_mean_squared_displacement(
+    lT: LineageTree,
+):
+    lT.msd = {}
+    for chain in lT.all_chains:
+        positions = np.array([lT.pos[c] for c in chain])
+        MSD = np.cumsum(
+            np.linalg.norm((positions - positions[0]) ** 2, axis=1)
+        ) / np.arange(1, len(chain) + 1)
+        lT.msd.update({node: msd for node, msd in zip(chain, MSD)})
+    return lT.msd
+
+
+def get_displacement_ratio(lT: LineageTree, sigma: float = 1.5):
+    disp = get_displacement(lT)
+    max_disp = get_max_displacement(lT)
+    lT.displacement_ratio = {
+        node: disp[node] / max_disp[node] for node in disp if max_disp[node]
+    }
+    return lT.displacement_ratio
+
+
+def get_outreach_ratio(lT: LineageTree, sigma: float = 1.5):
+    max_disp = get_max_displacement(lT)
+    track_length = get_track_length(lT, sigma)
+    lT.displacement_ratio = {
+        node: max_disp[node] / track_length[node] for node in track_length if track_length[node]
+    }
+    return lT.displacement_ratio
+
+
+def get_straightness(lT: LineageTree, sigma: float = 1.5):
+    displacement = get_displacement(lT)
+    track_length = get_track_length(lT, sigma)
+    lT.straightness = {
+        node: displacement[node] / track_length[node] for node in displacement
+    }
+    return lT.straightness
+
+
+def _inertia_matrix(chain, sigma: float = 1.5):
+    """Calculates the inertia of a given point cloud.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The lineageTree object
+    sigma : float, optional
+        The smoothing factor, by default 1.5
+    """
+    smoothed_chain = np.zeros_like(chain, dtype = float)
+    if sigma != 0:
+        smoothed_chain[:, 0] = anchored_gaussian_smooth(chain[:, 0], sigma)
+        smoothed_chain[:, 1] = anchored_gaussian_smooth(chain[:, 1], sigma)
+        smoothed_chain[:, 2] = anchored_gaussian_smooth(chain[:, 2], sigma)
+    else:
+        smoothed_chain = chain  # Not smoothed
+    cloud = smoothed_chain - np.mean(smoothed_chain, axis=0)  # Centering
+    Ixx = np.sum(cloud[:, 1] ** 2 + cloud[:, 2] ** 2)
+    Iyy = np.sum(cloud[:, 2] ** 2 + cloud[:, 0] ** 2)
+    Izz = np.sum(cloud[:, 0] ** 2 + cloud[:, 1] ** 2)
+
+    Ixy = -np.sum(cloud[:, 0]* cloud[:, 1])
+    Ixz = -np.sum(cloud[:, 0]* cloud[:, 2])
+    Iyz = -np.sum(cloud[:, 1]* cloud[:, 2])
+
+    return np.array([[Ixx, Ixy, Ixz], [Ixy, Iyy, Iyz], [Ixz, Iyz, Izz]])
+
+
+def get_asphericity(lT: LineageTree, sigma: float = 1.5):
+    """Calculate the asphericity of a track
+    Adapted from : J Rudnick and G Gaspari 1986 J. Phys. A: Math. Gen. 19 L191
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree object
+    sigma : _type_
+        Smoothing factor.
+    """
+    lT.asphericity = {}
+
+    for chain in lT.all_chains:
+        chain_pos = np.array([lT.pos[c] for c in chain])
+        if len(chain)<4:
+            continue
+        else:
+            inertia = _inertia_matrix(chain_pos, sigma)
+        eig_vals = np.linalg.eigvals(inertia)
+        tr = eig_vals[0] ** 2 + eig_vals[1] ** 2 + eig_vals[2] ** 2
+        M = (
+            eig_vals[0] ** 2 * eig_vals[1] ** 2
+            + eig_vals[1] ** 2 * eig_vals[2] ** 2
+            + eig_vals[0] ** 2 * eig_vals[2] ** 2
+        )
+        asphericity = (tr**2 - 3 * M) / (tr**2)
+        lT.asphericity.update({node: asphericity for node in chain})
+        return lT.asphericity
+
+
+def get_angles(lT: LineageTree, sigma: float = 1.5):
+    lT.angles = {}
+    for chain in lT.all_chains:
+        if len(chain)<3:
+            continue
+        else:
+            positions = np.array([lT.pos[c] for c in chain])
+            smoothed_positions = np.zeros_like(positions, dtype=float)
+            if sigma != 0:
+                smoothed_positions[:, 0] = anchored_gaussian_smooth(
+                    positions[:, 0], sigma
+                )
+                smoothed_positions[:, 1] = anchored_gaussian_smooth(
+                    positions[:, 1], sigma
+                )
+                smoothed_positions[:, 2] = anchored_gaussian_smooth(
+                    positions[:, 2], sigma
+                )
+            else:
+                smoothed_positions = positions  # Not smoothed
+            
+            vectors1 = smoothed_positions[:-1] - smoothed_positions[1:]
+            vectors2 = vectors1[1:]
+            angles = [
+                (v1 @ v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+                for v1, v2 in zip(vectors1, vectors2)
+            ]
+            angles = [0] + angles + [0]  # first and last node have no angle
+            lT.angles.update({node: angle for node, angle in zip(chain, angles)})
+    return lT.angles
+
+
+def get_overall_angle(lT: LineageTree):
+    lT.overall_angles = {}
+    for chain in lT.all_chains:
+        if len(chain)<3:
+            continue
+        else:
+            vector1 = lT.pos[chain[1]] - lT.pos[chain[0]]
+            vector2 = lT.pos[chain[-1]] - lT.pos[chain[-2]]
+            overangle = (vector1 @ vector2) / (
+                np.linalg.norm(vector1) * np.linalg.norm(vector2)
+            )
+            lT.overall_angles.update({node: overangle for node in chain})
+    return lT.overall_angles
+
+
+# TODO
+
+# * **trackLength**: sums up the distances between subsequent positions; in other words, it estimates the length of the underlying subtrack by linear interpolation (usually an underestimation)
+# * **duration**: time elapsed between first and last positions of the subtrack
+# * **maxDisplacement**: maximal Euclidean distance of any position on the subtrack from the first position
+# * **speed**: trackLength/duration
+# * **displacement**: Euclidean distance between the track starting and endpoints
+# * **squareDisplacement**: squared Euclidean distance between the track starting and endpoints
+# * **displacementRatio**: displacement/maxDisplacement (values between 0 and 1, where 1 means a perfectly straight track)
+# * **outreachRatio**: maxDisplacement/trackLength (values between 0 and 1, where 1 means a perfectly straight track)
+# * **straightness**: displacement/trackLength (values between 0 and 1, where 1 means a perfectly straight track)
+# * **asphericity**: a different appraoch to measure straightness, that computes the asphericity of the set of positions on the subtrack _via_ the length of its principal components (number between 0 and 1, with higher values indicating straighter tracks). Unlike straightness, however, asphericity ignores back-and-forth motion of the object, so something that bounces between two positions will have low straightness but high asphericity. We define the asphericity of every track with two or fewer positions to be 1.
+# * **overallAngle**: angle (degrees) between the first and the last segment of the given track. Angles are measured symmetrically, thus the return values range from 0 to pi; for instance, both a 90 degrees left and right turns yield the same value pi/2 radians.
+# * **meanTurningAngle**: averages the overallAngle over all adjacent segments of a given track; a low meanTurningAngle indicates high persistence of orientation, whereas for an uncorrelated random walk we expect 90 degrees. Note that angle measurements will yield NA values for tracks in which two subsequent positions are identical.
+# * **overallDot**: computes the dot product between the first and the last segment of the given track.
+# * **overallNormDot**: computes the dot product between the unit vectors along the first and the last segment of the given track. These two functions may be useful to generate autocovariance plots.
+# * **fractalDimension**: fractal dimension is a mathematical concept used to describe the complexity of self-similar patterns or structures, such as fractals. It is a measure of how much detail or irregularity is present in a pattern or structure. This function estimates the fractal dimension of a track using the function fd.estim.boxcount, which involves dividing the cell trajectories into smaller and smaller boxes of a given size, counting the number of boxes that contain part of the trajectory, and then using this information to estimate the fractal dimension. In general, a higher fractal dimension can indicate that the cell track is more complex or irregular, and may be more invasive or aggressive. Conversely, a lower fractal dimension may indicate a more regular or uniform track shape, and may be associated with less invasive or aggressive behavior.
+
+# NOTE: With increasing window sizes, the number of available timepoints per cell decrease, since we can not create subtracks of length w starting in the last w timepoints.

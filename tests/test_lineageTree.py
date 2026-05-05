@@ -797,3 +797,58 @@ def test_smoothing():
         new_pos[1552], np.array([462.15385069, 907.17562352, 419.54303692])
     ).all()
     lt.pos = lt.old_pos
+
+def test_get_track_length():
+    result_0 = lt.get_track_length(0)
+    result_1 = lt.get_track_length(1)
+  
+
+
+def test_get_duration():
+    result = lt.get_duration()
+    
+
+
+def test_get_max_displacement():
+    result = lt.get_max_displacement()
+  
+
+def test_get_speed():
+    speed_0 = lt.get_speed(0)
+    speed_1 = lt.get_speed(1)
+   
+
+def test_get_displacement():
+    result = lt.get_displacement()
+
+
+def test_get_velocity():
+    result = lt.get_velocity()
+
+
+def test_get_mean_squared_displacement():
+    result = lt.get_mean_squared_displacement()
+
+
+def test_get_displacement_ratio():
+    ratio_0 = lt.get_displacement_ratio(0)
+    ratio_1 = lt.get_displacement_ratio(1)
+
+
+def test_get_straightness():
+    s0 = lt.get_straightness(0)
+    s1 = lt.get_straightness(1)
+
+
+def test_get_asphericity():
+    a1 = lt.get_asphericity(1)
+    a0 = lt.get_asphericity(0)
+
+
+def test_get_angles():
+    angles_0 = lt.get_angles(0)
+    angles_1 = lt.get_angles(1)
+
+
+def test_get_overall_angle():
+    result = lt.get_overall_angle()
