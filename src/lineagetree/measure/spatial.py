@@ -279,7 +279,7 @@ def compute_spatial_edges(
     return lT.th_edges
 
 
-def _track_length(chain: np.ndarray, sigma: int = 1.5) -> float:
+def _track_length(chain: np.ndarray, sigma: float = 1.5) -> float:
     """Computes the anchored gaussian smooth of a chain and returns the distance travelled for a given chain.
 
     Parameters
@@ -310,7 +310,7 @@ def _track_length(chain: np.ndarray, sigma: int = 1.5) -> float:
 
 
 def get_track_length(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
-    """Returns the distance travelled for each chain.
+    """Returns the distance travelled for each timepoint.
 
     Parameters
     ----------
@@ -323,7 +323,7 @@ def get_track_length(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
     Returns
     -------
     dict[int, float]
-        The distance travelled for each chain assigned to all of its nodes.
+        dictionary that maps a node id to its track length
     """
     track_length = {}
     for track in lT.all_chains:
@@ -345,7 +345,7 @@ def get_duration(lT: LineageTree) -> dict[int, float]:
     Returns
     -------
     dict[int,float]
-        The duration of each chain assigned to all of its nodes.
+       dictionary that maps a node id to the temporal duration of its chain.
     """
     lT.duration = {
         node: len(lT.get_chain_of_node(node)) * lT.time_resolution
@@ -354,7 +354,21 @@ def get_duration(lT: LineageTree) -> dict[int, float]:
     return lT.duration
 
 
-def get_max_displacement(lT: LineageTree):
+def get_max_displacement(lT: LineageTree) -> dict[int, float]:
+    """Maximal Euclidean distance of any position on the subtrack from the first position. 
+    Each node in a given chain has the same max displacement. 
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree object.
+
+    Returns
+    -------
+    dict[int, float]
+        a dictionary that maps each node to the max displacement of its chain.
+    """
+    
     lT.max_displacement = {}
     for chain in lT.all_chains:
         root = lT.get_ancestor_at_t(chain[0])
@@ -367,7 +381,21 @@ def get_max_displacement(lT: LineageTree):
     return lT.max_displacement
 
 
-def get_speed(lT: LineageTree, sigma: int) -> dict[int, float]:
+def get_speed(lT: LineageTree, sigma: float) -> dict[int, float]:
+    """The speed of each node.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree object.
+    sigma : float
+        The smoothing factor
+
+    Returns
+    -------
+    dict[int, float]
+        dictionary that maps each node to its speed ( distance travelled/time_resolution)
+    """
 
     track_length = get_track_length(lT, sigma)
     lT.speed = {
@@ -376,7 +404,19 @@ def get_speed(lT: LineageTree, sigma: int) -> dict[int, float]:
     return lT.speed
 
 
-def get_displacement(lT: LineageTree):
+def get_displacement(lT: LineageTree) -> dict[int, float]:
+    """Displacement between a the start and the end of each chain.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree object.
+
+    Returns
+    -------
+    dict[int, float]
+        dictionary that maps each node to the displacement of its chain (start to end)
+    """
     displacement = {}
     for chain in lT.all_chains:
         displacement.update(
@@ -389,7 +429,19 @@ def get_displacement(lT: LineageTree):
     return lT.displacement
 
 
-def get_velocity(lT: LineageTree):
+def get_velocity(lT: LineageTree) -> dict[int, float]:
+    """The velocity of each node.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree object.
+
+    Returns
+    -------
+    dict[int, float]
+        dictionary that maps each node ti its velocity
+    """
     disp = get_displacement(lT)
     lT.velocity = {
         node: dist / lT.time_resolution for node, dist in disp.items()
@@ -399,7 +451,19 @@ def get_velocity(lT: LineageTree):
 
 def get_mean_squared_displacement(
     lT: LineageTree,
-):
+) -> dict[int, float]:
+    """The Mean Squared Euclidean distance between the track starting and endpoints
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree object.
+
+    Returns
+    -------
+    dict[int, float]
+        dictionary that maps each node to the msd of its respective chain.
+    """
     lT.msd = {}
     for chain in lT.all_chains:
         positions = np.array([lT.pos[c] for c in chain])
@@ -410,7 +474,20 @@ def get_mean_squared_displacement(
     return lT.msd
 
 
-def get_displacement_ratio(lT: LineageTree, sigma: float = 1.5):
+def get_displacement_ratio(lT: LineageTree) -> dict[int, float]:
+    """The displacement ratio, displacement/max_displacement, displacement of each chain divided by
+    the displacement from the root node.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree object.
+
+    Returns
+    -------
+    dict[int, float]
+        dictionary that maps each node to its displacement ratio.
+    """
     disp = get_displacement(lT)
     max_disp = get_max_displacement(lT)
     lT.displacement_ratio = {
@@ -419,7 +496,7 @@ def get_displacement_ratio(lT: LineageTree, sigma: float = 1.5):
     return lT.displacement_ratio
 
 
-def get_outreach_ratio(lT: LineageTree, sigma: float = 1.5):
+def get_outreach_ratio(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
     max_disp = get_max_displacement(lT)
     track_length = get_track_length(lT, sigma)
     lT.displacement_ratio = {
@@ -428,7 +505,7 @@ def get_outreach_ratio(lT: LineageTree, sigma: float = 1.5):
     return lT.displacement_ratio
 
 
-def get_straightness(lT: LineageTree, sigma: float = 1.5):
+def get_straightness(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
     displacement = get_displacement(lT)
     track_length = get_track_length(lT, sigma)
     lT.straightness = {
@@ -437,7 +514,7 @@ def get_straightness(lT: LineageTree, sigma: float = 1.5):
     return lT.straightness
 
 
-def _inertia_matrix(chain, sigma: float = 1.5):
+def _inertia_matrix(chain, sigma: float = 1.5)-> np.ndarray:
     """Calculates the inertia of a given point cloud.
 
     Parameters
@@ -466,8 +543,8 @@ def _inertia_matrix(chain, sigma: float = 1.5):
     return np.array([[Ixx, Ixy, Ixz], [Ixy, Iyy, Iyz], [Ixz, Iyz, Izz]])
 
 
-def get_asphericity(lT: LineageTree, sigma: float = 1.5):
-    """Calculate the asphericity of a track
+def get_asphericity(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
+    """Calculate the asphericity of a track. For 0 it is perfectly spherical, while for 1 it is not spherical.
     Adapted from : J Rudnick and G Gaspari 1986 J. Phys. A: Math. Gen. 19 L191
 
     Parameters
@@ -476,6 +553,12 @@ def get_asphericity(lT: LineageTree, sigma: float = 1.5):
         The LineageTree object
     sigma : _type_
         Smoothing factor.
+    
+    Returns
+    -------
+    dict[int, float]:
+        dictionary that maps each node to the sphericity of each respective track.
+
     """
     lT.asphericity = {}
 
@@ -494,10 +577,32 @@ def get_asphericity(lT: LineageTree, sigma: float = 1.5):
         )
         asphericity = (tr**2 - 3 * M) / (tr**2)
         lT.asphericity.update({node: asphericity for node in chain})
-        return lT.asphericity
+    return lT.asphericity
 
 
-def get_angles(lT: LineageTree, sigma: float = 1.5):
+def get_angles(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
+    """Angles between adjacent edges.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree object.
+    sigma : float, optional
+        The smoothing factor, by default 1.5
+
+    Returns
+    -------
+    dict[int, float]
+        dictionary that maps each node to the angle between its diplacement and the next ones displacement.
+        o
+        /
+        i
+        |
+        e
+        \\
+         a
+        for i its the angle of o->i to i->e
+    """
     lT.angles = {}
     for chain in lT.all_chains:
         if len(chain)<3:
@@ -529,7 +634,19 @@ def get_angles(lT: LineageTree, sigma: float = 1.5):
     return lT.angles
 
 
-def get_overall_angle(lT: LineageTree):
+def get_overall_angle(lT: LineageTree) -> dict[int, float]:
+    """_summary_
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree object.
+
+    Returns
+    -------
+    dict[int, float]
+        _description_
+    """
     lT.overall_angles = {}
     for chain in lT.all_chains:
         if len(chain)<3:
