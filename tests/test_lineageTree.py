@@ -798,25 +798,24 @@ def test_smoothing():
     ).all()
     lt.pos = lt.old_pos
 
+
 def test_get_track_length():
     result_0 = lt.get_track_length(0)
     result_1 = lt.get_track_length(1)
-  
 
 
 def test_get_duration():
     result = lt.get_duration()
-    
 
 
 def test_get_max_displacement():
     result = lt.get_max_displacement()
-  
+
 
 def test_get_speed():
     speed_0 = lt.get_speed(0)
     speed_1 = lt.get_speed(1)
-   
+
 
 def test_get_displacement():
     result = lt.get_displacement()
@@ -831,8 +830,7 @@ def test_get_mean_squared_displacement():
 
 
 def test_get_displacement_ratio():
-    ratio_0 = lt.get_displacement_ratio(0)
-    ratio_1 = lt.get_displacement_ratio(1)
+    ratio_1 = lt.get_displacement_ratio()
 
 
 def test_get_straightness():

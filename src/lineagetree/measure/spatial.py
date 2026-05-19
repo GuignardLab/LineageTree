@@ -355,8 +355,8 @@ def get_duration(lT: LineageTree) -> dict[int, float]:
 
 
 def get_max_displacement(lT: LineageTree) -> dict[int, float]:
-    """Maximal Euclidean distance of any position on the subtrack from the first position. 
-    Each node in a given chain has the same max displacement. 
+    """Maximal Euclidean distance of any position on the subtrack from the first position.
+    Each node in a given chain has the same max displacement.
 
     Parameters
     ----------
@@ -368,7 +368,7 @@ def get_max_displacement(lT: LineageTree) -> dict[int, float]:
     dict[int, float]
         a dictionary that maps each node to the max displacement of its chain.
     """
-    
+
     lT.max_displacement = {}
     for chain in lT.all_chains:
         root = lT.get_ancestor_at_t(chain[0])
@@ -376,8 +376,12 @@ def get_max_displacement(lT: LineageTree) -> dict[int, float]:
             continue
         root_pos = lT.pos[root]
         positions = np.array([lT.pos[c] for c in chain])
-        displacements = np.cumsum(np.linalg.norm((positions - root_pos), axis=1))
-        lT.max_displacement.update({node:disp for node, disp in zip(chain,displacements)})
+        displacements = np.cumsum(
+            np.linalg.norm((positions - root_pos), axis=1)
+        )
+        lT.max_displacement.update(
+            {node: disp for node, disp in zip(chain, displacements)}
+        )
     return lT.max_displacement
 
 
@@ -496,11 +500,15 @@ def get_displacement_ratio(lT: LineageTree) -> dict[int, float]:
     return lT.displacement_ratio
 
 
-def get_outreach_ratio(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
+def get_outreach_ratio(
+    lT: LineageTree, sigma: float = 1.5
+) -> dict[int, float]:
     max_disp = get_max_displacement(lT)
     track_length = get_track_length(lT, sigma)
     lT.displacement_ratio = {
-        node: max_disp[node] / track_length[node] for node in track_length if track_length[node]
+        node: max_disp[node] / track_length[node]
+        for node in track_length
+        if track_length[node]
     }
     return lT.displacement_ratio
 
@@ -514,7 +522,7 @@ def get_straightness(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
     return lT.straightness
 
 
-def _inertia_matrix(chain, sigma: float = 1.5)-> np.ndarray:
+def _inertia_matrix(chain, sigma: float = 1.5) -> np.ndarray:
     """Calculates the inertia of a given point cloud.
 
     Parameters
@@ -523,8 +531,14 @@ def _inertia_matrix(chain, sigma: float = 1.5)-> np.ndarray:
         The lineageTree object
     sigma : float, optional
         The smoothing factor, by default 1.5
+
+    Returns
+    -------
+    np.ndarray
+        The 3x3 inertia array of a point cloud.
+
     """
-    smoothed_chain = np.zeros_like(chain, dtype = float)
+    smoothed_chain = np.zeros_like(chain, dtype=float)
     if sigma != 0:
         smoothed_chain[:, 0] = anchored_gaussian_smooth(chain[:, 0], sigma)
         smoothed_chain[:, 1] = anchored_gaussian_smooth(chain[:, 1], sigma)
@@ -536,9 +550,9 @@ def _inertia_matrix(chain, sigma: float = 1.5)-> np.ndarray:
     Iyy = np.sum(cloud[:, 2] ** 2 + cloud[:, 0] ** 2)
     Izz = np.sum(cloud[:, 0] ** 2 + cloud[:, 1] ** 2)
 
-    Ixy = -np.sum(cloud[:, 0]* cloud[:, 1])
-    Ixz = -np.sum(cloud[:, 0]* cloud[:, 2])
-    Iyz = -np.sum(cloud[:, 1]* cloud[:, 2])
+    Ixy = -np.sum(cloud[:, 0] * cloud[:, 1])
+    Ixz = -np.sum(cloud[:, 0] * cloud[:, 2])
+    Iyz = -np.sum(cloud[:, 1] * cloud[:, 2])
 
     return np.array([[Ixx, Ixy, Ixz], [Ixy, Iyy, Iyz], [Ixz, Iyz, Izz]])
 
@@ -553,7 +567,7 @@ def get_asphericity(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
         The LineageTree object
     sigma : _type_
         Smoothing factor.
-    
+
     Returns
     -------
     dict[int, float]:
@@ -564,7 +578,7 @@ def get_asphericity(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
 
     for chain in lT.all_chains:
         chain_pos = np.array([lT.pos[c] for c in chain])
-        if len(chain)<4:
+        if len(chain) < 4:
             continue
         else:
             inertia = _inertia_matrix(chain_pos, sigma)
@@ -594,18 +608,12 @@ def get_angles(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
     -------
     dict[int, float]
         dictionary that maps each node to the angle between its diplacement and the next ones displacement.
-        o
-        /
-        i
-        |
-        e
-        \\
-         a
-        for i its the angle of o->i to i->e
+        For example for and edge containing the nodes o,i,e,a:  o -> i -> e -> a
+        for i its the angle of o->i to i->e, for e is the angle of i->e to e->a
     """
     lT.angles = {}
     for chain in lT.all_chains:
-        if len(chain)<3:
+        if len(chain) < 3:
             continue
         else:
             positions = np.array([lT.pos[c] for c in chain])
@@ -622,7 +630,7 @@ def get_angles(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
                 )
             else:
                 smoothed_positions = positions  # Not smoothed
-            
+
             vectors1 = smoothed_positions[:-1] - smoothed_positions[1:]
             vectors2 = vectors1[1:]
             angles = [
@@ -630,12 +638,16 @@ def get_angles(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
                 for v1, v2 in zip(vectors1, vectors2)
             ]
             angles = [0] + angles + [0]  # first and last node have no angle
-            lT.angles.update({node: angle for node, angle in zip(chain, angles)})
+            lT.angles.update(
+                {node: angle for node, angle in zip(chain, angles)}
+            )
     return lT.angles
 
 
 def get_overall_angle(lT: LineageTree) -> dict[int, float]:
-    """_summary_
+    """The angle (degrees) between the first and the last segment of the given track.
+    Angles are measured symmetrically, thus the return values range from 0 to pi;
+    for instance, both a 90 degrees left and right turns yield the same value pi/2 radians.
 
     Parameters
     ----------
@@ -645,11 +657,11 @@ def get_overall_angle(lT: LineageTree) -> dict[int, float]:
     Returns
     -------
     dict[int, float]
-        _description_
+        dictionary that maps the overall angle of a given chain to every node of its chain
     """
     lT.overall_angles = {}
     for chain in lT.all_chains:
-        if len(chain)<3:
+        if len(chain) < 3:
             continue
         else:
             vector1 = lT.pos[chain[1]] - lT.pos[chain[0]]
