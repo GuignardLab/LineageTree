@@ -470,7 +470,7 @@ def plot_dtw_heatmap(
     plt.Figure
         Heatmap of cost matrix with opitimal path
     """
-    cost, path, cost_mat, pos_chain1, pos_chain2 = lT.calculate_dtw(
+    cost, path, cost_mat, pos_chain1, pos_chain2 = lT.dtw(
         nodes1,
         nodes2,
         threshold,
@@ -587,7 +587,7 @@ def plot_dtw_trajectory(
         cost_mat,
         pos_chain1,
         pos_chain2,
-    ) = lT.calculate_dtw(
+    ) = lT.dtw(
         nodes1,
         nodes2,
         threshold,
@@ -705,14 +705,12 @@ def plot_dtw_trajectory(
             ax.set_xlabel(f"{x_percent:.0f}% of {x_label} position")
             ax.set_ylabel(f"{y_percent:.0f}% of {y_label} position")
         else:
-            raise ValueError(
-                """Error: available projections are:
+            raise ValueError("""Error: available projections are:
                     '3d' : for the 3d visualization
                     'xy' or None (default) : 2D projection of axis x and y
                     'xz' : 2D projection of axis x and z
                     'yz' : 2D projection of axis y and z
-                    'pca' : PCA projection"""
-            )
+                    'pca' : PCA projection""")
 
     connections = [[pos_chain1[i], pos_chain2[j]] for i, j in alignment]
 

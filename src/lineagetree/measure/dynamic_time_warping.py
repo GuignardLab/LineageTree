@@ -16,7 +16,7 @@ def __calculate_diag_line(dist_mat: np.ndarray) -> tuple[float, float]:
     Parameters
     ----------
     dist_mat : np.ndarray
-        distance matrix obtained by the function calculate_dtw
+        distance matrix obtained by the function dtw
 
     Returns
     -------
@@ -50,7 +50,7 @@ def __dp(
     Parameters
     ----------
     dist_mat : np.ndarray
-        distance matrix obtained by the function calculate_dtw
+        distance matrix obtained by the function dtw
     start_d : int, default=0
         start delay
     back_d : int, default=0
@@ -251,7 +251,7 @@ def __interpolate(
     return np.column_stack(inter1_pos), np.column_stack(inter2_pos)
 
 
-def calculate_dtw(
+def dtw(
     lT: LineageTree,
     nodes1: int,
     nodes2: int,
