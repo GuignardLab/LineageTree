@@ -1,5 +1,4 @@
 from __future__ import annotations
-from warnings import warn, catch_warnings, simplefilter
 
 from itertools import combinations
 from typing import TYPE_CHECKING, Iterable
@@ -11,7 +10,7 @@ if TYPE_CHECKING:
     from ..lineage_tree import LineageTree
 
 
-def get_idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
+def idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
     """Get a 3d kdtree for the dataset at time `t`.
     The  kdtree is stored in `lT.kdtrees[t]` and returned.
     The correspondancy list is also returned.
@@ -50,7 +49,7 @@ def get_idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
     return idx3d, np.array(to_check_lT)
 
 
-def get_gabriel_graph(
+def gabriel_graph(
     lT: LineageTree, time: int | Iterable[int] | None = None
 ) -> dict[int, set[int]]:
     """Build the Gabriel graph of the given graph for time point `t`.
@@ -128,7 +127,7 @@ def get_gabriel_graph(
     return lT.Gabriel_graph
 
 
-def compute_neighbours_in_radius(
+def neighbours_in_radius(
     lT: LineageTree,
     t_b: int | None = None,
     t_e: int | None = None,
@@ -160,13 +159,13 @@ def compute_neighbours_in_radius(
         t_e = lT.t_e
     time_range = set(range(t_b, t_e)).intersection(lT._time.values())
     for t in time_range:
-        idx3d, nodes = lT.get_idx3d(t)
+        idx3d, nodes = lT.idx3d(t)
         nb_ni = [(len(ni) - 1) for ni in idx3d.query_ball_tree(idx3d, th)]
         neighbours.update(dict(zip(nodes, nb_ni, strict=True)))
     return neighbours
 
 
-def compute_spatial_density(
+def spatial_density(
     lT: LineageTree,
     t_b: int | None = None,
     t_e: int | None = None,
@@ -194,14 +193,12 @@ def compute_spatial_density(
     s_vol = 4 / 3.0 * np.pi * th**3
     spatial_density = {
         k: (v + 1) / s_vol
-        for k, v in lT.compute_neighbours_in_radius(t_b, t_e, th).items()
+        for k, v in lT.neighbours_in_radius(t_b, t_e, th).items()
     }
     return spatial_density
 
 
-def compute_k_nearest_neighbours(
-    lT: LineageTree, k: int = 10
-) -> dict[int, set[int]]:
+def k_nearest_neighbours(lT: LineageTree, k: int = 10) -> dict[int, set[int]]:
     """Computes the k-nearest neighbors
     Writes the output in the attribute `kn_graph`
     and returns it.
@@ -228,7 +225,7 @@ def compute_k_nearest_neighbours(
     for t, nodes in lT.time_nodes.items():
         if 1 < len(nodes):
             use_k = k if k < len(nodes) else len(nodes)
-            idx3d, nodes = lT.get_idx3d(t)
+            idx3d, nodes = lT.idx3d(t)
             pos = [lT.pos[c] for c in nodes]
             distances, neighbs = idx3d.query(pos, use_k)
             out = dict(
@@ -250,9 +247,7 @@ def compute_k_nearest_neighbours(
     return lT.kn_graph, lT.kn_distances
 
 
-def compute_spatial_edges(
-    lT: LineageTree, th: int = 50
-) -> dict[int, set[int]]:
+def spatial_edges(lT: LineageTree, th: int = 50) -> dict[int, set[int]]:
     """Computes the neighbors at a distance `th`
     Writes the output in the attribute `th_edge`
     and returns it.
@@ -272,7 +267,7 @@ def compute_spatial_edges(
     lT.th_edges = {}
     for t in set(lT._time.values()):
         nodes = lT.time_nodes[t]
-        idx3d, nodes = lT.get_idx3d(t)
+        idx3d, nodes = lT.idx3d(t)
         neighbs = idx3d.query_ball_tree(idx3d, th)
         out = dict(zip(nodes, [set(nodes[ni]) for ni in neighbs], strict=True))
         lT.th_edges.update({k: v.difference([k]) for k, v in out.items()})

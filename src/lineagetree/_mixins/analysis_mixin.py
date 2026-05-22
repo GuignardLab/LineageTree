@@ -1,4 +1,4 @@
-from ..measure.dynamic_time_warping import calculate_dtw
+from ..measure.dynamic_time_warping import dtw
 from ..measure.uted import (
     clear_comparisons,
     labelled_mappings,
@@ -15,7 +15,7 @@ class AnalysisMixin(metaclass=AutoMethodizeMeta):
     """Mixin for analysis operations (DTW, UTED)."""
 
     # DTW functions
-    calculate_dtw = calculate_dtw
+    dtw = dtw
 
     # UTED functions
     clear_comparisons = clear_comparisons
