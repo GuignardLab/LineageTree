@@ -1,5 +1,4 @@
 from __future__ import annotations
-from warnings import warn, catch_warnings, simplefilter
 
 from itertools import combinations
 from typing import TYPE_CHECKING, Iterable
