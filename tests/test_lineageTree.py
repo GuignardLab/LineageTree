@@ -799,54 +799,54 @@ def test_smoothing():
     lt.pos = lt.old_pos
 
 
-def test_get_track_length():
-    result_0 = lt.get_track_length(0)
-    result_1 = lt.get_track_length(1)
+def test_track_length():
+    lt.track_length(0)
+    lt.track_length(1)
 
 
-def test_get_duration():
-    result = lt.get_duration()
+def test_duration():
+    lt.duration()
 
 
-def test_get_max_displacement():
-    result = lt.get_max_displacement()
+def test_max_displacement():
+    lt.max_displacement()
 
 
-def test_get_speed():
-    speed_0 = lt.get_speed(0)
-    speed_1 = lt.get_speed(1)
+def test_speed():
+    lt.speed(0)
+    lt.speed(1)
 
 
-def test_get_displacement():
-    result = lt.get_displacement()
+def test_displacement():
+    lt.displacement()
 
 
-def test_get_velocity():
-    result = lt.get_velocity()
+def test_velocity():
+    lt.velocity()
 
 
-def test_get_mean_squared_displacement():
-    result = lt.get_mean_squared_displacement()
+def test_mean_squared_displacement():
+    lt.mean_squared_displacement()
 
 
-def test_get_displacement_ratio():
-    ratio_1 = lt.get_displacement_ratio()
+def test_displacement_ratio():
+    lt.displacement_ratio()
 
 
-def test_get_straightness():
-    s0 = lt.get_straightness(0)
-    s1 = lt.get_straightness(1)
+def test_straightness():
+    lt.straightness(0)
+    lt.straightness(1)
 
 
-def test_get_asphericity():
-    a1 = lt.get_asphericity(1)
-    a0 = lt.get_asphericity(0)
+def test_asphericity():
+    lt.asphericity(1)
+    lt.asphericity(0)
 
 
-def test_get_angles():
-    angles_0 = lt.get_angles(0)
-    angles_1 = lt.get_angles(1)
+def test_angles():
+    lt.angles(0)
+    lt.angles(1)
 
 
-def test_get_overall_angle():
-    result = lt.get_overall_angle()
+def test_overall_angle():
+    lt.overall_angle()

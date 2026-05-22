@@ -5,19 +5,19 @@ from ..measure.spatial import (
     gabriel_graph,
     idx3d,
     neighbours_in_radius,
-    get_angles,
-    get_asphericity,
-    get_displacement,
-    get_displacement_ratio,
-    get_duration,
-    get_max_displacement,
-    get_mean_squared_displacement,
-    get_outreach_ratio,
-    get_overall_angle,
-    get_speed,
-    get_straightness,
-    get_track_length,
-    get_velocity,
+    angles,
+    asphericity,
+    displacement,
+    displacement_ratio,
+    duration,
+    max_displacement,
+    mean_squared_displacement,
+    outreach_ratio,
+    overall_angle,
+    speed,
+    straightness,
+    track_length,
+    velocity,
 )
 
 from ._methodize import AutoMethodizeMeta
@@ -32,28 +32,28 @@ class SpatialMixin(metaclass=AutoMethodizeMeta):
     spatial_edges = spatial_edges
     spatial_density = spatial_density
     neighbours_in_radius = neighbours_in_radius
-    get_angles = get_angles
+    angles = angles
 
-    get_asphericity = get_asphericity
+    asphericity = asphericity
 
-    get_displacement = get_displacement
+    displacement = displacement
 
-    get_displacement_ratio = get_displacement_ratio
+    displacement_ratio = displacement_ratio
 
-    get_duration = get_duration
+    duration = duration
 
-    get_max_displacement = get_max_displacement
+    max_displacement = max_displacement
 
-    get_mean_squared_displacement = get_mean_squared_displacement
+    mean_squared_displacement = mean_squared_displacement
 
-    get_outreach_ratio = get_outreach_ratio
+    outreach_ratio = outreach_ratio
 
-    get_overall_angle = get_overall_angle
+    overall_angle = overall_angle
 
-    get_speed = get_speed
+    speed = speed
 
-    get_straightness = get_straightness
+    straightness = straightness
 
-    get_track_length = get_track_length
+    track_length = track_length
 
-    get_velocity = get_velocity
+    velocity = velocity
