@@ -5,6 +5,7 @@ from ..plot import (
     plot_dtw_heatmap,
     plot_dtw_trajectory,
     plot_subtree,
+    plot_chain_histogram,
 )
 
 from ._methodize import AutoMethodizeMeta
@@ -19,3 +20,4 @@ class PlotMixin(metaclass=AutoMethodizeMeta):
     plot_dtw_heatmap = plot_dtw_heatmap
     plot_dtw_trajectory = plot_dtw_trajectory
     plot_subtree = plot_subtree
+    plot_chain_histogram = plot_chain_histogram

@@ -4,6 +4,7 @@ from collections.abc import Callable, Iterable
 from functools import wraps
 from typing import TYPE_CHECKING
 import numpy as np
+from scipy.ndimage import gaussian_filter1d
 
 if TYPE_CHECKING:
     from ..lineage_tree import LineageTree
@@ -67,7 +68,8 @@ def add_chain(
             raise Warning("The node already has a predecessor.")
         if lT._time[node] - length < lT.t_b:
             raise Warning(
-                "A node cannot created outside the lower bound of the dataset. (It is possible to change it by lT.t_b = int(...))"
+                "A node cannot created outside the lower bound of the dataset."
+                "(It is possible to change it by lT.t_b = int(...))"
             )
         for _ in range(int(length)):
             old_node = node
@@ -207,3 +209,279 @@ def remove_nodes(lT: LineageTree, group: int | set | list) -> None:
             lT._predecessor[p_node] = ()
         lT._predecessor.pop(node, ())
         lT._successor.pop(node, ())
+
+
+@staticmethod
+def compute_rigid_transform(A: np.ndarray, B: np.ndarray) -> np.ndarray:
+    """
+    Computes the rigid transformation (rotation + translation) between two paired 3D point clouds.
+
+    Parameters
+    ----------
+    A : (N, 3) numpy array
+        source point cloud.
+    B : (N, 3) numpy array
+        target point cloud.
+
+    Returns
+    -------
+    (4, 4) np.ndarray
+        the rigid transformation matrix in homogeneous coordinates
+    """
+    assert A.shape == B.shape, "Point clouds A and B must have the same shape."
+
+    # Compute centroids
+    centroid_A = np.mean(A, axis=0)
+    centroid_B = np.mean(B, axis=0)
+
+    # Center the point clouds
+    AA = A - centroid_A
+    BB = B - centroid_B
+
+    # Compute the covariance matrix
+    H = AA.T @ BB
+
+    # Compute the SVD
+    U, _, Vt = np.linalg.svd(H)
+
+    # Compute the rotation matrix
+    R = Vt.T @ U.T
+
+    # Ensure the rotation matrix is proper (no reflection)
+    if np.linalg.det(R) < 0:
+        Vt[-1, :] *= -1
+        R = Vt.T @ U.T
+
+    # Compute the translation vector
+    t = centroid_B - R @ centroid_A
+
+    m = np.identity(4)
+    m[:-1, :-1] = R
+    m[:-1, -1] = t
+
+    return m
+
+
+@staticmethod
+def iterative_composition(trsfs: list[np.ndarray]) -> list[np.ndarray]:
+    """
+    Iteratively compose multiple transformations in a list such that:
+    result[0] = identity
+    and
+    result[i] = result[i-1] @ trsfs[i - 1]
+
+    Parameters
+    ----------
+    trsfs : list of (N, N) np.ndarray
+        List of transformation matrices in homogeneous coordinates
+
+    Returns
+    -------
+    list of (N, N) np.ndarray
+        List of iteratively composed transformations
+    """
+    new_trsfs = [np.identity(4)]
+    for trsf in trsfs:
+        new_trsfs.append(new_trsfs[-1] @ trsf)
+    return new_trsfs
+
+
+@staticmethod
+def apply_trsf(m: np.ndarray, pos: np.ndarray):
+    """
+    Apply the transformation m to an array of positions.
+
+    Parameters
+    ----------
+    m : (N, N) np.ndarray
+        A transformation matrix in homogeneous coordinates
+        for positions in N-1 dimensions.
+
+    pos: (M, N-1) np.ndarray
+        A list of positions in N-1 dimensions to be transformed
+
+    Returns
+    -------
+    (M, N-1) np.array
+        A list of the original positions transformed by m
+    """
+    pos_padded = np.pad(pos, ((0, 0), (0, 1)), "constant", constant_values=1).T
+
+    return np.dot(m, pos_padded)[:-1].T
+
+
+@modifier
+def stabilise_positions(lT: LineageTree) -> dict[int, np.ndarray]:
+    """
+    Move node positions at each time point such that
+    the sum of the squared displacements between consecutive
+    time points is minimal.
+
+    The old positions are kept in `lT.old_pos`
+
+    .. warning: If there are strongly coordinated movements
+    there might be smootheded out significantly
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree instance.
+
+    Returns
+    -------
+    dict mapping int to np.ndarray
+        A dictionnary similar to lT.pos with the
+        registered positions
+    """
+    times = sorted(lT.time_nodes)
+    trsfs_i_j = []
+    # ok_cells = set([c for c, pos in lT.pos.items() if pos.shape == (3,)])
+
+    for t1 in times[:-1]:
+        nodes_i, nodes_j = [], []
+        for c in lT.time_nodes[t1]:
+            putative_next_n = lT.successor[c]
+            next_n = []
+            for ci in putative_next_n:
+                if 3 <= len(lT.pos.get(ci, [])):
+                    next_n.append(ci)
+            if 0 < len(next_n):
+                nodes_i.append(c)
+                nodes_j.append(next_n)
+
+        pos_i = np.array([lT.pos[c] for c in nodes_i])
+        pos_j = np.array(
+            [np.mean([lT.pos[ci] for ci in c], axis=0) for c in nodes_j]
+        )
+
+        trsf_i_j = compute_rigid_transform(pos_j, pos_i)
+        trsfs_i_j.append(trsf_i_j)
+
+    final_trsfs = iterative_composition(trsfs_i_j)
+
+    new_pos = {}
+    for i, trsf in enumerate(final_trsfs):
+        nodes = lT.time_nodes[times[i]]
+        pos = np.array([lT.pos[c] for c in nodes])
+        new_pos.update(zip(nodes, apply_trsf(trsf, pos)))
+
+    lT.old_pos = lT.pos
+    lT.pos = new_pos
+
+    return new_pos
+
+
+def anchored_gaussian_smooth(data, sigma=1.5, anchor_strength=3.0):
+    """
+    Apply Gaussian smoothing to a 1D sequence while anchoring the endpoints
+    and suppressing drift near the boundaries.
+
+    This function performs standard Gaussian smoothing and then blends the
+    smoothed result with the original data using a position-dependent weight.
+    The weights enforce exact anchoring at the first and last elements and
+    progressively relax toward the center of the array.
+
+    Parameters
+    ----------
+    data : array_like
+        Input 1D sequence of numeric values.
+    sigma : float, optional
+        Standard deviation of the Gaussian kernel used for smoothing.
+        Higher values produce stronger smoothing. Default is 1.5.
+    anchor_strength : float, optional
+        Controls how strongly the endpoints influence nearby values.
+        Smaller values result in tighter anchoring (less smoothing near edges),
+        while larger values allow more smoothing across the entire array.
+        Default is 3.0.
+
+    Returns
+    -------
+    numpy.ndarray
+        Smoothed array of the same shape as the input, with the first and last
+        elements exactly equal to the original values.
+
+    Notes
+    -----
+    - The method applies a Gaussian filter followed by a spatially varying
+      convex combination:
+          result[i] = alpha[i] * data[i] + (1 - alpha[i]) * smoothed[i]
+      where alpha[i] decays exponentially with distance from the nearest
+      endpoint.
+    - This introduces soft boundary conditions (anchoring), breaking the
+      shift-invariance of standard convolution-based smoothing.
+    - The endpoints are strictly preserved (Dirichlet boundary condition),
+      and nearby points are partially constrained depending on their distance
+      to the boundaries.
+
+    Examples
+    --------
+    >>> anchored_gaussian_smooth([10, 12, 15, 20, 18, 16, 14], sigma=1.5)
+    array([...])
+    """
+    data = np.asarray(data, dtype=float)
+
+    # Standard Gaussian smoothing
+    smoothed = gaussian_filter1d(data, sigma=sigma, mode="nearest")
+
+    n = data.size
+    i = np.arange(n)
+
+    # Distance to nearest endpoint
+    dist = np.minimum(i, n - 1 - i)
+
+    # Exponential decay: strong anchoring near edges
+    alpha = np.exp(-dist / anchor_strength)
+
+    # Ensure exact anchoring at endpoints
+    alpha[0] = 1.0
+    alpha[-1] = 1.0
+
+    # Blend original and smoothed
+    return alpha * data + (1 - alpha) * smoothed
+
+
+@modifier
+def smooth_trajectories(lT: LineageTree, sigma=1.0, ancor_strength=3):
+    """
+    Smooth 3D trajectories of all chains in a lineage tree using anchored
+    Gaussian filtering.
+
+    For each chain in the lineage tree, the x-, y-, and z-coordinates are
+    independently smoothed using a Gaussian filter with soft endpoint
+    constraints. The first and last positions of each chain are preserved
+    exactly, while nearby points are partially constrained to reduce drift.
+
+    Parameters
+    ----------
+    lT : LineageTree
+    sigma : float, default=1.0
+        Standard deviation of the Gaussian kernel used for smoothing each
+        coordinate independently. Higher values produce smoother trajectories.
+        Default is 1.0.
+    ancor_strength : float, default=3
+        Controls the strength of endpoint anchoring. Smaller values enforce
+        stronger constraints near the start and end of each chain (less drift),
+        while larger values allow more global smoothing. Default is 3.
+
+    Returns
+    -------
+    dict
+        Dictionary mapping each node in the lineage tree to its smoothed
+        3D position.
+    """
+    new_pos = {}
+    for chain in lT.all_chains:
+        X, Y, Z = np.array([lT.pos[c] for c in chain]).T
+        X_new = anchored_gaussian_smooth(
+            X, sigma=sigma, anchor_strength=ancor_strength
+        )
+        Y_new = anchored_gaussian_smooth(
+            Y, sigma=sigma, anchor_strength=ancor_strength
+        )
+        Z_new = anchored_gaussian_smooth(
+            Z, sigma=sigma, anchor_strength=ancor_strength
+        )
+        new_pos.update(zip(chain, np.transpose([X_new, Y_new, Z_new])))
+    lT.old_pos = lT.pos
+    lT.pos = new_pos
+    return lT.pos

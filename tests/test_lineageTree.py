@@ -8,12 +8,19 @@ from lineagetree import (
     LineageTreeManager,
     read_from_mamut_xml,
     read_from_mastodon,
+    read_from_swc,
     tree_approximation,
 )
 
 lT1 = read_from_mamut_xml("tests/data/test-mamut.xml")
 lT2 = read_from_mastodon("tests/data/test.mastodon")
 lt = LineageTree.load("tests/data/demo.lT")
+
+
+def test_swc_reader():
+    lT3 = read_from_swc("tests/data/204-2-6nj.CNG.swc")
+    assert len(lT3.nodes) == 603
+    assert not lT3.temporal
 
 
 def test_read_MaMuT_xml():
@@ -25,6 +32,9 @@ def test_read_MaMuT_xml():
     assert len(lT2.nodes) == 41
     assert len(lT2.successor) == 41
     assert len(lT2.find_leaves(40)) == 2
+    assert lT2.temporal
+    assert lT1.temporal
+    assert lt.temporal
 
 
 @pytest.fixture(scope="session")
@@ -752,3 +762,40 @@ def test_change_labels():
         24: "left",
         25: "left",
     }
+
+
+def test_plot_chain_hist():
+    _, ax1 = lt.plot_chain_histogram()
+    _, ax2 = lt.plot_chain_histogram(with_leaves=True)
+    _, ax3 = lt.plot_chain_histogram(with_roots=True)
+    _, ax4 = lt.plot_chain_histogram(with_roots=True, with_leaves=True)
+    assert sum(p.get_height() for p in ax4.patches) == len(lt.all_chains)
+    assert sum(p.get_height() for p in ax3.patches) == (
+        len(lt.all_chains) - len(lt.leaves)
+    )
+    assert sum(p.get_height() for p in ax2.patches) == (
+        len(lt.all_chains) - len(lt.roots)
+    )
+    print(
+        sum(p.get_height() for p in ax1.patches),
+        len(lt.all_chains) - len(lt.leaves) - len(lt.roots),
+    )
+    assert sum(p.get_height() for p in ax1.patches) == (
+        len(lt.all_chains) - len(lt.leaves.union(lt.roots))
+    )
+
+
+def test_stabilise_positions():
+    new_pos = lT1.stabilise_positions()
+    assert np.isclose(
+        new_pos[148361], np.array([1019.66762163, 400.25591182, 287.54520521])
+    ).all()
+    lT1.pos = lT1.old_pos
+
+
+def test_smoothing():
+    new_pos = lt.smooth_trajectories()
+    assert np.isclose(
+        new_pos[1552], np.array([462.15385069, 907.17562352, 419.54303692])
+    ).all()
+    lt.pos = lt.old_pos
