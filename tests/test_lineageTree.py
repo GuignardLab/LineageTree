@@ -586,19 +586,19 @@ def test_dynamic_property():
 
 
 def test_idx3d():
-    kdtree, idxs = lT1.get_idx3d(0)
+    kdtree, idxs = lT1.idx3d(0)
     assert np.isclose(kdtree.query((0, 0, 0))[0], 1131.2352660153383)
     assert idxs[kdtree.query((0, 0, 0))[1]] == 110826
     assert idxs[kdtree.query((1000, 2000, 1000))[1]] == 132063
 
 
 def test_gabriel_graph():
-    gg = lT1.get_gabriel_graph(0)
+    gg = lT1.gabriel_graph(0)
     assert gg[173618] == {110832, 168322}
-    gg_all = lT1.get_gabriel_graph()
+    gg_all = lT1.gabriel_graph()
     gg_all_2 = {}
     for t in lT1.time_nodes:
-        gg_all_2.update(lT1.get_gabriel_graph(t))
+        gg_all_2.update(lT1.gabriel_graph(t))
     assert gg_all == gg_all_2
 
 
@@ -634,18 +634,18 @@ def test_get_subtree_nodes():
 
 def test_spatial_density():
     assert np.isclose(
-        lT1.compute_spatial_density(0, th=40)[110832], 7.460387957432594e-06
+        lT1.spatial_density(0, th=40)[110832], 7.460387957432594e-06
     )
-    assert lT1.compute_neighbours_in_radius(0, th=40)[110832] == 1
+    assert lT1.neighbours_in_radius(0, th=40)[110832] == 1
 
 
-def test_compute_k_nearest_neighbours():
+def test_k_nearest_neighbours():
     assert (
-        lT1.compute_k_nearest_neighbours()[0][169994]
+        lT1.k_nearest_neighbours()[0][169994]
         == [178396, 139163, 165681, 148361, 129276, 114722, 108588]
     ).all()
     assert np.allclose(
-        lT1.compute_k_nearest_neighbours()[1][169994],
+        lT1.k_nearest_neighbours()[1][169994],
         [
             34.39062611,
             50.72494649,
@@ -658,8 +658,8 @@ def test_compute_k_nearest_neighbours():
     )
 
 
-def test_compute_spatial_edges():
-    assert lT1.compute_spatial_edges()[129294] == {139162, 148358}
+def test_spatial_edges():
+    assert lT1.spatial_edges()[129294] == {139162, 148358}
 
 
 def test_get_ancestor_at_t():
@@ -697,8 +697,8 @@ def test_nodes_at_t():
     assert lT1.nodes_at_t(65, 110832) == [112436]
 
 
-def test_calculate_dtw():
-    assert np.isclose(lT1.calculate_dtw(110832, 132129)[0], 25.550036305019194)
+def test_dtw():
+    assert np.isclose(lT1.dtw(110832, 132129)[0], 25.550036305019194)
 
 
 def test_create_new_style():
