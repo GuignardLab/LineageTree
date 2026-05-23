@@ -160,7 +160,7 @@ def neighbours_in_radius(
     time_range = set(range(t_b, t_e)).intersection(lT._time.values())
     for t in time_range:
         idx3d, nodes = lT.idx3d(t)
-        idx = [ni for ni in idx3d.query_ball_tree(idx3d, th)]
+        idx = idx3d.query_ball_tree(idx3d, th)
         neighbours.update(
             {
                 node: set(nodes[nb_idx]) - {node}
