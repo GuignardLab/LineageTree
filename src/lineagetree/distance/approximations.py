@@ -6,10 +6,7 @@ from collections import deque
 from typing import TYPE_CHECKING, Iterable, Callable
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline
-from hashlib import sha256
-import pickle
 
-from edist import uted
 
 from .delta import (
     delta_normalized_difference,
@@ -17,13 +14,10 @@ from .delta import (
     delta_difference,
     delta_binary,
 )
-from warnings import warn
 
 if TYPE_CHECKING:
     from lineagetree import LineageTree
-    from edist.alignment import Alignment
     from .approximations import TreeApproximationTemplate
-    from .distance_calculator import TreeDistanceTemplate
 
 
 @dataclass
@@ -175,8 +169,8 @@ class ReducedTreeProperties(TreeApproximationTemplate):
 
     def approximation(
         self,
-        lT,
-        root,
+        lT: LineageTree,
+        root: int,
         end_time=None,
         properties: dict[int, float | list] | list[str] = None,
     ):
@@ -523,8 +517,8 @@ class FullTree(TreeApproximationTemplate):
 
     def approximation(
         self,
-        lT,
-        root,
+        lT: LineageTree,
+        root: int,
         end_time: int | None = None,
         properties: dict[int, float | list] | list[str] = None,
     ):

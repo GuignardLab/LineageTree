@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Iterable, Callable
-import numpy as np
-from scipy.interpolate import InterpolatedUnivariateSpline
+from typing import TYPE_CHECKING
 from edist import uted
 
 if TYPE_CHECKING:
-    from lineagetree import LineageTree
     from edist.alignment import Alignment
     from .approximations import ApproximatedTree
 
@@ -42,7 +39,6 @@ class UnorderedTreeEditDistance(TreeDistanceTemplate):
         self,
         approximated_tree1: ApproximatedTree,
         approximated_tree2: ApproximatedTree,
-        return_serial: bool = False,
     ) -> Alignment:
         """
         Computes the optimal mapping between
@@ -68,16 +64,13 @@ class UnorderedTreeEditDistance(TreeDistanceTemplate):
             approximated_tree2.adjacency_list,
             delta=self.delta,
         )
-        if return_serial:
-            return (backtrace,)
-        else:
-            return backtrace
+        return backtrace
 
     def compute_distance(
         self,
         approximated_tree1: ApproximatedTree,
         approximated_tree2: ApproximatedTree,
-        btrc: dict[frozenset[tuple], Alignment],
+        btrc: dict[frozenset[tuple], Alignment] | None = None,
     ) -> float:
         """
         Computes the unordered edit distance
@@ -102,16 +95,21 @@ class UnorderedTreeEditDistance(TreeDistanceTemplate):
             The unordered tree edit distance
             between the two trees.
         """
-        key = frozenset(
-            approximated_tree1.tree_specs, approximated_tree2.tree_specs
-        )
-        if key not in btrc:
-            btrc[key] = self._compute_uted_backtrace(
-                approximated_tree1, approximated_tree2
+        if btrc:
+            key = frozenset(
+                {approximated_tree1.tree_specs, approximated_tree2.tree_specs}
             )
-        return btrc[key].cost(
-            approximated_tree1.nodes, approximated_tree2.nodes, self.delta
-        )
+            if key not in btrc:
+                btrc[key] = self._compute_uted_backtrace(
+                    approximated_tree1, approximated_tree2
+                )
+            return btrc[key].cost(
+                approximated_tree1.nodes, approximated_tree2.nodes, self.delta
+            )
+        else:
+            uted.uted(
+                approximated_tree1.nodes, approximated_tree2.nodes, self.delta
+            )
 
     def reconstruct_backtrace(self, tree1, tree2, backtrace): ...
 

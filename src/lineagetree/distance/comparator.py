@@ -1,38 +1,27 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from abc import ABC, abstractmethod
-from collections import deque
-from typing import TYPE_CHECKING, Iterable, Callable
-import numpy as np
-from scipy.interpolate import InterpolatedUnivariateSpline
-from hashlib import sha256
-import pickle
+from typing import TYPE_CHECKING, Iterable
+import inspect
 
-from edist import uted
-
-from .delta import (
-    delta_normalized_difference,
-    delta_nd_norm,
-    delta_difference,
-    delta_binary,
-)
 from warnings import warn
 
 if TYPE_CHECKING:
     from lineagetree import LineageTree
-    from edist.alignment import Alignment
     from .approximations import TreeApproximationTemplate
     from .distance_calculator import TreeDistanceTemplate
 
 
 class TreeComparator:
 
+    __adding_trees = True  # Variable that allows adding trees to the object or not, the moment a dataset is added no more trees can be added.
+    levels_of_comparison = {}
+
     def __init__(
         self,
         tree_distance: TreeDistanceTemplate,
         approximator: TreeApproximationTemplate | None = None,
     ):
+
         self.approximator = approximator() if approximator else lambda x: x
         if approximator is None:
             warn(
@@ -55,27 +44,99 @@ class TreeComparator:
             self._cache = {}
         return self._cache
 
-    def _get_next_id(self) -> int:
+    def _get_next_id(self) -> str:
         """Provides and id if it is not provided by `add_tree`.
 
         Returns
         -------
-        int
+        str
             The generated id.
         """
         self.__id_count += 1
-        return self.__id_count - 1
+        return f"LineageTree {self.__id_count - 1}"
 
-    def add_trees_from_dif_starts(self, lT, starts, emd_time): ...
+    def add_trees_one_dataset(
+        self,
+        lT: LineageTree,
+        roots: Iterable,
+        starts: int | list[int],
+        end_time: int | list[int] = None,
+    ):
+        """Creates a dataset using ONLY one `Lineagetree` object for comparison.
+          The user may choose if they want their dataset to have multiple starts
+          or multiple end times but not both.
 
-    def add_multiple_trees(self, *trees): ...
+        Parameters
+        ----------
+        lT : LineageTree
+            The `LineageTree` object.
+        roots : Iterable
+            The roots of the subtrees to be compared.
+        starts : int | list[int]
+            The different starting points for the dataset. If `starts` is a list the `end_time` cannot be a list.
+        end_time : int | list[int], optional
+            The different end times for the dataset. If `end_time` is a list the `starts` cannot be a list. If None the whole subtrees will be taken into account, by default `None`
+        """
+        if not self.__adding_trees:
+            raise Warning("Cannot add any more trees to the Comparator.")
+        if isinstance(starts, Iterable) and isinstance(end_time, Iterable):
+            raise Warning(
+                "Each Comparator can hold either multiple starts or multiple end_times. Not both."
+            )
+        if isinstance(starts, Iterable) and not isinstance(end_time, Iterable):
+            for start in starts:
+                selected_roots = lT.nodes_at_t(start, roots)
+                self._add_trees(lT, selected_roots, end_time, level=start)
+        elif not isinstance(starts, Iterable) and isinstance(
+            end_time, Iterable
+        ):
+            for end in end_time:
+                self._add_trees(lT, roots, end, level=end)
 
-    def add_tree(
+        else:
+            for root in roots:
+                self._add_tree(lT, root, end_time, level=1)
+
+        self.__adding_trees = False
+
+    def _add_trees(
+        self,
+        lT: LineageTree,
+        roots: Iterable,
+        end_time: int | list[int] | None = None,
+        level=1,
+    ):
+        for root in roots:
+            self._add_tree(lT, root, end_time, level=level)
+
+    def add_trees_multiple_datasets(
+        self, *trees: tuple[LineageTree, list[int], int|list[int], int|list[int]]
+    ):
+        """
+        Works the same way as adding trees from one dataset, but its for multiple datasaets.
+
+        Args:
+            *trees: Variable-length collection of tuples, where each tuple contains:
+                - tree (LineageTree): The lineage tree to add.
+                - roots (list[int]): The selected roots of the dataset.
+                - end_time (int): The ending time for the subtrees.
+        """
+        if not self.__adding_trees:
+            raise Warning("Cannot add any more trees to the Comparator.")
+        lTs = [tr[0] for tr in trees]
+        roots = [tr[1] for tr in trees]
+        starting_times = [tr[2] for tr in trees]
+        for s_t in starting_times:
+            
+        end_times = [tr[3] for tr in trees]
+        
+
+    def _add_tree(
         self,
         lT: LineageTree,
         root: int,
         end_time: int | None = None,
-        name: str = None,
+        level: int = None,
     ):
         """Handles adding a tree to the object, by calling the `approximation` method and assigning an id to the tree.
         This function also saves the labels.
@@ -90,23 +151,17 @@ class TreeComparator:
             The final timepoint of the subtree to be taken into account, by default None
         time_resolution : float, optional
             The time_resolution, by default None
-        name: str, optional
-            The name of the tree to be added, if None an id will be generated, which will serve as its name, by default None
+        level: int, optional
+            Used if the dataset has multiple levels of comparison
         """
-        approximated_tree = self.approximator.approximation(
-            lT, root, end_time, time_resolution
-        )
-        if isinstance(name, str):
-            id = name
+        approximated_tree = self.approximator.approximation(lT, root, end_time)
+        if isinstance(lT.name, str):
+            id = lT.name
         else:
             id = self._get_next_id()
         self.trees.update({id: approximated_tree})
         self.labels.update({id: lT.labels.get(root, root)})
-
-    def remove_tree(self, tree: int | str):
-        if not isinstance(tree, str):
-            raise Warning(
-                f"Trees are removed form the structure using their names (str)"
+        if level is not None:
+            self.levels_of_comparison.setdefault(level, []).append(
+                approximated_tree
             )
-        if tree in self.trees:
-            self.trees.pop(tree)
