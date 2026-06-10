@@ -7,15 +7,19 @@ from edist import uted
 if TYPE_CHECKING:
     from edist.alignment import Alignment
     from .approximations import ApproximatedTree
+    from lineagetree import LineageTree
 
 
 class TreeDistanceTemplate(ABC):
+    backtrace_based = (
+        ...
+    )  # If your distance is and edit distance that may provide the alignments between nodes set to `True`, else `False`.
 
     @abstractmethod
     def compute_distance(
         self,
-        approximated_tree1: ApproximatedTree,
-        approximated_tree2: ApproximatedTree,
+        approximated_tree1: ApproximatedTree | LineageTree,
+        approximated_tree2: ApproximatedTree | LineageTree,
         backtrace: Alignment = None,
     ) -> float: ...
 
@@ -30,6 +34,8 @@ class TreeDistanceTemplate(ABC):
 
 class UnorderedTreeEditDistance(TreeDistanceTemplate):
 
+    backtrace_based = True
+
     def __init__(self, delta):
         super().__init__()
         self.delta = delta
@@ -39,6 +45,7 @@ class UnorderedTreeEditDistance(TreeDistanceTemplate):
         self,
         approximated_tree1: ApproximatedTree,
         approximated_tree2: ApproximatedTree,
+        cache: dict[frozenset[tuple], Alignment] | None = None,
     ) -> Alignment:
         """
         Computes the optimal mapping between
@@ -57,13 +64,27 @@ class UnorderedTreeEditDistance(TreeDistanceTemplate):
         backtrace : edist.alignment.Alignment
             The resulting alignment in the edist format
         """
-        backtrace = uted.uted_backtrace(
-            approximated_tree1.nodes,
-            approximated_tree1.adjacency_list,
-            approximated_tree2.nodes,
-            approximated_tree2.adjacency_list,
-            delta=self.delta,
-        )
+        if cache:
+            key = frozenset(
+                {approximated_tree1.tree_specs, approximated_tree2.tree_specs}
+            )
+            if key not in cache:
+                cache[key] = uted.uted_backtrace(
+                    approximated_tree1.nodes,
+                    approximated_tree1.adjacency_list,
+                    approximated_tree2.nodes,
+                    approximated_tree2.adjacency_list,
+                    delta=self.delta,
+                )
+                backtrace = cache[key]
+        else:
+            backtrace = uted.uted_backtrace(
+                approximated_tree1.nodes,
+                approximated_tree1.adjacency_list,
+                approximated_tree2.nodes,
+                approximated_tree2.adjacency_list,
+                delta=self.delta,
+            )
         return backtrace
 
     def compute_distance(
@@ -95,21 +116,9 @@ class UnorderedTreeEditDistance(TreeDistanceTemplate):
             The unordered tree edit distance
             between the two trees.
         """
-        if btrc:
-            key = frozenset(
-                {approximated_tree1.tree_specs, approximated_tree2.tree_specs}
-            )
-            if key not in btrc:
-                btrc[key] = self._compute_uted_backtrace(
-                    approximated_tree1, approximated_tree2
-                )
-            return btrc[key].cost(
-                approximated_tree1.nodes, approximated_tree2.nodes, self.delta
-            )
-        else:
-            uted.uted(
-                approximated_tree1.nodes, approximated_tree2.nodes, self.delta
-            )
+        return self._compute_uted_backtrace(
+            approximated_tree1, approximated_tree2, btrc
+        ).cost(approximated_tree1.nodes, approximated_tree2.nodes, self.delta)
 
     def reconstruct_backtrace(self, tree1, tree2, backtrace): ...
 

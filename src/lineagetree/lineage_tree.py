@@ -42,6 +42,9 @@ class LineageTree(
         else:
             return False
 
+    def __hash__(self) -> int:
+        return hash(tuple(self.successor.items()))
+
     def __setstate__(self, state):
         if "_successor" not in state:
             state["_successor"] = state["successor"]

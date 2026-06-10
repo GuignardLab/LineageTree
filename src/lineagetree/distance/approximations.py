@@ -128,6 +128,7 @@ class ReducedTreeTimed(TreeApproximationTemplate):
         root: int,
         end_time: int | None = None,
     ) -> ApproximatedTree:
+        print(lT, root, end_time)
         if end_time is None:
             end_time = lT.t_e
         if lT.time_resolution == 0:
@@ -155,7 +156,7 @@ class ReducedTreeTimed(TreeApproximationTemplate):
                     out_dict[current] = []
             final_properties[current] = len(cycle) * (time_resolution)
         return ApproximatedTree(
-            out_dict, final_properties, (lT.name, root, end_time)
+            out_dict, final_properties, (hash(lT), root, end_time)
         )
 
 
@@ -238,7 +239,7 @@ class ReducedTreeProperties(TreeApproximationTemplate):
                     final_properties[current] = default_value
 
         return ApproximatedTree(
-            out_dict, final_properties, (lT.name, root, end_time)
+            out_dict, final_properties, (hash(lT), root, end_time)
         )
 
 
@@ -322,7 +323,7 @@ class DownsampledTree(TreeApproximationTemplate):
             else:
                 out_dict[current] = []
         return ApproximatedTree(
-            out_dict, properties, (lT.name, root, end_time)
+            out_dict, properties, (hash(lT), root, end_time)
         )
 
 
@@ -494,7 +495,7 @@ class ResampledTree(TreeApproximationTemplate):
             )
 
         return ApproximatedTree(
-            out_dict, final_property, (lT.name, root, end_time)
+            out_dict, final_property, (hash(lT), root, end_time)
         )
 
 
@@ -544,5 +545,5 @@ class FullTree(TreeApproximationTemplate):
             else:
                 out_dict[current] = []
         return ApproximatedTree(
-            out_dict, properties, (lT.name, root, end_time)
+            out_dict, properties, (hash(lT), root, end_time)
         )
