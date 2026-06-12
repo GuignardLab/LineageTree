@@ -9,7 +9,8 @@ import warnings
 from collections.abc import Iterable, Sequence
 from packaging.version import Version
 import numpy as np
-
+import hashlib
+import json
 from ._core.utils import CompatibleUnpickler
 from ._mixins.properties_mixin import PropertiesMixin
 from ._mixins.modifier_mixin import ModifierMixin
@@ -19,6 +20,12 @@ from ._mixins.spatial_mixin import SpatialMixin
 from ._mixins.analysis_mixin import AnalysisMixin
 from ._mixins.io_mixin import IOMixin
 from ._core.validation import TreeValidator
+
+
+def normalize_keys(d):
+    return tuple(
+        sorted((int(k), tuple(int(vv) for vv in v)) for k, v in d.items())
+    )
 
 
 class LineageTree(
@@ -43,7 +50,10 @@ class LineageTree(
             return False
 
     def __hash__(self) -> int:
-        return hash(tuple(self.successor.items()))
+        return hash(tuple(self._successor))
+        # succ = normalize_keys(self._successor)
+        # s = json.dumps(succ, sort_keys=True, separators=(",", ":"))
+        # return int(hashlib.sha256(s.encode("utf-8")).hexdigest(), 16)
 
     def __setstate__(self, state):
         if "_successor" not in state:

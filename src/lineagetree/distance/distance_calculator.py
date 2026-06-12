@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Callable
 from typing import TYPE_CHECKING
 from edist import uted
+from warnings import warn
 
 if TYPE_CHECKING:
     from edist.alignment import Alignment
@@ -11,9 +13,19 @@ if TYPE_CHECKING:
 
 
 class TreeDistanceTemplate(ABC):
-    backtrace_based = (
-        ...
-    )  # If your distance is and edit distance that may provide the alignments between nodes set to `True`, else `False`.
+
+    def compute_distance_parallel(
+        self,
+        approximated_tree1: ApproximatedTree | LineageTree,
+        approximated_tree2: ApproximatedTree | LineageTree,
+        backtrace: Alignment = None,
+    ) -> dict:
+        warn(
+            "Parallel algorithm not implemented, defaulting to single process."
+        )
+        self.compute_distance(
+            approximated_tree1, approximated_tree2, backtrace
+        )
 
     @abstractmethod
     def compute_distance(
@@ -41,6 +53,26 @@ class UnorderedTreeEditDistance(TreeDistanceTemplate):
         self.delta = delta
         self.backtrace = {}
 
+    def compute_distance_parallel(
+        self,
+        approximated_tree1: ApproximatedTree,
+        approximated_tree2: ApproximatedTree,
+        backtrace: Alignment = None,
+    ):
+        key = frozenset(
+            {approximated_tree1.tree_specs, approximated_tree2.tree_specs}
+        )
+        align = self._compute_uted_backtrace(
+            approximated_tree1, approximated_tree2, backtrace
+        )
+
+        return (
+            {key: align},
+            self.compute_distance(
+                approximated_tree1, approximated_tree2, backtrace
+            ),
+        )
+
     def _compute_uted_backtrace(
         self,
         approximated_tree1: ApproximatedTree,
@@ -64,27 +96,24 @@ class UnorderedTreeEditDistance(TreeDistanceTemplate):
         backtrace : edist.alignment.Alignment
             The resulting alignment in the edist format
         """
-        if cache:
-            key = frozenset(
-                {approximated_tree1.tree_specs, approximated_tree2.tree_specs}
-            )
-            if key not in cache:
-                cache[key] = uted.uted_backtrace(
-                    approximated_tree1.nodes,
-                    approximated_tree1.adjacency_list,
-                    approximated_tree2.nodes,
-                    approximated_tree2.adjacency_list,
-                    delta=self.delta,
-                )
-                backtrace = cache[key]
-        else:
-            backtrace = uted.uted_backtrace(
-                approximated_tree1.nodes,
-                approximated_tree1.adjacency_list,
-                approximated_tree2.nodes,
-                approximated_tree2.adjacency_list,
-                delta=self.delta,
-            )
+        key = frozenset(
+            {approximated_tree1.tree_specs, approximated_tree2.tree_specs}
+        )
+
+        if cache is not None and key in cache:
+            return cache[key]
+
+        backtrace = uted.uted_backtrace(
+            approximated_tree1.nodes,
+            approximated_tree1.adjacency_list,
+            approximated_tree2.nodes,
+            approximated_tree2.adjacency_list,
+            delta=self.delta,
+        )
+
+        if cache is not None:
+            cache[key] = backtrace
+
         return backtrace
 
     def compute_distance(
@@ -126,7 +155,7 @@ class UnorderedTreeEditDistance(TreeDistanceTemplate):
         self,
         tree1: ApproximatedTree,
         tree2: ApproximatedTree,
-        norm_type: {"max", "sum", "tuple"} = "sum",
+        norm_type: {"max", "sum", "tuple"} | Callable = "sum",
     ) -> float:
         """
         Computes the normalisation value for the
@@ -162,12 +191,15 @@ class UnorderedTreeEditDistance(TreeDistanceTemplate):
         distance_to_none2 = uted.uted(
             [], [], tree2.nodes, tree2.adjacency_list, delta=self.delta
         )
-
+        if isinstance(norm_type, Callable):
+            return norm_type(distance_to_none1, distance_to_none2)
         match norm_type.lower():
             case "max":
                 return max(distance_to_none1, distance_to_none2)
             case "sum":
                 return distance_to_none1 + distance_to_none2
+            case "None" | None:
+                return 1
             case "tuple":
                 return distance_to_none1, distance_to_none2
             case _:

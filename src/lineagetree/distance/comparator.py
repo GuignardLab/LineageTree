@@ -2,20 +2,21 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterable
 import inspect
-
+import pickle
 from warnings import warn
+from multiprocessing import pool
+import types
+from .approximations import ApproximatedTree
+import itertools
 
 if TYPE_CHECKING:
     from lineagetree import LineageTree
     from .approximations import TreeApproximationTemplate
     from .distance_calculator import TreeDistanceTemplate
-    from .approximations import ApproximatedTree
     from edist.alignment import Alignment
 
 
 class TreeComparator:
-
-    levels_of_comparison = {}
 
     def __init__(
         self,
@@ -23,7 +24,6 @@ class TreeComparator:
         approximator: TreeApproximationTemplate | None = None,
     ):
 
-        self.approximator = approximator() if approximator else lambda x: x
         if approximator is None:
             warn(
                 "No approximation was set so the lineageTree object itself will be added to the the Object without any changes."
@@ -32,7 +32,7 @@ class TreeComparator:
         else:
             self.approximator = approximator
 
-        self.tree_distance = tree_distance
+        self.tree_distance = tree_distance(self.approximator.delta)
         self.labels = {}
         self.trees = {}
 
@@ -52,16 +52,14 @@ class TreeComparator:
             self.__approximations = {}
         return self.__approximations
 
-    def use_approximation(
+    def __use_approximation(
         self, tree: tuple[LineageTree, int, int] | ApproximatedTree
     ) -> ApproximatedTree:
-        print("peos", tree)
         if isinstance(tree, tuple):
             new_key = (hash(tree[0]), *tree[1:])
             if new_key in self._cached_approximations:
                 f_tree = self._cached_approximations[new_key]
             else:
-                print("edw", tree)
                 f_tree = self.approximator.approximation(*tree)
                 self._cached_approximations[new_key] = f_tree
         else:
@@ -72,12 +70,51 @@ class TreeComparator:
         self,
         tree1: tuple[LineageTree, int, int] | ApproximatedTree,
         tree2: tuple[LineageTree, int, int] | ApproximatedTree,
-        norm="sum",
+        norm: {"max", "sum", "tuple"} | Callable = "sum",
     ) -> float | int:
-        tree1 = self.use_approximation(tree1)
-        tree2 = self.use_approximation(tree2)
+        if not isinstance(tree1, ApproximatedTree):
+            tree1 = self.__use_approximation(tree1)
+        if not isinstance(tree2, ApproximatedTree):
+            tree2 = self.__use_approximation(tree2)
         distance = self.tree_distance.compute_distance(
             tree1, tree2, self._cached_distances
         ) / self.tree_distance.get_norm(tree1, tree2, norm)
 
         return distance
+
+    def p_compare(self, *trees, norm="sum", n_proccessors: int = 4):
+        app_trees = []
+        for tree in trees:
+            if not isinstance(tree, ApproximatedTree):
+                app_trees.append(self.__use_approximation(tree))
+        print("finished calc approx")
+        combinations = itertools.combinations(app_trees, 2)
+        proccesses = (
+            (self.tree_distance, comb1, comb2, norm, self._cached_distances)
+            for comb1, comb2 in combinations
+        )
+        with pool.Pool(
+            n_proccessors if n_proccessors < len(app_trees) else len(app_trees)
+        ) as p:
+            res = p.map(_worker, proccesses)
+        distances = []
+        for r in res:
+            print(r)
+            self._cached_distances.update(r[0])
+            distances.append(r[1])
+
+        return distances
+
+
+def _worker(args):
+    (
+        distance,
+        app_tree1,
+        app_tree2,
+        norm,
+        cache,
+    ) = args
+    res = distance.compute_distance_parallel(app_tree1, app_tree2, cache)
+    distance = res[1] / distance.get_norm(app_tree1, app_tree2, norm)
+
+    return (res[0], distance)
