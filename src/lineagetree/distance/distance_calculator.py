@@ -59,8 +59,9 @@ class UnorderedTreeEditDistance(TreeDistanceTemplate):
         approximated_tree2: ApproximatedTree,
         backtrace: Alignment = None,
     ):
-        key = frozenset(
-            {approximated_tree1.tree_specs, approximated_tree2.tree_specs}
+        key = frozenset({str(approximated_tree1), str(approximated_tree2)})
+        approximated_tree1, approximated_tree2 = sorted(
+            (approximated_tree1, approximated_tree2), key=lambda x: str(x)
         )
         align = self._compute_uted_backtrace(
             approximated_tree1, approximated_tree2, backtrace
@@ -96,8 +97,10 @@ class UnorderedTreeEditDistance(TreeDistanceTemplate):
         backtrace : edist.alignment.Alignment
             The resulting alignment in the edist format
         """
-        key = frozenset(
-            {approximated_tree1.tree_specs, approximated_tree2.tree_specs}
+        key = frozenset({str(approximated_tree1), str(approximated_tree2)})
+
+        approximated_tree1, approximated_tree2 = sorted(
+            (approximated_tree1, approximated_tree2), key=lambda x: str(x)
         )
 
         if cache is not None and key in cache:
@@ -145,6 +148,9 @@ class UnorderedTreeEditDistance(TreeDistanceTemplate):
             The unordered tree edit distance
             between the two trees.
         """
+        approximated_tree1, approximated_tree2 = sorted(
+            (approximated_tree1, approximated_tree2), key=lambda x: str(x)
+        )
         return self._compute_uted_backtrace(
             approximated_tree1, approximated_tree2, btrc
         ).cost(approximated_tree1.nodes, approximated_tree2.nodes, self.delta)

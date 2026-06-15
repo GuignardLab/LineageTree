@@ -119,17 +119,17 @@ class ApproximatedTree:
         )
 
     def __str__(self):  # For quickly checking how the object was created.
-        return self.tree_specs
+        return str(self.tree_specs)
 
 
 class TreeApproximationTemplate(ABC):
-    default_delta = ...
+    default_delta: Callable = ...
 
     def __init__(
         self,
         delta: Callable | None = None,
     ):
-        self.delta = delta if delta else self.default_delta
+        self.delta = delta if delta else self.__class__.default_delta  # :(
 
     @abstractmethod
     def approximation(
@@ -138,9 +138,6 @@ class TreeApproximationTemplate(ABC):
         root: int,
         end_time: int | None = None,
     ) -> ApproximatedTree: ...
-
-    def delta(self, node1, node2):
-        return self.delta(node1, node2)
 
 
 class ReducedTreeTimed(TreeApproximationTemplate):

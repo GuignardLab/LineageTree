@@ -8,6 +8,7 @@ from multiprocessing import pool
 import types
 from .approximations import ApproximatedTree
 import itertools
+import tqdm
 
 if TYPE_CHECKING:
     from lineagetree import LineageTree
@@ -56,7 +57,7 @@ class TreeComparator:
         self, tree: tuple[LineageTree, int, int] | ApproximatedTree
     ) -> ApproximatedTree:
         if isinstance(tree, tuple):
-            new_key = (hash(tree[0]), *tree[1:])
+            new_key = (hash(tree[0]), tree[1], tree[2])
             if new_key in self._cached_approximations:
                 f_tree = self._cached_approximations[new_key]
             else:
@@ -72,36 +73,53 @@ class TreeComparator:
         tree2: tuple[LineageTree, int, int] | ApproximatedTree,
         norm: {"max", "sum", "tuple"} | Callable = "sum",
     ) -> float | int:
-        if not isinstance(tree1, ApproximatedTree):
-            tree1 = self.__use_approximation(tree1)
-        if not isinstance(tree2, ApproximatedTree):
-            tree2 = self.__use_approximation(tree2)
+        tree1 = self.__use_approximation(tree1)
+        tree2 = self.__use_approximation(tree2)
         distance = self.tree_distance.compute_distance(
             tree1, tree2, self._cached_distances
         ) / self.tree_distance.get_norm(tree1, tree2, norm)
 
         return distance
 
+    def order_processes(self, proc):
+        nodes1, nodes2 = len(proc[1].nodes), len(proc[2].nodes)
+        return nodes1 + nodes2
+
     def p_compare(self, *trees, norm="sum", n_proccessors: int = 4):
         app_trees = []
-        for tree in trees:
-            if not isinstance(tree, ApproximatedTree):
-                app_trees.append(self.__use_approximation(tree))
-        print("finished calc approx")
-        combinations = itertools.combinations(app_trees, 2)
-        proccesses = (
+        for tree in tqdm.tqdm(trees, desc="Processing Trees: "):
+            app_trees.append(self.__use_approximation(tree))
+        combinations = list(itertools.combinations(app_trees, 2))
+        processes = (
             (self.tree_distance, comb1, comb2, norm, self._cached_distances)
             for comb1, comb2 in combinations
         )
-        with pool.Pool(
-            n_proccessors if n_proccessors < len(app_trees) else len(app_trees)
-        ) as p:
-            res = p.map(_worker, proccesses)
         distances = []
-        for r in res:
-            print(r)
-            self._cached_distances.update(r[0])
-            distances.append(r[1])
+
+        ch_size = (
+            len(combinations) // n_proccessors
+        ) // 4  # Maybe overengineered but it works super good
+        processes_b_s = sorted(processes, key=self.order_processes)
+        processes_s_b = processes_b_s[::-1]
+        mid = len(processes_b_s) // 2
+        high = processes_b_s[:mid]
+        low = processes_s_b[mid:]
+        new_proc = []
+        for h, l in zip(high, low):
+            new_proc.append(h)
+            new_proc.append(l)
+
+        new_proc.extend(high[len(low) :])
+        with pool.Pool(min(n_proccessors, len(app_trees))) as p:
+            for r in tqdm.tqdm(
+                p.imap_unordered(
+                    _worker, new_proc, chunksize=ch_size if ch_size > 0 else 1
+                ),
+                total=len(combinations),
+                desc="UTED distances",
+            ):
+                self._cached_distances.update(r[0])
+                distances.append(r[1])
 
         return distances
 
