@@ -22,6 +22,8 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class TreeSpecs:
+    """Serves as the identifier of an `ApproximatedTree`"""
+
     lT: int
     root: int
     end_time: int
@@ -41,6 +43,8 @@ class TreeSpecs:
 
 @dataclass
 class ApproximatedTree:
+    """A tree that has been processed and i ready for comparison should be converted to this class."""
+
     adjacency_dict: dict[int, Iterable[int]]
     property_dict: dict[int, float | int | list[int | float]] | None
     tree_specs: TreeSpecs | None = None
@@ -120,11 +124,16 @@ class ApproximatedTree:
     def __str__(self):  # For quickly checking how the object was created.
         return str(self.tree_specs)
 
-    def __hash__(self):
+    def __hash__(self):  # Makes it hashable.
         return hash(self.tree_specs)
 
 
 class TreeApproximationTemplate(ABC):
+    """Template to create approximations
+    One function the `approximation` has to be implemented
+    and there should be a `default_delta` set
+    """
+
     default_delta: Callable = ...
 
     def __init__(
@@ -139,7 +148,26 @@ class TreeApproximationTemplate(ABC):
         lT: LineageTree,
         root: int,
         end_time: int | None = None,
-    ) -> ApproximatedTree: ...
+    ) -> ApproximatedTree:
+        """Build the approximation of a given sub lineage of lineage tree.
+
+
+        Parameters
+        ----------
+        lT : LineageTree
+            The lineage tree from which to approximate
+        root : int
+            The id of the spawning cell of the sub lineage
+            to approximate
+        end_time : int
+            The last time point to consider
+
+        Returns
+        -------
+        ApproximatedTree
+            The approximated tree that will be used
+            for the computation of the tree edit distance
+        """
 
 
 class ReducedTreeTimed(TreeApproximationTemplate):
@@ -151,6 +179,25 @@ class ReducedTreeTimed(TreeApproximationTemplate):
         root: int,
         end_time: int | None = None,
     ) -> ApproximatedTree:
+        """Build the approximation of a given sub lineage of lineage tree.
+
+
+        Parameters
+        ----------
+        lT : LineageTree
+            The lineage tree from which to approximate
+        root : int
+            The id of the spawning cell of the sub lineage
+            to approximate
+        end_time : int
+            The last time point to consider
+
+        Returns
+        -------
+        ApproximatedTree
+            The approximated tree that will be used
+            for the computation of the tree edit distance
+        """
         if end_time is None:
             end_time = lT.t_e
         if lT.time_resolution == 0:
@@ -209,10 +256,6 @@ class ReducedTreeProperties(TreeApproximationTemplate):
             to approximate
         end_time : int
             The last time point to consider
-        time_resolution : float
-            How much time happens between two consecutive time points
-            This is useful when comparing two different lineage trees
-            that do not have the same time scale
         properties : dict mapping int to float, optional
             The dictionary that maps a node id to a given value.
             *Not* all the nodes need to have a value.
@@ -310,9 +353,9 @@ class DownsampledTree(TreeApproximationTemplate):
             to approximate
         end_time : int
             The last time point to consider
-        downsample : int
-            The downsampling value.
-            One node will be conserved every `downsample` node
+        properties : dict mapping int to float, optional
+            The dictionary that maps a node id to a given value.
+            *Not* all the nodes need to have a value.
 
         Returns
         -------
@@ -402,10 +445,9 @@ class ResampledTree(TreeApproximationTemplate):  ### TODO
             and therefore only the topology of the lineage tree will matter
         end_time : int
             The last time point to consider
-        time_resolution : int
-            The time resolution of the lineage tree
-            to approximate. It has to be in the same
-            units than the one provided as `target_time_resolution`.
+        properties : dict mapping int to float, optional
+            The dictionary that maps a node id to a given value.
+            *Not* all the nodes need to have a value.
 
         Returns
         -------
@@ -545,6 +587,28 @@ class FullTree(TreeApproximationTemplate):
         end_time: int | None = None,
         properties: dict[int, float | list] | list[str] = None,
     ):
+        """
+        Build the approximation of a given sub lineage of lineage tree.
+
+        Parameters
+        ----------
+        lT : LineageTree
+            The lineage tree from which to approximate
+        root : int
+            The id of the spawning cell of the sub lineage
+            to approximate
+        end_time : int
+            The last time point to consider
+        properties : dict mapping int to float, optional
+            The dictionary that maps a node id to a given value.
+            *Not* all the nodes need to have a value.
+
+        Returns
+        -------
+        ApproximatedTree
+            The approximated tree that will be used
+            for the computation of the tree edit distance
+        """
 
         if isinstance(properties, list):
             prop_dicts = [getattr(lT, prop) for prop in properties]
