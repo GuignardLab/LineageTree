@@ -349,7 +349,7 @@ class DownsampledTree(TreeApproximationTemplate):
         )
 
 
-class ResampledTree(TreeApproximationTemplate):
+class ResampledTree(TreeApproximationTemplate):  ### TODO
     """
     An approximator that resample lineage trees to a given time resolution.
     The target time resolution is provided at creation.

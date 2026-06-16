@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 
 class TreeDistanceTemplate(ABC):
+    """The template class to create new distance metrics"""
 
     def compute_distance_parallel(
         self,
@@ -20,6 +21,24 @@ class TreeDistanceTemplate(ABC):
         approximated_tree2: ApproximatedTree | LineageTree,
         backtrace: Alignment = None,
     ) -> tuple[dict, dict] | dict:
+        """Computes the distance between 2 trees. Important to implement
+        if parallel processing is gonna be used.
+
+        Parameters
+        ----------
+        approximated_tree1 : ApproximatedTree | LineageTree
+            The first tree to compare
+        approximated_tree2 : ApproximatedTree | LineageTree
+            The secnd tree to compare
+        backtrace : Alignment, optional
+            The cache where the distances/alignments are gonna be saved or extracted from, by default None
+
+        Returns
+        -------
+        tuple[dict, dict] | dict
+            - A dictionary that maps the two trees to a distance
+            - Two dictinaries that map the 2 trees to a distance and their backtrace.
+        """
         warn(
             "Parallel algorithm not implemented, defaulting to single process."
         )
@@ -49,6 +68,7 @@ class TreeDistanceTemplate(ABC):
 
 
 class UnorderedTreeEditDistance(TreeDistanceTemplate):
+    """Specific implementation for Unordered Tree Edit Distance."""
 
     backtrace_based = True
 
@@ -62,7 +82,21 @@ class UnorderedTreeEditDistance(TreeDistanceTemplate):
         approximated_tree1: ApproximatedTree,
         approximated_tree2: ApproximatedTree,
         backtrace: Alignment = None,
-    ):
+    ) -> tuple[dict, dict] | dict:
+        """Performs uted in parallel.
+
+        Parameters
+        ----------
+        approximated_tree1 : ApproximatedTree
+            The first tree to compare
+        approximated_tree2 : ApproximatedTree
+            The second tree to compare
+
+        Returns
+        -------
+        backtrace : edist.alignment.Alignment
+            The resulting alignment in the edist format
+        """
         key = frozenset({approximated_tree1, approximated_tree2})
         approximated_tree1, approximated_tree2 = sorted(
             (approximated_tree1, approximated_tree2), key=lambda x: str(x)
