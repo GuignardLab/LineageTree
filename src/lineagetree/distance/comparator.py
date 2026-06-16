@@ -137,6 +137,7 @@ class TreeComparator:
             ):
                 self._cached_distances.update(r[0])
                 distances.update(r[1])
+
         return {
             key: dist / self.tree_distance.get_norm(*key, norm)
             for key, dist in distances.items()
@@ -218,7 +219,13 @@ class TreeComparator:
         return fig, ax
 
     def compare_all_trees_that_start_at_t(
-        self, lT: LineageTree, time, roots, end_time, norm, n_processors=4
+        self,
+        lT: LineageTree,
+        time,
+        norm="sum",
+        roots=None,
+        end_time=None,
+        n_processors=4,
     ):
         if roots:
             new_roots = lT.nodes_at_t(
@@ -228,7 +235,7 @@ class TreeComparator:
         else:
             new_roots = lT.time_nodes[time]
         trees = [(lT, r, end_time) for r in new_roots]
-        self.p_compare(*trees, norm=norm, n_proccessors=n_processors)
+        return self.p_compare(*trees, norm=norm, n_proccessors=n_processors)
 
     def plot_tree_distance_graph(
         self,
