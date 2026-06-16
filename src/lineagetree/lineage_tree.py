@@ -50,10 +50,10 @@ class LineageTree(
             return False
 
     def __hash__(self) -> int:
-        return hash(tuple(self._successor))
-        # succ = normalize_keys(self._successor)
-        # s = json.dumps(succ, sort_keys=True, separators=(",", ":"))
-        # return int(hashlib.sha256(s.encode("utf-8")).hexdigest(), 16)
+        used_nodes = self.roots.union(self.leaves)
+        return int.from_bytes(
+            hashlib.sha256(str(used_nodes).encode()).digest()[:8], "big"
+        )
 
     def __setstate__(self, state):
         if "_successor" not in state:

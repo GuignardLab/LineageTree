@@ -9,12 +9,30 @@ import types
 from .approximations import ApproximatedTree
 import itertools
 import tqdm
+from pathlib import Path
+import csv
+
+# import seaborn
 
 if TYPE_CHECKING:
     from lineagetree import LineageTree
     from .approximations import TreeApproximationTemplate
     from .distance_calculator import TreeDistanceTemplate
     from edist.alignment import Alignment
+
+
+def _worker(args):
+    (
+        distance,
+        app_tree1,
+        app_tree2,
+        norm,
+        cache,
+    ) = args
+    res = distance.compute_distance_parallel(app_tree1, app_tree2, cache)
+    distance = res[1] / distance.get_norm(app_tree1, app_tree2, norm)
+
+    return (res[0], distance)
 
 
 class TreeComparator:
@@ -49,9 +67,9 @@ class TreeComparator:
     def _cached_approximations(
         self,
     ) -> dict[tuple[int, int, int], ApproximatedTree]:
-        if not hasattr(self, "approximations"):
-            self.__approximations = {}
-        return self.__approximations
+        if not hasattr(self, "_approximations"):
+            self._approximations = {}
+        return self._approximations
 
     def __use_approximation(
         self, tree: tuple[LineageTree, int, int] | ApproximatedTree
@@ -81,11 +99,23 @@ class TreeComparator:
 
         return distance
 
-    def order_processes(self, proc):
+    def _order_processes(self, proc):
         nodes1, nodes2 = len(proc[1].nodes), len(proc[2].nodes)
         return nodes1 + nodes2
 
-    def p_compare(self, *trees, norm="sum", n_proccessors: int = 4):
+    def p_compare(
+        self,
+        *trees,
+        norm="sum",
+        n_proccessors: int = 4,
+        path: Path | None = None,
+    ):
+        if path:
+            for tree in trees:
+                if tree[0].name is None:
+                    raise Warning(
+                        f"All LineageTrees should have a name for saving the comparisons. Missing name: {tree[0]}"
+                    )
         app_trees = []
         for tree in tqdm.tqdm(trees, desc="Processing Trees: "):
             app_trees.append(self.__use_approximation(tree))
@@ -99,7 +129,7 @@ class TreeComparator:
         ch_size = (
             len(combinations) // n_proccessors
         ) // 4  # Maybe overengineered but it works super good
-        processes_b_s = sorted(processes, key=self.order_processes)
+        processes_b_s = sorted(processes, key=self._order_processes)
         processes_s_b = processes_b_s[::-1]
         mid = len(processes_b_s) // 2
         high = processes_b_s[:mid]
@@ -119,20 +149,13 @@ class TreeComparator:
                 desc="UTED distances",
             ):
                 self._cached_distances.update(r[0])
-                distances.append(r[1])
+                distances.append((r[0].keys(), r[1]))
+
+                # if path: # needs discussion
+                #     with open(path, "w", newline="") as f:
+                #         writer = csv.writer(f)
+                #         writer.writerow((r[0].keys(), r[1]))
 
         return distances
 
-
-def _worker(args):
-    (
-        distance,
-        app_tree1,
-        app_tree2,
-        norm,
-        cache,
-    ) = args
-    res = distance.compute_distance_parallel(app_tree1, app_tree2, cache)
-    distance = res[1] / distance.get_norm(app_tree1, app_tree2, norm)
-
-    return (res[0], distance)
+    def plot_clustermap(self, *trees, **kwargs): ...

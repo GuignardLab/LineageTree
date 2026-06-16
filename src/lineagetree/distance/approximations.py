@@ -65,7 +65,6 @@ class ApproximatedTree:
         """
         if self.property_dict:
             sample = next(iter(self.property_dict.values()))
-            dict_type = type(sample)
             if isinstance(sample, Iterable):
                 length = len(sample)
                 default_value = [0] * length
