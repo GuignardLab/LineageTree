@@ -19,13 +19,17 @@ class TreeDistanceTemplate(ABC):
         approximated_tree1: ApproximatedTree | LineageTree,
         approximated_tree2: ApproximatedTree | LineageTree,
         backtrace: Alignment = None,
-    ) -> dict:
+    ) -> tuple[dict, dict] | dict:
         warn(
             "Parallel algorithm not implemented, defaulting to single process."
         )
-        self.compute_distance(
-            approximated_tree1, approximated_tree2, backtrace
-        )
+        return {
+            frozenset(
+                {approximated_tree1, approximated_tree2}
+            ): self.compute_distance(
+                approximated_tree1, approximated_tree2, backtrace
+            )
+        }
 
     @abstractmethod
     def compute_distance(

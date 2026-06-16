@@ -95,23 +95,12 @@ class TreeComparator:
 
         return distance
 
-    def _order_processes(self, proc):
-        nodes1, nodes2 = len(proc[1].nodes), len(proc[2].nodes)
-        return nodes1 + nodes2
-
     def p_compare(
         self,
         *trees,
         norm="sum",
         n_proccessors: int = 4,
-        path: Path | None = None,
     ):
-        if path:
-            for tree in trees:
-                if tree[0].name is None:
-                    raise Warning(
-                        f"All LineageTrees should have a name for saving the comparisons. Missing name: {tree[0]}"
-                    )
         app_trees = []
         for tree in tqdm.tqdm(trees, desc="Processing Trees: "):
             app_trees.append(self.__use_approximation(tree))
@@ -125,7 +114,7 @@ class TreeComparator:
         ch_size = (
             len(combinations) // n_proccessors
         ) // 4  # Maybe overengineered but it works super good
-        processes_b_s = sorted(processes, key=self._order_processes)
+        processes_b_s = sorted(processes, key=_order_processes)
         # processes_s_b = processes_b_s[::-1]
         mid = len(processes_b_s) // 2
         high = processes_b_s[:mid]
@@ -148,13 +137,10 @@ class TreeComparator:
             ):
                 self._cached_distances.update(r[0])
                 distances.update(r[1])
-
-                # if path: # needs discussion
-                #     with open(path, "w", newline="") as f:
-                #         writer = csv.writer(f)
-                #         writer.writerow((r[0].keys(), r[1]))
-
-        return distances
+        return {
+            key: dist / self.tree_distance.get_norm(*key, norm)
+            for key, dist in distances.items()
+        }
 
     @property
     def __get_next_lineage(self):
@@ -216,9 +202,10 @@ class TreeComparator:
         linkage_data = linkage(condensed_dist_matrix, method="ward")
         order = dendrogram(linkage_data, no_plot=True)["leaves"]
         labels = [labels[i] for i in order]
-        print(labels)
+
         plot = np.ix_(order, order)
-        plt.imshow(matrix[plot], **kwargs)
+        _pl = plt.imshow(matrix[plot], **kwargs)
+        self.colorbar = fig.colorbar(_pl, ax=ax)
         ax.set_xticks(np.arange(len(labels)), labels=labels)
         ax.set_yticks(np.arange(len(labels)), labels=labels)
         ax.tick_params(axis="both", labelsize=10)
@@ -231,7 +218,7 @@ class TreeComparator:
         return fig, ax
 
     def compare_all_trees_that_start_at_t(
-        self, lT: LineageTree, roots, time, end_time
+        self, lT: LineageTree, time, roots, end_time, norm, n_processors=4
     ):
         if roots:
             new_roots = lT.nodes_at_t(
@@ -241,10 +228,15 @@ class TreeComparator:
         else:
             new_roots = lT.time_nodes[time]
         trees = [(lT, r, end_time) for r in new_roots]
-        self.p_compare(*trees)
+        self.p_compare(*trees, norm=norm, n_proccessors=n_processors)
 
     def plot_tree_distance_graph(
         self,
         tree1,
         tree2,
     ): ...
+
+
+def _order_processes(proc):
+    nodes1, nodes2 = len(proc[1].nodes), len(proc[2].nodes)
+    return nodes1 + nodes2
