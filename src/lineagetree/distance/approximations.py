@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from .approximations import TreeApproximationTemplate
 
 
-@dataclass
+@dataclass(frozen=True)
 class TreeSpecs:
     lT: int
     root: int
@@ -119,6 +119,9 @@ class ApproximatedTree:
 
     def __str__(self):  # For quickly checking how the object was created.
         return str(self.tree_specs)
+
+    def __hash__(self):
+        return hash(self.tree_specs)
 
 
 class TreeApproximationTemplate(ABC):

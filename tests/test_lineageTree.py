@@ -797,3 +797,7 @@ def test_smoothing():
         new_pos[1552], np.array([462.15385069, 907.17562352, 419.54303692])
     ).all()
     lt.pos = lt.old_pos
+
+
+def test_hash():
+    assert hash(lt) == 7929439451057191037

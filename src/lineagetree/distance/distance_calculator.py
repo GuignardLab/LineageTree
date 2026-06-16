@@ -59,7 +59,7 @@ class UnorderedTreeEditDistance(TreeDistanceTemplate):
         approximated_tree2: ApproximatedTree,
         backtrace: Alignment = None,
     ):
-        key = frozenset({str(approximated_tree1), str(approximated_tree2)})
+        key = frozenset({approximated_tree1, approximated_tree2})
         approximated_tree1, approximated_tree2 = sorted(
             (approximated_tree1, approximated_tree2), key=lambda x: str(x)
         )
@@ -69,9 +69,11 @@ class UnorderedTreeEditDistance(TreeDistanceTemplate):
 
         return (
             {key: align},
-            self.compute_distance(
-                approximated_tree1, approximated_tree2, backtrace
-            ),
+            {
+                key: self.compute_distance(
+                    approximated_tree1, approximated_tree2, backtrace
+                )
+            },
         )
 
     def _compute_uted_backtrace(
@@ -97,7 +99,7 @@ class UnorderedTreeEditDistance(TreeDistanceTemplate):
         backtrace : edist.alignment.Alignment
             The resulting alignment in the edist format
         """
-        key = frozenset({str(approximated_tree1), str(approximated_tree2)})
+        key = frozenset({approximated_tree1, approximated_tree2})
 
         approximated_tree1, approximated_tree2 = sorted(
             (approximated_tree1, approximated_tree2), key=lambda x: str(x)
