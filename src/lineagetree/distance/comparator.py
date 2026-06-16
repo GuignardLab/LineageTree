@@ -1,16 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable
-import inspect
-import pickle
+from typing import TYPE_CHECKING
 from warnings import warn
 from multiprocessing import pool
-import types
 from .approximations import ApproximatedTree
 import itertools
 import tqdm
-from pathlib import Path
-import csv
 
 if TYPE_CHECKING:
     from lineagetree import LineageTree

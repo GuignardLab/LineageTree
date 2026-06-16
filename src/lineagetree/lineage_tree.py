@@ -10,7 +10,6 @@ from collections.abc import Iterable, Sequence
 from packaging.version import Version
 import numpy as np
 import hashlib
-import json
 from ._core.utils import CompatibleUnpickler
 from ._mixins.properties_mixin import PropertiesMixin
 from ._mixins.modifier_mixin import ModifierMixin
@@ -20,12 +19,6 @@ from ._mixins.spatial_mixin import SpatialMixin
 from ._mixins.analysis_mixin import AnalysisMixin
 from ._mixins.io_mixin import IOMixin
 from ._core.validation import TreeValidator
-
-
-def normalize_keys(d):
-    return tuple(
-        sorted((int(k), tuple(int(vv) for vv in v)) for k, v in d.items())
-    )
 
 
 class LineageTree(
