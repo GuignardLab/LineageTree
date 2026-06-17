@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Iterable
 import numpy as np
 from scipy.spatial import Delaunay, KDTree
 from .._core._modifier import anchored_gaussian_smooth
+from scipy.interpolate import InterpolatedUnivariateSpline
+from scipy.optimize import curve_fit
 
 if TYPE_CHECKING:
     from ..lineage_tree import LineageTree
@@ -699,6 +701,25 @@ def overall_angle(lT: LineageTree) -> dict[int, float]:
             )
             lT.Overall_angles.update({node: overangle for node in chain})
     return lT.Overall_angles
+
+
+def alpha_score(
+    lT: LineageTree,
+):
+    def _model(x, a, b):
+        return b * (x**a)
+
+    alphas = {}
+    for chain in lT.all_chains:
+        if len(chain) < 5 or chain[0] in lT.roots or chain[-1] in lT.leaves:
+            continue
+        positions = np.array([lT.pos[c] for c in chain])
+        MSD = np.cumsum(
+            np.linalg.norm((positions - positions[0]) ** 2, axis=1)
+        ) / np.arange(1, len(chain) + 1)
+        pars, *_ = curve_fit(_model, np.linspace(0, len(MSD), 50), MSD)
+        alphas.update({node: pars[0] for node in chain})
+    return alphas
 
 
 # TODO
