@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class TreeSpecs:
-    """Serves as the identifier of an `ApproximatedTree`"""
+    """Serves as the identifier of an `ApproximatedTree` an should be used when transforming trees to a form that is to be compared."""
 
     lT: int
     root: int
@@ -43,7 +43,7 @@ class TreeSpecs:
 
 @dataclass
 class ApproximatedTree:
-    """A tree that has been processed and i ready for comparison should be converted to this class."""
+    """A tree that has been processed and iw ready for comparison should be converted to this class."""
 
     adjacency_dict: dict[int, Iterable[int]]
     property_dict: dict[int, float | int | list[int | float]] | None
