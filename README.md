@@ -172,11 +172,11 @@ lT.plot_dtw_heatmap(node_a, node_b)
 from lineagetree import LineageTreeManager
 
 manager = LineageTreeManager()
-manager["embryo_1"] = lT_1
-manager["embryo_2"] = lT_2
+manager.add(lT_1)
+manager.add(lT_2)
 
-# Pairwise UTED across all stored trees
-manager.compute_distances()
+# Compare subtrees across lineages
+manager.cross_lineage_edit_distance(root_of_lT1, name_of_lT1,root_of_lT2, name_of_lT2)
 ```
 
 ---
