@@ -11,6 +11,30 @@ if TYPE_CHECKING:
 
 
 def modifier(wrapped_func):
+    """Decorator that invalidates all cached dynamic properties after a mutation.
+
+    Wrap any function that mutates the tree's topology, times, or positions
+    with ``@modifier``. After the wrapped function returns, every backing
+    attribute listed in ``self._protected_dynamic_properties`` is reset to
+    ``None``, causing :class:`dynamic_property` descriptors to recompute their
+    values on the next access.
+
+    Re-entrant calls (modifier functions calling other modifier functions) are
+    detected via ``self._has_been_reset``; only the outermost call performs the
+    invalidation so the cache is flushed exactly once per logical mutation.
+
+    Parameters
+    ----------
+    wrapped_func : callable
+        The mutation function to wrap. Its first argument must be the
+        ``LineageTree`` instance (``self``).
+
+    Returns
+    -------
+    callable
+        The wrapped function with cache-invalidation behaviour.
+    """
+
     @wraps(wrapped_func)
     def raising_flag(self, *args, **kwargs):
         should_reset = (

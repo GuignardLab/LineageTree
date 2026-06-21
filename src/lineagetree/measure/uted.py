@@ -138,7 +138,19 @@ def __calculate_distance_of_sub_tree(
     return res / norm([norm1, norm2])
 
 
-def clear_comparisons(lT: LineageTree):
+def clear_comparisons(lT: LineageTree) -> None:
+    """Clear all cached tree-edit-distance comparisons.
+
+    Comparisons between subtrees are stored in ``lT._comparisons`` keyed by
+    ``(end_time, style_id)`` to avoid redundant recomputation. This function
+    empties the cache. Call it when memory usage is a concern or when
+    parameters that affect the alignment (e.g. tree topology) have changed.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree instance whose comparison cache should be cleared.
+    """
     lT._comparisons.clear()
 
 

@@ -155,7 +155,32 @@ def attach_methods(cls, funcs):
         setattr(cls, name, methodize(f))
 
 
-def _should(name, obj, cls_module):
+def _should(name: str, obj: object, cls_module: str | None) -> bool:
+    """Decide whether ``obj`` should be automatically methodised.
+
+    A callable is eligible when:
+
+    - It is a plain :class:`types.FunctionType` (not a ``staticmethod``,
+      ``classmethod``, or ``property``).
+    - It was **not** defined inside the same module as the mixin class
+      (i.e. it was imported from a ``_core`` module).
+    - Its first parameter is positional (``POSITIONAL_ONLY`` or
+      ``POSITIONAL_OR_KEYWORD``).
+
+    Parameters
+    ----------
+    name : str
+        Attribute name (unused; kept for caller convenience).
+    obj : object
+        The object assigned to the class attribute.
+    cls_module : str or None
+        ``__module__`` of the mixin class being constructed.
+
+    Returns
+    -------
+    bool
+        ``True`` if ``obj`` should be wrapped by :func:`methodize`.
+    """
     if isinstance(obj, (staticmethod, classmethod, property)):
         return False
     if not isinstance(obj, types.FunctionType):
@@ -173,7 +198,38 @@ def _should(name, obj, cls_module):
 
 
 class AutoMethodizeMeta(type):
+    """Metaclass that automatically wraps imported free functions as bound methods.
+
+    When a mixin class is created with this metaclass, every function that
+    satisfies :func:`_should` (or every name listed in the optional
+    ``__methodize__`` class attribute) is replaced by a
+    :func:`methodize`-wrapped version. The net effect is that free functions
+    imported from the ``_core`` modules appear as ordinary instance methods
+    on the :class:`~lineagetree.LineageTree` class.
+
+    The ``lT : LineageTree`` first parameter is also stripped from the
+    visible method signature and from the NumPy-style docstring.
+    """
+
     def __new__(mcls, name, bases, ns, **kw):
+        """Create the new mixin class and attach methodised functions.
+
+        Parameters
+        ----------
+        name : str
+            Class name.
+        bases : tuple
+            Base classes.
+        ns : dict
+            Class namespace.
+        **kw
+            Additional keyword arguments forwarded to :func:`type.__new__`.
+
+        Returns
+        -------
+        type
+            The newly created class with methodised functions attached.
+        """
         cls = super().__new__(mcls, name, bases, ns, **kw)
 
         if "__methodize__" in ns:

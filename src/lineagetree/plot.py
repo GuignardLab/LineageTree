@@ -25,8 +25,31 @@ def __plot_nodes(
     default_color: str = "black",
     **kwargs,
 ) -> None:
-    """
-    Private method that plots the nodes of the tree.
+    """Plot division nodes (non-leaf chain endpoints) as scatter points.
+
+    Leaf nodes are excluded because they have no outgoing edges and would
+    clutter the bottom of the tree.
+
+    Parameters
+    ----------
+    hier : dict mapping int to sequence of float
+        Mapping from node id to ``[x, y]`` position.
+    selected_nodes : set of int
+        Node ids to highlight with ``color``.
+    color : str, dict, or list
+        If a ``dict``, maps node ids to colours directly.
+        If a ``str`` or ``list``, the colour is used for selected nodes and
+        ``default_color`` for all others.
+    size : int or float
+        Marker size passed to :func:`matplotlib.pyplot.scatter`.
+    ax : plt.Axes
+        Axes to draw on.
+    leaves : set of int
+        Node ids considered as leaves (excluded from the scatter).
+    default_color : str, default="black"
+        Colour for non-selected nodes.
+    **kwargs
+        Additional keyword arguments forwarded to :func:`~matplotlib.axes.Axes.scatter`.
     """
     hier_no_leaves = copy.copy(hier)
     for leaf in leaves:
@@ -52,8 +75,36 @@ def __plot_edges(
     default_color: str = "black",
     **kwargs,
 ) -> None:
-    """
-    Private method that plots the edges of the tree.
+    """Plot the edges of the lineage tree as a :class:`~matplotlib.collections.LineCollection`.
+
+    Edges are drawn from child to parent using the compact ``lnks_tms['links']``
+    representation (chain start to chain end), not every individual time-step
+    edge.
+
+    Parameters
+    ----------
+    hier : dict mapping int to sequence of float
+        Mapping from node id to ``[x, y]`` position.
+    lnks_tms : dict
+        Dictionary produced by :func:`~lineagetree._core.utils.create_links_and_chains`,
+        containing ``'links'`` and ``'times'`` keys.
+    selected_edges : Iterable of int
+        Node ids (predecessor side) whose edges should be highlighted.
+        If ``color`` is a ``dict``, this argument is ignored and the dict
+        keys are used instead.
+    color : str, dict, or list
+        Colour specification for highlighted edges.
+        If a ``dict``, maps node ids to colours; all edges not in the dict
+        get ``default_color``.
+    lw : float
+        Line width passed to :class:`~matplotlib.collections.LineCollection`.
+    ax : plt.Axes
+        Axes to draw on.
+    default_color : str, default="black"
+        Colour for non-selected edges.
+    **kwargs
+        Additional keyword arguments forwarded to
+        :class:`~matplotlib.collections.LineCollection`.
     """
     if isinstance(color, dict):
         selected_edges = color.keys()

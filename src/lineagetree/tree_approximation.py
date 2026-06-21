@@ -30,6 +30,28 @@ class TreeApproximationTemplate(ABC):
         end_time: int | None = None,
         time_scale: int = 1,
     ):
+        """Initialise the tree approximation for the subtree rooted at ``root``.
+
+        Parameters
+        ----------
+        lT : LineageTree
+            The source lineage tree.
+        root : int
+            Id of the node that is the root of the subtree to approximate.
+        downsample : int, optional
+            Downsampling factor (used by :class:`downsample_tree`).
+        end_time : int, optional
+            Last time point to include in the approximation. Defaults to
+            ``lT.t_e``.
+        time_scale : int, default=1
+            Scaling factor applied to node durations, used to align trees
+            sampled at different time resolutions.
+
+        Raises
+        ------
+        Exception
+            If ``time_scale <= 0``.
+        """
         self.lT: LineageTree = lT
         self.internal_ids = max(self.lT.nodes)
         self.root: int = root
@@ -42,6 +64,16 @@ class TreeApproximationTemplate(ABC):
         self.edist = self._edist_format(self.tree[0])
 
     def get_next_id(self) -> int:
+        """Return the next available internal node id for synthetic nodes.
+
+        The counter starts above the maximum real node id so that synthetic
+        nodes created during tree construction never collide with real ones.
+
+        Returns
+        -------
+        int
+            A unique id larger than any existing node id.
+        """
         self.internal_ids += 1
         return self.internal_ids
 
@@ -348,6 +380,18 @@ class downsample_tree(TreeApproximationTemplate):
 
 
 class normalized_simple_tree(simple_tree):
+    """Simple tree where the node-comparison cost is normalised by combined branch length.
+
+    Identical to :class:`simple_tree` except the ``delta`` function returns
+    ``|len_x - len_y| / (len_x + len_y)`` instead of the raw absolute
+    difference, so each pairwise cost lies in ``[0, 1)``. This makes the
+    distance less sensitive to the absolute duration of branches and more
+    sensitive to their relative lengths.
+
+    The norm is the number of chains in the subtree (not the total number of
+    nodes), matching the normalisation convention of :class:`mini_tree`.
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -481,6 +525,25 @@ class full_tree(TreeApproximationTemplate):
 
 
 class tree_style(Enum):
+    """Enumeration of built-in tree-approximation styles.
+
+    Each member maps a human-readable name to its corresponding
+    :class:`TreeApproximationTemplate` subclass.
+
+    Members
+    -------
+    mini : mini_tree
+        Fastest; each branch becomes a node of cost 1.
+    simple : simple_tree
+        Each branch becomes a node weighted by branch length.
+    normalized_simple : normalized_simple_tree
+        Like ``simple`` but cost is relative (in ``[0, 1)``).
+    downsampled : downsample_tree
+        Samples every ``n`` time points.
+    full : full_tree
+        No approximation; every node is explicit.
+    """
+
     mini = mini_tree
     simple = simple_tree
     normalized_simple = normalized_simple_tree
@@ -488,5 +551,12 @@ class tree_style(Enum):
     full = full_tree
 
     @classmethod
-    def list_names(self):
-        return [style.name for style in self]
+    def list_names(cls) -> list[str]:
+        """Return a list of all available style names.
+
+        Returns
+        -------
+        list of str
+            Names of all members of this enum.
+        """
+        return [style.name for style in cls]

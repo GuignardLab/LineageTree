@@ -152,7 +152,34 @@ def __dp(
 
 
 # Reference: https://github.com/nghiaho12/rigid_transform_3D
-def __rigid_transform_3D(A, B):
+def __rigid_transform_3D(
+    A: np.ndarray, B: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Compute the rigid (rotation + translation) transform from point cloud A to B.
+
+    Uses the SVD-based method to find the rotation matrix ``R`` and
+    translation vector ``t`` such that ``R @ A + t ≈ B`` in a least-squares
+    sense.
+
+    Parameters
+    ----------
+    A : (3, N) np.ndarray
+        Source point cloud in column-vector form (3 rows, N points).
+    B : (3, N) np.ndarray
+        Target point cloud in column-vector form (3 rows, N points).
+
+    Returns
+    -------
+    R : (3, 3) np.ndarray
+        Rotation matrix.
+    t : (3, 1) np.ndarray
+        Translation vector.
+
+    Raises
+    ------
+    Exception
+        If either matrix does not have exactly 3 rows.
+    """
     assert A.shape == B.shape
 
     num_rows, num_cols = A.shape

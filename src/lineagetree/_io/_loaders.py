@@ -97,8 +97,31 @@ ASTEC_KEYDICTIONARY = {
 }
 
 
-def _load_meshdict_from_bmfmesh(bmfmesh, pos_multipliers, translation):
+def _load_meshdict_from_bmfmesh(
+    bmfmesh, pos_multipliers: tuple, translation: tuple
+) -> dict:
+    """Convert a single BMF mesh object to a plain dictionary.
 
+    Parameters
+    ----------
+    bmfmesh : object
+        A mesh object as returned by ``binarymeshformat.loadMeshTracks``.
+        Must expose ``.positions`` and ``.triangles`` attributes.
+    pos_multipliers : tuple of float
+        Per-axis scale factors applied to vertex positions (x, y, z order
+        after axis reversal).
+    translation : tuple of float
+        Per-axis translation applied after scaling.
+
+    Returns
+    -------
+    dict
+        Dictionary with keys:
+
+        - ``'vertices'`` : (N, 3) np.ndarray of scaled vertex positions.
+        - ``'faces'``    : (M, 3) np.ndarray of triangle face indices.
+        - ``'center_mass'`` : (3,) np.ndarray, mean of all vertex positions.
+    """
     vertices = np.array(bmfmesh.positions).reshape(-1, 3)[:, ::-1]
     faces = np.array(bmfmesh.triangles).reshape(-1, 3)
 
@@ -248,7 +271,20 @@ def read_from_csv(
     return LineageTree(successor=successor, time=time, pos=pos, name=name)
 
 
-def _read_from_ASTEC_xml(file_path: str):
+def _read_from_ASTEC_xml(file_path: str) -> dict:
+    """Parse an ASTEC XML file into a normalised property dictionary.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to an ASTEC ``.xml`` output file.
+
+    Returns
+    -------
+    dict
+        Dictionary whose keys are ASTEC canonical property names (as defined
+        in :data:`ASTEC_KEYDICTIONARY`) and values are the parsed data.
+    """
     def _set_dictionary_value(root):
         if len(root) == 0:
             if root.text is None:
@@ -280,7 +316,22 @@ def _read_from_ASTEC_xml(file_path: str):
     return dictionary
 
 
-def _read_from_ASTEC_pkl(file_path: str, eigen: bool = False):
+def _read_from_ASTEC_pkl(file_path: str, eigen: bool = False) -> dict:
+    """Parse an ASTEC pickle file into a normalised property dictionary.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to an ASTEC ``.pkl`` output file.
+    eigen : bool, default=False
+        Whether to read eigen values from the pickle (currently unused).
+
+    Returns
+    -------
+    dict
+        Dictionary whose keys are ASTEC canonical property names (as defined
+        in :data:`ASTEC_KEYDICTIONARY`) and values are the parsed data.
+    """
     with open(file_path, "rb") as f:
         tmp_data = pkl.load(f, encoding="latin1")
         f.close()
@@ -608,10 +659,21 @@ def read_from_txt_for_celegans_CAO(
     Parameters
     ----------
     file : str
-        Path to the file to read
+        Path to the file to read.
+    reorder : bool, default=False
+        If ``True``, flip and rescale positions from the raw image coordinate
+        system to a normalised coordinate system. Requires ``raw_size`` and
+        ``shape`` to be provided.
+    raw_size : np.ndarray, optional
+        Shape of the raw image volume ``(z, y, x)`` used to flip the z-axis
+        when ``reorder=True``.
+    shape : float, optional
+        Target scale factor applied together with ``raw_size`` when
+        ``reorder=True``.
     name : None or str, optional
-        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
-        will be the name attribute, otherwise the name will be the stem of the file path.
+        The name attribute of the LineageTree file. If given a non-empty
+        string, the value of the attribute will be the name attribute,
+        otherwise the name will be the stem of the file path.
 
     Returns
     -------
@@ -1065,8 +1127,24 @@ def read_from_mamut_xml(
 
 
 def read_from_swc(swc_path: Path | str) -> LineageTree:
-    """
-    Read a neuronal tree from a swc file
+    """Read a neuronal morphology tree from an SWC file.
+
+    The SWC format stores a single rooted tree of 3D sample points with
+    associated radius and structure-type annotations.  The resulting
+    :class:`~lineagetree.LineageTree` is created with ``temporal=False``
+    because SWC files do not encode time.
+
+    Parameters
+    ----------
+    swc_path : str or Path
+        Path to the ``.swc`` file to read.
+
+    Returns
+    -------
+    LineageTree
+        Lineage tree whose nodes correspond to SWC sample points.
+        Custom properties ``'radius'`` (float) and ``'structure_id'`` (int)
+        are attached to every node.
     """
     with open(swc_path) as f:
         lines = f.readlines()

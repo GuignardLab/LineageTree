@@ -30,9 +30,65 @@ class LineageTree(
     AnalysisMixin,
     IOMixin,
 ):
-    """A lineage tree data structure with comprehensive analysis capabilities."""
+    """A lineage tree data structure with comprehensive analysis capabilities.
+
+    A ``LineageTree`` is a directed forest (set of rooted trees) where nodes
+    represent biological cells at specific time points and edges encode
+    parent–daughter relationships. It is the central data structure of the
+    ``lineagetree`` library.
+
+    The class is composed of mixin classes that provide distinct capability
+    groups:
+
+    - :class:`~lineagetree._mixins.properties_mixin.PropertiesMixin` —
+      structural properties (roots, leaves, edges, …)
+    - :class:`~lineagetree._mixins.modifier_mixin.ModifierMixin` — mutation
+      (add/remove nodes, smooth trajectories, …)
+    - :class:`~lineagetree._mixins.navigation_mixin.NavigationMixin` —
+      tree traversal (ancestors, subtrees, chains, …)
+    - :class:`~lineagetree._mixins.plot_mixin.PlotMixin` — matplotlib-based
+      visualisation
+    - :class:`~lineagetree._mixins.spatial_mixin.SpatialMixin` — spatial
+      neighbourhood graphs (Gabriel graph, kNN, …)
+    - :class:`~lineagetree._mixins.analysis_mixin.AnalysisMixin` — pairwise
+      tree comparison (UTED, DTW)
+    - :class:`~lineagetree._mixins.io_mixin.IOMixin` — serialisation (pickle,
+      SVG, Tulip)
+
+    The preferred way to create a ``LineageTree`` from a file is via one of
+    the ``read_from_*`` functions exposed in :mod:`lineagetree`, or via
+    :meth:`load` for ``.lT`` pickle files.
+
+    Parameters
+    ----------
+    successor : dict mapping int to Iterable, optional
+        See :meth:`__init__`.
+    predecessor : dict mapping int to int or Iterable, optional
+        See :meth:`__init__`.
+
+    Examples
+    --------
+    >>> from lineagetree import LineageTree
+    >>> lT = LineageTree(successor={0: [1, 2], 1: [], 2: []}, time={0: 0, 1: 1, 2: 1})
+    """
 
     def __eq__(self, other) -> bool:
+        """Compare two ``LineageTree`` objects for structural equality.
+
+        Two trees are considered equal when their successor, predecessor, and
+        time dictionaries are identical.
+
+        Parameters
+        ----------
+        other : object
+            Object to compare against.
+
+        Returns
+        -------
+        bool
+            ``True`` if ``other`` is a ``LineageTree`` with the same topology
+            and time assignment, ``False`` otherwise.
+        """
         if isinstance(other, LineageTree):
             return (
                 other._successor == self._successor
@@ -42,7 +98,19 @@ class LineageTree(
         else:
             return False
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: dict) -> None:
+        """Restore instance state from a pickle, handling legacy attribute names.
+
+        Older pickled ``LineageTree`` objects stored the core dictionaries
+        under ``successor``, ``predecessor``, and ``time`` (without the
+        leading underscore).  This method remaps those to the current private
+        names before calling ``__dict__.update``.
+
+        Parameters
+        ----------
+        state : dict
+            The unpickled ``__dict__`` of the stored object.
+        """
         if "_successor" not in state:
             state["_successor"] = state["successor"]
         if "_predecessor" not in state:

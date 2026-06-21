@@ -28,9 +28,11 @@ def get_predecessors(
     depth : int
         maximum number of predecessors to return
     start_time : int, optional
-        maximum time to consider, if not provided the beginning of the life of `x` is used
+        Earliest time point to include in the returned chain.
+        Defaults to ``lT.t_b`` (beginning of the dataset).
     end_time : int, optional
-        maximum time to consider, if not provided the end of the life of `x` is used
+        Latest time point to include in the returned chain.
+        Defaults to ``lT.t_e`` (end of the dataset).
 
     Returns
     -------
@@ -325,20 +327,32 @@ def get_labelled_ancestor(lT: LineageTree, node: int) -> int:
 def get_ancestor_with_attribute(
     lT: LineageTree, node: int, attribute: str
 ) -> int:
-    """General purpose function to help with searching the first ancestor that has an attribute.
-    Similar to get_labeled_ancestor and may make it redundant.
+    """Find the first ancestor (inclusive of ``node``) that appears in a given attribute dict.
+
+    General purpose function to help with searching the first ancestor that
+    has an attribute. Similar to :func:`get_labelled_ancestor` and may make
+    it redundant.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     node : int
-        The id of the node
+        The id of the node to start the search from (inclusive).
+    attribute : str
+        Name of the ``LineageTree`` attribute to search in. Must be a ``dict``
+        whose keys are node ids.
 
     Returns
     -------
     int
-        Returns the first ancestor found that has an attribute otherwise `-1`.
+        Id of the first ancestor (including ``node`` itself) found in
+        ``lT.<attribute>``, or ``-1`` if none is found.
+
+    Raises
+    ------
+    ValueError
+        If ``lT.<attribute>`` is not a dictionary.
     """
     attr_dict = lT.__getattribute__(attribute)
     if not isinstance(attr_dict, dict):

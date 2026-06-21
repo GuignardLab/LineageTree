@@ -32,16 +32,34 @@ if TYPE_CHECKING:
 
 
 class LineageTreeManager:
+    """Container for multiple :class:`~lineagetree.LineageTree` objects.
+
+    Provides named access to a collection of lineage trees and exposes
+    cross-lineage analysis methods such as :meth:`cross_lineage_edit_distance`
+    and :meth:`plot_tree_distance_graphs`.
+
+    Trees are stored in ``self.lineagetrees`` as an ordered dictionary keyed
+    by tree name (a ``str``). If a tree has no name, one is generated
+    automatically (``"Lineagetree 0"``, ``"Lineagetree 1"``, …).
+
+    Attributes
+    ----------
+    norm_dict : dict
+        Mapping from normalization name to function, shared with
+        :class:`~lineagetree.LineageTree`.
+    lineagetrees : dict mapping str to LineageTree
+        The managed collection.
+    """
+
     norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
 
     def __init__(self, lineagetree_list: Iterable[LineageTree] = ()):
-        """Creates a LineageTreeManager
-        :TODO: write the docstring
+        """Create a LineageTreeManager.
 
         Parameters
         ----------
-        lineagetree_list: Iterable of LineageTree
-            List of lineage trees to be in the LineageTreeManager
+        lineagetree_list : Iterable of LineageTree, default=()
+            Optional initial collection of lineage trees to add.
         """
         self.lineagetrees: dict[str, LineageTree] = {}
         self.lineageTree_counter: int = 0
@@ -50,6 +68,15 @@ class LineageTreeManager:
             self.add(lT)
 
     def __next__(self) -> int:
+        """Return the next auto-increment counter value and advance it.
+
+        Used internally to generate unique fallback names for unnamed trees.
+
+        Returns
+        -------
+        int
+            Current counter value (before incrementing).
+        """
         self.lineageTree_counter += 1
         return self.lineageTree_counter - 1
 
@@ -63,10 +90,34 @@ class LineageTreeManager:
         """
         return len(self.lineagetrees)
 
-    def __iter__(self) -> Generator[tuple[str, LineageTree]]:
+    def __iter__(self) -> Generator[tuple[str, LineageTree], None, None]:
+        """Iterate over ``(name, LineageTree)`` pairs.
+
+        Yields
+        ------
+        tuple of (str, LineageTree)
+            Name and corresponding tree for each entry in the manager.
+        """
         yield from self.lineagetrees.items()
 
     def __getitem__(self, key: str) -> LineageTree:
+        """Return the :class:`~lineagetree.LineageTree` stored under ``key``.
+
+        Parameters
+        ----------
+        key : str
+            Name of the tree to retrieve.
+
+        Returns
+        -------
+        LineageTree
+            The tree associated with ``key``.
+
+        Raises
+        ------
+        KeyError
+            If ``key`` is not present in the manager.
+        """
         if key in self.lineagetrees:
             return self.lineagetrees[key]
         else:
@@ -372,7 +423,13 @@ class LineageTreeManager:
                 )
         return res / norm([norm1, norm2])
 
-    def clear_comparisons(self):
+    def clear_comparisons(self) -> None:
+        """Clear all cached cross-lineage tree-edit-distance comparisons.
+
+        Frees memory by erasing the cached alignment results stored in
+        ``self._comparisons``. Call this when the cache grows too large or
+        after modifying trees in the manager.
+        """
         self._comparisons.clear()
 
     def cross_lineage_edit_distance(
