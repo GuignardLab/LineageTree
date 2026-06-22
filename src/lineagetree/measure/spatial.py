@@ -712,7 +712,7 @@ def alpha_score(
     alphas = {}
     for chain in lT.all_chains:
         if len(chain) < 5 or chain[0] in lT.roots or chain[-1] in lT.leaves:
-            continue
+            alphas.update({node: np.nan for node in chain})
         positions = np.array([lT.pos[c] for c in chain])
         MSD = np.cumsum(
             np.linalg.norm((positions - positions[0]) ** 2, axis=1)
