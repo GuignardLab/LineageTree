@@ -19,6 +19,7 @@ from ._mixins.spatial_mixin import SpatialMixin
 from ._mixins.analysis_mixin import AnalysisMixin
 from ._mixins.io_mixin import IOMixin
 from ._core.validation import TreeValidator
+from ._mixins._external_properties import ExtgernalPropertiesMixin
 
 
 class LineageTree(
@@ -29,8 +30,16 @@ class LineageTree(
     SpatialMixin,
     AnalysisMixin,
     IOMixin,
+    ExtgernalPropertiesMixin,
 ):
     """A lineage tree data structure with comprehensive analysis capabilities."""
+
+    _property_dict = {}
+
+    def __setitem__(self, key, value):
+        raise TypeError(
+            f"No new properties can be directly added to LineageTree. Please use `lT.add_property(value, key)` to add any new ones."
+        )
 
     def __eq__(self, other) -> bool:
         if isinstance(other, LineageTree):
@@ -131,10 +140,7 @@ class LineageTree(
             root_leaf_value=[
                 (),
             ],
-            **{
-                name: self.__dict__[name]
-                for name in self._custom_property_list
-            },
+            **{n: self.__dict__[name] for n, d in self.list_all_properties()},
         )
 
     def __init__(
@@ -310,15 +316,18 @@ class LineageTree(
                     "Provided times are not strictly increasing. Setting times to default."
                 )
         # custom properties
-        self._custom_property_list = []
         for name, d in kwargs.items():
             if name in self.__dict__:
                 warnings.warn(
                     f"Attribute name {name} is reserved.", stacklevel=2
                 )
                 continue
-            setattr(self, name, d)
-            self._custom_property_list.append(name)
+            # setattr(self, name, d)
+            # self._custom_prope    rty_list.append(name)
+            if isinstance(d, dict):
+                self.add_property(d, name)
+            else:
+                setattr(self, name, d)
         if not hasattr(self, "_comparisons"):
             self._comparisons = {}
 
