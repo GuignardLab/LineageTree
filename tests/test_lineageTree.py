@@ -616,7 +616,7 @@ def test_get_all_chains_of_subtree():
 
 
 def test_get_ancestor_with_attribute():
-    lT1.labelling.default_dict.pop("178353")
+    lT1.labelling.default_dict.pop(178353)
     assert lT1.get_ancestor_with_attribute(178353, "label") == 178336
 
 
