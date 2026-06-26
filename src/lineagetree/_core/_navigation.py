@@ -297,7 +297,9 @@ def get_ancestor_at_t(lT: LineageTree, n: int, time: int | None = None) -> int:
         return -1
 
 
-def get_labelled_ancestor(lT: LineageTree, node: int) -> int:
+def get_labelled_ancestor(
+    lT: LineageTree, node: int, labels: str | None = None
+) -> int:
     """Finds the first labelled ancestor and returns its ID otherwise returns -1
 
     Parameters
@@ -315,8 +317,13 @@ def get_labelled_ancestor(lT: LineageTree, node: int) -> int:
     if node not in lT.nodes:
         return -1
     ancestor = node
+    if labels is not None and labels not in lT.labelling.list_of_labels:
+        raise ValueError("Label set not defined.")
+    labs = (
+        getattr(lT.labelling, labels) if labels else lT.labelling.default_dict
+    )
     while lT.t_b <= lT._time.get(ancestor, lT.t_b - 1) and ancestor != -1:
-        if ancestor in lT.labels:
+        if ancestor in labs:
             return ancestor
         ancestor = lT._predecessor.get(ancestor, [-1])[0]
     return -1
@@ -395,106 +402,3 @@ def nodes_at_t(
         elif lT._time[curr] < t:
             to_do.extend(lT.successor[curr])
     return final_nodes
-
-
-def get_available_labels(lT: LineageTree) -> list[str]:
-    """Returns the list all the available label dictionaries
-
-    Parameters
-    ----------
-    lT : LineageTree
-        The LineageTree instance.
-
-    Returns
-    -------
-    list of string
-        list of the names of all the available properties
-        to label the nodes
-    """
-    available_labels = []
-    for prop_name, prop in lT.__dict__.items():
-        if (
-            0 < len(prop_name)
-            and prop_name[0] != "_"
-            and isinstance(prop, dict)
-            and 0 < len(prop)
-            and all(isinstance(k, int) for k in prop.keys())
-            and all(isinstance(v, str) for v in prop.values())
-        ):
-            available_labels.append(prop_name)
-    return available_labels
-
-
-def change_labels(
-    lT: LineageTree,
-    new_labels_name: str | None = None,
-    new_labels_dict: dict[int, str] | None = None,
-    only_first_node_in_chain: bool = False,
-) -> None:
-    """Change the dictionary that serves at labels with
-    the `LineageTree` attribute `new_labels_name`.
-    It has to be a dictionary mapping node id to string.
-
-    If `new_labels_dict` is provided, it will be used to
-    label the cells.
-    If `new_labels_name` is not specified, the labels are reset.
-
-    One can decide to only label the first node of the chain
-    instead of all the nodes of the chain.
-    That can help readability in the napari plugin reLAX.
-
-    Parameters
-    ----------
-    lT : LineageTree
-    new_labels_name : string, optional
-        The name of the dictionary to use
-        (the list of potential dictionaries can be found
-        with `lT.available_labels`)
-        If `new_labels_name` is not provided,
-        the labels are reset to `"Unlabeleld"`
-    new_labels_dict : dictionary mapping integers to strings, optional
-        The new names as a dictionary mapping each named node id to its string label
-        If not provided and lT has a fitting attribute named `new_labels_name`,
-        it will therefore be used
-    only_first_node_in_chain : bool, default=True
-        If `True` only labels the first node of the chains
-    """
-    store_new_labels = True
-    if new_labels_name is not None:
-        lT.labels_name = new_labels_name
-        if new_labels_dict is None:
-            if new_labels_name in lT.__dict__:
-                new_labels_dict = lT.__dict__[new_labels_name]
-                store_new_labels = False
-            else:
-                raise AttributeError(
-                    f"{new_labels_name} is not in the properties of {lT.name}"
-                )
-        if any(not isinstance(v, str) for v in new_labels_dict.values()):
-            raise TypeError(
-                "All values of new_labels dictionary should be `str`"
-            )
-
-        labelled_cells = lT.nodes.intersection(new_labels_dict)
-        if only_first_node_in_chain:
-            labelled_cells = labelled_cells.intersection(
-                {chain[0] for chain in lT.all_chains}
-            )
-
-        if len(labelled_cells) < 1:
-            warnings.warn(
-                "The labeling dictionary does not have any node labels.\n"
-                'Defaulting to the "Unlabeled" labeling'
-            )
-        else:
-            lT._labels = {n: new_labels_dict[n] for n in labelled_cells}
-            if store_new_labels:
-                lT.__dict__[new_labels_name] = lT._labels
-    else:
-        lT.labels_name = ""
-        lT._labels = {
-            root: "Unlabeled"
-            for root in lT.roots
-            for leaf in lT.find_leaves(root)
-            if abs(lT._time[leaf] - lT._time[root]) >= abs(lT.t_e - lT.t_b) / 4
-        }

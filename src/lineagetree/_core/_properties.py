@@ -142,28 +142,6 @@ def edges(lT: LineageTree) -> tuple[tuple[int, int]]:
 
 
 @property
-def labels(lT: LineageTree) -> dict[int, str]:
-    """Dictionary that maps a node to its label"""
-    if not hasattr(lT, "_labels"):
-        if hasattr(lT, "node_name"):
-            lT.labels_name = "node_name"
-            lT._labels = {
-                chain[0]: lT.node_name.get(chain[0], "Unlabeled")
-                for chain in lT.all_chains
-            }
-        else:
-            lT.labels_name = ""
-            lT._labels = {
-                root: "Unlabeled"
-                for root in lT.roots
-                for leaf in lT.find_leaves(root)
-                if abs(lT._time[leaf] - lT._time[root])
-                >= abs(lT.t_e - lT.t_b) / 4
-            }
-    return lT._labels
-
-
-@property
 def time_resolution(lT: LineageTree) -> float:
     """Time resolution of the lineage tree"""
     if not hasattr(lT, "_time_resolution"):

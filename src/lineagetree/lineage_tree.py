@@ -19,6 +19,7 @@ from ._mixins.spatial_mixin import SpatialMixin
 from ._mixins.analysis_mixin import AnalysisMixin
 from ._mixins.io_mixin import IOMixin
 from ._core.validation import TreeValidator
+from ._labelling import Labelling, Labels
 
 
 class LineageTree(
@@ -259,9 +260,22 @@ class LineageTree(
             self.pos = {
                 node: np.array(position) for node, position in pos.items()
             }
-        if "labels" in kwargs:
-            self._labels = kwargs["labels"]
+        if "labelling" in kwargs:  # for loading trees
+            print("labelling inside")
+            self.labelling = kwargs["labelling"]
+        elif "labels" in kwargs:  # for importing trees
+            _labels = kwargs["labels"]
             kwargs.pop("labels")
+            self.labelling = Labelling(self.nodes)
+            self.labelling.default_labels = Labels(_labels)
+            for k, v in tuple(kwargs.items()):
+                if isinstance(v, dict):
+                    if all(isinstance(l, str) for l in v.values()):
+                        print(k)
+                        setattr(self.labelling, k, v)
+                        kwargs.pop(k)
+        else:
+            self.labelling = Labelling(self.nodes)
         if time is None:
             if starting_time is None:
                 starting_time = 0
