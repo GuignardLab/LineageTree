@@ -1,7 +1,5 @@
 from typing import Any, Iterable, Mapping
 from collections import UserDict
-import numpy as np
-import numbers
 
 
 class StaticTypedValueDict(UserDict):
@@ -42,7 +40,6 @@ class Labels(StaticTypedValueDict):
 class Labelling:
 
     default_dict = {}
-    list_of_labels = []
 
     def __init__(self, nodes) -> None:
         if isinstance(nodes, Iterable) and not isinstance(nodes, str):
@@ -54,6 +51,8 @@ class Labelling:
 
     def __setattr__(self, name: str, value: Any) -> None:
         l = Labels(value)
+        if not value:
+            return
         if not set(l).issubset(self._nodes):
             raise ValueError(
                 "All ids in the labelset should correspond to ids in the LineageTree object."
@@ -62,5 +61,9 @@ class Labelling:
             not self.default_dict
         ):  # if the default dict has not been set set it up with the first label set available.
             super().__setattr__("default_dict", l)
-        self.list_of_labels.append(name)
+        # self.list_of_labels.append(name)
         super().__setattr__(name, l)
+
+    @property
+    def list_of_labels(self):
+        return [k for k, v in self.__dict__.items() if isinstance(v, Labels)]

@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 import warnings
+from .._labelling import Labels
 
 if TYPE_CHECKING:
     from ..lineage_tree import LineageTree
@@ -347,8 +348,13 @@ def get_ancestor_with_attribute(
     int
         Returns the first ancestor found that has an attribute otherwise `-1`.
     """
-    attr_dict = lT.__getattribute__(attribute)
-    if not isinstance(attr_dict, dict):
+    if attribute in lT.labelling.list_of_labels:
+        attr_dict = getattr(lT.labelling, attribute, None)
+    else:
+        attr_dict = getattr(lT, attribute, None)
+    if attr_dict is None:
+        raise ValueError(f"No label or property with name {attribute}")
+    if not isinstance(attr_dict, dict | Labels):
         raise ValueError("Please select a dict attribute")
     if node not in lT.nodes:
         return -1
