@@ -19,7 +19,7 @@ from ._mixins.spatial_mixin import SpatialMixin
 from ._mixins.analysis_mixin import AnalysisMixin
 from ._mixins.io_mixin import IOMixin
 from ._core.validation import TreeValidator
-from ._mixins._external_properties import ExtgernalPropertiesMixin
+from ._mixins._external_properties_mixin import ExtgernalPropertiesMixin
 
 
 class LineageTree(
@@ -36,10 +36,9 @@ class LineageTree(
 
     _property_dict = {}
 
-    def __setitem__(self, key, value):
-        raise TypeError(
-            f"No new properties can be directly added to LineageTree. Please use `lT.add_property(value, key)` to add any new ones."
-        )
+    def __setattr__(self, name: str, value: Any) -> None:
+        warnings.wrn("It is reccommended to use `lT.add_property().")
+        return super().__setattr__(name, value)
 
     def __eq__(self, other) -> bool:
         if isinstance(other, LineageTree):
