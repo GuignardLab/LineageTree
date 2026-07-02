@@ -1,43 +1,17 @@
 from typing import Any, Iterable, Mapping
 from collections import UserDict
-
-
-class StaticTypedValueDict(UserDict):
-    """Dict that allows only one type of values."""
-
-    def __init__(
-        self,
-        data: Iterable,
-        data_type: Any = None,
-    ) -> None:
-        if not data and data_type is None:
-            raise ValueError("data_type cant be `None` if data is empty.")
-
-        if data_type is None:
-            if not isinstance(data, Mapping):
-                tmp_d = tuple(data)
-                if len(tmp_d[0]) != 2:
-                    raise ValueError(f"`data` could not be converted to dict.")
-                self.data_type = type(next(iter(data))[1])
-            else:
-                self.data_type = type(next(iter(data.values())))
-        else:
-            self.data_type = data_type
-
-        super().__init__(data)
-
-    def __setitem__(self, key: Any, item: Any) -> None:
-        if not isinstance(item, self.data_type):
-            raise TypeError(f"All values must be {self.data_type}")
-        return super().__setitem__(key, item)
+from .util_types import StaticTypedValueDict
 
 
 class Labels(StaticTypedValueDict):
+    """Subclass of `StaticTypedValueDict` that only allows for string values."""
+
     def __init__(self, iterable: Iterable) -> None:
         super().__init__(iterable, str)
 
 
 class Labelling:
+    """Labelling can hold only `Labels` where all their keys are a subset of the nodes of `LineageTree`."""
 
     default_dict = {}
 
@@ -49,10 +23,8 @@ class Labelling:
                 f"Labelling expects an Iterable, not {type(nodes)}"
             )
 
-    def __setattr__(self, name: str, value: Any) -> None:
+    def __setattr__(self, name: str, value: dict | Labels) -> None:
         l = Labels(value)
-        if not value:
-            return
         if not set(l).issubset(self._nodes):
             raise ValueError(
                 "All ids in the labelset should correspond to ids in the LineageTree object."
@@ -65,5 +37,5 @@ class Labelling:
         super().__setattr__(name, l)
 
     @property
-    def list_of_labels(self):
+    def list_of_labels(self) -> list[str]:
         return [k for k, v in self.__dict__.items() if isinstance(v, Labels)]
