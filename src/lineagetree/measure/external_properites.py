@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Sequence, Any
 import numpy as np
 from dataclasses import dataclass
-
+import warnings
 from collections.abc import (
     MutableMapping,
 )  # I do not need to impement all methods and it works like a dict
@@ -119,10 +119,18 @@ class NodeProperty(ExternalProperty, dict):
     ...
 
 
-def DatasetProperty(var):
+class TimeProperty(ExternalProperty, dict):
+    """Property class for time properties."""
+
+    ...
+
+
+def DatasetProperty(var, time=False):
     """Automatically returns the correct External Property subclass."""
     if isinstance(var, dict):
         return NodeProperty(var)
+    elif isinstance(var, dict) and time:
+        return TimeProperty(var)
     elif isinstance(var, np.number):
         return DatasetPropertyNumeric(var)
     elif isinstance(var, str):
@@ -155,7 +163,10 @@ class DatasetPropertyList(ExternalProperty, UserList):
 
 
 def add_property(
-    lT: LineageTree, d: dict | Sequence[dict] | Any, name: str | Sequence[str]
+    lT: LineageTree,
+    d: dict | Any,
+    name: str,
+    time_property=False,
 ):
     """Adds a property to the `LineageTree` object.
 
@@ -168,19 +179,16 @@ def add_property(
     name : str | Sequence[str]
         The name of the property.
     """
-    if not isinstance(name, str) and isinstance(name, Sequence):
+    if isinstance(d, dict):
         if (
-            isinstance(name, Sequence)
-            and len(name) != len(d)
-            and isinstance(d, Sequence)
+            all([lT.t_b < i < lT.t_e for i in lT.keys()])
+            and time_property is False
         ):
-            raise ValueError(
-                "When `name` is a sequence, `d` must be a sequence of properties of the same length."
+            warnings.warn(
+                "Looks like a time property. Maybe try `lT.add_property(val, name, time_property=True)`"
             )
-        for d_i, n_i in zip(d, name):
-            add_property(lT, d_i, n_i)
-        return
-    setattr(lT, name, DatasetProperty(d))
+
+    setattr(lT, name, DatasetProperty(d, time_property))
 
 
 def get_property(lT: LineageTree, key):

@@ -37,7 +37,7 @@ class LineageTree(
     _property_dict = {}
 
     def __setattr__(self, name: str, value: Any) -> None:
-        warnings.wrn("It is reccommended to use `lT.add_property().")
+        warnings.warn("It is reccommended to use `lT.add_property`.")
         return super().__setattr__(name, value)
 
     def __eq__(self, other) -> bool:
