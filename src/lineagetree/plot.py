@@ -13,6 +13,7 @@ from ._core.utils import create_links_and_chains, hierarchical_pos
 
 if TYPE_CHECKING:
     from .lineage_tree import LineageTree
+    from ._labelling import Labels
 
 
 def __plot_nodes(
@@ -223,6 +224,7 @@ def plot_all_lineages(
     fontsize: int = 15,
     axes: plt.Axes | None = None,
     vert_gap: int = 1,
+    labels: str | dict | None = None,
     **kwargs,
 ) -> tuple[plt.Figure, plt.Axes, dict[plt.Axes, int]]:
     """Plots all lineages.
@@ -313,7 +315,14 @@ def plot_all_lineages(
         )
         root = graph["root"]
         ax2root[flat_axes[i]] = root
-        label = lT.labels.get(root, "Unlabeled")
+        if labels is None:
+            label = lT.labelling.default_dict.get(root, "Unlabeled")
+        elif isinstance(labels, dict | Labels):
+            label = labels.get(root, "Unlabelled")
+        elif isinstance(labels, str):
+            if labels not in lT.labelling.list_of_labels:
+                raise ValueError("Label set not defined.")
+            label = getattr(lT.labelling, labels).get(root, "Unlabelled")
         xlim = flat_axes[i].get_xlim()
         ylim = flat_axes[i].get_ylim()
         x_pos = (xlim[0] + xlim[1]) / 2
