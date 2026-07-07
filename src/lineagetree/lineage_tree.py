@@ -3,13 +3,13 @@
 # file 'LICENCE', which is part of this source code package.
 # Author: Leo Guignard (leo.guignard...@AT@...univ-amu.fr)
 from __future__ import annotations
-
+from typing import Mapping
 import importlib.metadata
 import warnings
 from collections.abc import Iterable, Sequence
 from packaging.version import Version
 import numpy as np
-
+from .measure.external_properites import Properties
 from ._core.utils import CompatibleUnpickler
 from ._mixins.properties_mixin import PropertiesMixin
 from ._mixins.modifier_mixin import ModifierMixin
@@ -19,8 +19,11 @@ from ._mixins.spatial_mixin import SpatialMixin
 from ._mixins.analysis_mixin import AnalysisMixin
 from ._mixins.io_mixin import IOMixin
 from ._core.validation import TreeValidator
-from ._mixins._external_properties_mixin import ExtgernalPropertiesMixin
+from ._mixins._external_properties_mixin import ExternalPropertiesMixin
 from ._labelling import Labelling, Labels
+
+
+class SetAttrWarning(UserWarning): ...
 
 
 class LineageTree(
@@ -31,14 +34,15 @@ class LineageTree(
     SpatialMixin,
     AnalysisMixin,
     IOMixin,
-    ExtgernalPropertiesMixin,
+    ExternalPropertiesMixin,
 ):
     """A lineage tree data structure with comprehensive analysis capabilities."""
 
-    _property_dict = {}
-
     def __setattr__(self, name: str, value: Any) -> None:
-        warnings.warn("It is reccommended to use `lT.add_property`.")
+        warnings.warn(
+            "It is reccommended to use `lT.add_property`.",
+            category=SetAttrWarning,
+        )
         return super().__setattr__(name, value)
 
     def __eq__(self, other) -> bool:
@@ -132,6 +136,34 @@ class LineageTree(
             n: tuple(vi for vi in self.successor[n] if vi in node_list)
             for n in node_list
         }
+        new_labelling = Labelling(new_successors.keys())
+        for n in new_labelling.list_of_labels:
+            setattr(
+                new_labelling,
+                n,
+                {
+                    k: v
+                    for k, v in getattr(self.labelling, n).items()
+                    if k in new_successors
+                },
+            )
+
+        new_properties = Properties(self)
+        for n in self.list_all_properties():
+            if isinstance(getattr(self.properties, n), Mapping):
+                print(n)
+                setattr(
+                    new_properties,
+                    n,
+                    {
+                        k: v
+                        for k, v in getattr(self.properties, n).items()
+                        if k in new_successors
+                    },
+                )
+            else:
+                setattr(new_properties, n, getattr(self.properties, n))
+
         return LineageTree(
             successor=new_successors,
             time=self._time,
@@ -140,7 +172,7 @@ class LineageTree(
             root_leaf_value=[
                 (),
             ],
-            **{n: self.__dict__[name] for n, d in self.list_all_properties()},
+            **{"labelling": new_labelling, "properties": new_properties},
         )
 
     def __init__(
@@ -184,6 +216,7 @@ class LineageTree(
             Supported keyword arguments are dictionaries assigning nodes to any custom property.
             The property must be specified for every node, and named differently from LineageTree's own attributes.
         """
+        warnings.filterwarnings("ignore", category=SetAttrWarning)
         self.__version__ = importlib.metadata.version("lineagetree")
         self.name = str(name) if name is not None else None
         self._temporal = temporal
@@ -265,20 +298,7 @@ class LineageTree(
             self.pos = {
                 node: np.array(position) for node, position in pos.items()
             }
-        if "labelling" in kwargs:  # for loading trees
-            self.labelling = kwargs["labelling"]
-        elif "labels" in kwargs:  # for importing trees
-            _labels = kwargs["labels"]
-            kwargs.pop("labels")
-            self.labelling = Labelling(self.nodes)
-            self.labelling.labels = Labels(_labels)
-        else:
-            self.labelling = Labelling(self.nodes)
-        for k, v in tuple(kwargs.items()):
-            if isinstance(v, dict):
-                if all(isinstance(l, str) for l in v.values()):
-                    setattr(self.labelling, k, v)
-                    kwargs.pop(k)
+
         if time is None:
             if starting_time is None:
                 starting_time = 0
@@ -326,6 +346,49 @@ class LineageTree(
                 raise ValueError(
                     "Provided times are not strictly increasing. Setting times to default."
                 )
+
+        spatial_dimension = (
+            len(self.pos[next(iter(self.nodes))])
+            if self.nodes and self.pos
+            else 3
+        )
+        if self.nodes and spatial_resolution is not None:
+            if len(spatial_resolution) == spatial_dimension:
+                self.spatial_resolution = np.array(spatial_resolution)
+            else:
+                raise ValueError(
+                    "The spatial resolution should have the same dimension as the one of the positions:\n"
+                    f"{len(spatial_resolution)=}, spatial dimension={spatial_dimension}"
+                )
+        else:
+            self.spatial_resolution = spatial_resolution or np.ones(
+                spatial_dimension
+            )
+        if "labelling" in kwargs:  # for loading trees
+            self.labelling = kwargs["labelling"]
+        elif "labels" in kwargs:  # for importing trees
+            _labels = kwargs["labels"]
+            kwargs.pop("labels")
+            self.labelling = Labelling(self.nodes)
+            self.labelling.labels = Labels(_labels)
+        elif "label_set" in kwargs:
+            print("label_Set")
+            kwargs.pop("label_set")
+            self.labelling = Labelling(self.nodes)
+            for name, label in kwargs["label_set"].items():
+                setattr(self.labelling, name, label)
+        else:
+            self.labelling = Labelling(self.nodes)
+        for k, v in tuple(kwargs.items()):
+            if isinstance(v, dict):
+                if all(isinstance(l, str) for l in v.values()):
+                    setattr(self.labelling, k, v)
+                    kwargs.pop(k)
+        if "properties" in kwargs:
+            self.properties = kwargs["properties"]
+        else:
+            self.properties = Properties(self)
+
         # custom properties
         for name, d in kwargs.items():
             if name in self.__dict__:
@@ -334,28 +397,14 @@ class LineageTree(
                 )
                 continue
             # setattr(self, name, d)
-            # self._custom_prope    rty_list.append(name)
-            if isinstance(d, dict):
-                self.add_property(d, name)
-            else:
-                setattr(self, name, d)
-        if not hasattr(self, "_comparisons"):
-            self._comparisons = {}
+            if isinstance(d, dict) and name not in vars(PropertiesMixin):
+                try:
+                    self.add_property(name, d, False)
+                except:
+                    try:
+                        self.add_property(name, d, True)
+                    except:
+                        setattr(self, name, d)
+                        print(f"Passed property: {name} with values: {d}")
 
-        spatia_dimension = (
-            len(self.pos[next(iter(self.nodes))])
-            if self.nodes and self.pos
-            else 3
-        )
-        if self.nodes and spatial_resolution is not None:
-            if len(spatial_resolution) == spatia_dimension:
-                self.spatial_resolution = np.array(spatial_resolution)
-            else:
-                raise ValueError(
-                    "The spatial resolution should have the same dimension as the one of the positions:\n"
-                    f"{len(spatial_resolution)=}, spatial dimension={spatia_dimension}"
-                )
-        else:
-            self.spatial_resolution = spatial_resolution or np.ones(
-                spatia_dimension
-            )
+        warnings.resetwarnings()

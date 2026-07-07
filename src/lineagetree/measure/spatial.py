@@ -33,19 +33,19 @@ def idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
     """
     to_check_lT = list(lT.time_nodes[t])
 
-    if lT._property_dict.get("kdtrees", None) is None:
-        lT._property_dict["kdtrees"] = {}
+    if getattr(lT.properties, "kdtree", None) is None:
+        lT.add_property("kdtree", {}, time_property=True)
 
-    if t not in lT._property_dict["kdtrees"]:
+    if t not in lT.properties.kdtree:
         data_corres = {}
         data = []
         for i, C in enumerate(to_check_lT):
             data.append(tuple(lT.pos[C] * lT.spatial_resolution))
             data_corres[i] = C
         idx3d = KDTree(data)
-        lT._property_dict["kdtrees"][t] = idx3d
+        lT.properties.kdtree[t] = idx3d
     else:
-        idx3d = lT._property_dict["kdtrees"][t]
+        idx3d = lT.properties.kdtree[t]
     return idx3d, np.array(to_check_lT)
 
 
@@ -70,8 +70,8 @@ def gabriel_graph(
     dict of int to set of int
         A dictionary that maps a node to the set of its neighbors
     """
-    if not hasattr(lT, "Gabriel_graph"):
-        lT._property_dict["gabriel_graph"] = {}
+    if getattr(lT.properties, "gabriel_graph", None) is None:
+        lT.add_property("gabriel_graph", {}, time_property=True)
 
     if time is None:
         time = lT.time_nodes.keys()
@@ -79,7 +79,7 @@ def gabriel_graph(
         time = [time]
 
     for t in time:
-        if lT.time_nodes[t] - lT._property_dict["gabriel_graph"].keys():
+        if lT.time_nodes[t] - lT.properties.gabriel_graph.keys():
             nodes = lT.time_nodes[t]
 
             data_corres = {}
@@ -122,9 +122,9 @@ def gabriel_graph(
                         Gabriel_graph.setdefault(data_corres[ni], set()).add(
                             data_corres[e1]
                         )
-            lT._property_dict["gabriel_graph"].update(Gabriel_graph)
+            lT.properties.gabriel_graph.update(Gabriel_graph)
 
-    return lT._property_dict["gabriel_graph"]
+    return lT.properties.gabriel_graph
 
 
 def neighbours_in_radius(
@@ -167,6 +167,7 @@ def neighbours_in_radius(
                 for node, nb_idx in zip(nodes, idx)
             }
         )
+    lT.add_property("neighbours_in_radius", neighbours, False)
     return neighbours
 
 
@@ -200,6 +201,8 @@ def spatial_density(
         k: (len(v) + 1) / s_vol
         for k, v in lT.neighbours_in_radius(t_b, t_e, th).items()
     }
+    lT.add_property("spatial_density", spatial_density, False)
+
     return spatial_density
 
 
@@ -249,8 +252,8 @@ def k_nearest_neighbours(lT: LineageTree, k: int = 10) -> dict[int, set[int]]:
             )
             kn_graph.update(out)
             kn_distances.update(out_distances)
-    lT.add_property(kn_graph, "kn_graph")
-    lT.add_property(kn_distances, "kn_distances")
+    lT.add_property("kn_graph", kn_graph, False)
+    lT.add_property("kn_distances", kn_distances, False)
     return kn_graph, kn_distances
 
 
@@ -278,5 +281,5 @@ def spatial_edges(lT: LineageTree, th: int = 50) -> dict[int, set[int]]:
         neighbs = idx3d.query_ball_tree(idx3d, th)
         out = dict(zip(nodes, [set(nodes[ni]) for ni in neighbs], strict=True))
         th_edges.update({k: v.difference([k]) for k, v in out.items()})
-    lT.add_property(th_edges, "th_edges")
+    lT.add_property("th_edges", th_edges, False)
     return th_edges

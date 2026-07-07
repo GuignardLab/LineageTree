@@ -3,15 +3,18 @@ from typing import TYPE_CHECKING, Sequence, Any
 import numpy as np
 from dataclasses import dataclass
 import warnings
-from collections.abc import (
-    MutableMapping,
-)  # I do not need to impement all methods and it works like a dict
+
 from dataclasses import dataclass, field
 from abc import ABC
 from collections import UserList
+from ..util_types import StaticTypedValueDict
+import numbers
 
 if TYPE_CHECKING:
-    from .lineage_tree import LineageTree
+    from ..lineage_tree import LineageTree
+from typing import Any, Iterable, Mapping
+from collections import UserDict
+
 
 import operator
 
@@ -112,14 +115,13 @@ class ExternalProperty(ABC):
         return repr(self.data)
 
 
-@dataclass
-class NodeProperty(ExternalProperty, dict):
+class NodeProperty(StaticTypedValueDict, ExternalProperty):
     """Property class for node attributes, should be a dict like structure"""
 
     ...
 
 
-class TimeProperty(ExternalProperty, dict):
+class TimeProperty(StaticTypedValueDict, ExternalProperty):
     """Property class for time properties."""
 
     ...
@@ -127,16 +129,24 @@ class TimeProperty(ExternalProperty, dict):
 
 def DatasetProperty(var, time=False):
     """Automatically returns the correct External Property subclass."""
-    if isinstance(var, dict):
+    if isinstance(var, dict) and time == False:
         return NodeProperty(var)
     elif isinstance(var, dict) and time:
         return TimeProperty(var)
-    elif isinstance(var, np.number):
+    elif isinstance(var, np.number | numbers.Number):
         return DatasetPropertyNumeric(var)
     elif isinstance(var, str):
         return DatasetPropertyString(var)
     elif isinstance(var, list):
         return DatasetPropertyList(var)
+    elif isinstance(var, set):
+        return DatasetPropertySet(var)
+    elif isinstance(var, tuple):
+        return DatasetPropertyTuple(var)
+    else:
+        raise Warning(
+            "Value couldnot be converted to dataset property only numericals, lists, sets, tuples and dictionaries can be converted to dataset properties."
+        )
 
 
 @operations("data")
@@ -146,7 +156,7 @@ class DatasetPropertyNumeric(
 ):
     """Whole class numeric property. Has all methods implemented."""
 
-    data: int | float | np.number
+    data: numbers.Number | np.number
 
 
 @operations("data")
@@ -157,52 +167,53 @@ class DatasetPropertyString(ExternalProperty):
     data: str
 
 
-@dataclass
-class DatasetPropertyList(ExternalProperty, UserList):
-    data: list
+class DatasetPropertyList(ExternalProperty, list): ...
 
 
-def add_property(
-    lT: LineageTree,
-    d: dict | Any,
-    name: str,
-    time_property=False,
-):
-    """Adds a property to the `LineageTree` object.
+class DatasetPropertySet(ExternalProperty, set): ...
 
-    Parameters
-    ----------
-    lT : LineageTree
-        The `LineageTree` object.
-    d : dict | Sequence[dict]
-        The property dictionary/ dictionaries.
-    name : str | Sequence[str]
-        The name of the property.
-    """
-    if isinstance(d, dict):
-        if (
-            all([lT.t_b < i < lT.t_e for i in lT.keys()])
-            and time_property is False
+
+class DatasetPropertyTuple(ExternalProperty, tuple): ...
+
+
+class Properties:
+
+    property_list = []
+
+    def __init__(self, lT: LineageTree) -> None:
+        self.__dict__["lT"] = lT
+
+    def __setattr__(self, name: str, value: dict | Any) -> None:
+
+        if isinstance(value, NodeProperty) and not set(value).issubset(
+            self.lT._nodes
         ):
-            warnings.warn(
-                "Looks like a time property. Maybe try `lT.add_property(val, name, time_property=True)`"
+            raise ValueError(
+                f"All ids in the labelset should correspond to ids in the LineageTree object. `{name}` contans ids for labels not part of the dataset."
             )
+        # if not self.lT.time and isinstance(value, TimeProperty):
+        #     t_b, t_e = self.lT.t_b, self.lT.t_e
+        #     self.__dict__["t_b"] = t_b
+        #     self.__dict__["t_e"] = t_e
+        elif isinstance(value, TimeProperty) and not set(value).issubset(
+            set(range(self.lT.t_b, self.lT.t_e))
+        ):
+            raise ValueError(
+                f"Timepoints should all be between `t_b` and `t_e`. Range is {self.lT.t_b, self.lT.t_e}. While the property {name} is {value.keys()}"
+            )
+        super().__setattr__(name, value)
+        self.property_list.append(name)
 
-    setattr(lT, name, DatasetProperty(d, time_property))
+
+def add_property(lT: LineageTree, name: str, value: Any, time_property: bool):
+    lT.properties._nodes = lT.nodes
+    setattr(lT.properties, name, DatasetProperty(value, time_property))
 
 
-def get_property(lT: LineageTree, key):
-    if key not in lT._property_dict:
-        raise KeyError(f"No attribute `{key}` in the properties.")
-    return lT._property_dict[key]
+def list_all_properties(lT):
 
-
-def del_property(lT: LineageTree, key):
-    lT._property_dict.pop(key)
-
-
-def list_all_properties(
-    lT: LineageTree,
-):
-
-    return list(lT._property_dict.keys())
+    return [
+        prop
+        for prop, val in lT.properties.__dict__.items()
+        if isinstance(val, ExternalProperty)
+    ]

@@ -898,7 +898,7 @@ def read_from_mastodon(
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-    properties["label_set"] = label_set
+    properties.update(label_set)
 
     return LineageTree(
         predecessor=predecessor,

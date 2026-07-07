@@ -10,10 +10,8 @@ class StaticTypedValueDict(UserDict):
         data: Iterable,
         data_type: type | None = None,
     ) -> dict[int, Any]:
-        if not data and data_type is None:
-            raise ValueError("data_type can't be `None` if data is empty.")
 
-        if data_type is None:
+        if data is None and not data_type:
             if not isinstance(data, Mapping):
                 value = next(iter(data))
                 if len(value[0]) != 2:
@@ -26,7 +24,9 @@ class StaticTypedValueDict(UserDict):
 
         super().__init__(data)
 
-    def __setitem__(self, key: int, item: type) -> None:
+    def __setitem__(self, key: int, item: Any) -> None:
+        if not self.data_type:
+            self.data_type = type(item)
         if not isinstance(item, self.data_type):
             raise TypeError(f"All values must be {self.data_type}")
         super().__setitem__(key, item)

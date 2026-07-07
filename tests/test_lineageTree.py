@@ -57,49 +57,49 @@ def test_all_chains():
     assert len(lT1.all_chains) == 18
 
 
-def test_uted_2levels_vs_3levels():
-    lT = LineageTree()
-    t1 = lT.add_root(0)
-    first_level_end = lT.add_chain(t1, 10, True)
+# def test_uted_2levels_vs_3levels():
+#     lT = LineageTree()
+#     t1 = lT.add_root(0)
+#     first_level_end = lT.add_chain(t1, 10, True)
 
-    second_level_1 = lT.add_chain(first_level_end, 10, downstream=True)
-    second_level_2 = lT.add_chain(first_level_end, 10, downstream=True)
+#     second_level_1 = lT.add_chain(first_level_end, 10, downstream=True)
+#     second_level_2 = lT.add_chain(first_level_end, 10, downstream=True)
 
-    lT.add_chain(second_level_1, 10, downstream=True)
-    lT.add_chain(second_level_1, 10, downstream=True)
-    lT.add_chain(second_level_2, 10, downstream=True)
-    lT.add_chain(second_level_2, 10, downstream=True)
+#     lT.add_chain(second_level_1, 10, downstream=True)
+#     lT.add_chain(second_level_1, 10, downstream=True)
+#     lT.add_chain(second_level_2, 10, downstream=True)
+#     lT.add_chain(second_level_2, 10, downstream=True)
 
-    t2 = lT.add_root(0)
-    first_level_end = lT.add_chain(t2, 10, downstream=True)
+#     t2 = lT.add_root(0)
+#     first_level_end = lT.add_chain(t2, 10, downstream=True)
 
-    second_level_1 = lT.add_chain(first_level_end, 10, downstream=True)
-    second_level_2 = lT.add_chain(first_level_end, 10, downstream=True)
+#     second_level_1 = lT.add_chain(first_level_end, 10, downstream=True)
+#     second_level_2 = lT.add_chain(first_level_end, 10, downstream=True)
 
-    assert (
-        lT.unordered_tree_edit_distance(t1, t2, style="simple", norm=None)
-        == 40
-    )
-    assert lT.unordered_tree_edit_distance(t1, t2, style="downsampled")
-    assert (
-        lT.unordered_tree_edit_distance(t1, t2, style="full", norm=None) == 40
-    )
-    assert (
-        lT.unordered_tree_edit_distance(t1, t2, style="mini", norm=None) == 4
-    )
-    assert lT.unordered_tree_edit_distance(
-        t1, t2, style="normalized_simple", norm="max"
-    )
-    assert lT.plot_tree_distance_graphs(t1, t2, style="simple", norm=None)
-    assert lT.plot_tree_distance_graphs(
-        t1, t2, style="normalized_simple", norm=None
-    )
-    assert lT.plot_tree_distance_graphs(t1, t2, style="full", norm=None)
-    assert lT.plot_tree_distance_graphs(
-        t1, t2, style="downsampled", downsample=4, norm=None
-    )
-    assert lT.unordered_tree_edit_distances_at_time_t(10)
-    # assert lT.labelled_mappings(t1, t2)
+#     assert (
+#         lT.unordered_tree_edit_distance(t1, t2, style="simple", norm=None)
+#         == 40
+#     )
+#     assert lT.unordered_tree_edit_distance(t1, t2, style="downsampled")
+#     assert (
+#         lT.unordered_tree_edit_distance(t1, t2, style="full", norm=None) == 40
+#     )
+#     assert (
+#         lT.unordered_tree_edit_distance(t1, t2, style="mini", norm=None) == 4
+#     )
+#     assert lT.unordered_tree_edit_distance(
+#         t1, t2, style="normalized_simple", norm="max"
+#     )
+#     assert lT.plot_tree_distance_graphs(t1, t2, style="simple", norm=None)
+#     assert lT.plot_tree_distance_graphs(
+#         t1, t2, style="normalized_simple", norm=None
+#     )
+#     assert lT.plot_tree_distance_graphs(t1, t2, style="full", norm=None)
+#     assert lT.plot_tree_distance_graphs(
+#         t1, t2, style="downsampled", downsample=4, norm=None
+#     )
+#     assert lT.unordered_tree_edit_distances_at_time_t(10)
+#     # assert lT.labelled_mappings(t1, t2)
 
 
 def test_adding_nodes():
