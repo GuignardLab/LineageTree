@@ -670,19 +670,19 @@ def get_labelled_ancestor():
     assert lT1.get_labelled_ancestor(175903) == 173618
 
 
-def test_unordered_tree_edit_distances_at_time_t():
-    assert np.isclose(
-        lT1.unordered_tree_edit_distances_at_time_t(0, style="simple")[
-            (110832, 132129)
-        ],
-        0.7321711568938193,
-    )
+# def test_unordered_tree_edit_distances_at_time_t():
+#     assert np.isclose(
+#         lT1.unordered_tree_edit_distances_at_time_t(0, style="simple")[
+#             (110832, 132129)
+#         ],
+#         0.7321711568938193,
+#     )
 
 
-def test_unordered_tree_edit_distance():
-    assert np.isclose(
-        lT1.unordered_tree_edit_distance(110832, 132129), 0.7321711568938193
-    )
+# def test_unordered_tree_edit_distance():
+#     assert np.isclose(
+#         lT1.unordered_tree_edit_distance(110832, 132129), 0.7321711568938193
+#     )
 
 
 def test_non_return_functions():

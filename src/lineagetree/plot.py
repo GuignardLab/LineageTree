@@ -320,7 +320,7 @@ def plot_all_lineages(
         elif isinstance(labels, dict | Labels):
             label = labels.get(root, "Unlabelled")
         elif isinstance(labels, str):
-            if labels not in lT.labelling.list_of_labels:
+            if labels not in lT.list_all_labels():
                 raise ValueError("Label set not defined.")
             label = getattr(lT.labelling, labels).get(root, "Unlabelled")
         xlim = flat_axes[i].get_xlim()

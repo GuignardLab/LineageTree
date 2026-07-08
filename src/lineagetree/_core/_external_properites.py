@@ -191,10 +191,6 @@ class Properties:
             raise ValueError(
                 f"All ids in the labelset should correspond to ids in the LineageTree object. `{name}` contans ids for labels not part of the dataset."
             )
-        # if not self.lT.time and isinstance(value, TimeProperty):
-        #     t_b, t_e = self.lT.t_b, self.lT.t_e
-        #     self.__dict__["t_b"] = t_b
-        #     self.__dict__["t_e"] = t_e
         elif isinstance(value, TimeProperty) and not set(value).issubset(
             set(range(self.lT.t_b, self.lT.t_e))
         ):

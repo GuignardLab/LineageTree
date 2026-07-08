@@ -318,7 +318,7 @@ def get_labelled_ancestor(
     if node not in lT.nodes:
         return -1
     ancestor = node
-    if labels is not None and labels not in lT.labelling.list_of_labels:
+    if labels is not None and labels not in lT.list_all_labels():
         raise ValueError("Label set not defined.")
     labs = (
         getattr(lT.labelling, labels) if labels else lT.labelling.default_dict
@@ -348,7 +348,7 @@ def get_ancestor_with_attribute(
     int
         Returns the first ancestor found that has an attribute otherwise `-1`.
     """
-    if attribute in lT.labelling.list_of_labels:
+    if attribute in lT.list_all_labels():
         attr_dict = getattr(lT.labelling, attribute, None)
     else:
         attr_dict = getattr(lT, attribute, None)

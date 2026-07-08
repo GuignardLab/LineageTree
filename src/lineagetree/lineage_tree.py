@@ -17,6 +17,7 @@ from ._mixins.navigation_mixin import NavigationMixin
 from ._mixins.plot_mixin import PlotMixin
 from ._mixins.spatial_mixin import SpatialMixin
 from ._mixins.analysis_mixin import AnalysisMixin
+from ._mixins.labelling_mixin import LabellingMixin
 from ._mixins.io_mixin import IOMixin
 from ._core.validation import TreeValidator
 from ._mixins.external_properties_mixin import ExternalPropertiesMixin
@@ -35,10 +36,13 @@ class LineageTree(
     AnalysisMixin,
     IOMixin,
     ExternalPropertiesMixin,
+    LabellingMixin,
 ):
     """A lineage tree data structure with comprehensive analysis capabilities."""
 
     def __setattr__(self, name: str, value: Any) -> None:
+        if name in vars(self):  # Property calls the setattr every time :O
+            return super().__setattr__(name, value)
         warnings.warn(
             "It is reccommended to use `lT.add_property`.",
             category=SetAttrWarning,
@@ -137,7 +141,7 @@ class LineageTree(
             for n in node_list
         }
         new_labelling = Labelling(new_successors.keys())
-        for n in new_labelling.list_of_labels:
+        for n in self.list_all_labels():
             setattr(
                 new_labelling,
                 n,
@@ -405,6 +409,8 @@ class LineageTree(
                         self.add_property(name, d, True)
                     except:
                         setattr(self, name, d)
-                        print(f"Passed property: {name} with values: {d}")
+                        print(
+                            f"Property `{name}` with values: {d}, was not used in labelling or properties dicitionary. Instead it canbe accessed by `lT.{name}`"
+                        )
 
         warnings.resetwarnings()
