@@ -1,4 +1,4 @@
-from ..measure.external_properites import (
+from .._core._external_properites import (
     add_property,
     list_all_properties,
     # get_property,

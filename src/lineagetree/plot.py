@@ -13,7 +13,7 @@ from ._core.utils import create_links_and_chains, hierarchical_pos
 
 if TYPE_CHECKING:
     from .lineage_tree import LineageTree
-    from ._labelling import Labels
+    from ._core._labelling import Labels
 
 
 def __plot_nodes(

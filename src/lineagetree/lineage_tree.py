@@ -9,7 +9,7 @@ import warnings
 from collections.abc import Iterable, Sequence
 from packaging.version import Version
 import numpy as np
-from .measure.external_properites import Properties
+from ._core._external_properites import Properties
 from ._core.utils import CompatibleUnpickler
 from ._mixins.properties_mixin import PropertiesMixin
 from ._mixins.modifier_mixin import ModifierMixin
@@ -19,8 +19,8 @@ from ._mixins.spatial_mixin import SpatialMixin
 from ._mixins.analysis_mixin import AnalysisMixin
 from ._mixins.io_mixin import IOMixin
 from ._core.validation import TreeValidator
-from ._mixins._external_properties_mixin import ExternalPropertiesMixin
-from ._labelling import Labelling, Labels
+from ._mixins.external_properties_mixin import ExternalPropertiesMixin
+from ._core._labelling import Labelling, Labels
 
 
 class SetAttrWarning(UserWarning): ...

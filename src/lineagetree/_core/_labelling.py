@@ -1,6 +1,6 @@
 from typing import Any, Iterable, Mapping
 from collections import UserDict
-from .util_types import StaticTypedValueDict
+from ..util_types import StaticTypedValueDict
 
 
 class Labels(StaticTypedValueDict):
@@ -36,6 +36,8 @@ class Labelling:
         # self.list_of_labels.append(name)
         super().__setattr__(name, l)
 
-    @property
-    def list_of_labels(self) -> list[str]:
-        return [k for k, v in self.__dict__.items() if isinstance(v, Labels)]
+
+def list_all_labels(lT) -> list[str]:
+    return [
+        k for k, v in lT.labelling.__dict__.items() if isinstance(v, Labels)
+    ]
