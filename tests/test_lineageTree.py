@@ -9,7 +9,6 @@ from lineagetree import (
     read_from_mamut_xml,
     read_from_mastodon,
     read_from_swc,
-    tree_approximation,
 )
 
 lT1 = read_from_mamut_xml("tests/data/test-mamut.xml")
@@ -656,6 +655,27 @@ def test_k_nearest_neighbours():
             173.50879512,
         ],
     )
+
+
+def test_properties():
+    from lineagetree.util_types import StaticTypedValueDict
+
+    var = StaticTypedValueDict()
+    warnings.filterwarnings(
+        "error"
+    )  # raises warnings as errors so we can catch them when expected
+    with pytest.raises(TypeError) as excinfo:
+        var[1] = 1
+        var[2] = "2"
+    assert str(excinfo.value)
+
+    warnings.filterwarnings("default")
+    assert "tracks" in lT1.list_all_properties()
+    assert lT1.get_property("tracks") == lT1.properties.tracks
+    lT1.add_property("test", 1, False)
+    assert "test" in lT1.list_all_properties()
+    lT1.del_property("test")
+    assert "test" not in lT1.list_all_properties()
 
 
 def test_spatial_edges():

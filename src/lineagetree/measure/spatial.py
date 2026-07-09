@@ -33,7 +33,7 @@ def idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
     """
     to_check_lT = list(lT.time_nodes[t])
 
-    if getattr(lT.properties, "kdtree", None) is None:
+    if not lT.get_property("kdtree"):
         lT.add_property("kdtree", {}, time_property=True)
 
     if t not in lT.properties.kdtree:
@@ -70,7 +70,7 @@ def gabriel_graph(
     dict of int to set of int
         A dictionary that maps a node to the set of its neighbors
     """
-    if getattr(lT.properties, "gabriel_graph", None) is None:
+    if not lT.get_property("gabriel_graph"):
         lT.add_property("gabriel_graph", {}, time_property=True)
 
     if time is None:
@@ -167,7 +167,11 @@ def neighbours_in_radius(
                 for node, nb_idx in zip(nodes, idx)
             }
         )
-    lT.add_property("neighbours_in_radius", neighbours, False)
+        #### TODO OVERWRITE
+    if not lT.get_property("neighbours_in_radius"):
+        lT.add_property("neighbours_in_radius", neighbours, False)
+    else:
+        lT.properties.neighbours_in_radius = neighbours
     return neighbours
 
 
@@ -201,7 +205,10 @@ def spatial_density(
         k: (len(v) + 1) / s_vol
         for k, v in lT.neighbours_in_radius(t_b, t_e, th).items()
     }
-    lT.add_property("spatial_density", spatial_density, False)
+    if not lT.get_property("spatial_density"):
+        lT.add_property("spatial_density", spatial_density, False)
+    else:
+        lT.properties.spatial_density.update(spatial_density)
 
     return spatial_density
 

@@ -1,6 +1,10 @@
-from typing import Any, Iterable, Mapping
-from collections import UserDict
+from __future__ import annotations
+from typing import Iterable, Literal
 from ..util_types import StaticTypedValueDict
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..lineage_tree import LineageTree
 
 
 class Labels(StaticTypedValueDict):
@@ -11,33 +15,68 @@ class Labels(StaticTypedValueDict):
 
 
 class Labelling:
-    """Labelling can hold only `Labels` where all their keys are a subset of the nodes of `LineageTree`."""
+    """Labelling can hold only `Labels` where all their keys are a subset of the nodes of `LineageTree`.
+    An important part of `Labelling` is the default_dict, this property returns a lebelset that exists in labelling,
+    you can change the labelset the default dict returns with `change_default_label
+    """
 
-    default_dict = {}
+    _default_dict: str = None
 
-    def __init__(self, nodes) -> None:
-        if isinstance(nodes, Iterable) and not isinstance(nodes, str):
-            self.__dict__["_nodes"] = set(nodes)
-        else:
+    @property
+    def default_dict(self):
+        if not self.list_labels:
+            raise ValueError("Label list is empty.")
+        if self._default_dict not in self.list_labels:
+            self.__dict__["_default_dict"] = next(iter(self.list_labels))
+        return getattr(self, self._default_dict)
+
+    def __repr__(self) -> str:
+        ret = self.list_labels
+        if not ret:
+            return "Empty Label set"
+        return str(ret)
+
+    @property
+    def list_labels(self):
+        return [
+            prop
+            for prop, val in self.__dict__.items()
+            if isinstance(val, Labels)
+        ]
+
+    def change_default_label(self, name: str):
+        if name not in self.list_labels:
             raise ValueError(
-                f"Labelling expects an Iterable, not {type(nodes)}"
+                f"Label {name} not part of the labelling object. Please choose one of the following: {self.list_labels}."
             )
+        self.__dict__["_default_label"] = name
+
+    def pop(self, key: str, default=None):
+        return self.__dict__.pop(key, default)
+
+    def __init__(self, lT: LineageTree) -> None:
+        self.__dict__["lT"] = lT
 
     def __setattr__(self, name: str, value: dict | Labels) -> None:
-        l = Labels(value)
-        if not set(l).issubset(self._nodes):
+        lbl = Labels(value)
+        if not set(lbl).issubset(self.lT.nodes):
             raise ValueError(
                 "All ids in the labelset should correspond to ids in the LineageTree object."
             )
-        if (
-            not self.default_dict
-        ):  # if the default dict has not been set set it up with the first label set available.
-            super().__setattr__("default_dict", l)
-        # self.list_of_labels.append(name)
-        super().__setattr__(name, l)
+        super().__setattr__(name, lbl)
 
 
-def list_all_labels(lT) -> list[str]:
-    return [
-        k for k, v in lT.labelling.__dict__.items() if isinstance(v, Labels)
-    ]
+def list_all_labels(lT: LineageTree) -> list[str]:
+    return lT.labelling.list_labels
+
+
+def add_label(lT: LineageTree, name: str, label: dict):
+    setattr(lT.labelling, name, label)
+
+
+def get_label(lT: LineageTree, name: str | Literal["default"] = "default"):
+    return getattr(lT.labelling, name)
+
+
+def del_label(lT: LineageTree, name: str, default):
+    lT.labelling.pop(name, default)

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
-import warnings
 from ._labelling import Labels
 
 if TYPE_CHECKING:

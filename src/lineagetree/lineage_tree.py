@@ -140,7 +140,7 @@ class LineageTree(
             n: tuple(vi for vi in self.successor[n] if vi in node_list)
             for n in node_list
         }
-        new_labelling = Labelling(new_successors.keys())
+        new_labelling = Labelling(self)
         for n in self.list_all_labels():
             setattr(
                 new_labelling,
@@ -373,16 +373,16 @@ class LineageTree(
         elif "labels" in kwargs:  # for importing trees
             _labels = kwargs["labels"]
             kwargs.pop("labels")
-            self.labelling = Labelling(self.nodes)
+            self.labelling = Labelling(self)
             self.labelling.labels = Labels(_labels)
         elif "label_set" in kwargs:
             print("label_Set")
             kwargs.pop("label_set")
-            self.labelling = Labelling(self.nodes)
+            self.labelling = Labelling(self)
             for name, label in kwargs["label_set"].items():
                 setattr(self.labelling, name, label)
         else:
-            self.labelling = Labelling(self.nodes)
+            self.labelling = Labelling(self)
         for k, v in tuple(kwargs.items()):
             if isinstance(v, dict):
                 if all(isinstance(l, str) for l in v.values()):
