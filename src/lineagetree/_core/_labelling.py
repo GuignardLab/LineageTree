@@ -28,7 +28,7 @@ class Labelling:
             raise ValueError("Label list is empty.")
         if self._default_dict not in self.list_labels:
             self.__dict__["_default_dict"] = next(iter(self.list_labels))
-        return getattr(self, self._default_dict)
+        return self.__dict__[self._default_dict]
 
     def __repr__(self) -> str:
         ret = self.list_labels

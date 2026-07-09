@@ -347,7 +347,9 @@ def get_ancestor_with_attribute(
     int
         Returns the first ancestor found that has an attribute otherwise `-1`.
     """
-    if attribute in lT.list_all_labels():
+    if attribute == "default_dict":
+        attr_dict = lT.labelling.default_dict
+    elif attribute in lT.list_all_labels():
         attr_dict = getattr(lT.labelling, attribute, None)
     else:
         attr_dict = getattr(lT, attribute, None)
