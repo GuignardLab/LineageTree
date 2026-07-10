@@ -23,6 +23,8 @@ from ._core.validation import TreeValidator
 from ._mixins.external_properties_mixin import ExternalPropertiesMixin
 from ._core._labelling import Labelling, Labels
 
+from typing import Any
+
 
 class SetAttrWarning(UserWarning): ...
 
@@ -385,7 +387,7 @@ class LineageTree(
             self.labelling = Labelling(self)
         for k, v in tuple(kwargs.items()):
             if isinstance(v, dict):
-                if all(isinstance(l, str) for l in v.values()):
+                if all(isinstance(value, str) for value in v.values()):
                     setattr(self.labelling, k, v)
                     kwargs.pop(k)
         if "properties" in kwargs:
@@ -400,17 +402,17 @@ class LineageTree(
                     f"Attribute name {name} is reserved.", stacklevel=2
                 )
                 continue
-            # setattr(self, name, d)
             if isinstance(d, dict) and name not in vars(PropertiesMixin):
                 try:
                     self.add_property(name, d, False)
-                except:
-                    try:
-                        self.add_property(name, d, True)
-                    except:
-                        setattr(self, name, d)
-                        print(
-                            f"Property `{name}` with values: {d}, was not used in labelling or properties dicitionary. Instead it canbe accessed by `lT.{name}`"
-                        )
+                except ValueError:
+                    pass
+                try:
+                    self.add_property(name, d, True)
+                except ValueError:
+                    setattr(self, name, d)
+                    print(
+                        f"Property `{name}` with values: {d}, was not used in labelling or properties dicitionary. Instead it canbe accessed by `lT.{name}`"
+                    )
 
         warnings.resetwarnings()

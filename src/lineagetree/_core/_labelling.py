@@ -26,7 +26,10 @@ class Labelling:
     def default_dict(self):
         if not self.list_labels:
             raise ValueError("Label list is empty.")
-        if self._default_dict not in self.list_labels:
+        if (
+            self._default_dict not in self.list_labels
+            and "_default_dict" != self._default_dict
+        ):
             self.__dict__["_default_dict"] = next(iter(self.list_labels))
         return self.__dict__[self._default_dict]
 
