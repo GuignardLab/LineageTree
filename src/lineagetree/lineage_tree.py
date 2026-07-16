@@ -9,7 +9,7 @@ import warnings
 from collections.abc import Iterable, Sequence
 from packaging.version import Version
 import numpy as np
-
+import hashlib
 from ._core.utils import CompatibleUnpickler
 from ._mixins.properties_mixin import PropertiesMixin
 from ._mixins.modifier_mixin import ModifierMixin
@@ -41,6 +41,12 @@ class LineageTree(
             )
         else:
             return False
+
+    def __hash__(self) -> int:
+        used_nodes = self.roots.union(self.leaves)
+        return int.from_bytes(
+            hashlib.sha256(str(used_nodes).encode()).digest()[:8], "big"
+        )
 
     def __setstate__(self, state):
         if "_successor" not in state:

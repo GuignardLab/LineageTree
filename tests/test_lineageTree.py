@@ -636,9 +636,8 @@ def test_spatial_density():
     assert np.isclose(
         lT1.spatial_density(0, th=40)[110832], 7.460387957432594e-06
     )
-    assert lT1.neighbours_in_radius(0, th=40)[110832] == {
-        np.int64(110826)
-    }
+    assert lT1.neighbours_in_radius(0, th=40)[110832] == {np.int64(110826)}
+
 
 def test_k_nearest_neighbours():
     assert (
@@ -798,3 +797,7 @@ def test_smoothing():
         new_pos[1552], np.array([462.15385069, 907.17562352, 419.54303692])
     ).all()
     lt.pos = lt.old_pos
+
+
+def test_hash():
+    assert hash(lt) == 7929439451057191037
