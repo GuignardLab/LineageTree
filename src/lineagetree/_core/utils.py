@@ -15,22 +15,25 @@ def create_links_and_chains(
     roots: int | Iterable | None = None,
     end_time: int | None = None,
 ) -> dict[str, dict]:
-    """Generates a dictionary containing all the edges (from start of lifetime to end not the intermediate timepoints)
-      of a subtree spawned by node/s and their duration
+    """Generate the chains and their durations for a subtree spawned by nodes.
 
+    Each chain is represented only by its start and end nodes (not the
+    intermediate time points) together with its duration.
 
     Parameters
     ----------
     lT : LineageTree
-        The LineageTree that the user is working on
+        The LineageTree that the user is working on.
     roots : int or Iterable, optional
-        The root/s from which the tree/s will be generated, if 'None' all the roots will be selected.
+        The root(s) from which the tree(s) will be generated. If None, all the
+        roots are selected.
     end_time : int, optional
-        The last timepoint to be considered, if 'None' the last timepoint of the dataset (t_e) is considered, by default None.
+        The last time point to be considered. If None, the last time point of
+        the dataset (``t_e``) is used.
 
     Returns
     -------
-    dict mapping str to set or dict mapping int to list or int
+    dict
         A dictionary that contains:
             - "links": The dictionary that contains the hierarchy of the nodes (only start and end of each chain)
             - "times": The time distance between the start and the end of a chain
@@ -273,19 +276,20 @@ def convert_style_to_number(
     style: str | TreeApproximationTemplate,
     downsample: int | None,
 ) -> int:
-    """Converts tree_style and downsampling to a single number.
+    """Convert a tree style and downsampling factor to a single number.
 
     Parameters
     ----------
-    style : str
-        the tree style
-    downsample : int
-        the downsampling factor
+    style : str or TreeApproximationTemplate
+        The tree style.
+    downsample : int or None
+        The downsampling factor.
 
     Returns
     -------
     int
-        A number which serves as ID if the tree style and downsampling used.
+        A number that serves as an identifier for the tree style and
+        downsampling used.
     """
     style_dict = {
         "full": 0,

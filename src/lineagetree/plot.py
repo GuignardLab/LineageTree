@@ -143,40 +143,48 @@ def draw_tree_graph(
     default_color: str = "black",
     **kwargs,
 ) -> tuple[plt.Figure, plt.Axes]:
-    """Function to plot the tree graph.
+    """Plot the tree graph.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
-    hier : dict mapping int to tuple of int
+    hier : dict of {int: tuple of int}
         Dictionary that contains the positions of all nodes.
-    lnks_tms : dict mapping string to dictionaries mapping int to list or int
-        - 'links' : conatains the hierarchy of the nodes (only start and end of each chain)
-        - 'times' : contains the distance between the  start and the end of each chain.
+    lnks_tms : dict of {str: dict of {int: list or int}}
+        Dictionary with two keys:
+
+        - ``'links'``: the hierarchy of the nodes (only start and end of each
+          chain),
+        - ``'times'``: the distance between the start and the end of each chain.
     selected_nodes : list or set, optional
-        Which nodes are to be selected (Painted with a different color, according to 'color_'of_nodes')
+        Nodes to select (painted with a different colour, according to
+        ``color_of_nodes``).
     selected_edges : list or set, optional
-        Which edges are to be selected (Painted with a different color, according to 'color_'of_edges')
-    color_of_nodes : str, default="magenta"
-        Color of selected nodes
-    color_of_edges : str, default="magenta"
-        Color of selected edges
-    size : int, default=10
-        Size of the nodes, defaults to 10
+        Edges to select (painted with a different colour, according to
+        ``color_of_edges``).
+    color_of_nodes : str or dict, default="magenta"
+        Colour of the selected nodes.
+    color_of_edges : str or dict, default="magenta"
+        Colour of the selected edges.
+    size : int or float, default=10
+        Size of the nodes.
     lw : float, default=0.3
-        The width of the edges of the tree graph, defaults to 0.3
+        The width of the edges of the tree graph.
     ax : plt.Axes, optional
-        Plot the graph on existing ax. If not provided or None a new ax is going to be created.
+        Plot the graph on an existing ax. If None, a new ax is created.
     default_color : str, default="black"
-        Default color of nodes
+        Default colour of nodes.
+    **kwargs
+        Additional keyword arguments forwarded to the underlying scatter and
+        line-collection calls.
 
     Returns
     -------
     plt.Figure
-        The matplotlib figure
+        The matplotlib figure.
     plt.Axes
-        The matplotlib ax
+        The matplotlib ax.
     """
     if selected_nodes is None:
         selected_nodes = []
@@ -226,27 +234,31 @@ def _create_dict_of_plots(
     start_time: int | None = None,
     end_time: int | None = None,
 ) -> dict[int, dict]:
-    """Generates a dictionary of graphs where the keys are the index of the graph and
-    the values are the graphs themselves which are produced by `create_links_and_chains`
+    """Generate a dictionary of graphs indexed by an integer.
+
+    The values are the graphs produced by
+    :func:`~lineagetree._core.utils.create_links_and_chains`.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     node : int or Iterable of int, optional
-        The id of the node/nodes to produce the simple graphs, if not provided or None will
-        calculate the dicts for every root that starts before 'start_time'
+        The id of the node(s) to produce the simple graphs for. If None, the
+        dicts are computed for every root that starts before ``start_time``.
     start_time : int, optional
-        Important only if there are no nodes it will produce the graph of every
-        root that starts before or at start time. If not provided or None the 'start_time' defaults to the start of the dataset.
+        Only relevant when no nodes are given: the graph of every root that
+        starts before or at ``start_time`` is produced. If None, it defaults to
+        the start of the dataset.
     end_time : int, optional
-        The last timepoint to be considered, if not provided or None the last timepoint of the
-        dataset (t_e) is considered.
+        The last time point to be considered. If None, the last time point of
+        the dataset (``t_e``) is considered.
 
     Returns
     -------
-    dict mapping int to dict
-        The keys are just index values 0-n and the values are the graphs produced.
+    dict of {int: dict}
+        The keys are index values ``0..n`` and the values are the graphs
+        produced.
     """
     if start_time is None:
         start_time = lT.t_b
@@ -276,7 +288,7 @@ def plot_all_lineages(
     vert_gap: int = 1,
     **kwargs,
 ) -> tuple[plt.Figure, plt.Axes, dict[plt.Axes, int]]:
-    """Plots all lineages.
+    """Plot all lineages.
 
     Parameters
     ----------
@@ -285,10 +297,10 @@ def plot_all_lineages(
     nodes : list, optional
         The nodes spawning the graphs to be plotted.
     last_time_point_to_consider : int, optional
-        Which timepoints and upwards are the graphs to be plotted.
-        For example if start_time is 10, then all trees that begin
-        on tp 10 or before are calculated. Defaults to None, where
-        it will plot all the roots that exist on `lT.t_b`.
+        Time point from which the graphs are plotted. For example, if
+        ``last_time_point_to_consider`` is 10, all trees that begin at time
+        point 10 or before are computed. If None, plots all the roots that
+        exist at ``lT.t_b``.
     nrows : int, default=1
         How many rows of plots should be printed.
     figsize : tuple, default=(10, 15)
@@ -298,19 +310,20 @@ def plot_all_lineages(
     fontsize : int, default=15
         The fontsize of the labels.
     axes : plt.Axes, optional
-        The axes to plot the graphs on. If None or not provided new axes are going to be created.
+        The axes to plot the graphs on. If None, new axes are created.
     vert_gap : int, default=1
-        space between the nodes, defaults to 1
-    **kwargs:
-        kwargs accepted by matplotlib.pyplot.plot, matplotlib.pyplot.scatter
+        Space between the nodes.
+    **kwargs
+        Keyword arguments accepted by :func:`matplotlib.pyplot.plot` and
+        :func:`matplotlib.pyplot.scatter`.
 
     Returns
     -------
     plt.Figure
-        The figure
+        The figure.
     plt.Axes
-        The axes
-    dict of plt.Axes to int
+        The axes.
+    dict of {plt.Axes: int}
         A dictionary that maps the axes to the root of the tree.
     """
     nrows = int(nrows)
@@ -403,7 +416,7 @@ def plot_subtree(
     default_color: str = "black",
     ax: plt.Axes | None = None,
 ) -> tuple[plt.Figure, plt.Axes]:
-    """Plots the subtree spawn by a node.
+    """Plot the subtree spawned by a node.
 
     Parameters
     ----------
@@ -412,41 +425,42 @@ def plot_subtree(
     node : int
         The id of the node that is going to be plotted.
     end_time : int, optional
-        The last timepoint to be considered, if None or not provided the last timepoint of the dataset (t_e) is considered.
-    figsize : tuple of 2 ints, default=(4,7)
-        The size of the figure, deafults to (4,7)
-    vert_gap : int, default=2
-        The verical gap of a node when it divides, defaults to 2.
+        The last time point to be considered. If None, the last time point of
+        the dataset (``t_e``) is considered.
+    figsize : tuple of int, default=(4, 7)
+        The size of the figure.
     dpi : int, default=150
-        The dpi of the figure, defaults to 150
+        The dpi of the figure.
+    vert_gap : int, default=2
+        The vertical gap of a node when it divides.
     selected_nodes : list, optional
-        The nodes that are selected by the user to be colored in a different color, defaults to None
+        The nodes selected by the user to be coloured in a different colour.
     selected_edges : list, optional
-        The edges that are selected by the user to be colored in a different color, defaults to None
-    color_of_nodes : str, default="magenta"
-        The color of the nodes to be colored, except the default colored ones, defaults to "magenta"
-    color_of_edges : str, default="magenta"
-        The color of the edges to be colored, except the default colored ones, defaults to "magenta"
-    size : int, default=10
-        The size of the nodes, defaults to 10
+        The edges selected by the user to be coloured in a different colour.
+    color_of_nodes : str or dict, default="magenta"
+        The colour of the selected nodes.
+    color_of_edges : str or dict, default="magenta"
+        The colour of the selected edges.
+    size : int or float, default=10
+        The size of the nodes.
     lw : float, default=0.1
-        The widthe of the edges of the tree graph, defaults to 0.1
+        The width of the edges of the tree graph.
     default_color : str, default="black"
-        The default color of nodes and edges, defaults to "black"
+        The default colour of nodes and edges.
     ax : plt.Axes, optional
-        The ax where the plot is going to be applied, if not provided or None new axes will be created.
+        The ax where the plot is drawn. If None, new axes are created.
 
     Returns
     -------
     plt.Figure
-        The matplotlib figure
+        The matplotlib figure.
     plt.Axes
-        The matplotlib axes
+        The matplotlib axes.
 
     Raises
     ------
     Warning
-        If more than one nodes are received
+        If more than one node is received.
     """
     graph = lT._create_dict_of_plots(node, end_time=end_time)
     if len(graph) > 1:
@@ -488,38 +502,38 @@ def plot_dtw_heatmap(
     w: int = 0,
     centered_band: bool = True,
 ) -> tuple[float, plt.Figure]:
-    """
-    Plot DTW cost matrix between two chains in heatmap format
+    """Plot the DTW cost matrix between two chains as a heatmap.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     nodes1 : int
-        node to compare distance
+        First node whose chain is compared.
     nodes2 : int
-        node to compare distance
+        Second node whose chain is compared.
     threshold : int, default=1000
-        set a maximum number of points a chain can have
+        Maximum number of points a chain can have.
     regist : bool, default=True
-        Rotate and translate trajectories
+        Whether to rotate and translate the trajectories.
     start_d : int, default=0
-        start delay
+        Start delay.
     back_d : int, default=0
-        end delay
+        End delay.
     fast : bool, default=False
-        if `True`, the algorithm will use a faster version but might not find the optimal alignment
+        If True, use a faster version that might not find the optimal
+        alignment.
     w : int, default=0
-        window size
+        Window size.
     centered_band : bool, default=True
-        when running the fast algorithm, `True` if the windown is centered
+        When running the fast algorithm, whether the window is centered.
 
     Returns
     -------
     float
-        DTW distance
+        DTW distance.
     plt.Figure
-        Heatmap of cost matrix with opitimal path
+        Heatmap of the cost matrix with the optimal path.
     """
     cost, path, cost_mat, pos_chain1, pos_chain2 = lT.dtw(
         nodes1,
@@ -560,6 +574,29 @@ def __plot_2d(
     x_label: str,
     y_label: str,
 ) -> None:
+    """Plot the 2D projection of two trajectories on the given axes.
+
+    Parameters
+    ----------
+    pos_chain1 : numpy.ndarray
+        Positions of the first trajectory.
+    pos_chain2 : numpy.ndarray
+        Positions of the second trajectory.
+    nodes1 : list of int
+        Root node(s) of the first trajectory (used for the legend).
+    nodes2 : list of int
+        Root node(s) of the second trajectory (used for the legend).
+    ax : plt.Axes
+        Axes to draw on.
+    x_idx : list of int
+        Column index used for the x-axis.
+    y_idx : list of int
+        Column index used for the y-axis.
+    x_label : str
+        Label of the x-axis.
+    y_label : str
+        Label of the y-axis.
+    """
     ax.plot(
         pos_chain1[:, x_idx],
         pos_chain1[:, y_idx],
@@ -590,47 +627,47 @@ def plot_dtw_trajectory(
     projection: Literal["3d", "xy", "xz", "yz", "pca", None] = None,
     alig: bool = False,
 ) -> tuple[float, plt.Figure]:
-    """
-    Plots DTW trajectories aligment between two chains in 2D or 3D
+    """Plot the DTW trajectory alignment between two chains in 2D or 3D.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     nodes1 : int
-        node to compare distance
+        First node whose chain is compared.
     nodes2 : int
-        node to compare distance
+        Second node whose chain is compared.
     threshold : int, default=1000
-        set a maximum number of points a chain can have
+        Maximum number of points a chain can have.
     regist : bool, default=True
-        Rotate and translate trajectories
+        Whether to rotate and translate the trajectories.
     start_d : int, default=0
-        start delay
+        Start delay.
     back_d : int, default=0
-        end delay
-    w : int, default=0
-        window size
+        End delay.
     fast : bool, default=False
-        True if the user wants to run the fast algorithm with window restrains
+        If True, run the fast algorithm with window constraints.
+    w : int, default=0
+        Window size.
     centered_band : bool, default=True
-        if running the fast algorithm, True if the windown is centered
-    projection : {"3d", "xy", "xz", "yz", "pca"}, optional
-        specify which 2D to plot ->
-        "3d" : for the 3d visualization
-        "xy" or None (default) : 2D projection of axis x and y
-        "xz" : 2D projection of axis x and z
-        "yz" : 2D projection of axis y and z
-        "pca" : PCA projection
-    alig : bool
-        True to show alignment on plot
+        When running the fast algorithm, whether the window is centered.
+    projection : {"3d", "xy", "xz", "yz", "pca", None}, optional
+        Which projection to plot:
+
+        - ``"3d"``: 3D visualisation,
+        - ``"xy"`` or None (default): 2D projection on the x and y axes,
+        - ``"xz"``: 2D projection on the x and z axes,
+        - ``"yz"``: 2D projection on the y and z axes,
+        - ``"pca"``: PCA projection.
+    alig : bool, default=False
+        Whether to show the alignment on the plot.
 
     Returns
     -------
     float
-        DTW distance
-    figure
-        Trajectories Plot
+        DTW distance.
+    plt.Figure
+        The trajectories plot.
     """
     (
         distance,
@@ -802,29 +839,34 @@ def plot_chain_histogram(
     ax: plt.Axes | None = None,
     **kwargs,
 ):
-    """Plot the histograms of the chains length of the dataset. By default the chains tha tcontain root or leaf ndoes are not included.
+    """Plot the histogram of the chain lengths of the dataset.
+
+    By default, the chains that contain root or leaf nodes are not included.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     with_leaves : bool, default=False
-        Include the chains that contain leaves in the histogram, by default False
+        Whether to include the chains that contain leaves in the histogram.
     with_roots : bool, default=False
-        Include the chains that contain roots in the histogram, by default False
+        Whether to include the chains that contain roots in the histogram.
     bins : int, optional
-        Bins of the histogram, if None they are set automatically, by default None
-    color : str, default='blue'
-        Color of the histogram, by default "blue"
-    ax : plt.Axes | None, optional
-        The plt.Axes instance, if None it creates a new Axes instance, by default None
+        Bins of the histogram. If None, they are set automatically.
+    color : str, default="blue"
+        Colour of the histogram.
+    ax : plt.Axes, optional
+        The axes instance. If None, a new axes instance is created.
+    **kwargs
+        Additional keyword arguments forwarded to
+        :func:`matplotlib.pyplot.subplots`.
 
     Returns
     -------
     plt.Figure
-        The matplotlib figure
+        The matplotlib figure.
     plt.Axes
-        The matplotlib axes
+        The matplotlib axes.
     """
 
     list_of_chains = [c for c in lT.all_chains]

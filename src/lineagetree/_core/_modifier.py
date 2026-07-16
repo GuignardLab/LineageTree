@@ -59,19 +59,25 @@ def add_chain(
     downstream: bool,
     pos: Callable | None = None,
 ) -> int:
-    """Adds a chain of specific length to a node either as a successor or as a predecessor.
-    If it is placed on top of a tree all the nodes will move timepoints #length down.
+    """Add a chain of a given length to a node.
+
+    The chain is added either as a successor or as a predecessor of ``node``.
+    If it is placed on top of a tree, all the nodes are moved ``length`` time
+    points down.
 
     Parameters
     ----------
+    lT : LineageTree
+        The LineageTree instance.
     node : int
-        Id of the successor (predecessor if `downstream==False`)
+        Id of the successor (predecessor if ``downstream`` is False).
     length : int
         The length of the new chain.
-    downstream : bool, default=True
-        If `True` will create a chain that goes forwards in time otherwise backwards.
-    pos : np.ndarray, optional
-        The new position of the chain. Defaults to None.
+    downstream : bool
+        If True, creates a chain that goes forwards in time, otherwise
+        backwards.
+    pos : Callable, optional
+        Callable returning the position of the new nodes.
 
     Returns
     -------
@@ -104,16 +110,17 @@ def add_chain(
 
 @modifier
 def add_root(lT: LineageTree, t: int, pos: list | None = None) -> int:
-    """Adds a root to a specific timepoint.
+    """Add a root at a specific timepoint.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
-    t :int
-        The timepoint the node is going to be added.
-    pos : list
+    t : int
+        The timepoint at which the node is added.
+    pos : list, optional
         The position of the new node.
+
     Returns
     -------
     int
@@ -130,12 +137,17 @@ def add_root(lT: LineageTree, t: int, pos: list | None = None) -> int:
 
 
 def get_next_id(lT) -> int:
-    """Computes the next authorized id and assign it.
+    """Compute the next authorized id and assign it.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree instance.
 
     Returns
     -------
     int
-        next authorized id
+        The next authorized id.
     """
     if not hasattr(lT, "max_id") or (lT.max_id == -1 and lT.nodes):
         lT.max_id = max(lT.nodes) if len(lT.nodes) else 0
@@ -154,27 +166,28 @@ def _add_node(
     pos: Iterable | None = None,
     nid: int | None = None,
 ) -> int:
-    """Adds a node to the LineageTree object that is either a successor or a predecessor of another node.
-    Does not handle time! You cannot enter both a successor and a predecessor.
+    """Add a node as either a successor or a predecessor of another node.
+
+    Does not handle time. You cannot enter both a successor and a predecessor.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
-    succ : list
-        list of ids of the nodes the new node is a successor to
-    pred : list
-        list of ids of the nodes the new node is a predecessor to
-    pos : np.ndarray, optional
-        position of the new node
+    succ : list, optional
+        List of ids of the nodes the new node is a successor to.
+    pred : list, optional
+        List of ids of the nodes the new node is a predecessor to.
+    pos : Iterable, optional
+        Position of the new node.
     nid : int, optional
-        id value of the new node, to be used carefully,
-        if None is provided the new id is automatically computed.
+        Id value of the new node, to be used carefully. If None, the new id is
+        automatically computed.
 
     Returns
     -------
     int
-        id of the new node.
+        Id of the new node.
     """
     if not succ and not pred:
         raise Warning(
@@ -201,7 +214,7 @@ def _add_node(
 
 @modifier
 def remove_nodes(lT: LineageTree, group: int | set | list) -> None:
-    """Removes a group of nodes from the LineageTree
+    """Remove a group of nodes from the LineageTree.
 
     Parameters
     ----------
@@ -237,20 +250,21 @@ def remove_nodes(lT: LineageTree, group: int | set | list) -> None:
 
 @staticmethod
 def compute_rigid_transform(A: np.ndarray, B: np.ndarray) -> np.ndarray:
-    """
-    Computes the rigid transformation (rotation + translation) between two paired 3D point clouds.
+    """Compute the rigid transformation between two paired 3D point clouds.
+
+    The transformation is a rotation followed by a translation.
 
     Parameters
     ----------
-    A : (N, 3) numpy array
-        source point cloud.
-    B : (N, 3) numpy array
-        target point cloud.
+    A : numpy.ndarray of shape (N, 3)
+        Source point cloud.
+    B : numpy.ndarray of shape (N, 3)
+        Target point cloud.
 
     Returns
     -------
-    (4, 4) np.ndarray
-        the rigid transformation matrix in homogeneous coordinates
+    numpy.ndarray of shape (4, 4)
+        The rigid transformation matrix in homogeneous coordinates.
     """
     assert A.shape == B.shape, "Point clouds A and B must have the same shape."
 
@@ -288,21 +302,20 @@ def compute_rigid_transform(A: np.ndarray, B: np.ndarray) -> np.ndarray:
 
 @staticmethod
 def iterative_composition(trsfs: list[np.ndarray]) -> list[np.ndarray]:
-    """
-    Iteratively compose multiple transformations in a list such that:
-    result[0] = identity
-    and
-    result[i] = result[i-1] @ trsfs[i - 1]
+    """Iteratively compose a list of transformations.
+
+    The composition is defined such that ``result[0]`` is the identity and
+    ``result[i] = result[i - 1] @ trsfs[i - 1]``.
 
     Parameters
     ----------
-    trsfs : list of (N, N) np.ndarray
-        List of transformation matrices in homogeneous coordinates
+    trsfs : list of numpy.ndarray of shape (N, N)
+        List of transformation matrices in homogeneous coordinates.
 
     Returns
     -------
-    list of (N, N) np.ndarray
-        List of iteratively composed transformations
+    list of numpy.ndarray of shape (N, N)
+        List of iteratively composed transformations.
     """
     new_trsfs = [np.identity(4)]
     for trsf in trsfs:
@@ -312,22 +325,20 @@ def iterative_composition(trsfs: list[np.ndarray]) -> list[np.ndarray]:
 
 @staticmethod
 def apply_trsf(m: np.ndarray, pos: np.ndarray):
-    """
-    Apply the transformation m to an array of positions.
+    """Apply a transformation to an array of positions.
 
     Parameters
     ----------
-    m : (N, N) np.ndarray
-        A transformation matrix in homogeneous coordinates
-        for positions in N-1 dimensions.
-
-    pos: (M, N-1) np.ndarray
-        A list of positions in N-1 dimensions to be transformed
+    m : numpy.ndarray of shape (N, N)
+        A transformation matrix in homogeneous coordinates for positions in
+        N-1 dimensions.
+    pos : numpy.ndarray of shape (M, N-1)
+        A list of positions in N-1 dimensions to be transformed.
 
     Returns
     -------
-    (M, N-1) np.array
-        A list of the original positions transformed by m
+    numpy.ndarray of shape (M, N-1)
+        The original positions transformed by ``m``.
     """
     pos_padded = np.pad(pos, ((0, 0), (0, 1)), "constant", constant_values=1).T
 
@@ -336,15 +347,14 @@ def apply_trsf(m: np.ndarray, pos: np.ndarray):
 
 @modifier
 def stabilise_positions(lT: LineageTree) -> dict[int, np.ndarray]:
-    """
-    Move node positions at each time point such that
-    the sum of the squared displacements between consecutive
-    time points is minimal.
+    """Register node positions to minimise inter-frame displacement.
 
-    The old positions are kept in `lT.old_pos`
+    Node positions at each time point are moved such that the sum of the
+    squared displacements between consecutive time points is minimal. The old
+    positions are kept in ``lT.old_pos``.
 
-    .. warning: If there are strongly coordinated movements
-    there might be smootheded out significantly
+    .. warning::
+        Strongly coordinated movements may be smoothed out significantly.
 
     Parameters
     ----------
@@ -353,9 +363,8 @@ def stabilise_positions(lT: LineageTree) -> dict[int, np.ndarray]:
 
     Returns
     -------
-    dict mapping int to np.ndarray
-        A dictionnary similar to lT.pos with the
-        registered positions
+    dict of {int: numpy.ndarray}
+        A dictionary similar to ``lT.pos`` with the registered positions.
     """
     times = sorted(lT.time_nodes)
     trsfs_i_j = []
@@ -396,9 +405,10 @@ def stabilise_positions(lT: LineageTree) -> dict[int, np.ndarray]:
 
 
 def anchored_gaussian_smooth(data, sigma=1.5, anchor_strength=3.0):
-    """
-    Apply Gaussian smoothing to a 1D sequence while anchoring the endpoints
-    and suppressing drift near the boundaries.
+    """Apply anchored Gaussian smoothing to a 1D sequence.
+
+    Smooth a 1D sequence while anchoring the endpoints and suppressing drift
+    near the boundaries.
 
     This function performs standard Gaussian smoothing and then blends the
     smoothed result with the original data using a position-dependent weight.
@@ -466,9 +476,7 @@ def anchored_gaussian_smooth(data, sigma=1.5, anchor_strength=3.0):
 
 @modifier
 def smooth_trajectories(lT: LineageTree, sigma=1.0, ancor_strength=3):
-    """
-    Smooth 3D trajectories of all chains in a lineage tree using anchored
-    Gaussian filtering.
+    """Smooth 3D trajectories of all chains using anchored Gaussian filtering.
 
     For each chain in the lineage tree, the x-, y-, and z-coordinates are
     independently smoothed using a Gaussian filter with soft endpoint
@@ -478,6 +486,7 @@ def smooth_trajectories(lT: LineageTree, sigma=1.0, ancor_strength=3):
     Parameters
     ----------
     lT : LineageTree
+        The LineageTree instance.
     sigma : float, default=1.0
         Standard deviation of the Gaussian kernel used for smoothing each
         coordinate independently. Higher values produce smoother trajectories.

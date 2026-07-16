@@ -35,7 +35,7 @@ def unordered_tree_edit_distances_at_time_t(
     norm: Literal["max", "sum", None] = "max",
     recompute: bool = False,
 ) -> dict[tuple[int, int], float]:
-    """Compute all the pairwise unordered tree edit distances from Zhang 996 between the trees spawned at time `t`
+    """Compute all pairwise unordered tree edit distances (Zhang 1996) at time ``t``.
 
     Parameters
     ----------
@@ -208,7 +208,7 @@ def __unordereded_backtrace(
     )
     n1, n2 = sorted([n1, n2])
     lT._comparisons.setdefault(parameters, {})
-    if len(lT._comparisons) > 100:
+    if len(lT._comparisons[parameters]) > 100:
         warnings.warn(
             "More than 100 comparisons are saved, use clear_comparisons() to delete them.",
             stacklevel=2,
@@ -324,6 +324,8 @@ def unordered_tree_edit_distance(
         tmp = __unordereded_backtrace(
             lT, n1, n2, end_time, norm, style, downsample
         )
+    if not tmp["trees"]:
+        return (0, (0, 0)) if return_norms else 0
     btrc = tmp["alignment"]
     tree1, tree2 = tmp["trees"]
     _, times1 = tree1.tree
@@ -432,6 +434,9 @@ def plot_tree_distance_graphs(
         tmp = __unordereded_backtrace(
             lT, n1, n2, end_time, norm, style, downsample
         )
+    if not tmp["trees"]:
+        fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True) if ax is None else (ax[0].get_figure(), ax)
+        return fig, ax
     btrc: Alignment = tmp["alignment"]
     tree1, tree2 = tmp["trees"]
     _, times1 = tree1.tree
@@ -453,7 +458,7 @@ def plot_tree_distance_graphs(
     )
 
     if norm not in lT.norm_dict:
-        raise Warning("Select a viable normalization method (max, sum, None)")
+        raise ValueError("Select a viable normalization method (max, sum, None)")
     matched_right = []
     matched_left = []
     colors = {}
@@ -501,8 +506,10 @@ def plot_tree_distance_graphs(
                 node_2 = corres2[m._right]
 
                 if (
-                    lT.get_chain_of_node(node_1)[0] == node_1
-                    or lT.get_chain_of_node(node_2)[0] == node_2
+                    (
+                        lT.get_chain_of_node(node_1)[0] == node_1
+                        or lT.get_chain_of_node(node_2)[0] == node_2
+                    )
                     and (node_1 not in colors or node_2 not in colors)
                 ):
                     matched_left.append(node_1)
@@ -615,6 +622,8 @@ def labelled_mappings(
         tmp = __unordereded_backtrace(
             lT, n1, n2, end_time, norm, style, downsample
         )
+    if not tmp["trees"]:
+        return {"matched": [], "unmatched": []}
     btrc = tmp["alignment"]
     tree1, tree2 = tmp["trees"]
 
@@ -628,7 +637,7 @@ def labelled_mappings(
     ) = tree2.edist
 
     if norm not in lT.norm_dict:
-        raise Warning("Select a viable normalization method (max, sum, None)")
+        raise ValueError("Select a viable normalization method (max, sum, None)")
     matched = []
     unmatched = []
     if style not in ("full", "downsampled"):

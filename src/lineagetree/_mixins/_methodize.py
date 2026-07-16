@@ -5,10 +5,22 @@ from functools import wraps
 
 
 def _strip_first_param_from_doc(doc: str) -> str:
-    """
-    Best-effort removal for NumPy docstrings.
-    Only removes the first parameter if it's "lT: LineageTree".
-    Leaves other styles unchanged if patterns aren't found.
+    """Remove the first parameter entry from a NumPy-style docstring.
+
+    Best-effort removal that only drops the first parameter when its type is
+    ``LineageTree``. Docstrings that do not match the expected NumPy layout are
+    returned unchanged.
+
+    Parameters
+    ----------
+    doc : str
+        The docstring to process.
+
+    Returns
+    -------
+    str
+        The docstring with the leading ``lT : LineageTree`` parameter removed,
+        or the original docstring when no matching entry is found.
     """
     if not doc:
         return doc
@@ -116,12 +128,22 @@ def _strip_first_param_from_doc(doc: str) -> str:
 
 
 def methodize(func):
-    """
-    Turn a free function (cl, *args) into a method wrapper that:
-      - drops the first parameter in the visible signature,
-      - hides the first parameter in common docstring styles.
-    Usage:
-        Class.func = methodize(func)
+    """Wrap a free function so it behaves as a bound method.
+
+    The returned wrapper drops the first parameter from the visible signature
+    and hides the corresponding entry in the NumPy-style docstring, so that a
+    free function ``func(self, *args)`` can be attached to a class as a method.
+
+    Parameters
+    ----------
+    func : callable
+        The free function to wrap. Its first parameter is treated as ``self``.
+
+    Returns
+    -------
+    callable
+        A wrapper suitable for assignment as a class attribute, e.g.
+        ``Class.func = methodize(func)``.
     """
 
     @wraps(func)
@@ -134,11 +156,20 @@ def methodize(func):
 
 
 def attach_methods(cls, funcs):
-    """
-    Bulk attach: funcs is a dict {name: function} or a module.
-    Example:
-        import funcs as fmod
-        attach_methods(Class, fmod)
+    """Attach several methodised free functions to a class in bulk.
+
+    Parameters
+    ----------
+    cls : type
+        The class to which the methods are attached.
+    funcs : module or dict of {str: callable}
+        Either a module (its public, callable, non-underscored attributes are
+        used) or a mapping from method name to free function.
+
+    Raises
+    ------
+    TypeError
+        If ``funcs`` is neither a module nor a dict of callables.
     """
     if hasattr(funcs, "__dict__"):
         items = {

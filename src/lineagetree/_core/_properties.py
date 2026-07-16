@@ -91,13 +91,17 @@ class dynamic_property(property):
 
 
 def _compute_all_chains(lT: LineageTree) -> tuple[tuple[int]]:
-    """Computes all the chains of a given lineage tree,
-    stores it in `lT.all_chains` and returns it.
+    """Compute all the chains of a given lineage tree.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree instance.
 
     Returns
     -------
     tuple of tuple of int
-        tuple of chains
+        The chains of the lineage tree.
     """
     all_chains = []
     to_do = sorted(lT.roots, key=lT.time.get, reverse=True)
@@ -111,7 +115,7 @@ def _compute_all_chains(lT: LineageTree) -> tuple[tuple[int]]:
 
 @property
 def successor(lT: LineageTree) -> MappingProxyType[int, tuple[int]]:
-    """Dictionary that maps a node to its successors"""
+    """Dictionary that maps a node to its successors."""
     if not hasattr(lT, "_protected_successor"):
         lT._protected_successor = MappingProxyType(lT._successor)
     return lT._protected_successor
@@ -119,7 +123,7 @@ def successor(lT: LineageTree) -> MappingProxyType[int, tuple[int]]:
 
 @property
 def predecessor(lT: LineageTree) -> MappingProxyType[int, tuple[int]]:
-    """Dictionary that maps a node to its predecessors"""
+    """Dictionary that maps a node to its predecessors."""
     if not hasattr(lT, "_protected_predecessor"):
         lT._protected_predecessor = MappingProxyType(lT._predecessor)
     return lT._protected_predecessor
@@ -127,7 +131,7 @@ def predecessor(lT: LineageTree) -> MappingProxyType[int, tuple[int]]:
 
 @property
 def time(lT: LineageTree) -> MappingProxyType[int, int]:
-    """Dictionary that maps a node to its time"""
+    """Dictionary that maps a node to its time."""
     if not hasattr(lT, "_protected_time"):
         lT._protected_time = MappingProxyType(lT._time)
     return lT._protected_time
@@ -135,31 +139,31 @@ def time(lT: LineageTree) -> MappingProxyType[int, int]:
 
 @dynamic_property
 def t_b(lT: LineageTree) -> int:
-    """The first timepoint of the lineage tree"""
+    """The first timepoint of the lineage tree."""
     return min(lT._time.values())
 
 
 @dynamic_property
 def t_e(lT: LineageTree) -> int:
-    """The last timepoint of the lineage tree"""
+    """The last timepoint of the lineage tree."""
     return max(lT._time.values())
 
 
 @dynamic_property
 def nodes(lT: LineageTree) -> frozenset[int]:
-    """Set of node ids of the lineage tree"""
+    """Set of node ids of the lineage tree."""
     return frozenset(lT._successor.keys())
 
 
 @dynamic_property
 def number_of_nodes(lT: LineageTree) -> int:
-    """Number of nodes in the lineage tree"""
+    """Number of nodes in the lineage tree."""
     return len(lT.nodes)
 
 
 @dynamic_property
 def depth(lT: LineageTree) -> dict[int, int]:
-    """The depth of each node in the lineage tree"""
+    """The depth of each node in the lineage tree."""
     _depth = {r: 0 for r in lT.roots}
     for root in lT.roots:
         to_do = list(lT.successor[root])
@@ -172,19 +176,19 @@ def depth(lT: LineageTree) -> dict[int, int]:
 
 @dynamic_property
 def roots(lT: LineageTree) -> frozenset[int]:
-    """Set of roots of the lineage tree"""
+    """Set of roots of the lineage tree."""
     return frozenset({s for s, p in lT._predecessor.items() if p == ()})
 
 
 @dynamic_property
 def leaves(lT: LineageTree) -> frozenset[int]:
-    """Set of leaves of the lineage tree"""
+    """Set of leaves of the lineage tree."""
     return frozenset({p for p, s in lT._successor.items() if s == ()})
 
 
 @dynamic_property
 def edges(lT: LineageTree) -> tuple[tuple[int, int]]:
-    """Set of edges of the lineage tree"""
+    """Set of edges of the lineage tree."""
     return tuple((p, si) for p, s in lT._successor.items() for si in s)
 
 

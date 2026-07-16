@@ -2,7 +2,8 @@ class TreeValidator:
     """Handles cycle-detection and structural validation for a LineageTree."""
 
     def __init__(self, tree_instance):
-        """
+        """Initialise the validator for a given tree.
+
         Parameters
         ----------
         tree_instance : LineageTree

@@ -11,25 +11,26 @@ if TYPE_CHECKING:
 
 
 def idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
-    """Get a 3d kdtree for the dataset at time `t`.
-    The  kdtree is stored in `lT.kdtrees[t]` and returned.
-    The correspondancy list is also returned.
+    """Get a 3D KDTree for the dataset at time ``t``.
+
+    The KDTree is stored in ``lT.kdtrees[t]`` and returned together with the
+    correspondence list.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     t : int
-        time
+        Time point.
 
     Returns
     -------
     KDTree
-        The KDTree corresponding to the lineage tree at time `t`
-    np.ndarray
-        The correspondancy list in the KDTree.
-        If the query in the kdtree gives you the value `i`,
-        then it corresponds to the id in the tree `to_check_lT[i]`
+        The KDTree corresponding to the lineage tree at time ``t``.
+    numpy.ndarray
+        The correspondence list in the KDTree. If a query in the KDTree returns
+        the value ``i``, it corresponds to the id ``to_check_lT[i]`` in the
+        tree.
     """
     to_check_lT = list(lT.time_nodes[t])
 
@@ -52,23 +53,26 @@ def idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
 def gabriel_graph(
     lT: LineageTree, time: int | Iterable[int] | None = None
 ) -> dict[int, set[int]]:
-    """Build the Gabriel graph of the given graph for time point `t`.
-    The Garbiel graph is then stored in `lT.Gabriel_graph` and returned.
+    """Build the Gabriel graph of the dataset for the given time point(s).
 
-    .. warning:: the graph is not recomputed if already computed, even if the point cloud has changed
+    The Gabriel graph is stored in ``lT.Gabriel_graph`` and returned.
+
+    .. warning::
+        The graph is not recomputed if already computed, even if the point
+        cloud has changed.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     time : int or Iterable of int, optional
-        time or iterable of times.
-        If not given the gabriel graph will be calculated for all timepoints.
+        Time or iterable of times. If not given, the Gabriel graph is
+        calculated for all time points.
 
     Returns
     -------
-    dict of int to set of int
-        A dictionary that maps a node to the set of its neighbors
+    dict of {int: set of int}
+        A dictionary that maps a node to the set of its neighbours.
     """
     if not hasattr(lT, "Gabriel_graph"):
         lT.Gabriel_graph = {}
@@ -133,24 +137,26 @@ def neighbours_in_radius(
     t_e: int | None = None,
     th: float = 50,
 ) -> dict[int, float]:
-    """Computes the number of neighbours for nodes between `t_b` and `t_e`.
-    The results is stored in `lT.neighbours` and returned.
+    """Compute the neighbours within radius ``th`` for nodes in a time range.
+
+    The result is stored in ``lT.neighbours`` and returned.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     t_b : int, optional
-        starting time to look at, default first time point
+        Starting time to look at. Defaults to the first time point.
     t_e : int, optional
-        ending time to look at, default last time point
+        Ending time to look at. Defaults to the last time point.
     th : float, default=50
-        size of the neighbourhood
+        Size of the neighbourhood.
 
     Returns
     -------
-    dict mapping int to float
-        dictionary that maps a node id to its spatial density
+    dict of {int: set of int}
+        Dictionary that maps a node id to the set of its neighbours within
+        radius ``th``.
     """
     neighbours = {}
     if t_b is None:
@@ -176,24 +182,25 @@ def spatial_density(
     t_e: int | None = None,
     th: float = 50,
 ) -> dict[int, float]:
-    """Computes the spatial density of nodes between `t_b` and `t_e`.
-    The results is stored in `lT.spatial_density` and returned.
+    """Compute the spatial density of nodes in a time range.
+
+    The result is stored in ``lT.spatial_density`` and returned.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     t_b : int, optional
-        starting time to look at, default first time point
+        Starting time to look at. Defaults to the first time point.
     t_e : int, optional
-        ending time to look at, default last time point
+        Ending time to look at. Defaults to the last time point.
     th : float, default=50
-        size of the neighbourhood
+        Size of the neighbourhood.
 
     Returns
     -------
-    dict mapping int to float
-        dictionary that maps a node id to its spatial density
+    dict of {int: float}
+        Dictionary that maps a node id to its spatial density.
     """
     s_vol = 4 / 3.0 * np.pi * th**3
     spatial_density = {
@@ -204,25 +211,24 @@ def spatial_density(
 
 
 def k_nearest_neighbours(lT: LineageTree, k: int = 10) -> dict[int, set[int]]:
-    """Computes the k-nearest neighbors
-    Writes the output in the attribute `kn_graph`
-    and returns it.
+    """Compute the k-nearest neighbours of every node.
+
+    The output is written to the attribute ``kn_graph`` and returned.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
-    k : float
-        number of nearest neighours
+    k : int, default=10
+        Number of nearest neighbours.
 
     Returns
     -------
-    dict mapping int to set of int
-        dictionary that maps
-        a node id to its `k` nearest neighbors
-    dict mapping int to set of float
-        dictionary that maps
-        a node id to the distances of its `k` nearest neighbors
+    dict of {int: set of int}
+        Dictionary that maps a node id to its ``k`` nearest neighbours.
+    dict of {int: set of float}
+        Dictionary that maps a node id to the distances of its ``k`` nearest
+        neighbours.
     """
     lT.kn_graph = {}
     lT.kn_distances = {}
@@ -253,21 +259,22 @@ def k_nearest_neighbours(lT: LineageTree, k: int = 10) -> dict[int, set[int]]:
 
 
 def spatial_edges(lT: LineageTree, th: int = 50) -> dict[int, set[int]]:
-    """Computes the neighbors at a distance `th`
-    Writes the output in the attribute `th_edge`
-    and returns it.
+    """Compute the neighbours at a distance ``th`` of every node.
+
+    The output is written to the attribute ``th_edges`` and returned.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     th : float, default=50
-        distance to consider neighbors
+        Distance below which two nodes are considered neighbours.
 
     Returns
     -------
-    dict mapping int to set of int
-        dictionary that maps a node id to its neighbors at a distance `th`
+    dict of {int: set of int}
+        Dictionary that maps a node id to its neighbours within distance
+        ``th``.
     """
     lT.th_edges = {}
     for t in set(lT._time.values()):
