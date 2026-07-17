@@ -87,10 +87,11 @@ class LineageTree(
         with open(fname, "br") as f:
             lT = CompatibleUnpickler(f).load()
             f.close()
+
         if not hasattr(lT, "__version__") or Version(lT.__version__) < Version(
-            "2.0.0"
+            "4.0.0"
         ):
-            properties = {
+            props = {
                 prop_name: prop
                 for prop_name, prop in lT.__dict__.items()
                 if (isinstance(prop, dict) or prop_name == "_time_resolution")
@@ -113,7 +114,7 @@ class LineageTree(
                 time=lT._time,
                 pos=lT.pos,
                 name=lT.name if hasattr(lT, "name") else None,
-                **properties,
+                **props,
             )
         if not hasattr(lT, "time_resolution"):
             lT.time_resolution = 1
@@ -121,6 +122,10 @@ class LineageTree(
             lT.spatial_resolution = np.ones(3)
         if not hasattr(lT, "_temporal"):
             lT._temporal = True
+        # if not hasattr(lT, "properties"):
+        #     lT.properties = Properties(lT)
+        # if not hasattr(lT, "labelling"):
+        #     lT.labelling = Labelling(lT)
 
         return lT
 
@@ -376,18 +381,30 @@ class LineageTree(
             _labels = kwargs["labels"]
             kwargs.pop("labels")
             self.labelling = Labelling(self)
+            for key in set(_labels.keys()).difference(
+                self.nodes
+            ):  # Only in the initializer we correct labels
+                _labels.pop(key)
             self.labelling.labels = Labels(_labels)
         elif "label_set" in kwargs:
-            print("label_Set")
             kwargs.pop("label_set")
             self.labelling = Labelling(self)
             for name, label in kwargs["label_set"].items():
+                for key in set(label.keys()).difference(
+                    self.nodes
+                ):  # Only in the initializer we correct labels
+                    label.pop(key)
                 setattr(self.labelling, name, label)
         else:
             self.labelling = Labelling(self)
         for k, v in tuple(kwargs.items()):
             if isinstance(v, dict):
+
                 if all(isinstance(value, str) for value in v.values()):
+                    for key in set(v.keys()).difference(
+                        self.nodes
+                    ):  # Only in the initializer we correct vs
+                        v.pop(key)
                     setattr(self.labelling, k, v)
                     kwargs.pop(k)
         if "properties" in kwargs:
@@ -402,14 +419,15 @@ class LineageTree(
                     f"Attribute name {name} is reserved.", stacklevel=2
                 )
                 continue
+            injected = False  # Flag to check if the value was injected in lT
             if isinstance(d, dict) and name not in vars(PropertiesMixin):
-                try:
-                    self.add_property(name, d, False)
-                except ValueError:
-                    pass
-                try:
-                    self.add_property(name, d, True)
-                except ValueError:
+                for t in (True, False):
+                    try:
+                        self.add_property(name, d, t)
+                        injected = True
+                    except:
+                        pass
+                if not injected:
                     setattr(self, name, d)
                     print(
                         f"Property `{name}` with values: {d}, was not used in labelling or properties dicitionary. Instead it canbe accessed by `lT.{name}`"

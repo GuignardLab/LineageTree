@@ -259,8 +259,14 @@ def k_nearest_neighbours(lT: LineageTree, k: int = 10) -> dict[int, set[int]]:
             )
             kn_graph.update(out)
             kn_distances.update(out_distances)
-    lT.add_property("kn_graph", kn_graph, False)
-    lT.add_property("kn_distances", kn_distances, False)
+    if not lT.get_property("kn_graph"):
+        lT.add_property("kn_graph", kn_graph, False)
+    else:
+        lT.properties.kn_graph.update(kn_graph)
+    if not lT.get_property("kn_distances"):
+        lT.add_property("kn_distances", kn_distances, False)
+    else:
+        lT.properties.kn_distances.update(kn_distances)
     return kn_graph, kn_distances
 
 
@@ -288,5 +294,8 @@ def spatial_edges(lT: LineageTree, th: int = 50) -> dict[int, set[int]]:
         neighbs = idx3d.query_ball_tree(idx3d, th)
         out = dict(zip(nodes, [set(nodes[ni]) for ni in neighbs], strict=True))
         th_edges.update({k: v.difference([k]) for k, v in out.items()})
-    lT.add_property("th_edges", th_edges, False)
+    if not lT.get_property("th_edges"):
+        lT.add_property("th_edges", th_edges, False)
+    else:
+        lT.properties.th_edges.update(th_edges)
     return th_edges

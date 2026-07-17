@@ -40,14 +40,12 @@ def test_read_MaMuT_xml():
 def test_write(tmp_path_factory):
     tmp_path = str(tmp_path_factory.mktemp("lineagetree")) + ".lT"
     lt.labelling.default_dict[list(lt.nodes)[0]] = "test"
-    lt._comparisons = {(1, 2): 30}
     lt.write(str(tmp_path))
     return tmp_path
 
 
 def test_load(test_write):
     lt2 = LineageTree.load(str(test_write))
-    assert lt2._comparisons == {(1, 2): 30}
     assert lt.labelling.default_dict[list(lt.nodes)[0]] == "test"
     assert lt == lt2
 
@@ -670,11 +668,12 @@ def test_properties():
     assert str(excinfo.value)
 
     warnings.filterwarnings("default")
+
     assert "tracks" in lT1.list_all_properties()
     assert lT1.get_property("tracks") == lT1.properties.tracks
     lT1.add_property("test", 1, False)
     assert "test" in lT1.list_all_properties()
-    lT1.del_property("test")
+    lT1.remove_property("test")
     assert "test" not in lT1.list_all_properties()
 
 

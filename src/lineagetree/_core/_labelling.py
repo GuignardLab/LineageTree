@@ -62,9 +62,9 @@ class Labelling:
 
     def __setattr__(self, name: str, value: dict | Labels) -> None:
         lbl = Labels(value)
-        if not set(lbl).issubset(self.lT.nodes):
+        if problematic := set(lbl).difference(self.lT.nodes):
             raise ValueError(
-                "All ids in the labelset should correspond to ids in the LineageTree object."
+                f"All ids in the labelset should correspond to ids in the LineageTree object.{problematic}"
             )
         super().__setattr__(name, lbl)
 
