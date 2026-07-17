@@ -68,13 +68,21 @@ class Properties:
         ret = [prop for prop_set in props for prop in prop_set]
         return ret
 
-    def __setattr__(self, name: str, value: Any) -> None:
-        """Does not allow attribute assignement after the object initialization."""
-        if hasattr(self, "_freeze"):
-            raise TypeError(
-                "'Properties' object does not support attribute assignment. Please use 'lT.add_attribute(...)'  or 'lT.properties.add_attribute(...)'"
-            )
-        return super().__setattr__(name, value)
+    # def __setattr__(self, name: str, value: Any) -> None: # To discuss if we want something like that.
+    #     """Does not allow attribute assignement after the object initialization."""
+    #     if name in [
+    #         "node_properties",
+    #         "time_properties",
+    #         "forest_properties",
+    #         "_all_props",
+    #         "_lT",
+    #     ]:
+    #         super().__setattr__(name, value)
+    #     if hasattr(self, "_freeze"):
+    #         raise TypeError(
+    #             "'Properties' object does not support attribute assignment. Please use 'lT.add_attribute(...)'  or 'lT.properties.add_attribute(...)'"
+    #         )
+    #     return super().__setattr__(name, value)
 
     def __getattr__(self, name: str) -> Any:
         """Makes the dictionaries saved inside `node_properties`,... accessible through the Properties object."""
