@@ -171,7 +171,7 @@ def neighbours_in_radius(
     if not lT.get_property("neighbours_in_radius"):
         lT.add_property("neighbours_in_radius", neighbours, False)
     else:
-        lT.properties.neighbours_in_radius = neighbours
+        lT.properties.neighbours_in_radius.update(neighbours)
     return neighbours
 
 

@@ -159,23 +159,7 @@ class LineageTree(
                 },
             )
 
-        new_properties = Properties(self)
-        for n in self.list_all_properties():
-            if isinstance(getattr(self.properties, n), Mapping):
-                print(n)
-                setattr(
-                    new_properties,
-                    n,
-                    {
-                        k: v
-                        for k, v in getattr(self.properties, n).items()
-                        if k in new_successors
-                    },
-                )
-            else:
-                setattr(new_properties, n, getattr(self.properties, n))
-
-        return LineageTree(
+        lT = LineageTree(
             successor=new_successors,
             time=self._time,
             pos=self.pos,
@@ -183,8 +167,31 @@ class LineageTree(
             root_leaf_value=[
                 (),
             ],
-            **{"labelling": new_labelling, "properties": new_properties},
         )
+        # new_properties = Properties(self)
+        for prop in self.properties.node_properties:
+            lT.add_property(
+                prop,
+                {
+                    k: v
+                    for k, v in self.properties.node_properties[prop].items()
+                    if k in lT.nodes
+                },
+                False,
+            )
+        for prop in self.properties.time_properties:
+            lT.add_property(
+                prop,
+                {
+                    k: v
+                    for k, v in self.properties.time_properties[prop].items()
+                    if k in lT.time_nodes
+                },
+                True,
+            )
+        for prop in self.properties.forest_properties:
+            lT.add_property(prop, lT.properties.forest_properties[prop], False)
+        return lT
 
     def __init__(
         self,
@@ -381,19 +388,13 @@ class LineageTree(
             _labels = kwargs["labels"]
             kwargs.pop("labels")
             self.labelling = Labelling(self)
-            for key in set(_labels.keys()).difference(
-                self.nodes
-            ):  # Only in the initializer we correct labels
-                _labels.pop(key)
+            _labels = _filter_keys(self, _labels)
             self.labelling.labels = Labels(_labels)
         elif "label_set" in kwargs:
             kwargs.pop("label_set")
             self.labelling = Labelling(self)
             for name, label in kwargs["label_set"].items():
-                for key in set(label.keys()).difference(
-                    self.nodes
-                ):  # Only in the initializer we correct labels
-                    label.pop(key)
+                label = _filter_keys(self, label)
                 setattr(self.labelling, name, label)
         else:
             self.labelling = Labelling(self)
@@ -401,11 +402,8 @@ class LineageTree(
             if isinstance(v, dict):
 
                 if all(isinstance(value, str) for value in v.values()):
-                    for key in set(v.keys()).difference(
-                        self.nodes
-                    ):  # Only in the initializer we correct vs
-                        v.pop(key)
-                    setattr(self.labelling, k, v)
+                    lbl = _filter_keys(self, v)
+                    setattr(self.labelling, k, lbl)
                     kwargs.pop(k)
         if "properties" in kwargs:
             self.properties = kwargs["properties"]
@@ -434,3 +432,7 @@ class LineageTree(
                     )
 
         warnings.resetwarnings()
+
+
+def _filter_keys(lT, label_dict):
+    return {k: v for k, v in label_dict.items() if k in lT.nodes}
