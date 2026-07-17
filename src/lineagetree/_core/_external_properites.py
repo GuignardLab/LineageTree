@@ -1,10 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Mapping
-import numpy as np
 
-from abc import ABC
 from ..util_types import StaticTypedValueDict
-import numbers
 
 if TYPE_CHECKING:
     from ..lineage_tree import LineageTree
@@ -39,7 +36,7 @@ class Properties:
 
     def remove(self, key: str):
         """Removes a property from any of the property dicts."""
-        for prop in self.all_props:
+        for prop in self._all_props:
             if key in prop:
                 prop.pop(key)
                 return
@@ -47,6 +44,19 @@ class Properties:
     def list_properties(
         self, constraint: Literal["node", "time", "forest"] | None = None
     ):
+        """Returns a list with the properties saved either in node_proeprties, time_properties or forest_properties,
+        or all at once.
+
+        Parameters
+        ----------
+        constraint : Literal[&quot;node&quot;, &quot;time&quot;, &quot;forest&quot;] | None, optional
+            _description_, by default None
+
+        Returns
+        -------
+        _type_
+            _description_
+        """
         if constraint == "node":
             props = self.node_properties
         elif constraint == "time":
@@ -54,33 +64,39 @@ class Properties:
         if constraint == "forest":
             props = self.forest_properties
         else:
-            props = self.all_props
+            props = self._all_props
         ret = [prop for prop_set in props for prop in prop_set]
         return ret
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Does not allow attribute assignement after the object initialization."""
+        if hasattr(self, "_freeze"):
+            raise TypeError(
+                "'Properties' object does not support attribute assignment. Please use 'lT.add_attribute(...)'  or 'lT.properties.add_attribute(...)'"
+            )
+        return super().__setattr__(name, value)
+
     def __getattr__(self, name: str) -> Any:
+        """Makes the dictionaries saved inside `node_properties`,... accessible through the Properties object."""
         if name in (
             "node_properties",
             "time_properties",
             "forest_properties",
-            "all_props",
-            "lT",
+            "_all_props",
+            "_lT",
         ):
             raise AttributeError(name)
 
-        for i in [
-            self.node_properties,
-            self.time_properties,
-            self.forest_properties,
-        ]:
+        for prop_dict in self._all_props:
             try:
-                return i[name]
+                return prop_dict[name]
             except KeyError:
                 pass
 
         raise AttributeError(f"Property {name} does not exist.")
 
     def __dir__(self) -> list[str]:
+        """Shows the proeprties inside the dictionaries as autocmplete options."""
         return (
             list(self.node_properties.keys())
             + list(self.time_properties.keys())
@@ -89,15 +105,16 @@ class Properties:
         )
 
     def __init__(self, lT: LineageTree) -> None:
-        self.lT = lT
+        self._lT = lT
         self.node_properties = {}
         self.time_properties = {}
         self.forest_properties = {}
-        self.all_props = [
+        self._all_props = [
             self.node_properties,
             self.time_properties,
             self.forest_properties,
         ]
+        self._freeze = True
 
     def add_property(self, name: str, value: Any, time_property: bool):
         """Adds a property to the `lT.properties` object.
@@ -121,14 +138,14 @@ class Properties:
         if isinstance(value, StaticTypedValueDict):
             if time_property:
                 if problematic := set(value.keys()).difference(
-                    self.lT.time_nodes
+                    self._lT.time_nodes
                 ):
                     raise Warning(
                         f"Not all times exist in the dataset.Problematic keys are {problematic}"
                     )
                 self.time_properties[name] = value
             else:
-                if problematic := set(value.keys()).difference(self.lT.nodes):
+                if problematic := set(value.keys()).difference(self._lT.nodes):
                     raise Warning(
                         f"Not all nodes exist in the dataset.Problematic keys are {problematic}"
                     )
@@ -145,25 +162,12 @@ def add_property(lT: LineageTree, name: str, value: Any, time_property: bool):
 def get_property(lT: LineageTree, name: str, default=None):
     """Function for getting properties from `lT.properties`, identical to accessing the
     properties object and receiving the attribute you want.
-
-    Parameters
-    ----------
-    lT : LineageTree
-        The `LineageTree` object.
-    name : str
-        The name of the attribute
-    default : _type_, optional
-        The default return if the object does not exist, by default None
-
-    Returns
-    -------
-    ExternalProperty-subclass objects
-        All properties in the `lT.properties` object are converted to a specialized subclass of ExternalProperty.
     """
     return getattr(lT.properties, name, default)
 
 
 def remove_property(lT: LineageTree, name: str):
+    """Removes a property from any of the dictionaries in lT.properties."""
     return lT.properties.remove(name)
 
 
@@ -177,6 +181,8 @@ def list_all_properties(
     ----------
     lT : LineageTree
         The `LineageTree` object.
+    constraint : Literal[node, time, forest] | None, optional
+        Returns the keys from one of the Properties lists. If None returns allthe keys, by default None
 
     Returns
     -------
