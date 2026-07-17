@@ -72,14 +72,6 @@ class Properties:
         self, name: str, value: Any
     ) -> None:  # To discuss if we want something like that.
         """Does not allow attribute assignement after the object initialization."""
-        if name in [
-            "node_properties",
-            "time_properties",
-            "forest_properties",
-            "_all_props",
-            "_lT",
-        ]:
-            super().__setattr__(name, value)
         if hasattr(self, "_freeze"):
             raise TypeError(
                 "'Properties' object does not support attribute assignment. Please use 'lT.add_attribute(...)'  or 'lT.properties.add_attribute(...)'"
@@ -141,8 +133,10 @@ class Properties:
             meaning all of the keys are nodes. If True, the dicitonary will become a TimeProperty, meaning that the keys
             are the same as `lT.times_nodes` of the dataset.
         """
-        if name in self.list_properties():
-            raise ValueError(f"Property named {name} already exists.")
+        if name in self.list_properties() and isinstance(value, Mapping):
+            raise ValueError(
+                f"Property named {name} already exists. Only forest_properties may be reassigned (non-Mapping objects)."
+            )
         if isinstance(value, Mapping):
             value = StaticTypedValueDict(value)
         if isinstance(value, StaticTypedValueDict):
