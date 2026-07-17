@@ -15,27 +15,31 @@ def get_predecessors(
     start_time: int | None = None,
     end_time: int | None = None,
 ) -> list[int]:
-    """Computes the predecessors of the node `x` up to
-    `depth` predecessors or the begining of the life of `x`.
-    The ordered list of ids is returned.
+    """Compute the predecessors of a node up to a given depth.
+
+    The predecessors of the node ``x`` are collected up to ``depth``
+    predecessors or the beginning of the life of ``x``, and returned as an
+    ordered list of ids.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     x : int
-        id of the node to compute
-    depth : int
-        maximum number of predecessors to return
+        Id of the node to compute.
+    depth : int, optional
+        Maximum number of predecessors to return.
     start_time : int, optional
-        maximum time to consider, if not provided the beginning of the life of `x` is used
+        Earliest time point to include in the returned chain.
+        Defaults to ``lT.t_b`` (beginning of the dataset).
     end_time : int, optional
-        maximum time to consider, if not provided the end of the life of `x` is used
+        Latest time point to include in the returned chain.
+        Defaults to ``lT.t_e`` (end of the dataset).
 
     Returns
     -------
     list of int
-        list of ids, the last id is `x`
+        List of ids; the last id is ``x``.
     """
     if start_time is None:
         start_time = lT.t_b
@@ -71,25 +75,26 @@ def get_successors(
     depth: int | None = None,
     end_time: int | None = None,
 ) -> list[int]:
-    """Computes the successors of the node `x` up to
-    `depth` successors or the end of the life of `x`.
-    The ordered list of ids is returned.
+    """Compute the successors of a node up to a given depth.
+
+    The successors of the node ``x`` are collected up to ``depth`` successors
+    or the end of the life of ``x``, and returned as an ordered list of ids.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     x : int
-        id of the node to compute
+        Id of the node to compute.
     depth : int, optional
-        maximum number of predecessors to return
+        Maximum number of successors to return.
     end_time : int, optional
-        maximum time to consider
+        Maximum time to consider.
 
     Returns
     -------
     list of int
-        list of ids, the first id is `x`
+        List of ids; the first id is ``x``.
     """
     if end_time is None:
         end_time = lT.t_e
@@ -114,30 +119,32 @@ def get_chain_of_node(
     depth_succ: int | None = None,
     end_time: int | None = None,
 ) -> list[int]:
-    """Computes the predecessors and successors of the node `x` up to
-    `depth_pred` predecessors plus `depth_succ` successors.
-    If the value `depth` is provided and not None,
-    `depth_pred` and `depth_succ` are overwriten by `depth`.
-    The ordered list of ids is returned.
-    If all `depth` are None, the full chain is returned.
+    """Compute the chain of a node from its predecessors and successors.
+
+    The chain gathers up to ``depth_pred`` predecessors plus ``depth_succ``
+    successors of the node ``x``, returned as an ordered list of ids. If
+    ``depth`` is provided and not None, it overwrites both ``depth_pred`` and
+    ``depth_succ``. If all depths are None, the full chain is returned.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     x : int
-        id of the node to compute
+        Id of the node to compute.
     depth : int, optional
-        maximum number of predecessors and successor to return
+        Maximum number of predecessors and successors to return.
     depth_pred : int, optional
-        maximum number of predecessors to return
+        Maximum number of predecessors to return.
     depth_succ : int, optional
-        maximum number of successors to return
+        Maximum number of successors to return.
+    end_time : int, optional
+        Maximum time to consider.
 
     Returns
     -------
     list of int
-        list of node ids
+        List of node ids.
     """
     if end_time is None:
         end_time = lT.t_e
@@ -151,8 +158,9 @@ def get_chain_of_node(
 def get_all_chains_of_subtree(
     lT: LineageTree, node: int, end_time: int | None = None
 ) -> list[list[int]]:
-    """Computes all the chains of the subtree spawn by a given node.
-    Similar to get_all_chains().
+    """Compute all the chains of the subtree spawned by a given node.
+
+    Similar to :func:`get_all_chains`.
 
     Parameters
     ----------
@@ -216,25 +224,27 @@ def get_subtree_nodes(
     end_time: int | None = None,
     preorder: bool = False,
 ) -> list[int]:
-    """Computes the list of nodes from the subtree spawned by *x*
-    The default output order is Breadth First Traversal.
-    Unless preorder is `True` in that case the order is
-    Depth First Traversal (DFT) preordered.
+    """Compute the list of nodes of the subtree spawned by a node.
+
+    The default output order is Breadth First Traversal, unless ``preorder`` is
+    True, in which case the order is Depth First Traversal (DFT) preordered.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
-    x : int
-        id of root node
+    x : int or Iterable
+        Id of the root node (or an iterable of root ids).
+    end_time : int, optional
+        The time at which to stop the traversal.
     preorder : bool, default=False
-        if True the output preorder is Depth First Traversal (DFT)
-        Otherwise it is Breadth First Traversal (BFT)
+        If True the output order is Depth First Traversal (DFT), otherwise it
+        is Breadth First Traversal (BFT).
 
     Returns
     -------
     list of int
-        the ordered list of node ids
+        The ordered list of node ids.
     """
     if not end_time:
         end_time = lT.t_e
@@ -258,12 +268,10 @@ def get_subtree_nodes(
 
 
 def get_ancestor_at_t(lT: LineageTree, n: int, time: int | None = None) -> int:
-    """Find the id of the ancestor of a give node `n`
-    at a given time `time`.
+    """Find the id of the ancestor of a given node at a given time.
 
-    If there is no ancestor, returns `None`
-    If time is None return the root of the subtree that spawns
-    the node n.
+    If there is no ancestor, ``-1`` is returned. If ``time`` is None, the root
+    of the subtree that spawns the node ``n`` is returned.
 
     Parameters
     ----------
@@ -298,7 +306,7 @@ def get_ancestor_at_t(lT: LineageTree, n: int, time: int | None = None) -> int:
 
 
 def get_labelled_ancestor(lT: LineageTree, node: int) -> int:
-    """Finds the first labelled ancestor and returns its ID otherwise returns -1
+    """Find the first labelled ancestor and return its id, otherwise ``-1``.
 
     Parameters
     ----------
@@ -325,20 +333,32 @@ def get_labelled_ancestor(lT: LineageTree, node: int) -> int:
 def get_ancestor_with_attribute(
     lT: LineageTree, node: int, attribute: str
 ) -> int:
-    """General purpose function to help with searching the first ancestor that has an attribute.
-    Similar to get_labeled_ancestor and may make it redundant.
+    """Find the first ancestor (inclusive of ``node``) that appears in a given attribute dict.
+
+    General purpose function to help with searching the first ancestor that
+    has an attribute. Similar to :func:`get_labelled_ancestor` and may make
+    it redundant.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     node : int
-        The id of the node
+        The id of the node to start the search from (inclusive).
+    attribute : str
+        Name of the ``LineageTree`` attribute to search in. Must be a ``dict``
+        whose keys are node ids.
 
     Returns
     -------
     int
-        Returns the first ancestor found that has an attribute otherwise `-1`.
+        Id of the first ancestor (including ``node`` itself) found in
+        ``lT.<attribute>``, or ``-1`` if none is found.
+
+    Raises
+    ------
+    ValueError
+        If ``lT.<attribute>`` is not a dictionary.
     """
     attr_dict = lT.__getattribute__(attribute)
     if not isinstance(attr_dict, dict):
@@ -363,22 +383,21 @@ def nodes_at_t(
     t: int,
     r: int | Iterable[int],
 ) -> list[int]:
-    """
-    Returns the list of nodes at time `t` that are spawn by the node(s) `r`.
+    """Return the nodes at time ``t`` that are spawned by the node(s) ``r``.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     t : int
-        target time, if `None` goes as far as possible
+        Target time. If None, goes as far as possible.
     r : int or Iterable of int
-        id or list of ids of the spawning node
+        Id or list of ids of the spawning node(s).
 
     Returns
     -------
     list of int
-        list of ids of the nodes at time `t` spawned by `r`
+        List of ids of the nodes at time ``t`` spawned by ``r``.
     """
     if isinstance(r, Iterable):
         r = list(r)
@@ -398,7 +417,7 @@ def nodes_at_t(
 
 
 def get_available_labels(lT: LineageTree) -> list[str]:
-    """Returns the list all the available label dictionaries
+    """Return the list of all the available label dictionaries.
 
     Parameters
     ----------
@@ -407,9 +426,9 @@ def get_available_labels(lT: LineageTree) -> list[str]:
 
     Returns
     -------
-    list of string
-        list of the names of all the available properties
-        to label the nodes
+    list of str
+        List of the names of all the available properties usable to label the
+        nodes.
     """
     available_labels = []
     for prop_name, prop in lT.__dict__.items():
@@ -431,33 +450,30 @@ def change_labels(
     new_labels_dict: dict[int, str] | None = None,
     only_first_node_in_chain: bool = False,
 ) -> None:
-    """Change the dictionary that serves at labels with
-    the `LineageTree` attribute `new_labels_name`.
-    It has to be a dictionary mapping node id to string.
+    """Change the dictionary used as node labels.
 
-    If `new_labels_dict` is provided, it will be used to
-    label the cells.
-    If `new_labels_name` is not specified, the labels are reset.
+    The labels are replaced by the ``LineageTree`` attribute
+    ``new_labels_name``, which has to be a dictionary mapping node id to
+    string. If ``new_labels_dict`` is provided, it is used to label the cells.
+    If ``new_labels_name`` is not specified, the labels are reset.
 
-    One can decide to only label the first node of the chain
-    instead of all the nodes of the chain.
-    That can help readability in the napari plugin reLAX.
+    One can decide to only label the first node of each chain instead of all
+    its nodes, which can help readability in the napari plugin reLAX.
 
     Parameters
     ----------
     lT : LineageTree
-    new_labels_name : string, optional
-        The name of the dictionary to use
-        (the list of potential dictionaries can be found
-        with `lT.available_labels`)
-        If `new_labels_name` is not provided,
-        the labels are reset to `"Unlabeleld"`
-    new_labels_dict : dictionary mapping integers to strings, optional
-        The new names as a dictionary mapping each named node id to its string label
-        If not provided and lT has a fitting attribute named `new_labels_name`,
-        it will therefore be used
-    only_first_node_in_chain : bool, default=True
-        If `True` only labels the first node of the chains
+        The LineageTree instance.
+    new_labels_name : str, optional
+        The name of the dictionary to use (the list of potential dictionaries
+        can be found with ``lT.available_labels``). If not provided, the labels
+        are reset to ``"Unlabeled"``.
+    new_labels_dict : dict of {int: str}, optional
+        The new names as a dictionary mapping each named node id to its string
+        label. If not provided and ``lT`` has a fitting attribute named
+        ``new_labels_name``, that attribute is used.
+    only_first_node_in_chain : bool, default=False
+        If True, only labels the first node of each chain.
     """
     store_new_labels = True
     if new_labels_name is not None:

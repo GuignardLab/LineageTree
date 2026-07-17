@@ -30,9 +30,65 @@ class LineageTree(
     AnalysisMixin,
     IOMixin,
 ):
-    """A lineage tree data structure with comprehensive analysis capabilities."""
+    """A lineage tree data structure with comprehensive analysis capabilities.
+
+    A ``LineageTree`` is a directed forest (set of rooted trees) where nodes
+    represent biological cells at specific time points and edges encode
+    parent–daughter relationships. It is the central data structure of the
+    ``lineagetree`` library.
+
+    The class is composed of mixin classes that provide distinct capability
+    groups:
+
+    - :class:`~lineagetree._mixins.properties_mixin.PropertiesMixin` —
+      structural properties (roots, leaves, edges, …)
+    - :class:`~lineagetree._mixins.modifier_mixin.ModifierMixin` — mutation
+      (add/remove nodes, smooth trajectories, …)
+    - :class:`~lineagetree._mixins.navigation_mixin.NavigationMixin` —
+      tree traversal (ancestors, subtrees, chains, …)
+    - :class:`~lineagetree._mixins.plot_mixin.PlotMixin` — matplotlib-based
+      visualisation
+    - :class:`~lineagetree._mixins.spatial_mixin.SpatialMixin` — spatial
+      neighbourhood graphs (Gabriel graph, kNN, …)
+    - :class:`~lineagetree._mixins.analysis_mixin.AnalysisMixin` — pairwise
+      tree comparison (UTED, DTW)
+    - :class:`~lineagetree._mixins.io_mixin.IOMixin` — serialisation (pickle,
+      SVG, Tulip)
+
+    The preferred way to create a ``LineageTree`` from a file is via one of
+    the ``read_from_*`` functions exposed in :mod:`lineagetree`, or via
+    :meth:`load` for ``.lT`` pickle files.
+
+    Parameters
+    ----------
+    successor : dict mapping int to Iterable, optional
+        See :meth:`__init__`.
+    predecessor : dict mapping int to int or Iterable, optional
+        See :meth:`__init__`.
+
+    Examples
+    --------
+    >>> from lineagetree import LineageTree
+    >>> lT = LineageTree(successor={0: [1, 2], 1: [], 2: []}, time={0: 0, 1: 1, 2: 1})
+    """
 
     def __eq__(self, other) -> bool:
+        """Compare two ``LineageTree`` objects for structural equality.
+
+        Two trees are considered equal when their successor, predecessor, and
+        time dictionaries are identical.
+
+        Parameters
+        ----------
+        other : object
+            Object to compare against.
+
+        Returns
+        -------
+        bool
+            ``True`` if ``other`` is a ``LineageTree`` with the same topology
+            and time assignment, ``False`` otherwise.
+        """
         if isinstance(other, LineageTree):
             return (
                 other._successor == self._successor
@@ -42,7 +98,19 @@ class LineageTree(
         else:
             return False
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: dict) -> None:
+        """Restore instance state from a pickle, handling legacy attribute names.
+
+        Older pickled ``LineageTree`` objects stored the core dictionaries
+        under ``successor``, ``predecessor``, and ``time`` (without the
+        leading underscore).  This method remaps those to the current private
+        names before calling ``__dict__.update``.
+
+        Parameters
+        ----------
+        state : dict
+            The unpickled ``__dict__`` of the stored object.
+        """
         if "_successor" not in state:
             state["_successor"] = state["successor"]
         if "_predecessor" not in state:
@@ -53,17 +121,17 @@ class LineageTree(
 
     @classmethod
     def load(clf, fname: str):
-        """Loading a lineage tree from a '.lT' file.
+        """Load a lineage tree from a ``.lT`` file.
 
         Parameters
         ----------
         fname : str
-            path to and name of the file to read
+            Path to and name of the file to read.
 
         Returns
         -------
         LineageTree
-            loaded file
+            The loaded lineage tree.
         """
         with open(fname, "br") as f:
             lT = CompatibleUnpickler(f).load()
@@ -106,18 +174,20 @@ class LineageTree(
         return lT
 
     def get_subtree(self, node_list: set[int]) -> LineageTree:
-        """Create a new lineage tree that has the same edges and properties
-        as the given lineage tree. Only the nodes in `node_list` are considered.
+        """Create a new lineage tree restricted to a set of nodes.
+
+        The new tree keeps the same edges and properties as this lineage tree,
+        but only the nodes in ``node_list`` are considered.
 
         Parameters
         ----------
-        node_list : Iterator of int
-            Iterator over the nodes to keep
+        node_list : set of int
+            The nodes to keep.
 
         Returns
         -------
         LineageTree
-            The subtree lineage tree
+            The subtree lineage tree.
         """
         new_successors = {
             n: tuple(vi for vi in self.successor[n] if vi in node_list)
@@ -143,7 +213,7 @@ class LineageTree(
         successor: dict[int, Sequence] | None = None,
         predecessor: dict[int, int | Sequence] | None = None,
         time: dict[int, int] | None = None,
-        starting_time: int | None = None,
+        starting_time: int = 0,
         pos: dict[int, Iterable] | None = None,
         name: str | None = None,
         root_leaf_value: Sequence | None = None,
@@ -151,32 +221,38 @@ class LineageTree(
         temporal: bool = True,
         **kwargs,
     ):
-        """Create a LineageTree object from minimal information, without reading from a file.
-        Either `successor` or `predecessor` should be specified.
+        """Create a LineageTree from minimal information, without a file.
+
+        Either ``successor`` or ``predecessor`` should be specified.
 
         Parameters
         ----------
-        successor : dict mapping int to Iterable
+        successor : dict of {int: Sequence}, optional
             Dictionary assigning nodes to their successors.
-        predecessor : dict mapping int to int or Iterable
+        predecessor : dict of {int: int or Sequence}, optional
             Dictionary assigning nodes to their predecessors.
-        time : dict mapping int to int, optional
-            Dictionary assigning nodes to the time point they were recorded to.
-            Defaults to None, in which case all times are set to `starting_time`.
-        starting_time : int, optional
-            Starting time of the lineage tree. Defaults to 0.
-        pos : dict mapping int to Iterable, optional
-            Dictionary assigning nodes to their positions. Defaults to None.
+        time : dict of {int: int}, optional
+            Dictionary assigning nodes to the time point they were recorded at.
+            If None, all times are set relative to ``starting_time``.
+        starting_time : int, default=0
+            Starting time of the lineage tree.
+        pos : dict of {int: Iterable}, optional
+            Dictionary assigning nodes to their positions.
         name : str, optional
-            Name of the lineage tree. Defaults to None.
-        root_leaf_value : Iterable, optional
-            Iterable of values of roots' predecessors and leaves' successors in the successor and predecessor dictionaries.
-            Defaults are `[None, (), [], set()]`.
-        temporal : boolean, default `True`
-            Whether the tree structure has time
-        **kwargs:
-            Supported keyword arguments are dictionaries assigning nodes to any custom property.
-            The property must be specified for every node, and named differently from LineageTree's own attributes.
+            Name of the lineage tree.
+        root_leaf_value : Sequence, optional
+            Values of roots' predecessors and leaves' successors in the
+            successor and predecessor dictionaries. Defaults to
+            ``[None, (), [], set()]``.
+        spatial_resolution : Sequence, optional
+            Spatial resolution along each dimension of the positions. Defaults
+            to ones.
+        temporal : bool, default=True
+            Whether the tree structure has a time dimension.
+        **kwargs
+            Supported keyword arguments are dictionaries assigning nodes to any
+            custom property. The property must be specified for every node and
+            named differently from LineageTree's own attributes.
         """
         self.__version__ = importlib.metadata.version("lineagetree")
         self.name = str(name) if name is not None else None

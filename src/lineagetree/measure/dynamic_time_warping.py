@@ -10,20 +10,19 @@ if TYPE_CHECKING:
 
 
 def __calculate_diag_line(dist_mat: np.ndarray) -> tuple[float, float]:
-    """
-    Calculate the line that centers the band w.
+    """Calculate the line that centers the band ``w``.
 
     Parameters
     ----------
-    dist_mat : np.ndarray
-        distance matrix obtained by the function dtw
+    dist_mat : numpy.ndarray
+        Distance matrix obtained by the function :func:`dtw`.
 
     Returns
     -------
     float
-        The slope of the curve
+        The slope of the line.
     float
-        The intercept of the curve
+        The intercept of the line.
     """
     i, j = dist_mat.shape
     x1 = max(0, i - j) / 2
@@ -44,32 +43,32 @@ def __dp(
     w: int = 0,
     centered_band: bool = True,
 ) -> tuple[list[int], np.ndarray, float]:
-    """
-    Find DTW minimum cost between two series using dynamic programming.
+    """Find the DTW minimum cost between two series via dynamic programming.
 
     Parameters
     ----------
-    dist_mat : np.ndarray
-        distance matrix obtained by the function dtw
+    dist_mat : numpy.ndarray
+        Distance matrix obtained by the function :func:`dtw`.
     start_d : int, default=0
-        start delay
+        Start delay.
     back_d : int, default=0
-        end delay
+        End delay.
     fast : bool, default=False
-        if `True`, the algorithm will use a faster version but might not find the optimal alignment
+        If True, use a faster version that might not find the optimal
+        alignment.
     w : int, default=0
-        window constrain
+        Window constraint.
     centered_band : bool, default=True
-        if `True`, the band will be centered around the diagonal
+        If True, the band is centered around the diagonal.
 
     Returns
     -------
-    tuple of tuples of int
-        Aligment path
-    np.ndarray
-        cost matrix
+    list of tuple of int
+        Alignment path.
+    numpy.ndarray
+        Cost matrix.
     float
-        optimal cost
+        Optimal cost.
     """
     N, M = dist_mat.shape
     w_limit = max(w, abs(N - M))  # Calculate the Sakoe-Chiba band width
@@ -152,7 +151,34 @@ def __dp(
 
 
 # Reference: https://github.com/nghiaho12/rigid_transform_3D
-def __rigid_transform_3D(A, B):
+def __rigid_transform_3D(
+    A: np.ndarray, B: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Compute the rigid transform from point cloud ``A`` to ``B``.
+
+    Uses the SVD-based method to find the rotation matrix ``R`` and
+    translation vector ``t`` such that ``R @ A + t ≈ B`` in a least-squares
+    sense.
+
+    Parameters
+    ----------
+    A : numpy.ndarray of shape (3, N)
+        Source point cloud in column-vector form (3 rows, N points).
+    B : numpy.ndarray of shape (3, N)
+        Target point cloud in column-vector form (3 rows, N points).
+
+    Returns
+    -------
+    R : numpy.ndarray of shape (3, 3)
+        Rotation matrix.
+    t : numpy.ndarray of shape (3, 1)
+        Translation vector.
+
+    Raises
+    ------
+    Exception
+        If either matrix does not have exactly 3 rows.
+    """
     assert A.shape == B.shape
 
     num_rows, num_cols = A.shape
@@ -194,26 +220,25 @@ def __rigid_transform_3D(A, B):
 def __interpolate(
     lT: LineageTree, chain1: list, chain2: list, threshold: int
 ) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Interpolate two series that have different lengths
+    """Interpolate two series that have different lengths.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     chain1 : list of int
-        list of nodes of the first chain to compare
+        List of nodes of the first chain to compare.
     chain2 : list of int
-        list of nodes of the second chain to compare
+        List of nodes of the second chain to compare.
     threshold : int
-        set a maximum number of points a chain can have
+        Maximum number of points a chain can have.
 
     Returns
     -------
-    list of np.ndarray
-        `x`, `y`, `z` postions for `chain1`
-    list of np.ndarray
-        `x`, `y`, `z` postions for `chain2`
+    numpy.ndarray
+        ``x``, ``y``, ``z`` positions for ``chain1``.
+    numpy.ndarray
+        ``x``, ``y``, ``z`` positions for ``chain2``.
     """
     inter1_pos = []
     inter2_pos = []
@@ -267,46 +292,48 @@ def dtw(
     tuple[float, tuple, np.ndarray, np.ndarray, np.ndarray]
     | tuple[float, tuple]
 ):
-    """
-    Calculate DTW distance between two chains
+    """Calculate the DTW distance between two chains.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     nodes1 : int
-        node to compare distance
+        First node whose chain is compared.
     nodes2 : int
-        node to compare distance
+        Second node whose chain is compared.
     threshold : int, default=1000
-        set a maximum number of points a chain can have
+        Maximum number of points a chain can have.
     regist : bool, default=True
-        Rotate and translate trajectories
+        Whether to rotate and translate the trajectories.
     start_d : int, default=0
-        start delay
+        Start delay.
     back_d : int, default=0
-        end delay
+        End delay.
     fast : bool, default=False
-        if `True`, the algorithm will use a faster version but might not find the optimal alignment
+        If True, use a faster version that might not find the optimal
+        alignment.
     w : int, default=0
-        window size
+        Window size.
     centered_band : bool, default=True
-        when running the fast algorithm, `True` if the windown is centered
+        When running the fast algorithm, whether the window is centered.
     cost_mat_p : bool, default=False
-        True if print the not normalized cost matrix
+        Whether to also return the non-normalized cost matrix and trajectories.
 
     Returns
     -------
     float
-        DTW distance
-    tuple of tuples
-        Aligment path
-    matrix
-        Cost matrix
-    list of lists
-        rotated and translated trajectories positions
-    list of lists
-        rotated and translated trajectories positions
+        DTW distance.
+    tuple of tuple
+        Alignment path.
+    numpy.ndarray
+        Cost matrix. Only returned when ``cost_mat_p`` is True.
+    numpy.ndarray
+        Rotated and translated positions of the first trajectory. Only
+        returned when ``cost_mat_p`` is True.
+    numpy.ndarray
+        Rotated and translated positions of the second trajectory. Only
+        returned when ``cost_mat_p`` is True.
     """
     nodes1_chain = lT.get_chain_of_node(nodes1)
     nodes2_chain = lT.get_chain_of_node(nodes2)

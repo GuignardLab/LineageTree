@@ -97,8 +97,31 @@ ASTEC_KEYDICTIONARY = {
 }
 
 
-def _load_meshdict_from_bmfmesh(bmfmesh, pos_multipliers, translation):
+def _load_meshdict_from_bmfmesh(
+    bmfmesh, pos_multipliers: tuple, translation: tuple
+) -> dict:
+    """Convert a single BMF mesh object to a plain dictionary.
 
+    Parameters
+    ----------
+    bmfmesh : object
+        A mesh object as returned by ``binarymeshformat.loadMeshTracks``.
+        Must expose ``.positions`` and ``.triangles`` attributes.
+    pos_multipliers : tuple of float
+        Per-axis scale factors applied to vertex positions (x, y, z order
+        after axis reversal).
+    translation : tuple of float
+        Per-axis translation applied after scaling.
+
+    Returns
+    -------
+    dict
+        Dictionary with keys:
+
+        - ``'vertices'`` : (N, 3) np.ndarray of scaled vertex positions.
+        - ``'faces'``    : (M, 3) np.ndarray of triangle face indices.
+        - ``'center_mass'`` : (3,) np.ndarray, mean of all vertex positions.
+    """
     vertices = np.array(bmfmesh.positions).reshape(-1, 3)[:, ::-1]
     faces = np.array(bmfmesh.triangles).reshape(-1, 3)
 
@@ -120,26 +143,26 @@ def read_from_bmf(
     translation: tuple[float, float, float] = (0.0, 0.0, 0.0),
     name: None | str = None,
 ) -> LineageTree:
-    """Read a lineage tree from a bmf file.
+    """Read a lineage tree from a BMF file.
 
     Parameters
     ----------
-        file_path : str
-            path to the bmf file
-        store_meshes : bool, default=False
-            whether to stores the meshes in the LineageTree or not.
-        pos_multipliers : tuple of float, default=(1.0, 1.0, 1.0)
-            multipliers for the x, y, z coordinates
-        translation : tuple of float, default=(0.0, 0.0, 0.0)
-            translation for the x, y, z coordinates
-        name : None or str, optional
-           The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
-           will be the name attribute, otherwise the name will be the stem of the file path.
+    file_path : str
+        Path to the BMF file.
+    store_meshes : bool, default=True
+        Whether to store the meshes in the LineageTree.
+    pos_multipliers : tuple of float, default=(1.0, 1.0, 1.0)
+        Multipliers for the x, y, z coordinates.
+    translation : tuple of float, default=(0.0, 0.0, 0.0)
+        Translation for the x, y, z coordinates.
+    name : str, optional
+        The name attribute of the LineageTree. If given a non-empty string, it
+        is used as the name; otherwise the name is the stem of the file path.
 
     Returns
     -------
-        LineageTree
-            lineage tree
+    LineageTree
+        The lineage tree.
     """
     tracks = bmf.loadMeshTracks(file_path)
     predecessor = {}
@@ -185,27 +208,28 @@ def read_from_csv(
     delim: str = ",",
     name: None | str = None,
 ) -> LineageTree:
-    """Read a lineage tree from a csv file with the following format:
-    id, time, z, y, x, id, pred_id, lin_id
+    """Read a lineage tree from a CSV file.
+
+    The expected format is ``id, time, z, y, x, id, pred_id, lin_id``.
 
     Parameters
     ----------
-        file_path : str
-            path to the csv file
-        z_mult : float
-            aspect ratio
-        link : int
-            1 if the csv file is ordered by id, 2 if ordered by pred_id
-        delim : str, default=","
-            delimiter used in the csv file
-        name : None or str, optional
-           The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
-           will be the name attribute, otherwise the name will be the stem of the file path.
+    file_path : str
+        Path to the CSV file.
+    z_mult : float, default=1
+        Aspect ratio.
+    link : int, default=1
+        1 if the CSV file is ordered by id, 2 if ordered by pred_id.
+    delim : str, default=","
+        Delimiter used in the CSV file.
+    name : str, optional
+        The name attribute of the LineageTree. If given a non-empty string, it
+        is used as the name; otherwise the name is the stem of the file path.
 
     Returns
     -------
-        LineageTree
-            lineage tree
+    LineageTree
+        The lineage tree.
     """
     with open(file_path) as f:
         lines = f.readlines()
@@ -248,7 +272,20 @@ def read_from_csv(
     return LineageTree(successor=successor, time=time, pos=pos, name=name)
 
 
-def _read_from_ASTEC_xml(file_path: str):
+def _read_from_ASTEC_xml(file_path: str) -> dict:
+    """Parse an ASTEC XML file into a normalised property dictionary.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to an ASTEC ``.xml`` output file.
+
+    Returns
+    -------
+    dict
+        Dictionary whose keys are ASTEC canonical property names (as defined
+        in :data:`ASTEC_KEYDICTIONARY`) and values are the parsed data.
+    """
     def _set_dictionary_value(root):
         if len(root) == 0:
             if root.text is None:
@@ -280,7 +317,22 @@ def _read_from_ASTEC_xml(file_path: str):
     return dictionary
 
 
-def _read_from_ASTEC_pkl(file_path: str, eigen: bool = False):
+def _read_from_ASTEC_pkl(file_path: str, eigen: bool = False) -> dict:
+    """Parse an ASTEC pickle file into a normalised property dictionary.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to an ASTEC ``.pkl`` output file.
+    eigen : bool, default=False
+        Whether to read eigen values from the pickle (currently unused).
+
+    Returns
+    -------
+    dict
+        Dictionary whose keys are ASTEC canonical property names (as defined
+        in :data:`ASTEC_KEYDICTIONARY`) and values are the parsed data.
+    """
     with open(file_path, "rb") as f:
         tmp_data = pkl.load(f, encoding="latin1")
         f.close()
@@ -301,23 +353,22 @@ def _read_from_ASTEC_pkl(file_path: str, eigen: bool = False):
 def read_from_ASTEC(
     file_path: str, eigen: bool = False, name: None | str = None
 ) -> LineageTree:
-    """
-    Read an `xml` or `pkl` file produced by the ASTEC algorithm.
+    """Read an XML or PKL file produced by the ASTEC algorithm.
 
     Parameters
     ----------
     file_path : str
-        path to an output generated by ASTEC
+        Path to an output generated by ASTEC.
     eigen : bool, default=False
-        whether or not to read the eigen values, default False
-    name : None or str, optional
-        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
-        will be the name attribute, otherwise the name will be the stem of the file path.
+        Whether to read the eigen values.
+    name : str, optional
+        The name attribute of the LineageTree. If given a non-empty string, it
+        is used as the name; otherwise the name is the stem of the file path.
 
     Returns
     -------
     LineageTree
-        lineage tree
+        The lineage tree.
     """
 
     if os.path.splitext(file_path)[-1] == ".xml":
@@ -420,22 +471,22 @@ def read_from_ASTEC(
 
 
 def read_from_binary(fname: str, name: None | str = None) -> LineageTree:
-    """
-    Reads a binary LineageTree file name.
-    Format description: see LineageTree.to_binary
+    """Read a binary LineageTree file.
+
+    For the format description, see :meth:`LineageTree.to_binary`.
 
     Parameters
     ----------
-    fname : string
-        path to the binary file
-    name : None or str, optional
-        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
-        will be the name attribute, otherwise the name will be the stem of the file path.
+    fname : str
+        Path to the binary file.
+    name : str, optional
+        The name attribute of the LineageTree. If given a non-empty string, it
+        is used as the name; otherwise the name is the stem of the file path.
 
     Returns
     -------
     LineageTree
-        lineage tree
+        The lineage tree.
     """
     q_size = struct.calcsize("q")
     H_size = struct.calcsize("H")
@@ -535,21 +586,20 @@ def read_from_binary(fname: str, name: None | str = None) -> LineageTree:
 def read_from_txt_for_celegans(
     file: str, name: None | str = None
 ) -> LineageTree:
-    """
-    Read a C. elegans lineage tree
+    """Read a C. elegans lineage tree.
 
     Parameters
     ----------
     file : str
-        Path to the file to read
-    name : None or str, optional
-        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
-        will be the name attribute, otherwise the name will be the stem of the file path.
+        Path to the file to read.
+    name : str, optional
+        The name attribute of the LineageTree. If given a non-empty string, it
+        is used as the name; otherwise the name is the stem of the file path.
 
     Returns
     -------
     LineageTree
-        lineage tree
+        The lineage tree.
     """
     with open(file) as f:
         raw = f.readlines()[1:]
@@ -602,21 +652,31 @@ def read_from_txt_for_celegans_CAO(
     shape: float | None = None,
     name: str | None = None,
 ) -> LineageTree:
-    """
-    Read a C. elegans lineage tree from Cao et al.
+    """Read a C. elegans lineage tree from Cao et al.
 
     Parameters
     ----------
     file : str
-        Path to the file to read
+        Path to the file to read.
+    reorder : bool, default=False
+        If ``True``, flip and rescale positions from the raw image coordinate
+        system to a normalised coordinate system. Requires ``raw_size`` and
+        ``shape`` to be provided.
+    raw_size : np.ndarray, optional
+        Shape of the raw image volume ``(z, y, x)`` used to flip the z-axis
+        when ``reorder=True``.
+    shape : float, optional
+        Target scale factor applied together with ``raw_size`` when
+        ``reorder=True``.
     name : None or str, optional
-        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
-        will be the name attribute, otherwise the name will be the stem of the file path.
+        The name attribute of the LineageTree file. If given a non-empty
+        string, the value of the attribute will be the name attribute,
+        otherwise the name will be the stem of the file path.
 
     Returns
     -------
     LineageTree
-        lineage tree
+        The lineage tree.
     """
 
     def split_line(line):
@@ -688,20 +748,20 @@ def read_from_txt_for_celegans_CAO(
 def read_from_txt_for_celegans_BAO(
     path: str, name: None | str = None
 ) -> LineageTree:
-    """Read a C. elegans Bao file from http://digital-development.org
+    """Read a C. elegans Bao file from http://digital-development.org.
 
     Parameters
     ----------
-    file : str
-        Path to the file to read
+    path : str
+        Path to the file to read.
     name : str, optional
-        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
-        will be the name attribute, otherwise the name will be the stem of the file path.
+        The name attribute of the LineageTree. If given a non-empty string, it
+        is used as the name; otherwise the name is the stem of the file path.
 
     Returns
     -------
     LineageTree
-        lineage tree
+        The lineage tree.
     """
     cell_times = {}
     properties = {}
@@ -748,31 +808,30 @@ def read_from_tgmm_xml(
     z_mult: float = 1.0,
     name: None | str = None,
 ) -> LineageTree:
-    """Reads a lineage tree from TGMM xml output.
+    """Read a lineage tree from a TGMM XML output.
 
     Parameters
     ----------
     file_format : str
-        path to the xmls location.
-        it should be written as follow:
-        path/to/xml/standard_name_t{t:06d}.xml where (as an example)
-        {t:06d} means a series of 6 digits representing the time and
-        if the time values is smaller that 6 digits, the missing
-        digits are filed with 0s
+        Path to the XMLs location. It should be written as
+        ``path/to/xml/standard_name_t{t:06d}.xml`` where, for example,
+        ``{t:06d}`` means a series of 6 digits representing the time; if the
+        time value has fewer than 6 digits, the missing digits are filled with
+        zeros.
     tb : int
-        first time point to read
+        First time point to read.
     te : int
-        last time point to read
+        Last time point to read.
     z_mult : float, default=1.0
-        aspect ratio
+        Aspect ratio.
     name : str, optional
-        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
-        will be the name attribute, otherwise the name will be the stem of the file path.
+        The name attribute of the LineageTree. If given a non-empty string, it
+        is used as the name; otherwise the name is the stem of the file path.
 
     Returns
     -------
     LineageTree
-        lineage tree
+        The lineage tree.
     """
     unique_id = 0
     successor = {}
@@ -845,23 +904,23 @@ def read_from_tgmm_xml(
 def read_from_mastodon(
     path: str, tag_set: str | None = None, name: str | None = None
 ) -> LineageTree:
-    """Read a maston lineage tree.
+    """Read a Mastodon lineage tree.
 
     Parameters
     ----------
     path : str
-        path to the mastodon file
+        Path to the Mastodon file.
     tag_set : str, optional
-        If specified, `tag_set` will be used for labeling the cells
-        Otherwise a random tag set will be used
+        If specified, ``tag_set`` is used for labelling the cells; otherwise a
+        random tag set is used.
     name : str, optional
-        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
-        will be the name attribute, otherwise the name will be the stem of the file path.
+        The name attribute of the LineageTree. If given a non-empty string, it
+        is used as the name; otherwise the name is the stem of the file path.
 
     Returns
     -------
     LineageTree
-        lineage tree
+        The lineage tree.
     """
 
     mr = MicroMastodonReader(path)
@@ -906,20 +965,20 @@ def read_from_mastodon(
 def read_from_mastodon_csv(
     paths: list[str], name: None | str = None
 ) -> LineageTree:
-    """Read a lineage tree from a mastodon csv.
+    """Read a lineage tree from a Mastodon CSV.
 
     Parameters
     ----------
-    paths : list of strings
-        list of paths to the csv files
-    name : None or str, optional
-        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
-        will be the name attribute, otherwise the name will be the stem of the file path.
+    paths : list of str
+        List of paths to the CSV files.
+    name : str, optional
+        The name attribute of the LineageTree. If given a non-empty string, it
+        is used as the name; otherwise the name is the stem of the file path.
 
     Returns
     -------
     LineageTree
-        lineage tree
+        The lineage tree.
     """
     spots = []
     links = []
@@ -966,20 +1025,23 @@ def read_from_mastodon_csv(
 def read_from_mamut_xml(
     path: str, xml_attributes: list[str] | None = None, name: None | str = None
 ) -> LineageTree:
-    """Read a lineage tree from a MaMuT xml.
+    """Read a lineage tree from a MaMuT XML.
 
     Parameters
     ----------
     path : str
-        path to the MaMut xml
-    name : None or str, optional
-        The name attribute of the LineageTree file. If given a non-empty string, the value of the attribute
-        will be the name attribute, otherwise the name will be the stem of the file path.
+        Path to the MaMuT XML.
+    xml_attributes : list of str, optional
+        Names of additional per-cell XML attributes to read and store as node
+        properties.
+    name : str, optional
+        The name attribute of the LineageTree. If given a non-empty string, it
+        is used as the name; otherwise the name is the stem of the file path.
 
     Returns
     -------
     LineageTree
-        lineage tree
+        The lineage tree.
     """
     tree = ET.parse(path)
     for elem in tree.getroot():
@@ -1065,8 +1127,24 @@ def read_from_mamut_xml(
 
 
 def read_from_swc(swc_path: Path | str) -> LineageTree:
-    """
-    Read a neuronal tree from a swc file
+    """Read a neuronal morphology tree from an SWC file.
+
+    The SWC format stores a single rooted tree of 3D sample points with
+    associated radius and structure-type annotations.  The resulting
+    :class:`~lineagetree.LineageTree` is created with ``temporal=False``
+    because SWC files do not encode time.
+
+    Parameters
+    ----------
+    swc_path : str or Path
+        Path to the ``.swc`` file to read.
+
+    Returns
+    -------
+    LineageTree
+        Lineage tree whose nodes correspond to SWC sample points.
+        Custom properties ``'radius'`` (float) and ``'structure_id'`` (int)
+        are attached to every node.
     """
     with open(swc_path) as f:
         lines = f.readlines()
