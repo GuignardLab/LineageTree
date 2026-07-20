@@ -43,19 +43,19 @@ class Properties:
 
     def list_properties(
         self, constraint: Literal["node", "time", "forest"] | None = None
-    ):
+    ) -> list[str]:
         """Returns a list with the properties saved either in node_proeprties, time_properties or forest_properties,
         or all at once.
 
         Parameters
         ----------
-        constraint : Literal[&quot;node&quot;, &quot;time&quot;, &quot;forest&quot;] | None, optional
-            _description_, by default None
+        constraint : Literal[node, time, forest] | None, optional
+            What kind of properties to return, if None all of the properties are gonna be returned, by default None
 
         Returns
         -------
-        _type_
-            _description_
+        list of str
+            A list with the names of all the properties.
         """
         if constraint == "node":
             props = self.node_properties
@@ -98,7 +98,7 @@ class Properties:
         raise AttributeError(f"Property {name} does not exist.")
 
     def __dir__(self) -> list[str]:
-        """Shows the proeprties inside the dictionaries as autocmplete options."""
+        """Shows the proeprties inside the dictionaries as autocomplete options."""
         return (
             list(self.node_properties.keys())
             + list(self.time_properties.keys())
