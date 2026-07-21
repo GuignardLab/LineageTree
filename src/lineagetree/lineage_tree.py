@@ -122,10 +122,6 @@ class LineageTree(
             lT.spatial_resolution = np.ones(3)
         if not hasattr(lT, "_temporal"):
             lT._temporal = True
-        # if not hasattr(lT, "properties"):
-        #     lT.properties = Properties(lT)
-        # if not hasattr(lT, "labelling"):
-        #     lT.labelling = Labelling(lT)
 
         return lT
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Iterable, Literal
 from ..util_types import StaticTypedValueDict
 from typing import TYPE_CHECKING
+import warnings
 
 if TYPE_CHECKING:
     from ..lineage_tree import LineageTree
@@ -16,21 +17,25 @@ class Labels(StaticTypedValueDict):
 
 class Labelling:
     """Labelling can hold only `Labels` where all their keys are a subset of the nodes of `LineageTree`.
-    An important part of `Labelling` is the default_dict, this property returns a lebelset that exists in labelling,
+    An important part of `Labelling` is the default_label, this property returns a lebelset that exists in labelling,
     you can change the labelset the default dict returns with `change_default_label
     """
 
     _default_dict: str = None
 
     @property
-    def default_dict(self):
+    def default_label(self):
         if not self.list_labels:
             raise ValueError("Label list is empty.")
         if (
             self._default_dict not in self.list_labels
             and "_default_dict" != self._default_dict
         ):
-            self.__dict__["_default_dict"] = next(iter(self.list_labels))
+            new_dict = next(iter(self.list_labels))
+            warnings.warn(
+                f"Previous dict was deleted. Default dict now points to {new_dict}. You may change the `default_label` using `lT.change_default_label`"
+            )
+            self.__dict__["_default_dict"] = new_dict
         return self.__dict__[self._default_dict]
 
     def __repr__(self) -> str:
