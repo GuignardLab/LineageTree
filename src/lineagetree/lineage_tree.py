@@ -17,11 +17,9 @@ from ._mixins.navigation_mixin import NavigationMixin
 from ._mixins.plot_mixin import PlotMixin
 from ._mixins.spatial_mixin import SpatialMixin
 from ._mixins.analysis_mixin import AnalysisMixin
-from ._mixins.labelling_mixin import LabellingMixin
 from ._mixins.io_mixin import IOMixin
 from ._core.validation import TreeValidator
 from ._mixins.external_properties_mixin import ExternalPropertiesMixin
-from ._core._labelling import Labelling, Labels
 
 from typing import Any
 
@@ -38,7 +36,6 @@ class LineageTree(
     AnalysisMixin,
     IOMixin,
     ExternalPropertiesMixin,
-    LabellingMixin,
 ):
     """A lineage tree data structure with comprehensive analysis capabilities."""
 

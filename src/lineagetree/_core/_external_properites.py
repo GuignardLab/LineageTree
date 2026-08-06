@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Mapping
 
 from ..util_types import StaticTypedValueDict
-from ._labelling import Labelling
 from warnings import warn
 if TYPE_CHECKING:
     from ..lineage_tree import LineageTree

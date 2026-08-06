@@ -256,13 +256,16 @@ def convert_style_to_number(
     else:
         return style_dict[style]
 
-
+class RemovedLabelling:
+    def __setstate__(self, state):
+        pass
 class CompatibleUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
         if module == "lineagetree._labelling":
-            module = "lineagetree._core._labelling"
-        if module == "LineageTree.lineageTree" and name == "lineageTree":
-            from lineagetree import LineageTree
+            return RemovedLabelling
 
+        if module == "LineageTree.lineageTree":
+            from lineagetree import LineageTree
             return LineageTree
+
         return super().find_class(module, name)

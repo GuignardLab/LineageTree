@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
-from ._labelling import Labels
+from ..util_types import StaticTypedValueDict
 
 if TYPE_CHECKING:
     from ..lineage_tree import LineageTree
@@ -319,11 +319,8 @@ def get_labelled_ancestor(
     ancestor = node
     if labels is not None and labels not in lT.list_all_labels():
         raise ValueError("Label set not defined.")
-    labs = (
-        getattr(lT.labelling, labels) if labels else lT.labelling.default_dict
-    )
     while lT.t_b <= lT._time.get(ancestor, lT.t_b - 1) and ancestor != -1:
-        if ancestor in labs:
+        if ancestor in lT.properties.label:
             return ancestor
         ancestor = lT._predecessor.get(ancestor, [-1])[0]
     return -1
@@ -347,15 +344,8 @@ def get_ancestor_with_attribute(
     int
         Returns the first ancestor found that has an attribute otherwise `-1`.
     """
-    if attribute == "default_dict":
-        attr_dict = lT.labelling.default_dict
-    elif attribute in lT.list_all_labels():
-        attr_dict = getattr(lT.labelling, attribute, None)
-    else:
-        attr_dict = getattr(lT, attribute, None)
-    if attr_dict is None:
-        raise ValueError(f"No label or property with name {attribute}")
-    if not isinstance(attr_dict, dict | Labels):
+    attr_dict = getattr(lT.properties, attribute)
+    if not isinstance(attr_dict, StaticTypedValueDict):
         raise ValueError("Please select a dict attribute")
     if node not in lT.nodes:
         return -1

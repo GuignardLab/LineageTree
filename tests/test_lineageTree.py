@@ -39,14 +39,12 @@ def test_read_MaMuT_xml():
 @pytest.fixture(scope="session")
 def test_write(tmp_path_factory):
     tmp_path = str(tmp_path_factory.mktemp("lineagetree")) + ".lT"
-    lt.labelling._default_dict[list(lt.nodes)[0]] = "test"
     lt.write(str(tmp_path))
     return tmp_path
 
 
 def test_load(test_write):
     lt2 = LineageTree.load(str(test_write))
-    assert lt.labelling._default_dict[list(lt.nodes)[0]] == "test"
     assert lt == lt2
 
 
@@ -613,8 +611,8 @@ def test_get_all_chains_of_subtree():
 
 
 def test_get_ancestor_with_attribute():
-    lT1.labelling.default_dict.pop(178353)
-    assert lT1.get_ancestor_with_attribute(178353, "default_dict") == 178336
+    lT1.properties.labels.pop(178353)
+    assert lT1.get_ancestor_with_attribute(178353, "labels") == 178336
 
 
 def test_get_subtree():
@@ -745,9 +743,9 @@ def test_dtw():
 
 
 def test_get_ancestor_with():
-    assert lt.get_labelled_ancestor(
-        list(lt.nodes)[0]
-    ) == lt.get_ancestor_with_attribute(list(lt.nodes)[0], "default_dict")
+    assert lT1.get_labelled_ancestor(
+        list(lT1.nodes)[0]
+    ) == lT1.get_ancestor_with_attribute(list(lT1.nodes)[0], "label")
 
 
 # def test_mastodon_labeling():
