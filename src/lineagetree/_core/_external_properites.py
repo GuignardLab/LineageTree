@@ -2,22 +2,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Mapping
 
 from ..util_types import StaticTypedValueDict
-
+from ._labelling import Labelling
+from warnings import warn
 if TYPE_CHECKING:
     from ..lineage_tree import LineageTree
 
-
-def DatasetProperty(var, time=False):
-    """Automatically returns the correct External Property subclass."""
-    if isinstance(var, dict) and time is False:
-        return var
-    elif isinstance(var, dict) and time:
-        return var
-
-    else:
-        raise Warning(
-            "Value couldnot be converted to dataset property only numericals, lists, sets, tuples and dictionaries can be converted to dataset properties."
-        )
 
 
 class Properties:
@@ -27,6 +16,7 @@ class Properties:
     and are checked so that all their info corresponds to a node or a timepoint of the dataset.
 
     """
+    _default_label: str|None = None
 
     def __repr__(self) -> str:
         ret = self.list_properties()
@@ -72,7 +62,7 @@ class Properties:
         self, name: str, value: Any
     ) -> None:  # To discuss if we want something like that.
         """Does not allow attribute assignement after the object initialization."""
-        if hasattr(self, "_freeze"):
+        if hasattr(self, "_freeze") and not name.startswith("_"):
             raise TypeError(
                 "'Properties' object does not support attribute assignment. Please use 'lT.add_attribute(...)'  or 'lT.properties.add_attribute(...)'"
             )
@@ -98,19 +88,40 @@ class Properties:
         raise AttributeError(f"Property {name} does not exist.")
 
     def __dir__(self) -> list[str]:
-        """Shows the proeprties inside the dictionaries as autocomplete options."""
-        return (
-            list(self.node_properties.keys())
-            + list(self.time_properties.keys())
-            + list(self.forest_properties.keys())
-            + list(super().__dir__())
-        )
+        return [
+            *self.node_properties,
+            *self.time_properties,
+            *self.forest_properties,
+            *super().__dir__(),
+        ]
+    
+    @property
+    def label(self) -> StaticTypedValueDict:
+        if self._default_label not in self.node_properties:
+            for name, prop in self.node_properties.items():
+                if prop.data_type is str:
+                    self._default_label = name
+                    warn(f"Label set to `{name}`")
+                    break
+            else:
+                raise RuntimeError("No valid string property exists. Consider setting the label manually by lT.properties.set_label(...)")
+
+        assert self._default_label is not None
+        if self.node_properties[self._default_label].data_type is not str:
+            return StaticTypedValueDict({k:str(val) for k,val in self.node_properties[self._default_label].items()})
+        return self.node_properties[self._default_label]
+
+    def set_label(self, name):
+        if name in self.node_properties: 
+            self._default_label = name
+        else:
+            raise KeyError("No such object exists in node properties.")
 
     def __init__(self, lT: LineageTree) -> None:
         self._lT = lT
-        self.node_properties = {}
-        self.time_properties = {}
-        self.forest_properties = {}
+        self.node_properties: dict[str,StaticTypedValueDict] = {}
+        self.time_properties: dict[str,StaticTypedValueDict] = {}
+        self.forest_properties: dict[str, Any] = {}
         self._all_props = [
             self.node_properties,
             self.time_properties,
