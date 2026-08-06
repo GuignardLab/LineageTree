@@ -140,17 +140,6 @@ class LineageTree(
             n: tuple(vi for vi in self.successor[n] if vi in node_list)
             for n in node_list
         }
-        # new_labelling = Labelling(self)
-        # for n in self.list_all_labels():
-        #     setattr(
-        #         new_labelling,
-        #         n,
-        #         {
-        #             k: v
-        #             for k, v in getattr(self.labelling, n).items()
-        #             if k in new_successors
-        #         },
-        #     )
 
         lT = LineageTree(
             successor=new_successors,
@@ -375,33 +364,15 @@ class LineageTree(
             self.spatial_resolution = spatial_resolution or np.ones(
                 spatial_dimension
             )
-        # if "labelling" in kwargs:  # for loading trees
-        #     self.labelling = kwargs["labelling"]
-        # elif "labels" in kwargs:  # for importing trees
-        #     _labels = kwargs["labels"]
-        #     kwargs.pop("labels")
-        #     self.labelling = Labelling(self)
-        #     _labels = _filter_keys(self, _labels)
-        #     self.labelling.labels = Labels(_labels)
-        # elif "label_set" in kwargs:
-        #     kwargs.pop("label_set")
-        #     self.labelling = Labelling(self)
-        #     for name, label in kwargs["label_set"].items():
-        #         label = _filter_keys(self, label)
-        #         setattr(self.labelling, name, label)
-        # else:
-        #     self.labelling = Labelling(self)
-        # for k, v in tuple(kwargs.items()):
-        #     if isinstance(v, dict):
-
-        #         if all(isinstance(value, str) for value in v.values()):
-        #             lbl = _filter_keys(self, v)
-        #             setattr(self.labelling, k, lbl)
-        #             kwargs.pop(k)
         if "properties" in kwargs:
             self.properties = kwargs["properties"]
         else:
             self.properties = Properties(self)
+        if "labels" in kwargs:
+            self.properties.add_property("labels",value=kwargs["labels"],time_property= False)
+        if "label" in kwargs:
+            warnings.warn("`label` is a protected name renaming attribute label to label_1")
+            self.properties.add_property("label_1",value=kwargs["label"],time_property= False)
 
         # custom properties
         for name, d in kwargs.items():
@@ -421,11 +392,11 @@ class LineageTree(
                 if not injected:
                     setattr(self, name, d)
                     print(
-                        f"Property `{name}` with values: {d}, was not used in labelling or properties dicitionary. Instead it canbe accessed by `lT.{name}`"
+                        f"Property `{name}` with values: {d}, was not used in properties. Instead it canbe accessed by `lT.{name}`"
                     )
 
         warnings.resetwarnings()
 
 
-def _filter_keys(lT, label_dict):
-    return {k: v for k, v in label_dict.items() if k in lT.nodes}
+# def _filter_keys(lT, label_dict):
+#     return {k: v for k, v in label_dict.items() if k in lT.nodes}
