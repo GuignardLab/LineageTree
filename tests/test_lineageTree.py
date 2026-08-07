@@ -670,9 +670,14 @@ def test_properties():
     assert "tracks" in lT1.list_all_properties()
     assert lT1.get_property("tracks") == lT1.properties.tracks
     lT1.add_property("test", 1, False)
+    assert lT1.list_all_properties("forest") == ["test"]
+    lT1.add_property("test_time", {10:10,12:12}, True)
+    assert "test_time" in lT1.list_all_properties("time")
     assert "test" in lT1.list_all_properties()
     lT1.remove_property("test")
     assert "test" not in lT1.list_all_properties()
+
+
 
 
 def test_spatial_edges():

@@ -13,6 +13,10 @@ class Properties:
     `LineageTree`, this may be the dictionary that holds the principal components for each timepoint
     the gene expression for each gene and so on. All properties in this object are converted to Exteranl properties,
     and are checked so that all their info corresponds to a node or a timepoint of the dataset.
+    This class contains 3 kin ds of properties:
+    - node_properties: Mapping nodes to values. All of the properties can be handled as labels, however the str values are automatically handled as labels.
+    - time_properties: Mapping times to values. Example: average_density of each timepoint.
+    - dataset property: Properties that are dataset wide. Example: A Transformation matrrix to rotate and translate the dataset.
 
     """
     _default_label: str|None = None
@@ -31,31 +35,31 @@ class Properties:
                 return
 
     def list_properties(
-        self, constraint: Literal["node", "time", "forest"] | None = None
+    self, constraint: Literal["node", "time", "forest", "labels"] | None = None
     ) -> list[str]:
-        """Returns a list with the properties saved either in node_proeprties, time_properties or forest_properties,
-        or all at once.
 
-        Parameters
-        ----------
-        constraint : Literal[node, time, forest] | None, optional
-            What kind of properties to return, if None all of the properties are gonna be returned, by default None
-
-        Returns
-        -------
-        list of str
-            A list with the names of all the properties.
-        """
         if constraint == "node":
-            props = self.node_properties
+            return list(self.node_properties.keys())
+
         elif constraint == "time":
-            props = self.time_properties
-        if constraint == "forest":
-            props = self.forest_properties
+            return list(self.time_properties.keys())
+
+        elif constraint == "forest":
+            return list(self.forest_properties.keys())
+
+        elif constraint == "labels":
+            return [
+                name
+                for name, prop in self.node_properties.items()
+                if prop.data_type == str
+            ]
+
         else:
-            props = self._all_props
-        ret = [prop for prop_set in props for prop in prop_set]
-        return ret
+            return (
+                list(self.node_properties.keys())
+                + list(self.time_properties.keys())
+                + list(self.forest_properties.keys())
+            )
 
     def __setattr__(
         self, name: str, value: Any
