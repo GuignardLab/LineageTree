@@ -149,7 +149,7 @@ class Properties:
         """
         if name in self.list_properties() and isinstance(value, Mapping):
             raise ValueError(
-                f"Property named {name} already exists. Only forest_properties may be reassigned (non-Mapping objects)."
+                f"Property named {name} already exists."
             )
         if isinstance(value, Mapping):
             value = StaticTypedValueDict(value)
