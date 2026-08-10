@@ -3,13 +3,13 @@
 # file 'LICENCE', which is part of this source code package.
 # Author: Leo Guignard (leo.guignard...@AT@...univ-amu.fr)
 from __future__ import annotations
-
+from typing import Mapping
 import importlib.metadata
 import warnings
 from collections.abc import Iterable, Sequence
 from packaging.version import Version
 import numpy as np
-
+from ._core._external_properites import Properties
 from ._core.utils import CompatibleUnpickler
 from ._mixins.properties_mixin import PropertiesMixin
 from ._mixins.modifier_mixin import ModifierMixin
@@ -19,6 +19,12 @@ from ._mixins.spatial_mixin import SpatialMixin
 from ._mixins.analysis_mixin import AnalysisMixin
 from ._mixins.io_mixin import IOMixin
 from ._core.validation import TreeValidator
+from ._mixins.external_properties_mixin import ExternalPropertiesMixin
+
+from typing import Any
+
+
+class SetAttrWarning(UserWarning): ...
 
 
 class LineageTree(
@@ -29,8 +35,18 @@ class LineageTree(
     SpatialMixin,
     AnalysisMixin,
     IOMixin,
+    ExternalPropertiesMixin,
 ):
     """A lineage tree data structure with comprehensive analysis capabilities."""
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name in vars(self):  # Property calls the setattr every time :O
+            return super().__setattr__(name, value)
+        warnings.warn(
+            "It is reccommended to use `lT.add_property`.",
+            category=SetAttrWarning,
+        )
+        return super().__setattr__(name, value)
 
     def __eq__(self, other) -> bool:
         if isinstance(other, LineageTree):
@@ -68,10 +84,11 @@ class LineageTree(
         with open(fname, "br") as f:
             lT = CompatibleUnpickler(f).load()
             f.close()
+
         if not hasattr(lT, "__version__") or Version(lT.__version__) < Version(
-            "2.0.0"
+            "4.0.0"
         ):
-            properties = {
+            props = {
                 prop_name: prop
                 for prop_name, prop in lT.__dict__.items()
                 if (isinstance(prop, dict) or prop_name == "_time_resolution")
@@ -94,7 +111,7 @@ class LineageTree(
                 time=lT._time,
                 pos=lT.pos,
                 name=lT.name if hasattr(lT, "name") else None,
-                **properties,
+                **props,
             )
         if not hasattr(lT, "time_resolution"):
             lT.time_resolution = 1
@@ -123,7 +140,8 @@ class LineageTree(
             n: tuple(vi for vi in self.successor[n] if vi in node_list)
             for n in node_list
         }
-        return LineageTree(
+
+        lT = LineageTree(
             successor=new_successors,
             time=self._time,
             pos=self.pos,
@@ -131,11 +149,31 @@ class LineageTree(
             root_leaf_value=[
                 (),
             ],
-            **{
-                name: self.__dict__[name]
-                for name in self._custom_property_list
-            },
         )
+        # new_properties = Properties(self)
+        for prop in self.properties.node_properties:
+            lT.add_property(
+                prop,
+                {
+                    k: v
+                    for k, v in self.properties.node_properties[prop].items()
+                    if k in lT.nodes
+                },
+                False,
+            )
+        for prop in self.properties.time_properties:
+            lT.add_property(
+                prop,
+                {
+                    k: v
+                    for k, v in self.properties.time_properties[prop].items()
+                    if k in lT.time_nodes
+                },
+                True,
+            )
+        for prop in self.properties.forest_properties:
+            lT.add_property(prop, lT.properties.forest_properties[prop], False)
+        return lT
 
     def __init__(
         self,
@@ -178,6 +216,7 @@ class LineageTree(
             Supported keyword arguments are dictionaries assigning nodes to any custom property.
             The property must be specified for every node, and named differently from LineageTree's own attributes.
         """
+        warnings.filterwarnings("ignore", category=SetAttrWarning)
         self.__version__ = importlib.metadata.version("lineagetree")
         self.name = str(name) if name is not None else None
         self._temporal = temporal
@@ -259,9 +298,7 @@ class LineageTree(
             self.pos = {
                 node: np.array(position) for node, position in pos.items()
             }
-        if "labels" in kwargs:
-            self._labels = kwargs["labels"]
-            kwargs.pop("labels")
+
         if time is None:
             if starting_time is None:
                 starting_time = 0
@@ -309,33 +346,55 @@ class LineageTree(
                 raise ValueError(
                     "Provided times are not strictly increasing. Setting times to default."
                 )
+
+        spatial_dimension = (
+            len(self.pos[next(iter(self.nodes))])
+            if self.nodes and self.pos
+            else 3
+        )
+        if self.nodes and spatial_resolution is not None:
+            if len(spatial_resolution) == spatial_dimension:
+                self.spatial_resolution = np.array(spatial_resolution)
+            else:
+                raise ValueError(
+                    "The spatial resolution should have the same dimension as the one of the positions:\n"
+                    f"{len(spatial_resolution)=}, spatial dimension={spatial_dimension}"
+                )
+        else:
+            self.spatial_resolution = spatial_resolution or np.ones(
+                spatial_dimension
+            )
+        if "properties" in kwargs:
+            self.properties = kwargs["properties"]
+        else:
+            self.properties = Properties(self)
+        if "labels" in kwargs:
+            self.properties.add_property("labels",value=kwargs["labels"],time_property= False)
+            kwargs.pop("labels")
+        if "label" in kwargs:
+            warnings.warn("`label` is a protected name renaming attribute label to label_1")
+            self.properties.add_property("label_1",value=kwargs["label"],time_property= False)
+            kwargs.pop("label")
+
         # custom properties
-        self._custom_property_list = []
         for name, d in kwargs.items():
             if name in self.__dict__:
                 warnings.warn(
                     f"Attribute name {name} is reserved.", stacklevel=2
                 )
                 continue
-            setattr(self, name, d)
-            self._custom_property_list.append(name)
-        if not hasattr(self, "_comparisons"):
-            self._comparisons = {}
+            injected = False  # Flag to check if the value was injected in lT
+            if isinstance(d, dict) and name not in vars(PropertiesMixin):
+                for t in (True, False):
+                    try:
+                        self.add_property(name, d, t)
+                        injected = True
+                    except:
+                        pass
+                if not injected:
+                    setattr(self, name, d)
+                    print(
+                        f"Property `{name}`, was not used in properties. Instead it canbe accessed by `lT.{name}`"
+                    )
 
-        spatia_dimension = (
-            len(self.pos[next(iter(self.nodes))])
-            if self.nodes and self.pos
-            else 3
-        )
-        if self.nodes and spatial_resolution is not None:
-            if len(spatial_resolution) == spatia_dimension:
-                self.spatial_resolution = np.array(spatial_resolution)
-            else:
-                raise ValueError(
-                    "The spatial resolution should have the same dimension as the one of the positions:\n"
-                    f"{len(spatial_resolution)=}, spatial dimension={spatia_dimension}"
-                )
-        else:
-            self.spatial_resolution = spatial_resolution or np.ones(
-                spatia_dimension
-            )
+        warnings.resetwarnings()

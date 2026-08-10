@@ -871,17 +871,24 @@ def read_from_mastodon(
     pos = dict(zip(nodes, spots[:, :3], strict=True))
     time = dict(zip(nodes, spots[:, 3], strict=True))
     predecessor = {}
-    labels, labels_name = {}, []
-
+    node_labels, labels_name = {}, []
+    label_set = {}
     for succ, pred in zip(links[:, 1], links[:, 0]):
         predecessor[int(succ)] = int(pred)
 
     _, properties, _ = mr.read_tags()
 
     if isinstance(tag_set, str) and tag_set in properties:
-        labels = properties[tag_set]
+        node_labels = properties[tag_set]
     elif 0 < len(properties):
-        labels_name, labels = next(iter(properties.items()))
+        labels_name, node_labels = next(iter(properties.items()))
+
+    for key, prop in tuple(properties.items()):
+        if isinstance(prop, dict) and isinstance(
+            next(iter(prop.values()), None), str
+        ):
+            label_set[key] = prop
+            properties.pop(key)
 
     if not name:
         if isinstance(path, Path):
@@ -891,13 +898,13 @@ def read_from_mastodon(
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
+    properties.update(label_set)
+    properties.update({"node_labels": node_labels})
 
     return LineageTree(
         predecessor=predecessor,
         time=time,
         pos=pos,
-        labels=labels,
-        labels_name=labels_name,
         name=name,
         **properties,
     )
@@ -957,9 +964,10 @@ def read_from_mastodon_csv(
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
+    properties = {"label":label}
 
     return LineageTree(
-        successor=successor, time=time, pos=pos, label=label, name=name
+        successor=successor, time=time, pos=pos, name=name, **properties
     )
 
 
@@ -994,7 +1002,7 @@ def read_from_mamut_xml(
     nodes = set()
     pos = {}
     time = {}
-    properties["label"] = {}
+    properties["labels"] = {}
 
     for frame in AllSpots:
         t = int(frame.attrib["frame"])
@@ -1009,7 +1017,7 @@ def read_from_mamut_xml(
             nodes.add(cell_id)
             pos[cell_id] = np.array([x, y, z])
             time[cell_id] = t
-            properties["label"][cell_id] = n
+            properties["labels"][cell_id] = str(n)
             if "TISSUE_NAME" in cell.attrib:
                 if "fate" not in properties:
                     properties["fate"] = {}

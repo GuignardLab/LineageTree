@@ -259,8 +259,8 @@ def convert_style_to_number(
 
 class CompatibleUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
-        if module == "LineageTree.lineageTree" and name == "lineageTree":
+        if module == "LineageTree.lineageTree":
             from lineagetree import LineageTree
-
             return LineageTree
+
         return super().find_class(module, name)

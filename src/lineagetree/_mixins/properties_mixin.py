@@ -2,7 +2,6 @@ from .._core._properties import (
     all_chains,
     depth,
     edges,
-    labels,
     leaves,
     nodes,
     number_of_nodes,
@@ -35,7 +34,6 @@ class PropertiesMixin(metaclass=AutoMethodizeMeta):
     roots = roots
     leaves = leaves
     edges = edges
-    labels = labels
     time_resolution = time_resolution
     all_chains = all_chains
     time_nodes = time_nodes

@@ -223,6 +223,7 @@ def plot_all_lineages(
     fontsize: int = 15,
     axes: plt.Axes | None = None,
     vert_gap: int = 1,
+    labels: str | dict | None = None,
     **kwargs,
 ) -> tuple[plt.Figure, plt.Axes, dict[plt.Axes, int]]:
     """Plots all lineages.
@@ -313,7 +314,14 @@ def plot_all_lineages(
         )
         root = graph["root"]
         ax2root[flat_axes[i]] = root
-        label = lT.labels.get(root, "Unlabeled")
+        if labels is None:
+            label = lT.properties.label.get(root, "Unlabeled")
+        elif isinstance(labels, dict):
+            label = labels.get(root, "Unlabelled")
+        elif isinstance(labels, str):
+            if labels not in lT.properties.list_properties("labels"):
+                raise ValueError("Label set not defined.")
+            label = getattr(lT.properties, labels).get(root, "Unlabelled")
         xlim = flat_axes[i].get_xlim()
         ylim = flat_axes[i].get_ylim()
         x_pos = (xlim[0] + xlim[1]) / 2
