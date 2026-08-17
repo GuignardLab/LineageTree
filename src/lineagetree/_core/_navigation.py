@@ -514,3 +514,53 @@ def change_labels(
             for leaf in lT.find_leaves(root)
             if abs(lT._time[leaf] - lT._time[root]) >= abs(lT.t_e - lT.t_b) / 4
         }
+
+
+def _get_all_ancestors(lT: LineageTree, node: int) -> set[int]:
+    """Returns all the ancestors of a node up until the root.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree object
+    node : int
+        The node n question
+
+    Returns
+    -------
+    set of int
+        All the ancestors of the `node`.
+    """
+    ancestors = set()
+
+    while pred := lT.predecessor.get(node, None):
+        ancestors.add(pred[0])
+        node = pred[0]
+    return ancestors
+
+
+def shortest_path(lT: LineageTree, n1: int, n2: int) -> set[int]:
+    """Returns the minimum path between 2 nodes
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree object
+    n1 : int
+        The first node
+    n2 : int
+        The second node.
+
+    Returns
+    -------
+    set of int
+        the ids of all the nodes that are needed to go from one node to the other.
+    """
+    set1 = _get_all_ancestors(lT, n1)
+    set2 = _get_all_ancestors(lT, n2)
+    difference = set1.symmetric_difference(set2)
+    if not difference:
+        return set()
+    lca = max(set1.intersection(set2), key=lambda x: lT.time[x])
+    difference.add(lca)
+    return difference

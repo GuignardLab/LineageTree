@@ -636,9 +636,8 @@ def test_spatial_density():
     assert np.isclose(
         lT1.spatial_density(0, th=40)[110832], 7.460387957432594e-06
     )
-    assert lT1.neighbours_in_radius(0, th=40)[110832] == {
-        np.int64(110826)
-    }
+    assert lT1.neighbours_in_radius(0, th=40)[110832] == {np.int64(110826)}
+
 
 def test_k_nearest_neighbours():
     assert (
@@ -798,3 +797,49 @@ def test_smoothing():
         new_pos[1552], np.array([462.15385069, 907.17562352, 419.54303692])
     ).all()
     lt.pos = lt.old_pos
+
+
+def test_shortest_path():
+
+    assert lt.shortest_path(6510, 387) == {
+        20,
+        30,
+        68,
+        84,
+        97,
+        117,
+        184,
+        215,
+        218,
+        232,
+        261,
+        279,
+        299,
+        317,
+        338,
+        357,
+        374,
+        413,
+        600,
+        719,
+        749,
+        781,
+        812,
+        844,
+        1565,
+        1727,
+        1761,
+        2256,
+        2495,
+        2536,
+        2576,
+        5676,
+        6341,
+        6425,
+        6603,
+        7098,
+        13007,
+        29347,
+        29348,
+    }
+    assert lt.shortest_path(176, 29345) == set()
