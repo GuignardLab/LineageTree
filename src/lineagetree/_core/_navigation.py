@@ -516,28 +516,6 @@ def change_labels(
         }
 
 
-def _get_all_ancestors(lT: LineageTree, node: int) -> set[int]:
-    """Returns all the ancestors of a node up until the root.
-
-    Parameters
-    ----------
-    lT : LineageTree
-        The LineageTree object
-    node : int
-        The node n question
-
-    Returns
-    -------
-    set of int
-        All the ancestors of the `node`.
-    """
-    ancestors = set()
-
-    while pred := lT.predecessor.get(node, None):
-        ancestors.add(pred[0])
-        node = pred[0]
-    return ancestors
-
 
 def shortest_path(lT: LineageTree, n1: int, n2: int) -> set[int]:
     """Returns the minimum path between 2 nodes
@@ -556,11 +534,25 @@ def shortest_path(lT: LineageTree, n1: int, n2: int) -> set[int]:
     set of int
         the ids of all the nodes that are needed to go from one node to the other.
     """
-    set1 = _get_all_ancestors(lT, n1)
-    set2 = _get_all_ancestors(lT, n2)
-    difference = set1.symmetric_difference(set2)
-    if not difference:
-        return set()
-    lca = max(set1.intersection(set2), key=lambda x: lT.time[x])
-    difference.add(lca)
-    return difference
+    n1,n2 = sorted((n1,n2), key= lambda x: lT.time[x])
+    path = set()
+
+    while lT.time[n2]!=lT.time[n1]:
+        n2 = lT.predecessor.get(n2)[0]
+        path.add(n2)
+    
+    while n1 != n2:
+        n1 = lT.predecessor.get(n1)
+        if not n1:
+            return set()
+        n1 = n1[0]
+        path.add(n1)
+
+        n2 = lT.predecessor.get(n2)
+        if not n2 :
+            return set()
+        n2 = n2[0]
+        path.add(n2)
+
+
+    return path
