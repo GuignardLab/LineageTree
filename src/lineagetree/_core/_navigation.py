@@ -535,6 +535,7 @@ def shortest_path(lT: LineageTree, n1: int, n2: int) -> set[int]:
         the ids of all the nodes that are needed to go from one node to the other.
     """
     n1,n2 = sorted((n1,n2), key= lambda x: lT.time[x])
+    # path = {n1,n2}
     path = set()
 
     while lT.time[n2]!=lT.time[n1]:
@@ -542,17 +543,18 @@ def shortest_path(lT: LineageTree, n1: int, n2: int) -> set[int]:
         path.add(n2)
     
     while n1 != n2:
-        n1 = lT.predecessor.get(n1)
-        if not n1:
-            return set()
-        n1 = n1[0]
-        path.add(n1)
+        try: 
+            n1 = lT.predecessor.get(n1)[0]
+            if n1 is None:
+                return set()
+            path.add(n1)
 
-        n2 = lT.predecessor.get(n2)
-        if not n2 :
+            n2 = lT.predecessor.get(n2)[0]
+            if n2 is None:
+                return set()
+            path.add(n2)
+        except:
             return set()
-        n2 = n2[0]
-        path.add(n2)
 
 
     return path
