@@ -12,6 +12,7 @@ from .._core._navigation import (
     get_successors,
     nodes_at_t,
     shortest_path,
+    last_common_ancestor,
 )
 
 from ._methodize import AutoMethodizeMeta
@@ -33,3 +34,4 @@ class NavigationMixin(metaclass=AutoMethodizeMeta):
     get_successors = get_successors
     nodes_at_t = nodes_at_t
     shortest_path = shortest_path
+    last_common_ancestor = last_common_ancestor
