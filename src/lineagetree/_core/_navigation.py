@@ -516,7 +516,7 @@ def change_labels(
         }
 
 
-def shortest_path(lT:LineageTree, n1:int,n2:int)->set[int]:
+def shortest_path(lT:LineageTree, n1:int,n2:int)->list[int]:
     """Returns the minimum path between 2 nodes
 
     Parameters
@@ -535,21 +535,22 @@ def shortest_path(lT:LineageTree, n1:int,n2:int)->set[int]:
     """
     d1 = lT.depth[n1]
     d2 = lT.depth[n2]
-    path = {n1, n2}
+    path = [n1]
+    first_n2 = n2
     while d1 > d2:
         n1 = lT.predecessor[n1][0]
         d1 -= 1
-        path.add(n1)
+        path.append(n1)
     while d2 > d1:
         n2 = lT.predecessor[n2][0]
         d2 -= 1
-        path.add(n2)
+        path.append(n2)
     while n1 != n2:
         if d1 == 0:
-            return set()
+            return []
         n1 = lT.predecessor[n1][0]
         n2 = lT.predecessor[n2][0]
         d1 -= 1
-        path.add(n1)
-        path.add(n2)
-    return path
+        path.append(n1)
+        path.append(n2)
+    return path+[first_n2]
