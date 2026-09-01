@@ -516,82 +516,7 @@ def change_labels(
         }
 
 
-
-# def shortest_path(lT: LineageTree, n1: int, n2: int) -> set[int]:
-#     """Returns the minimum path between 2 nodes
-
-#     Parameters
-#     ----------
-#     lT : LineageTree
-#         The LineageTree object
-#     n1 : int
-#         The first node
-#     n2 : int
-#         The second node.
-
-#     Returns
-#     -------
-#     set of int
-#         the ids of all the nodes that are needed to go from one node to the other.
-#     """
-#     n1,n2 = sorted((n1,n2), key= lambda x: lT.time[x])
-#     # path = {n1,n2}
-#     path = set()
-
-#     while lT.time[n2]!=lT.time[n1]:
-#         n2 = lT.predecessor.get(n2)[0]
-#         path.add(n2)
-    
-#     while n1 != n2:
-#         try: 
-#             n1 = lT.predecessor.get(n1)[0]
-#             if n1 is None:
-#                 return set()
-#             path.add(n1)
-
-#             n2 = lT.predecessor.get(n2)[0]
-#             if n2 is None:
-#                 return set()
-#             path.add(n2)
-#         except:
-#             return set()
-
-
-#     return path
-
 def shortest_path(lT, n1,n2):
-    path = set()
-    while lT.time[n1]!= lT.time[n2]:
-        if lT.time[n1]>lT.time[n2]:
-            n2 = lT.predecessor.get(n2)[0]
-            if n2 is None:
-                return set()
-            path.add(n2)
-        else:
-            n2 = lT.predecessor.get(n2)[0]
-            if n2 is None:
-                return set()
-            path.add(n2)
-    while n1 != n2:
-            try: 
-                n1 = lT.predecessor[n1][0]
-                if n1 is None:
-                    return set()
-                path.add(n1)
-    
-                n2 = lT.predecessor[n2][0]
-                if n2 is None:
-                    return set()
-                path.add(n2)
-            except:
-                return set()
-    
-    
-    return path
-        
-
-
-def shortest_path2(lT, n1,n2):
     """Returns the minimum path between 2 nodes
 
     Parameters
@@ -608,17 +533,24 @@ def shortest_path2(lT, n1,n2):
     set of int
         the ids of all the nodes that are needed to go from one node to the other.
     """
-    path = set()
-    while n1!=n2:
-        try: 
-            if lT.time[n1]>lT.time[n2]:
-                pred = lT.predecessor[n1]
-                n1 = pred[0]
-                path.add(n1)
-            else:
-                pred = lT.predecessor[n2]
-                n2 = pred[0]
-                path.add(n2)
-        except:
+    ancestors = [n1]
+    ancestor_set = set()
+
+    while pred := lT.predecessor.get(n1):
+        n1 = pred[0]
+        ancestors.append(n1)
+        ancestor_set.add(n1)
+
+    path = []
+
+    while n2 not in ancestor_set:
+        pred = lT.predecessor.get(n2)
+        if not pred:
             return set()
-    return path
+
+        n2 = pred[0]
+        path.append(n2)
+
+    path.extend(ancestors[1:ancestors.index(n2) + 1])
+
+    return set(path)
