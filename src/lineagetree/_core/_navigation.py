@@ -516,7 +516,7 @@ def change_labels(
         }
 
 
-def shortest_path(lT, n1,n2):
+def shortest_path(lT:LineageTree, n1:int,n2:int)->set[int]:
     """Returns the minimum path between 2 nodes
 
     Parameters
@@ -533,24 +533,23 @@ def shortest_path(lT, n1,n2):
     set of int
         the ids of all the nodes that are needed to go from one node to the other.
     """
-    ancestors = [n1]
-    ancestor_set = set()
-
-    while pred := lT.predecessor.get(n1):
-        n1 = pred[0]
-        ancestors.append(n1)
-        ancestor_set.add(n1)
-
-    path = []
-
-    while n2 not in ancestor_set:
-        pred = lT.predecessor.get(n2)
-        if not pred:
+    d1 = lT.depth[n1]
+    d2 = lT.depth[n2]
+    path = {n1, n2}
+    while d1 > d2:
+        n1 = lT.predecessor[n1][0]
+        d1 -= 1
+        path.add(n1)
+    while d2 > d1:
+        n2 = lT.predecessor[n2][0]
+        d2 -= 1
+        path.add(n2)
+    while n1 != n2:
+        if d1 == 0:
             return set()
-
-        n2 = pred[0]
-        path.append(n2)
-
-    path.extend(ancestors[1:ancestors.index(n2) + 1])
-
-    return set(path)
+        n1 = lT.predecessor[n1][0]
+        n2 = lT.predecessor[n2][0]
+        d1 -= 1
+        path.add(n1)
+        path.add(n2)
+    return path

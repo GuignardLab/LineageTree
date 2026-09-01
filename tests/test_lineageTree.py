@@ -801,7 +801,7 @@ def test_smoothing():
 
 def test_shortest_path():
 
-    assert lt.shortest_path(6510, 387) == {
+    assert lt.shortest_path(6510, 387) == {6510, 387,
         20,
         30,
         68,
