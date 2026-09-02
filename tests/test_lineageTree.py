@@ -800,8 +800,17 @@ def test_smoothing():
 
 
 def test_shortest_path():
+    roots = list(lt.roots)
+    root = roots[0]
+    lca = lt.get_chain_of_node(root)[-1]
+    succ1, succ2 = lt.successor[lca]
+    n1 = lt.get_chain_of_node(succ1)[:10]
+    n2 = lt.get_chain_of_node(succ2)[:5]
+    assert lt.shortest_path(n1[-1], n2[-1])[1] == 251
+    assert lt.shortest_path(roots[1], roots[2])[1] == -1
+    assert lt.shortest_path(n1[-1], n2[-1])[0] == n1[::-1] + [lca] + n2
 
-    assert lt.shortest_path(472, 29355) == [
+    assert lt.shortest_path(472, 29355)[0] == [
         472,
         162,
         417,
@@ -814,14 +823,7 @@ def test_shortest_path():
         29498,
         29355,
     ]
-    assert lt.shortest_path(6510, 387) == lt.shortest_path(387, 6510)[::-1]
-    assert lt.shortest_path(176, 29345) == []
-
-
-def test_last_common_ancestor():
-    root = next(iter(lt.roots))
-    lca = lt.get_chain_of_node(root)[-1]
-    succ1, succ2 = lt.successor[lca]
-    n1 = lt.get_chain_of_node(succ1)[10]
-    n2 = lt.get_chain_of_node(succ2)[5]
-    assert lt.last_common_ancestor(n1, n2) == 251
+    assert (
+        lt.shortest_path(6510, 387)[0] == lt.shortest_path(387, 6510)[0][::-1]
+    )
+    assert lt.shortest_path(176, 29345) == ([], -1)

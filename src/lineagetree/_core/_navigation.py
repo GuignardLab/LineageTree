@@ -516,8 +516,10 @@ def change_labels(
         }
 
 
-def shortest_path(lT: LineageTree, n1: int, n2: int) -> list[int]:
-    """Returns the minimum path between 2 nodes
+def get_shortest_path_and_last_common_ancestor(
+    lT: LineageTree, n1: int, n2: int
+) -> tuple[list[int], int]:
+    """Returns the minimum path between 2 nodes and the last commmon ancestor
 
     Parameters
     ----------
@@ -530,8 +532,11 @@ def shortest_path(lT: LineageTree, n1: int, n2: int) -> list[int]:
 
     Returns
     -------
-    set of int
-        the ids of all the nodes that are needed to go from one node to the other.
+    tuple which contains
+        - list of int
+            The shortest path from n1 to n2, containing n1, n2 and ordered, if not shortest path returns [].
+        - int
+            The last common ancestor of the 2 nodes, if none returns -1.
     """
     left_side = [n1]
     right_side = [n2]
@@ -546,44 +551,11 @@ def shortest_path(lT: LineageTree, n1: int, n2: int) -> list[int]:
         left_side.append(n1)
     while n1 != n2:
         if d1 == 0:
-            return []
+            return [], -1
         n1 = lT.predecessor[n1][0]
         n2 = lT.predecessor[n2][0]
         d1 -= 1
         d2 -= 1
         left_side.append(n1)
         right_side.append(n2)
-    return left_side + right_side[-2::-1]
-
-
-def last_common_ancestor(lT: LineageTree, n1: int, n2: int) -> int:
-    """Returns the last common ancstor of 2 nodes.
-
-    Parameters
-    ----------
-    lT : LineageTree
-        The LineageTree object.
-    n1 : int
-        The first node.
-    n2 : int
-        The second node.
-
-    Returns
-    -------
-    int
-        The last common ancstor of 2 nodes, if non existent return -1.
-    """
-    d1 = lT.depth[n1]
-    d2 = lT.depth[n2]
-    if d1 < d2:
-        n1, n2 = n2, n1
-        d1, d2 = d2, d1
-    while d1 > d2:
-        n1 = lT.predecessor[n1][0]
-        d1 -= 1
-    while n1 != n2:
-        n1 = lT.predecessor[n1][0]
-        n2 = lT.predecessor[n2][0]
-        d1 -= 1
-        d2 -= 1
-    return n1
+    return left_side + right_side[-2::-1], n1
