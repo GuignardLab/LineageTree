@@ -636,9 +636,8 @@ def test_spatial_density():
     assert np.isclose(
         lT1.spatial_density(0, th=40)[110832], 7.460387957432594e-06
     )
-    assert lT1.neighbours_in_radius(0, th=40)[110832] == {
-        np.int64(110826)
-    }
+    assert lT1.neighbours_in_radius(0, th=40)[110832] == {np.int64(110826)}
+
 
 def test_k_nearest_neighbours():
     assert (
@@ -798,3 +797,49 @@ def test_smoothing():
         new_pos[1552], np.array([462.15385069, 907.17562352, 419.54303692])
     ).all()
     lt.pos = lt.old_pos
+
+
+def test_get_shortest_path_and_last_common_ancestor():
+    roots = list(lt.roots)
+    root = roots[0]
+    lca = lt.get_chain_of_node(root)[-1]
+    succ1, succ2 = lt.successor[lca]
+    n1 = lt.get_chain_of_node(succ1)[:10]
+    n2 = lt.get_chain_of_node(succ2)[:5]
+    assert (
+        lt.get_shortest_path_and_last_common_ancestor(n1[-1], n2[-1])[1] == 251
+    )
+    assert (
+        lt.get_shortest_path_and_last_common_ancestor(roots[1], roots[2])[1]
+        == -1
+    )
+    assert (
+        lt.get_shortest_path_and_last_common_ancestor(n1[-1], n2[-1])[0]
+        == n1[::-1] + [lca] + n2
+    )
+    assert (
+        lt.get_shortest_path_and_last_common_ancestor(n2[-1], n1[-1])[0]
+        == n2[::-1] + [lca] + n1
+    )
+
+    assert lt.get_shortest_path_and_last_common_ancestor(472, 29355)[0] == [
+        472,
+        162,
+        417,
+        149,
+        128,
+        251,
+        29501,
+        29500,
+        29499,
+        29498,
+        29355,
+    ]
+    assert (
+        lt.get_shortest_path_and_last_common_ancestor(6510, 387)[0]
+        == lt.get_shortest_path_and_last_common_ancestor(387, 6510)[0][::-1]
+    )
+    assert lt.get_shortest_path_and_last_common_ancestor(176, 29345) == (
+        [],
+        -1,
+    )

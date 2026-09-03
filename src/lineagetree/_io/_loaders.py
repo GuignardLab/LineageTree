@@ -286,6 +286,7 @@ def _read_from_ASTEC_xml(file_path: str) -> dict:
         Dictionary whose keys are ASTEC canonical property names (as defined
         in :data:`ASTEC_KEYDICTIONARY`) and values are the parsed data.
     """
+
     def _set_dictionary_value(root):
         if len(root) == 0:
             if root.text is None:
