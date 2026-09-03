@@ -817,6 +817,10 @@ def test_get_shortest_path_and_last_common_ancestor():
         lt.get_shortest_path_and_last_common_ancestor(n1[-1], n2[-1])[0]
         == n1[::-1] + [lca] + n2
     )
+    assert (
+        lt.get_shortest_path_and_last_common_ancestor(n2[-1], n1[-1])[0]
+        == n2[::-1] + [lca] + n1
+    )
 
     assert lt.get_shortest_path_and_last_common_ancestor(472, 29355)[0] == [
         472,

@@ -542,9 +542,10 @@ def get_shortest_path_and_last_common_ancestor(
     right_side = [n2]
     d1 = lT.depth[n1]
     d2 = lT.depth[n2]
-    if d1 < d2:
-        n1, n2 = n2, n1
-        d1, d2 = d2, d1
+    while d2 > d1:
+        n2 = lT.predecessor[n2][0]
+        d2 -= 1
+        right_side.append(n2)
     while d1 > d2:
         n1 = lT.predecessor[n1][0]
         d1 -= 1
