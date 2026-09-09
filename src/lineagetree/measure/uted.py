@@ -435,7 +435,11 @@ def plot_tree_distance_graphs(
             lT, n1, n2, end_time, norm, style, downsample
         )
     if not tmp["trees"]:
-        fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True) if ax is None else (ax[0].get_figure(), ax)
+        fig, ax = (
+            plt.subplots(nrows=1, ncols=2, sharey=True)
+            if ax is None
+            else (ax[0].get_figure(), ax)
+        )
         return fig, ax
     btrc: Alignment = tmp["alignment"]
     tree1, tree2 = tmp["trees"]
@@ -458,7 +462,9 @@ def plot_tree_distance_graphs(
     )
 
     if norm not in lT.norm_dict:
-        raise ValueError("Select a viable normalization method (max, sum, None)")
+        raise ValueError(
+            "Select a viable normalization method (max, sum, None)"
+        )
     matched_right = []
     matched_left = []
     colors = {}
@@ -506,12 +512,9 @@ def plot_tree_distance_graphs(
                 node_2 = corres2[m._right]
 
                 if (
-                    (
-                        lT.get_chain_of_node(node_1)[0] == node_1
-                        or lT.get_chain_of_node(node_2)[0] == node_2
-                    )
-                    and (node_1 not in colors or node_2 not in colors)
-                ):
+                    lT.get_chain_of_node(node_1)[0] == node_1
+                    or lT.get_chain_of_node(node_2)[0] == node_2
+                ) and (node_1 not in colors or node_2 not in colors):
                     matched_left.append(node_1)
                     l_node_1 = lT.get_chain_of_node(node_1)[-1]
                     matched_left.append(l_node_1)
@@ -637,7 +640,9 @@ def labelled_mappings(
     ) = tree2.edist
 
     if norm not in lT.norm_dict:
-        raise ValueError("Select a viable normalization method (max, sum, None)")
+        raise ValueError(
+            "Select a viable normalization method (max, sum, None)"
+        )
     matched = []
     unmatched = []
     if style not in ("full", "downsampled"):
