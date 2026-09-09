@@ -14,6 +14,29 @@ except ImportError:
 def to_motile(
     lT: LineageTree, crop: int | None = None, max_dist=200, max_skip_frames=1
 ):
+    """Build a motile candidate graph from a lineage tree.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The lineage tree to convert.
+    crop : int, optional
+        The last time point (exclusive) to include. If None, ``lT.t_e`` is used.
+    max_dist : float, default=200
+        Maximum spatial distance allowed for candidate edges.
+    max_skip_frames : int, default=1
+        Maximum number of time points an edge is allowed to skip.
+
+    Returns
+    -------
+    networkx.DiGraph
+        A directed graph with candidate edges added by motile.
+
+    Raises
+    ------
+    Warning
+        If networkx is not installed.
+    """
     try:
         import networkx as nx
     except ImportError:

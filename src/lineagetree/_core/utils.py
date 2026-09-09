@@ -15,22 +15,25 @@ def create_links_and_chains(
     roots: int | Iterable | None = None,
     end_time: int | None = None,
 ) -> dict[str, dict]:
-    """Generates a dictionary containing all the edges (from start of lifetime to end not the intermediate timepoints)
-      of a subtree spawned by node/s and their duration
+    """Generate the chains and their durations for a subtree spawned by nodes.
 
+    Each chain is represented only by its start and end nodes (not the
+    intermediate time points) together with its duration.
 
     Parameters
     ----------
     lT : LineageTree
-        The LineageTree that the user is working on
+        The LineageTree that the user is working on.
     roots : int or Iterable, optional
-        The root/s from which the tree/s will be generated, if 'None' all the roots will be selected.
+        The root(s) from which the tree(s) will be generated. If None, all the
+        roots are selected.
     end_time : int, optional
-        The last timepoint to be considered, if 'None' the last timepoint of the dataset (t_e) is considered, by default None.
+        The last time point to be considered. If None, the last time point of
+        the dataset (``t_e``) is used.
 
     Returns
     -------
-    dict mapping str to set or dict mapping int to list or int
+    dict
         A dictionary that contains:
             - "links": The dictionary that contains the hierarchy of the nodes (only start and end of each chain)
             - "times": The time distance between the start and the end of a chain
@@ -118,7 +121,25 @@ def _find_leaves_and_depths_iterative(
 def _calculate_leaf_positions(
     leaves: list[int], width: int, xcenter: int
 ) -> dict[int, float]:
-    """Calculate uniform x-positions for leaves."""
+    """Calculate uniformly spaced x-positions for leaf nodes.
+
+    Leaves are distributed symmetrically around ``xcenter`` with a total
+    spread of ``width``.
+
+    Parameters
+    ----------
+    leaves : list of int
+        Ordered list of leaf node ids.
+    width : int
+        Total horizontal span available for the leaves.
+    xcenter : int
+        Horizontal centre position.
+
+    Returns
+    -------
+    dict mapping int to float
+        Mapping from leaf node id to its x-coordinate.
+    """
     num_leaves = len(leaves)
     if num_leaves == 1:
         return {leaves[0]: xcenter}
@@ -138,7 +159,35 @@ def _assign_positions_iterative(
     vert_gap: int,
     ycenter: int,
 ) -> dict[int, list[float]]:
-    """Assign positions to nodes using iterative post-order traversal."""
+    """Assign 2D positions to all nodes using an iterative post-order traversal.
+
+    Leaves are placed at pre-computed x-positions (``leaf_x_positions``).
+    Interior nodes with a single child are placed directly above that child.
+    Interior nodes with multiple children are centred over their children.
+
+    Parameters
+    ----------
+    lnks_tms : dict
+        Dictionary produced by :func:`create_links_and_chains`, containing
+        ``'links'`` and ``'times'`` sub-dicts.
+    root : int
+        Id of the root node to start placement from.
+    depths : dict mapping int to int
+        Pre-computed depth (in display units) of each node, as returned by
+        :func:`_find_leaves_and_depths_iterative`.
+    leaf_x_positions : dict mapping int to float
+        Pre-computed x-coordinates of each leaf node, as returned by
+        :func:`_calculate_leaf_positions`.
+    vert_gap : int
+        Vertical distance (in display units) between successive depth levels.
+    ycenter : int
+        Y-coordinate of the root node.
+
+    Returns
+    -------
+    dict mapping int to list of float
+        Mapping from node id to ``[x, y]`` position.
+    """
     pos_node = {}
 
     # First pass: build parent-child relationships and find processing order
@@ -188,7 +237,7 @@ def hierarchical_pos(
     ----------
     lnks_tms : dict
          a dictionary created by create_links_and_chains.
-    root : _type_
+    root : int
         The id of the node, usually it exists inside lnks_tms dictionary, however you may use your own root.
     width : int, optional
         Max width, will not change the graph but interacting with the graph takes this distance into account, by default 1000
@@ -227,19 +276,20 @@ def convert_style_to_number(
     style: str | TreeApproximationTemplate,
     downsample: int | None,
 ) -> int:
-    """Converts tree_style and downsampling to a single number.
+    """Convert a tree style and downsampling factor to a single number.
 
     Parameters
     ----------
-    style : str
-        the tree style
-    downsample : int
-        the downsampling factor
+    style : str or TreeApproximationTemplate
+        The tree style.
+    downsample : int or None
+        The downsampling factor.
 
     Returns
     -------
     int
-        A number which serves as ID if the tree style and downsampling used.
+        A number that serves as an identifier for the tree style and
+        downsampling used.
     """
     style_dict = {
         "full": 0,
@@ -258,7 +308,29 @@ def convert_style_to_number(
 
 
 class CompatibleUnpickler(pickle.Unpickler):
+    """A pickle unpickler that handles legacy module paths.
+
+    When a :class:`~lineagetree.LineageTree` object was pickled under the old
+    module path ``LineageTree.lineageTree`` (pre-v2.0), normal unpickling
+    would fail with a :exc:`ModuleNotFoundError`. This subclass intercepts
+    the import and redirects it to the current path.
+    """
+
     def find_class(self, module, name):
+        """Resolve a pickled class reference, remapping legacy module paths.
+
+        Parameters
+        ----------
+        module : str
+            Module path stored in the pickle stream.
+        name : str
+            Class name stored in the pickle stream.
+
+        Returns
+        -------
+        type
+            The resolved class object.
+        """
         if module == "LineageTree.lineageTree" and name == "lineageTree":
             from lineagetree import LineageTree
 
