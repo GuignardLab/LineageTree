@@ -671,13 +671,11 @@ def test_properties():
     assert lT1.get_property("tracks") == lT1.properties.tracks
     lT1.add_property("test", 1, False)
     assert lT1.list_all_properties("forest") == ["test"]
-    lT1.add_property("test_time", {10:10,12:12}, True)
+    lT1.add_property("test_time", {10: 10, 12: 12}, True)
     assert "test_time" in lT1.list_all_properties("time")
     assert "test" in lT1.list_all_properties()
     lT1.remove_property("test")
     assert "test" not in lT1.list_all_properties()
-
-
 
 
 def test_spatial_edges():
@@ -819,3 +817,49 @@ def test_smoothing():
         new_pos[1552], np.array([462.15385069, 907.17562352, 419.54303692])
     ).all()
     lt.pos = lt.old_pos
+
+
+def test_get_shortest_path_and_last_common_ancestor():
+    roots = list(lt.roots)
+    root = roots[0]
+    lca = lt.get_chain_of_node(root)[-1]
+    succ1, succ2 = lt.successor[lca]
+    n1 = lt.get_chain_of_node(succ1)[:10]
+    n2 = lt.get_chain_of_node(succ2)[:5]
+    assert (
+        lt.get_shortest_path_and_last_common_ancestor(n1[-1], n2[-1])[1] == 251
+    )
+    assert (
+        lt.get_shortest_path_and_last_common_ancestor(roots[1], roots[2])[1]
+        == -1
+    )
+    assert (
+        lt.get_shortest_path_and_last_common_ancestor(n1[-1], n2[-1])[0]
+        == n1[::-1] + [lca] + n2
+    )
+    assert (
+        lt.get_shortest_path_and_last_common_ancestor(n2[-1], n1[-1])[0]
+        == n2[::-1] + [lca] + n1
+    )
+
+    assert lt.get_shortest_path_and_last_common_ancestor(472, 29355)[0] == [
+        472,
+        162,
+        417,
+        149,
+        128,
+        251,
+        29501,
+        29500,
+        29499,
+        29498,
+        29355,
+    ]
+    assert (
+        lt.get_shortest_path_and_last_common_ancestor(6510, 387)[0]
+        == lt.get_shortest_path_and_last_common_ancestor(387, 6510)[0][::-1]
+    )
+    assert lt.get_shortest_path_and_last_common_ancestor(176, 29345) == (
+        [],
+        -1,
+    )
