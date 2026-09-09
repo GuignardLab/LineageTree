@@ -3,13 +3,12 @@
 # file 'LICENCE', which is part of this source code package.
 # Author: Leo Guignard (leo.guignard...@AT@...univ-amu.fr)
 from __future__ import annotations
-
 import importlib.metadata
 import warnings
 from collections.abc import Iterable, Sequence
 from packaging.version import Version
 import numpy as np
-
+from ._core._external_properites import Properties
 from ._core.utils import CompatibleUnpickler
 from ._mixins.properties_mixin import PropertiesMixin
 from ._mixins.modifier_mixin import ModifierMixin
@@ -19,6 +18,12 @@ from ._mixins.spatial_mixin import SpatialMixin
 from ._mixins.analysis_mixin import AnalysisMixin
 from ._mixins.io_mixin import IOMixin
 from ._core.validation import TreeValidator
+from ._mixins.external_properties_mixin import ExternalPropertiesMixin
+
+from typing import Any
+
+
+class SetAttrWarning(UserWarning): ...
 
 
 class LineageTree(
@@ -29,10 +34,76 @@ class LineageTree(
     SpatialMixin,
     AnalysisMixin,
     IOMixin,
+    ExternalPropertiesMixin,
 ):
-    """A lineage tree data structure with comprehensive analysis capabilities."""
+    """A lineage tree data structure with comprehensive analysis capabilities.
+
+    A ``LineageTree`` is a directed forest (set of rooted trees) where nodes
+    represent biological cells at specific time points and edges encode
+    parent–daughter relationships. It is the central data structure of the
+    ``lineagetree`` library.
+
+    The class is composed of mixin classes that provide distinct capability
+    groups:
+
+    - :class:`~lineagetree._mixins.properties_mixin.PropertiesMixin` —
+      structural properties (roots, leaves, edges, …)
+    - :class:`~lineagetree._mixins.modifier_mixin.ModifierMixin` — mutation
+      (add/remove nodes, smooth trajectories, …)
+    - :class:`~lineagetree._mixins.navigation_mixin.NavigationMixin` —
+      tree traversal (ancestors, subtrees, chains, …)
+    - :class:`~lineagetree._mixins.plot_mixin.PlotMixin` — matplotlib-based
+      visualisation
+    - :class:`~lineagetree._mixins.spatial_mixin.SpatialMixin` — spatial
+      neighbourhood graphs (Gabriel graph, kNN, …)
+    - :class:`~lineagetree._mixins.analysis_mixin.AnalysisMixin` — pairwise
+      tree comparison (UTED, DTW)
+    - :class:`~lineagetree._mixins.io_mixin.IOMixin` — serialisation (pickle,
+      SVG, Tulip)
+
+    The preferred way to create a ``LineageTree`` from a file is via one of
+    the ``read_from_*`` functions exposed in :mod:`lineagetree`, or via
+    :meth:`load` for ``.lT`` pickle files.
+
+    Parameters
+    ----------
+    successor : dict mapping int to Iterable, optional
+        See :meth:`__init__`.
+    predecessor : dict mapping int to int or Iterable, optional
+        See :meth:`__init__`.
+
+    Examples
+    --------
+    >>> from lineagetree import LineageTree
+    >>> lT = LineageTree(successor={0: [1, 2], 1: [], 2: []}, time={0: 0, 1: 1, 2: 1})
+    """
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name in vars(self):  # Property calls the setattr every time :O
+            return super().__setattr__(name, value)
+        warnings.warn(
+            "It is reccommended to use `lT.add_property`.",
+            category=SetAttrWarning,
+        )
+        return super().__setattr__(name, value)
 
     def __eq__(self, other) -> bool:
+        """Compare two ``LineageTree`` objects for structural equality.
+
+        Two trees are considered equal when their successor, predecessor, and
+        time dictionaries are identical.
+
+        Parameters
+        ----------
+        other : object
+            Object to compare against.
+
+        Returns
+        -------
+        bool
+            ``True`` if ``other`` is a ``LineageTree`` with the same topology
+            and time assignment, ``False`` otherwise.
+        """
         if isinstance(other, LineageTree):
             return (
                 other._successor == self._successor
@@ -42,7 +113,19 @@ class LineageTree(
         else:
             return False
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: dict) -> None:
+        """Restore instance state from a pickle, handling legacy attribute names.
+
+        Older pickled ``LineageTree`` objects stored the core dictionaries
+        under ``successor``, ``predecessor``, and ``time`` (without the
+        leading underscore).  This method remaps those to the current private
+        names before calling ``__dict__.update``.
+
+        Parameters
+        ----------
+        state : dict
+            The unpickled ``__dict__`` of the stored object.
+        """
         if "_successor" not in state:
             state["_successor"] = state["successor"]
         if "_predecessor" not in state:
@@ -53,25 +136,26 @@ class LineageTree(
 
     @classmethod
     def load(clf, fname: str):
-        """Loading a lineage tree from a '.lT' file.
+        """Load a lineage tree from a ``.lT`` file.
 
         Parameters
         ----------
         fname : str
-            path to and name of the file to read
+            Path to and name of the file to read.
 
         Returns
         -------
         LineageTree
-            loaded file
+            The loaded lineage tree.
         """
         with open(fname, "br") as f:
             lT = CompatibleUnpickler(f).load()
             f.close()
+
         if not hasattr(lT, "__version__") or Version(lT.__version__) < Version(
-            "2.0.0"
+            "4.0.0"
         ):
-            properties = {
+            props = {
                 prop_name: prop
                 for prop_name, prop in lT.__dict__.items()
                 if (isinstance(prop, dict) or prop_name == "_time_resolution")
@@ -94,7 +178,7 @@ class LineageTree(
                 time=lT._time,
                 pos=lT.pos,
                 name=lT.name if hasattr(lT, "name") else None,
-                **properties,
+                **props,
             )
         if not hasattr(lT, "time_resolution"):
             lT.time_resolution = 1
@@ -106,24 +190,27 @@ class LineageTree(
         return lT
 
     def get_subtree(self, node_list: set[int]) -> LineageTree:
-        """Create a new lineage tree that has the same edges and properties
-        as the given lineage tree. Only the nodes in `node_list` are considered.
+        """Create a new lineage tree restricted to a set of nodes.
+
+        The new tree keeps the same edges and properties as this lineage tree,
+        but only the nodes in ``node_list`` are considered.
 
         Parameters
         ----------
-        node_list : Iterator of int
-            Iterator over the nodes to keep
+        node_list : set of int
+            The nodes to keep.
 
         Returns
         -------
         LineageTree
-            The subtree lineage tree
+            The subtree lineage tree.
         """
         new_successors = {
             n: tuple(vi for vi in self.successor[n] if vi in node_list)
             for n in node_list
         }
-        return LineageTree(
+
+        lT = LineageTree(
             successor=new_successors,
             time=self._time,
             pos=self.pos,
@@ -131,11 +218,31 @@ class LineageTree(
             root_leaf_value=[
                 (),
             ],
-            **{
-                name: self.__dict__[name]
-                for name in self._custom_property_list
-            },
         )
+        # new_properties = Properties(self)
+        for prop in self.properties.node_properties:
+            lT.add_property(
+                prop,
+                {
+                    k: v
+                    for k, v in self.properties.node_properties[prop].items()
+                    if k in lT.nodes
+                },
+                False,
+            )
+        for prop in self.properties.time_properties:
+            lT.add_property(
+                prop,
+                {
+                    k: v
+                    for k, v in self.properties.time_properties[prop].items()
+                    if k in lT.time_nodes
+                },
+                True,
+            )
+        for prop in self.properties.forest_properties:
+            lT.add_property(prop, lT.properties.forest_properties[prop], False)
+        return lT
 
     def __init__(
         self,
@@ -143,7 +250,7 @@ class LineageTree(
         successor: dict[int, Sequence] | None = None,
         predecessor: dict[int, int | Sequence] | None = None,
         time: dict[int, int] | None = None,
-        starting_time: int | None = None,
+        starting_time: int = 0,
         pos: dict[int, Iterable] | None = None,
         name: str | None = None,
         root_leaf_value: Sequence | None = None,
@@ -151,33 +258,40 @@ class LineageTree(
         temporal: bool = True,
         **kwargs,
     ):
-        """Create a LineageTree object from minimal information, without reading from a file.
-        Either `successor` or `predecessor` should be specified.
+        """Create a LineageTree from minimal information, without a file.
+
+        Either ``successor`` or ``predecessor`` should be specified.
 
         Parameters
         ----------
-        successor : dict mapping int to Iterable
+        successor : dict of {int: Sequence}, optional
             Dictionary assigning nodes to their successors.
-        predecessor : dict mapping int to int or Iterable
+        predecessor : dict of {int: int or Sequence}, optional
             Dictionary assigning nodes to their predecessors.
-        time : dict mapping int to int, optional
-            Dictionary assigning nodes to the time point they were recorded to.
-            Defaults to None, in which case all times are set to `starting_time`.
-        starting_time : int, optional
-            Starting time of the lineage tree. Defaults to 0.
-        pos : dict mapping int to Iterable, optional
-            Dictionary assigning nodes to their positions. Defaults to None.
+        time : dict of {int: int}, optional
+            Dictionary assigning nodes to the time point they were recorded at.
+            If None, all times are set relative to ``starting_time``.
+        starting_time : int, default=0
+            Starting time of the lineage tree.
+        pos : dict of {int: Iterable}, optional
+            Dictionary assigning nodes to their positions.
         name : str, optional
-            Name of the lineage tree. Defaults to None.
-        root_leaf_value : Iterable, optional
-            Iterable of values of roots' predecessors and leaves' successors in the successor and predecessor dictionaries.
-            Defaults are `[None, (), [], set()]`.
-        temporal : boolean, default `True`
-            Whether the tree structure has time
-        **kwargs:
-            Supported keyword arguments are dictionaries assigning nodes to any custom property.
-            The property must be specified for every node, and named differently from LineageTree's own attributes.
+            Name of the lineage tree.
+        root_leaf_value : Sequence, optional
+            Values of roots' predecessors and leaves' successors in the
+            successor and predecessor dictionaries. Defaults to
+            ``[None, (), [], set()]``.
+        spatial_resolution : Sequence, optional
+            Spatial resolution along each dimension of the positions. Defaults
+            to ones.
+        temporal : bool, default=True
+            Whether the tree structure has a time dimension.
+        **kwargs
+            Supported keyword arguments are dictionaries assigning nodes to any
+            custom property. The property must be specified for every node and
+            named differently from LineageTree's own attributes.
         """
+        warnings.filterwarnings("ignore", category=SetAttrWarning)
         self.__version__ = importlib.metadata.version("lineagetree")
         self.name = str(name) if name is not None else None
         self._temporal = temporal
@@ -259,9 +373,7 @@ class LineageTree(
             self.pos = {
                 node: np.array(position) for node, position in pos.items()
             }
-        if "labels" in kwargs:
-            self._labels = kwargs["labels"]
-            kwargs.pop("labels")
+
         if time is None:
             if starting_time is None:
                 starting_time = 0
@@ -309,33 +421,61 @@ class LineageTree(
                 raise ValueError(
                     "Provided times are not strictly increasing. Setting times to default."
                 )
+
+        spatial_dimension = (
+            len(self.pos[next(iter(self.nodes))])
+            if self.nodes and self.pos
+            else 3
+        )
+        if self.nodes and spatial_resolution is not None:
+            if len(spatial_resolution) == spatial_dimension:
+                self.spatial_resolution = np.array(spatial_resolution)
+            else:
+                raise ValueError(
+                    "The spatial resolution should have the same dimension as the one of the positions:\n"
+                    f"{len(spatial_resolution)=}, spatial dimension={spatial_dimension}"
+                )
+        else:
+            self.spatial_resolution = spatial_resolution or np.ones(
+                spatial_dimension
+            )
+        if "properties" in kwargs:
+            self.properties = kwargs["properties"]
+        else:
+            self.properties = Properties(self)
+        if "labels" in kwargs:
+            self.properties.add_property(
+                "labels", value=kwargs["labels"], time_property=False
+            )
+            kwargs.pop("labels")
+        if "label" in kwargs:
+            warnings.warn(
+                "`label` is a protected name renaming attribute label to label_1"
+            )
+            self.properties.add_property(
+                "label_1", value=kwargs["label"], time_property=False
+            )
+            kwargs.pop("label")
+
         # custom properties
-        self._custom_property_list = []
         for name, d in kwargs.items():
             if name in self.__dict__:
                 warnings.warn(
                     f"Attribute name {name} is reserved.", stacklevel=2
                 )
                 continue
-            setattr(self, name, d)
-            self._custom_property_list.append(name)
-        if not hasattr(self, "_comparisons"):
-            self._comparisons = {}
+            injected = False  # Flag to check if the value was injected in lT
+            if isinstance(d, dict) and name not in vars(PropertiesMixin):
+                for t in (True, False):
+                    try:
+                        self.add_property(name, d, t)
+                        injected = True
+                    except:  # noqa: E722
+                        pass
+                if not injected:
+                    setattr(self, name, d)
+                    print(
+                        f"Property `{name}`, was not used in properties. Instead it canbe accessed by `lT.{name}`"
+                    )
 
-        spatia_dimension = (
-            len(self.pos[next(iter(self.nodes))])
-            if self.nodes and self.pos
-            else 3
-        )
-        if self.nodes and spatial_resolution is not None:
-            if len(spatial_resolution) == spatia_dimension:
-                self.spatial_resolution = np.array(spatial_resolution)
-            else:
-                raise ValueError(
-                    "The spatial resolution should have the same dimension as the one of the positions:\n"
-                    f"{len(spatial_resolution)=}, spatial dimension={spatia_dimension}"
-                )
-        else:
-            self.spatial_resolution = spatial_resolution or np.ones(
-                spatia_dimension
-            )
+        warnings.resetwarnings()

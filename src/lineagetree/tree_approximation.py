@@ -12,14 +12,19 @@ if TYPE_CHECKING:
 
 
 class TreeApproximationTemplate(ABC):
-    """Template class to produce different tree styles to comapare LineageTrees.
-    To add a new style you need to inherit this class or one of its children
-    and add them to the tree_style enum, or use it immediately on the function called.
+    """Template class to produce tree styles used to compare LineageTrees.
+
+    To add a new style, inherit this class or one of its children and add it to
+    the :class:`tree_style` enum, or use it directly on the function called.
+
     The main products of this class are:
-    - tree constructor (get_tree) that produces one dictionary that contains
-    arbitary unique labels and one dictionary that contains the duration of each node.
-    - delta function: A function that handles the cost of comparing nodes to each other.
-    - normalization function, a function that returns the length of the tree or any interger.
+
+    - a tree constructor (:meth:`get_tree`) that produces one dictionary of
+      arbitrary unique labels and one dictionary of the duration of each node,
+    - a :meth:`delta` function that handles the cost of comparing nodes to each
+      other,
+    - a normalization function that returns the length of the tree or any
+      integer.
     """
 
     def __init__(
@@ -30,6 +35,28 @@ class TreeApproximationTemplate(ABC):
         end_time: int | None = None,
         time_scale: int = 1,
     ):
+        """Initialise the tree approximation for the subtree rooted at ``root``.
+
+        Parameters
+        ----------
+        lT : LineageTree
+            The source lineage tree.
+        root : int
+            Id of the node that is the root of the subtree to approximate.
+        downsample : int, optional
+            Downsampling factor (used by :class:`downsample_tree`).
+        end_time : int, optional
+            Last time point to include in the approximation. Defaults to
+            ``lT.t_e``.
+        time_scale : int, default=1
+            Scaling factor applied to node durations, used to align trees
+            sampled at different time resolutions.
+
+        Raises
+        ------
+        Exception
+            If ``time_scale <= 0``.
+        """
         self.lT: LineageTree = lT
         self.internal_ids = max(self.lT.nodes)
         self.root: int = root
@@ -42,6 +69,16 @@ class TreeApproximationTemplate(ABC):
         self.edist = self._edist_format(self.tree[0])
 
     def get_next_id(self) -> int:
+        """Return the next available internal node id for synthetic nodes.
+
+        The counter starts above the maximum real node id so that synthetic
+        nodes created during tree construction never collide with real ones.
+
+        Returns
+        -------
+        int
+            A unique id larger than any existing node id.
+        """
         self.internal_ids += 1
         return self.internal_ids
 
@@ -58,31 +95,36 @@ class TreeApproximationTemplate(ABC):
         Parameters
         ----------
         time_resolution1 : int or float
-            Time resolution of the first dataset. (Extracted from lT._time_resolution)
+            Time resolution of the first dataset (extracted from
+            ``lT._time_resolution``).
         time_resolution2 : int or float
-            Time resolution of the second dataset. (Extracted from lT._time_resolution)
+            Time resolution of the second dataset (extracted from
+            ``lT._time_resolution``).
+        gcd : int
+            Greatest common divisor of the two time resolutions.
+        downsample : int
+            Downsampling factor.
 
         Returns
         -------
         int or float
-            The time resolution fix for the first dataset
+            The time resolution fix for the first dataset.
         int or float
-            The time resolution fix for the second dataset
+            The time resolution fix for the second dataset.
         """
 
     @abstractmethod
     def get_tree(self) -> tuple[dict, dict]:
-        """
-        Get a tree version of the tree spawned by the node `r`
+        """Get a tree version of the tree spawned by the root node.
 
         Returns
         -------
-        dict mapping an int to a list of int
-            an adjacency dictionnary where the ids are the ids of the
-            cells in the original tree at their first time point
-            (except for the cell `r` if it was not the first time point).
-        dict mapping an int to a float
-            life time duration of the key cell `m`
+        dict of {int: list of int}
+            An adjacency dictionary where the ids are those of the cells in the
+            original tree at their first time point (except for the root cell
+            if it was not at its first time point).
+        dict of {int: float}
+            Life time duration of each cell.
         """
 
     @abstractmethod
@@ -95,29 +137,33 @@ class TreeApproximationTemplate(ABC):
         times1: dict[int, float],
         times2: dict[int, float],
     ) -> int | float:
-        """The distance of two nodes inside a tree. Behaves like a staticmethod.
-            The corres1/2 and time1/2 should always be provided and will be handled accordingly by the specific
-            delta of each tree style.
+        """Compute the distance between two nodes inside a tree.
+
+        Behaves like a static method. ``corres1``/``corres2`` and
+        ``times1``/``times2`` should always be provided and are handled
+        accordingly by the specific ``delta`` of each tree style.
 
         Parameters
         ----------
         x : int
-            The first node to compare, takes the names provided by the edist.
+            The first node to compare, using the names provided by edist.
         y : int
-            The second node to compare, takes the names provided by the edist
+            The second node to compare, using the names provided by edist.
         corres1 : dict
-            Dictionary mapping node1 ids to the corresponding id in the original tree.
+            Dictionary mapping ``x`` ids to the corresponding id in the
+            original tree.
         corres2 : dict
-            Dictionary mapping node2 ids to the corresponding id in the original tree.
+            Dictionary mapping ``y`` ids to the corresponding id in the
+            original tree.
         times1 : dict
-            The dictionary of the chain lengths of the tree that n1 is spawned from.
+            The chain lengths of the tree that ``x`` is spawned from.
         times2 : dict
-            The dictionary of the chain lengths of the tree that n2 is spawned from.
+            The chain lengths of the tree that ``y`` is spawned from.
 
         Returns
         -------
         int or float
-            The distance between 'x' and 'y'.
+            The distance between ``x`` and ``y``.
         """
         if x is None and y is None:
             return 0
@@ -131,8 +177,7 @@ class TreeApproximationTemplate(ABC):
 
     @abstractmethod
     def get_norm(self, root: int) -> int | float:
-        """
-        Returns the valid value for normalizing the edit distance.
+        """Return the value used to normalize the edit distance.
 
         Parameters
         ----------
@@ -142,7 +187,8 @@ class TreeApproximationTemplate(ABC):
         Returns
         -------
         int or float
-            The number of nodes of each tree according to each style, or the sum of the length of all the nodes in a tree.
+            The number of nodes of the tree according to each style, or the sum
+            of the lengths of all the nodes in the tree.
         """
 
     def _edist_format(
@@ -172,7 +218,9 @@ class TreeApproximationTemplate(ABC):
 
 
 class mini_tree(TreeApproximationTemplate):
-    """Each branch is converted to a node of length 1, it is useful for comparing synchronous developing cells, extremely fast.
+    """Convert each branch to a node of length 1.
+
+    Extremely fast and useful for comparing synchronously developing cells.
     Mainly used for testing.
     """
 
@@ -228,9 +276,10 @@ class mini_tree(TreeApproximationTemplate):
 
 
 class simple_tree(TreeApproximationTemplate):
-    """Each branch is converted to one node with length the same as the life cycle of the cell.
-    This method is fast, but imprecise, especialy for small trees (recommended height of the trees should be 100 at least).
-    Use with CAUTION.
+    """Convert each branch to one node whose length is the cell's life cycle.
+
+    This method is fast but imprecise, especially for small trees (the
+    recommended tree height should be at least 100). Use with caution.
     """
 
     def __init__(self, **kwargs):
@@ -348,6 +397,18 @@ class downsample_tree(TreeApproximationTemplate):
 
 
 class normalized_simple_tree(simple_tree):
+    """Simple tree where the node-comparison cost is normalised by combined branch length.
+
+    Identical to :class:`simple_tree` except the ``delta`` function returns
+    ``|len_x - len_y| / (len_x + len_y)`` instead of the raw absolute
+    difference, so each pairwise cost lies in ``[0, 1)``. This makes the
+    distance less sensitive to the absolute duration of branches and more
+    sensitive to their relative lengths.
+
+    The norm is the number of chains in the subtree (not the total number of
+    nodes), matching the normalisation convention of :class:`mini_tree`.
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -369,30 +430,34 @@ class normalized_simple_tree(simple_tree):
 
 
 class full_tree(TreeApproximationTemplate):
-    """No approximations the whole tree is used here. Perfect accuracy, but heavy on ram and speed.
-    Not recommended to use on napari.
+    """Use the whole tree without any approximation.
 
+    Perfect accuracy, but heavy on RAM and slow. Not recommended for use in
+    napari.
     """
 
     def _edist_format(
         self, adj_dict: dict
     ) -> tuple[list, list[list], dict[int, int]]:
-        """Formating the custom tree style to the format needed by edist.
-        .. warning:: Modifying this function might break your code.
+        """Format the custom tree style to the format needed by edist.
+
+        .. warning::
+            Modifying this function might break your code.
 
         Parameters
         ----------
-            adj_dict : dict
-                The adjacency dictionary produced by 'get_tree'
+        adj_dict : dict
+            The adjacency dictionary produced by :meth:`get_tree`.
 
         Returns
         -------
-            list[int]
-                The list of the new nodes to be used for edist
-            list[list]
-                The adjacency list of these nodes
-            dict[int,int]
-                The correspondance between the nodes used in edist and LineageTree
+        list of int
+            The list of the new nodes to be used for edist.
+        list of list
+            The adjacency list of these nodes.
+        dict of {int: int}
+            The correspondence between the nodes used in edist and the
+            LineageTree.
         """
         inv_adj = {vi: k for k, v in adj_dict.items() for vi in v}
         roots = set(adj_dict).difference(inv_adj)
@@ -481,6 +546,25 @@ class full_tree(TreeApproximationTemplate):
 
 
 class tree_style(Enum):
+    """Enumeration of built-in tree-approximation styles.
+
+    Each member maps a human-readable name to its corresponding
+    :class:`TreeApproximationTemplate` subclass.
+
+    Members
+    -------
+    mini : mini_tree
+        Fastest; each branch becomes a node of cost 1.
+    simple : simple_tree
+        Each branch becomes a node weighted by branch length.
+    normalized_simple : normalized_simple_tree
+        Like ``simple`` but cost is relative (in ``[0, 1)``).
+    downsampled : downsample_tree
+        Samples every ``n`` time points.
+    full : full_tree
+        No approximation; every node is explicit.
+    """
+
     mini = mini_tree
     simple = simple_tree
     normalized_simple = normalized_simple_tree
@@ -488,5 +572,12 @@ class tree_style(Enum):
     full = full_tree
 
     @classmethod
-    def list_names(self):
-        return [style.name for style in self]
+    def list_names(cls) -> list[str]:
+        """Return a list of all available style names.
+
+        Returns
+        -------
+        list of str
+            Names of all members of this enum.
+        """
+        return [style.name for style in cls]
