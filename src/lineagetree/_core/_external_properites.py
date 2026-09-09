@@ -1,11 +1,12 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Mapping
+from typing import TYPE_CHECKING, Any, Literal
+from collections.abc import Mapping
 
 from ..util_types import StaticTypedValueDict
 from warnings import warn
+
 if TYPE_CHECKING:
     from ..lineage_tree import LineageTree
-
 
 
 class Properties:
@@ -19,7 +20,8 @@ class Properties:
     - dataset property: Properties that are dataset wide. Example: A Transformation matrrix to rotate and translate the dataset.
 
     """
-    _default_label: str|None = None
+
+    _default_label: str | None = None
 
     def __repr__(self) -> str:
         ret = self.list_properties()
@@ -35,31 +37,70 @@ class Properties:
                 return
 
     def list_properties(
-    self, constraint: Literal["node", "time", "forest", "labels"] | None = None
+        self,
+        type_of_property: (
+            Literal["node", "time", "forest", "labels"] | None
+        ) = None,
+        filter: type | None = None,
     ) -> list[str]:
+        """Lists all objects that exist in `lT.properies`.
 
-        if constraint == "node":
-            return list(self.node_properties.keys())
+        Parameters
+        ----------
+        type_of_property : Literal[node, time, forest] | None, optional
+            Returns the keys from one of the Properties lists. If None returns allthe keys, by default None
+        filter : type or None, by default None
+            Filters out properties that are not of this type.
 
-        elif constraint == "time":
-            return list(self.time_properties.keys())
+        Returns
+        -------
+        list of str
+            The properties in `lT.properties` after being filtered.
+        """
+        if type_of_property == "node":
+            return [
+                key
+                for key, prop in self.node_properties.items()
+                if filter is None or prop.data_type is filter
+            ]
 
-        elif constraint == "forest":
-            return list(self.forest_properties.keys())
+        if type_of_property == "time":
+            return [
+                key
+                for key, prop in self.time_properties.items()
+                if filter is None or prop.data_type is filter
+            ]
 
-        elif constraint == "labels":
+        if type_of_property == "forest":
+            return [
+                key
+                for key, value in self.forest_properties.items()
+                if filter is None or type(value) is filter
+            ]
+
+        if type_of_property == "labels":
             return [
                 name
                 for name, prop in self.node_properties.items()
-                if prop.data_type == str
+                if prop.data_type is str
             ]
-
-        else:
-            return (
-                list(self.node_properties.keys())
-                + list(self.time_properties.keys())
-                + list(self.forest_properties.keys())
-            )
+        return (
+            [
+                key
+                for key, prop in self.node_properties.items()
+                if filter is None or prop.data_type is filter
+            ]
+            + [
+                key
+                for key, prop in self.time_properties.items()
+                if filter is None or prop.data_type is filter
+            ]
+            + [
+                key
+                for key, value in self.forest_properties.items()
+                if filter is None or type(value) is filter
+            ]
+        )
 
     def __setattr__(
         self, name: str, value: Any
@@ -67,7 +108,7 @@ class Properties:
         """Does not allow attribute assignement after the object initialization."""
         if hasattr(self, "_freeze") and not name.startswith("_"):
             raise TypeError(
-                "'Properties' object does not support attribute assignment. Please use 'lT.add_attribute(...)'  or 'lT.properties.add_attribute(...)'"
+                "'Properties' object does not support attribute assignment. Please use 'lT.add_property(...)'  or 'lT.properties.add_property(...)'"
             )
         return super().__setattr__(name, value)
 
@@ -91,13 +132,14 @@ class Properties:
         raise AttributeError(f"Property {name} does not exist.")
 
     def __dir__(self) -> list[str]:
+        """Important for autocomplete."""
         return [
             *self.node_properties,
             *self.time_properties,
             *self.forest_properties,
             *super().__dir__(),
         ]
-    
+
     @property
     def label(self) -> StaticTypedValueDict:
         if self._default_label not in self.node_properties:
@@ -107,23 +149,44 @@ class Properties:
                     warn(f"Label set to `{name}`")
                     break
             else:
-                raise RuntimeError("No valid string property exists. Consider setting the label manually by lT.properties.set_label(...)")
+                raise RuntimeError(
+                    "No valid string property exists. Consider setting the label manually by lT.properties.set_label(...)"
+                )
 
         assert self._default_label is not None
         if self.node_properties[self._default_label].data_type is not str:
-            return StaticTypedValueDict({k:str(val) for k,val in self.node_properties[self._default_label].items()})
+            return StaticTypedValueDict(
+                {
+                    k: str(val)
+                    for k, val in self.node_properties[
+                        self._default_label
+                    ].items()
+                }
+            )
         return self.node_properties[self._default_label]
 
-    def set_label(self, name):
-        if name in self.node_properties: 
+    def set_label(self, name: str):
+        """Set default label to another node property.
+
+        Parameters
+        ----------
+        name : str
+            The name of the new property.
+
+        Raises
+        ------
+        KeyError
+            If the specified `name` does not exist.
+        """
+        if name in self.node_properties:
             self._default_label = name
         else:
             raise KeyError("No such object exists in node properties.")
 
     def __init__(self, lT: LineageTree) -> None:
         self._lT = lT
-        self.node_properties: dict[str,StaticTypedValueDict] = {}
-        self.time_properties: dict[str,StaticTypedValueDict] = {}
+        self.node_properties: dict[str, StaticTypedValueDict] = {}
+        self.time_properties: dict[str, StaticTypedValueDict] = {}
         self.forest_properties: dict[str, Any] = {}
         self._all_props = [
             self.node_properties,
@@ -148,9 +211,7 @@ class Properties:
             are the same as `lT.times_nodes` of the dataset.
         """
         if name in self.list_properties() and isinstance(value, Mapping):
-            raise ValueError(
-                f"Property named {name} already exists."
-            )
+            raise ValueError(f"Property named {name} already exists.")
         if isinstance(value, Mapping):
             value = StaticTypedValueDict(value)
         if isinstance(value, StaticTypedValueDict):
@@ -173,6 +234,20 @@ class Properties:
 
 
 def add_property(lT: LineageTree, name: str, value: Any, time_property: bool):
+    """Adds a property to the `lT.properties` object.
+
+    Parameters
+    ----------
+    name : str
+        The name of the new property.
+    value : Any
+        The value of the property which is gonna be converted to an ExternalProperty style object.
+    time_property : bool
+        Only important for dict like properties, for other data types has no effect.
+        If False the dictionary will become a `NodeProperty`,
+        meaning all of the keys are nodes. If True, the dicitonary will become a TimeProperty, meaning that the keys
+        are the same as `lT.times_nodes` of the dataset.
+    """
 
     return lT.properties.add_property(name, value, time_property)
 
@@ -191,7 +266,8 @@ def remove_property(lT: LineageTree, name: str):
 
 def list_all_properties(
     lT: LineageTree,
-    constraint: Literal["node", "time", "forest"] | None = None,
+    type_of_property: Literal["node", "time", "forest"] | None = None,
+    filter: type | None = None,
 ) -> list[str]:
     """Lists all objects that exist in `lT.properies`.
 
@@ -199,13 +275,17 @@ def list_all_properties(
     ----------
     lT : LineageTree
         The `LineageTree` object.
-    constraint : Literal[node, time, forest] | None, optional
+    type_of_property : Literal[node, time, forest] | None, optional
         Returns the keys from one of the Properties lists. If None returns allthe keys, by default None
+    filter : type or None, by default None
+        Filters out properties that are not of this type.
 
     Returns
     -------
     list of str
-        The properties in `lT.properties`.
+        The properties in `lT.properties` after being filtered.
     """
 
-    return lT.properties.list_properties(constraint=constraint)
+    return lT.properties.list_properties(
+        type_of_property=type_of_property, filter=filter
+    )
