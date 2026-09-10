@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from itertools import combinations
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
+from collections.abc import Iterable
 
 import numpy as np
 from scipy.spatial import Delaunay, KDTree
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
     from ..lineage_tree import LineageTree
 
 
-def idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
+def compute_idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
     """Get a 3D KDTree for the dataset at time ``t``.
 
     The KDTree is stored in ``lT.kdtrees[t]`` and returned together with the
@@ -52,7 +53,7 @@ def idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
     return idx3d, np.array(to_check_lT)
 
 
-def gabriel_graph(
+def compute_gabriel_graph(
     lT: LineageTree, time: int | Iterable[int] | None = None
 ) -> dict[int, set[int]]:
     """Build the Gabriel graph of the dataset for the given time point(s).
@@ -133,7 +134,7 @@ def gabriel_graph(
     return lT.Gabriel_graph
 
 
-def neighbours_in_radius(
+def compute_neighbours_in_radius(
     lT: LineageTree,
     t_b: int | None = None,
     t_e: int | None = None,
@@ -178,7 +179,7 @@ def neighbours_in_radius(
     return neighbours
 
 
-def spatial_density(
+def compute_spatial_density(
     lT: LineageTree,
     t_b: int | None = None,
     t_e: int | None = None,
@@ -212,7 +213,9 @@ def spatial_density(
     return spatial_density
 
 
-def k_nearest_neighbours(lT: LineageTree, k: int = 10) -> dict[int, set[int]]:
+def compute_k_nearest_neighbours(
+    lT: LineageTree, k: int = 10
+) -> dict[int, set[int]]:
     """Compute the k-nearest neighbours of every node.
 
     The output is written to the attribute ``kn_graph`` and returned.
@@ -260,7 +263,9 @@ def k_nearest_neighbours(lT: LineageTree, k: int = 10) -> dict[int, set[int]]:
     return lT.kn_graph, lT.kn_distances
 
 
-def spatial_edges(lT: LineageTree, th: int = 50) -> dict[int, set[int]]:
+def compute_spatial_edges(
+    lT: LineageTree, th: int = 50
+) -> dict[int, set[int]]:
     """Compute the neighbours at a distance ``th`` of every node.
 
     The output is written to the attribute ``th_edges`` and returned.
@@ -278,14 +283,14 @@ def spatial_edges(lT: LineageTree, th: int = 50) -> dict[int, set[int]]:
         Dictionary that maps a node id to its neighbours within distance
         ``th``.
     """
-    lT.th_edges = {}
+    th_edges = {}
     for t in set(lT._time.values()):
         nodes = lT.time_nodes[t]
         idx3d, nodes = lT.idx3d(t)
         neighbs = idx3d.query_ball_tree(idx3d, th)
         out = dict(zip(nodes, [set(nodes[ni]) for ni in neighbs], strict=True))
-        lT.th_edges.update({k: v.difference([k]) for k, v in out.items()})
-    return lT.th_edges
+        th_edges.update({k: v.difference([k]) for k, v in out.items()})
+    return th_edges
 
 
 def _track_length(chain: np.ndarray, sigma: float = 1.5) -> float:
@@ -318,8 +323,10 @@ def _track_length(chain: np.ndarray, sigma: float = 1.5) -> float:
     return sum(distance_travelled)
 
 
-def track_length(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
-    """Returns the distance travelled for each timepoint.
+def compute_track_length(
+    lT: LineageTree, sigma: float = 1.5
+) -> dict[int, float]:
+    """Returns the distance travelled for each timepoint. Possible smoothing may be applied.
 
     Parameters
     ----------
@@ -339,12 +346,12 @@ def track_length(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
         data = np.array([lT.pos[c] for c in track])
         dist = _track_length(data, sigma)
         tr_length.update({node: dist for node in track})
-    lT.Track_length = tr_length
-    return lT.Track_length
+    track_length = tr_length
+    return track_length
 
 
-def duration(lT: LineageTree) -> dict[int, float]:
-    """The duration of each chain.
+def compute_duration(lT: LineageTree) -> dict[int, float]:
+    """The duration of each chain in terms of time.
 
     Parameters
     ----------
@@ -356,16 +363,17 @@ def duration(lT: LineageTree) -> dict[int, float]:
     dict[int,float]
        dictionary that maps a node id to the temporal duration of its chain.
     """
-    lT.Duration = {
+    duration = {
         node: len(lT.get_chain_of_node(node)) * lT.time_resolution
         for node in lT.nodes
     }
-    return lT.Duration
+    return duration
 
 
-def max_displacement(lT: LineageTree) -> dict[int, float]:
+def compute_max_displacement(lT: LineageTree) -> dict[int, float]:
     """Maximal Euclidean distance of any position on the subtrack from the first position.
     Each node in a given chain has the same max displacement.
+    Max displacement uses the displacement from the start of the lineage, instead of the start of the chain or a window.
 
     Parameters
     ----------
@@ -378,7 +386,7 @@ def max_displacement(lT: LineageTree) -> dict[int, float]:
         a dictionary that maps each node to the max displacement of its chain.
     """
 
-    lT.Max_displacement = {}
+    max_displacement = {}
     for chain in lT.all_chains:
         root = lT.get_ancestor_at_t(chain[0])
         if root not in lT.nodes:
@@ -388,13 +396,13 @@ def max_displacement(lT: LineageTree) -> dict[int, float]:
         displacements = np.cumsum(
             np.linalg.norm((positions - root_pos), axis=1)
         )
-        lT.Max_displacement.update(
+        max_displacement.update(
             {node: disp for node, disp in zip(chain, displacements)}
         )
-    return lT.Max_displacement
+    return max_displacement
 
 
-def speed(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
+def compute_speed(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
     """The speed of each node.
 
     Parameters
@@ -411,14 +419,14 @@ def speed(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
         dictionary that maps each node to its speed (distance travelled/time_resolution)
     """
 
-    tr_length = track_length(lT, sigma)
-    lT.Speed = {
+    tr_length = compute_track_length(lT, sigma)
+    speed = {
         node: dist / lT.time_resolution for node, dist in tr_length.items()
     }
-    return lT.Speed
+    return speed
 
 
-def displacement(lT: LineageTree) -> dict[int, float]:
+def compute_displacement(lT: LineageTree) -> dict[int, float]:
     """Displacement between a the start and the end of each chain.
 
     Parameters
@@ -431,19 +439,19 @@ def displacement(lT: LineageTree) -> dict[int, float]:
     dict[int, float]
         dictionary that maps each node to the displacement of its chain (start to end)
     """
-    displacement = {}
+    chain_displacement = {}
     for chain in lT.all_chains:
-        displacement.update(
+        chain_displacement.update(
             {
                 node: np.linalg.norm(lT.pos[chain[0]] - lT.pos[chain[-1]])
                 for node in chain
             }
         )
-    lT.Displacement = displacement
-    return lT.Displacement
+    displacement = chain_displacement
+    return displacement
 
 
-def velocity(lT: LineageTree) -> dict[int, float]:
+def compute_velocity(lT: LineageTree) -> dict[int, float]:
     """The velocity of each node.
 
     Parameters
@@ -456,17 +464,16 @@ def velocity(lT: LineageTree) -> dict[int, float]:
     dict[int, float]
         dictionary that maps each node to its velocity
     """
-    disp = displacement(lT)
-    lT.Velocity = {
-        node: dist / lT.time_resolution for node, dist in disp.items()
-    }
-    return lT.Velocity
+    disp = compute_displacement(lT)
+    velocity = {node: dist / lT.time_resolution for node, dist in disp.items()}
+    return velocity
 
 
-def mean_squared_displacement(
+def compute_mean_squared_displacement(
     lT: LineageTree,
 ) -> dict[int, float]:
     """The Mean Squared Euclidean distance between the track starting and endpoints
+    Uses the distance from the first position of the chain.
 
     Parameters
     ----------
@@ -478,17 +485,17 @@ def mean_squared_displacement(
     dict[int, float]
         dictionary that maps each node to the msd of its respective chain.
     """
-    lT.msd = {}
+    msd = {}
     for chain in lT.all_chains:
         positions = np.array([lT.pos[c] for c in chain])
         MSD = np.cumsum(
             np.linalg.norm((positions - positions[0]) ** 2, axis=1)
         ) / np.arange(1, len(chain) + 1)
-        lT.msd.update({node: msd for node, msd in zip(chain, MSD)})
-    return lT.msd
+        msd.update({node: msd for node, msd in zip(chain, MSD)})
+    return msd
 
 
-def displacement_ratio(lT: LineageTree) -> dict[int, float]:
+def compute_displacement_ratio(lT: LineageTree) -> dict[int, float]:
     """The displacement ratio, displacement/max_displacement, displacement of each chain divided by
     the displacement from the root node.
 
@@ -502,15 +509,17 @@ def displacement_ratio(lT: LineageTree) -> dict[int, float]:
     dict[int, float]
         dictionary that maps each node to its displacement ratio.
     """
-    disp = displacement(lT)
-    max_disp = max_displacement(lT)
-    lT.Displacement_ratio = {
+    disp = compute_displacement(lT)
+    max_disp = compute_max_displacement(lT)
+    displacement_ratio = {
         node: disp[node] / max_disp[node] for node in disp if max_disp[node]
     }
-    return lT.Displacement_ratio
+    return displacement_ratio
 
 
-def outreach_ratio(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
+def compute_outreach_ratio(
+    lT: LineageTree, sigma: float = 1.5
+) -> dict[int, float]:
     """maxDisplacement/trackLength
     (values between 0 and 1, where 1 means a perfectly straight track)
 
@@ -527,17 +536,19 @@ def outreach_ratio(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
     dict[int, float]
         dictionary that maps erach node to the outreach ratio of its chain
     """
-    max_disp = max_displacement(lT)
-    tr_length = track_length(lT, sigma)
-    lT.Outreach_ratio = {
+    max_disp = compute_max_displacement(lT)
+    tr_length = compute_track_length(lT, sigma)
+    outreach_ratio = {
         node: max_disp[node] / tr_length[node]
         for node in tr_length
         if tr_length[node]
     }
-    return lT.Outreach_ratio
+    return outreach_ratio
 
 
-def straightness(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
+def compute_straightness(
+    lT: LineageTree, sigma: float = 1.5
+) -> dict[int, float]:
     """displacement/trackLength
     (values between 0 and 1, where 1 means a perfectly straight track)
 
@@ -554,10 +565,10 @@ def straightness(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
     dict[int, float]
         dictionary that maps each node to the straightness of its chain
     """
-    displ = displacement(lT)
-    tr_length = track_length(lT, sigma)
-    lT.Straightness = {node: displ[node] / tr_length[node] for node in displ}
-    return lT.Straightness
+    displ = compute_displacement(lT)
+    tr_length = compute_track_length(lT, sigma)
+    straightness = {node: displ[node] / tr_length[node] for node in displ}
+    return straightness
 
 
 def _inertia_matrix(chain, sigma: float = 1.5) -> np.ndarray:
@@ -596,7 +607,9 @@ def _inertia_matrix(chain, sigma: float = 1.5) -> np.ndarray:
     return np.array([[Ixx, Ixy, Ixz], [Ixy, Iyy, Iyz], [Ixz, Iyz, Izz]])
 
 
-def asphericity(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
+def compute_asphericity(
+    lT: LineageTree, sigma: float = 1.5
+) -> dict[int, float]:
     """Calculate the asphericity of a track. For 0 it is perfectly spherical, while for 1 it is not spherical.
     Adapted from : J Rudnick and G Gaspari 1986 J. Phys. A: Math. Gen. 19 L191
 
@@ -614,7 +627,7 @@ def asphericity(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
         dictionary that maps each node to the sphericity of each respective track.
 
     """
-    lT.Asphericity = {}
+    asphericity = {}
 
     for chain in lT.all_chains:
         chain_pos = np.array([lT.pos[c] for c in chain])
@@ -630,12 +643,12 @@ def asphericity(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
             + eig_vals[0] ** 2 * eig_vals[2] ** 2
         )
         asphericity = (tr**2 - 3 * M) / (tr**2)
-        lT.Asphericity.update({node: asphericity for node in chain})
-    return lT.Asphericity
+        asphericity.update({node: asphericity for node in chain})
+    return asphericity
 
 
-def angles(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
-    """Angles between adjacent edges.
+def compute_angles(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
+    """Angles between adjacent edges. Only nodes in chains longer than 3 will be considered.
 
     Parameters
     ----------
@@ -652,40 +665,42 @@ def angles(lT: LineageTree, sigma: float = 1.5) -> dict[int, float]:
         For example for and edge containing the nodes o,i,e,a:  o -> i -> e -> a
         for i its the angle of o->i to i->e, for e is the angle of i->e to e->a
     """
-    lT.Angles = {}
+    angles = {}
     for chain in lT.all_chains:
         if len(chain) < 3:
             continue
-        else:
-            positions = np.array([lT.pos[c] for c in chain])
-            smoothed_positions = np.zeros_like(positions, dtype=float)
-            if sigma != 0:
-                smoothed_positions[:, 0] = anchored_gaussian_smooth(
-                    positions[:, 0], sigma
-                )
-                smoothed_positions[:, 1] = anchored_gaussian_smooth(
-                    positions[:, 1], sigma
-                )
-                smoothed_positions[:, 2] = anchored_gaussian_smooth(
-                    positions[:, 2], sigma
-                )
-            else:
-                smoothed_positions = positions  # Not smoothed
 
-            vectors1 = smoothed_positions[:-1] - smoothed_positions[1:]
-            vectors2 = vectors1[1:]
-            angles = [
-                (v1 @ v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
-                for v1, v2 in zip(vectors1, vectors2)
-            ]
-            angles = [0] + angles + [0]  # first and last node have no angle
-            lT.Angles.update(
-                {node: angle for node, angle in zip(chain, angles)}
+        positions = np.array([lT.pos[c] for c in chain])
+        smoothed_positions = np.zeros_like(positions, dtype=float)
+        if sigma != 0:
+            smoothed_positions[:, 0] = anchored_gaussian_smooth(
+                positions[:, 0], sigma
             )
-    return lT.Angles
+            smoothed_positions[:, 1] = anchored_gaussian_smooth(
+                positions[:, 1], sigma
+            )
+            smoothed_positions[:, 2] = anchored_gaussian_smooth(
+                positions[:, 2], sigma
+            )
+        else:
+            smoothed_positions = positions  # Not smoothed
+
+        vectors1 = smoothed_positions[:-1] - smoothed_positions[1:]
+        vectors2 = vectors1[1:]
+        chain_angles = [
+            (v1 @ v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+            for v1, v2 in zip(vectors1, vectors2)
+        ]
+        chain_angles = (
+            [0] + chain_angles + [0]
+        )  # first and last node have no angle
+        angles.update(
+            {node: angle for node, angle in zip(chain, chain_angles)}
+        )
+    return angles
 
 
-def overall_angle(lT: LineageTree) -> dict[int, float]:
+def compute_overall_angle(lT: LineageTree) -> dict[int, float]:
     """The angle (degrees) between the first and the last segment of the given track.
     Angles are measured symmetrically, thus the return values range from 0 to pi;
     for instance, both a 90 degrees left and right turns yield the same value pi/2 radians.
@@ -700,7 +715,7 @@ def overall_angle(lT: LineageTree) -> dict[int, float]:
     dict[int, float]
         dictionary that maps the overall angle of a given chain to every node of its chain
     """
-    lT.Overall_angles = {}
+    overall_angles = {}
     for chain in lT.all_chains:
         if len(chain) < 3:
             continue
@@ -710,13 +725,32 @@ def overall_angle(lT: LineageTree) -> dict[int, float]:
             overangle = (vector1 @ vector2) / (
                 np.linalg.norm(vector1) * np.linalg.norm(vector2)
             )
-            lT.Overall_angles.update({node: overangle for node in chain})
-    return lT.Overall_angles
+            overall_angles.update({node: overangle for node in chain})
+    return overall_angles
 
 
-def alpha_score(
+def compute_MSD_alpha_score(
     lT: LineageTree,
-):
+) -> dict[int, float]:
+    """Calculates the MSD (Mean Squared Displacement) scaling exponent (b * (x**a)) for each chain.
+    This metric can be used to characterize the movement of cells:
+        - Values<1: The movement is constrained (sub diffusive)
+        - Values=1: The movement is Brownian
+        - Values>1: The movement is directed (if Value>2 its considered superdiffusive)
+    For this calculation the MSD is defined as the distance from the first timepoint of the chain, not a moving window.
+    Small chains (<5) will not be considered for the calculation, as they dont provide enough data to be able to do calculations.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree object.
+
+    Returns
+    -------
+    dict[int, float]
+        dictionary that maps nodes to floating values (alphas). The different alpha value one alpha is calculated per chain, however all nodes of a given chain will have the same alpha.
+    """
+
     def _model(x, a, b):
         return b * (x**a)
 
@@ -728,7 +762,7 @@ def alpha_score(
         MSD = np.cumsum(
             np.linalg.norm((positions - positions[0]) ** 2, axis=1)
         ) / np.arange(1, len(chain) + 1)
-        pars, *_ = curve_fit(_model, np.linspace(0, len(MSD), 50), MSD)
+        pars, *_ = curve_fit(_model, np.linspace(0, len(MSD), len(chain)), MSD)
         alphas.update({node: pars[0] for node in chain})
     return alphas
 
