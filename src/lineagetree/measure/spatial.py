@@ -142,7 +142,7 @@ def compute_neighbours_in_radius(
 ) -> dict[int, float]:
     """Compute the neighbours within radius ``th`` for nodes in a time range.
 
-    The result is stored in ``lT.neighbours`` and returned.
+    The result is stored in ``lT.compute_neighbours`` and returned.
 
     Parameters
     ----------
@@ -168,7 +168,7 @@ def compute_neighbours_in_radius(
         t_e = lT.t_e
     time_range = set(range(t_b, t_e)).intersection(lT._time.values())
     for t in time_range:
-        idx3d, nodes = lT.idx3d(t)
+        idx3d, nodes = compute_idx3d(lT, t)
         idx = idx3d.query_ball_tree(idx3d, th)
         neighbours.update(
             {
@@ -208,14 +208,14 @@ def compute_spatial_density(
     s_vol = 4 / 3.0 * np.pi * th**3
     spatial_density = {
         k: (len(v) + 1) / s_vol
-        for k, v in lT.neighbours_in_radius(t_b, t_e, th).items()
+        for k, v in compute_neighbours_in_radius(lT, t_b, t_e, th).items()
     }
     return spatial_density
 
 
 def compute_k_nearest_neighbours(
     lT: LineageTree, k: int = 10
-) -> dict[int, set[int]]:
+) -> tuple[dict[int, set[int]], dict[int, set[float]]]:
     """Compute the k-nearest neighbours of every node.
 
     The output is written to the attribute ``kn_graph`` and returned.
@@ -241,7 +241,7 @@ def compute_k_nearest_neighbours(
     for t, nodes in lT.time_nodes.items():
         if 1 < len(nodes):
             use_k = k if k < len(nodes) else len(nodes)
-            idx3d, nodes = lT.idx3d(t)
+            idx3d, nodes = compute_idx3d(lT, t)
             pos = [lT.pos[c] for c in nodes]
             distances, neighbs = idx3d.query(pos, use_k)
             out = dict(
@@ -286,7 +286,7 @@ def compute_spatial_edges(
     th_edges = {}
     for t in set(lT._time.values()):
         nodes = lT.time_nodes[t]
-        idx3d, nodes = lT.idx3d(t)
+        idx3d, nodes = compute_idx3d(lT, t)
         neighbs = idx3d.query_ball_tree(idx3d, th)
         out = dict(zip(nodes, [set(nodes[ni]) for ni in neighbs], strict=True))
         th_edges.update({k: v.difference([k]) for k, v in out.items()})
@@ -642,8 +642,8 @@ def compute_asphericity(
             + eig_vals[1] ** 2 * eig_vals[2] ** 2
             + eig_vals[0] ** 2 * eig_vals[2] ** 2
         )
-        asphericity = (tr**2 - 3 * M) / (tr**2)
-        asphericity.update({node: asphericity for node in chain})
+        chain_asphericity = (tr**2 - 3 * M) / (tr**2)
+        asphericity.update({node: chain_asphericity for node in chain})
     return asphericity
 
 

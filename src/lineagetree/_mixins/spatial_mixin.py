@@ -1,23 +1,23 @@
 from ..measure.spatial import (
-    k_nearest_neighbours,
-    spatial_density,
-    spatial_edges,
-    gabriel_graph,
-    idx3d,
-    neighbours_in_radius,
-    angles,
-    asphericity,
-    displacement,
-    displacement_ratio,
-    duration,
-    max_displacement,
-    mean_squared_displacement,
-    outreach_ratio,
-    overall_angle,
-    speed,
-    straightness,
-    track_length,
-    velocity,
+    compute_k_nearest_neighbours,
+    compute_spatial_density,
+    compute_spatial_edges,
+    compute_gabriel_graph,
+    compute_idx3d,
+    compute_neighbours_in_radius,
+    compute_angles,
+    compute_asphericity,
+    compute_displacement,
+    compute_displacement_ratio,
+    compute_duration,
+    compute_max_displacement,
+    compute_mean_squared_displacement,
+    compute_outreach_ratio,
+    compute_overall_angle,
+    compute_speed,
+    compute_straightness,
+    compute_track_length,
+    compute_velocity,
 )
 
 from ._methodize import AutoMethodizeMeta
@@ -26,34 +26,22 @@ from ._methodize import AutoMethodizeMeta
 class SpatialMixin(metaclass=AutoMethodizeMeta):
     """Mixin for spatial analysis operations."""
 
-    idx3d = idx3d
-    gabriel_graph = gabriel_graph
-    k_nearest_neighbours = k_nearest_neighbours
-    spatial_edges = spatial_edges
-    spatial_density = spatial_density
-    neighbours_in_radius = neighbours_in_radius
-    angles = angles
-
-    asphericity = asphericity
-
-    displacement = displacement
-
-    displacement_ratio = displacement_ratio
-
-    duration = duration
-
-    max_displacement = max_displacement
-
-    mean_squared_displacement = mean_squared_displacement
-
-    outreach_ratio = outreach_ratio
-
-    overall_angle = overall_angle
-
-    speed = speed
-
-    straightness = straightness
-
-    track_length = track_length
-
-    velocity = velocity
+    compute_idx3d = compute_idx3d
+    compute_gabriel_graph = compute_gabriel_graph
+    compute_k_nearest_neighbours = compute_k_nearest_neighbours
+    compute_spatial_edges = compute_spatial_edges
+    compute_spatial_density = compute_spatial_density
+    compute_neighbours_in_radius = compute_neighbours_in_radius
+    compute_angles = compute_angles
+    compute_asphericity = compute_asphericity
+    compute_displacement = compute_displacement
+    compute_displacement_ratio = compute_displacement_ratio
+    compute_duration = compute_duration
+    compute_max_displacement = compute_max_displacement
+    compute_mean_squared_displacement = compute_mean_squared_displacement
+    compute_outreach_ratio = compute_outreach_ratio
+    compute_overall_angle = compute_overall_angle
+    compute_speed = compute_speed
+    compute_straightness = compute_straightness
+    compute_track_length = compute_track_length
+    compute_velocity = compute_velocity
