@@ -87,6 +87,7 @@ push = false
 "pyproject.toml" = [
     'current_version = "{version}"',
     'version = "{version}"',
+
 ]
 "src/lineagetree/__init__.py" = [
     '__version__ = "{version}"',
@@ -94,6 +95,7 @@ push = false
 
 [tool.ruff]
 line-length = 79
+
 exclude = [
     ".bzr",
     ".direnv",
@@ -114,6 +116,17 @@ exclude = [
     "venv",
     "*vendored*",
     "*_vendor*",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes: unused imports, unused variables, etc.
+    "I",    # isort: organize imports
+    "B",    # flake8-bugbear
+    "UP",   # pyupgrade
+    "SIM",  # simplify code
+    "RUF",  # Ruff-specific rules
 ]
 
 target-version = "py313"
