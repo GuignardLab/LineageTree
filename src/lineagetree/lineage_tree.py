@@ -164,8 +164,9 @@ class LineageTree(
                 name=lT.name if hasattr(lT, "name") else None,
                 **properties,
             )
-        for node, pos in lT.pos.items():
-            lT.pos[node] = np.array(pos, dtype=float)
+        lT.pos = {
+            node: np.array(pos, dtype=float) for node, pos in lT.pos.items()
+        }
         if not hasattr(lT, "time_resolution"):
             lT.time_resolution = 1
         if not hasattr(lT, "spatial_resolution"):
@@ -334,7 +335,6 @@ class LineageTree(
         else:
             if self.nodes.difference(pos) != set():
                 raise ValueError("Please provide the position of all nodes.")
-            print("passthrough")
             self.pos = {
                 node: np.array(position, dtype=float)
                 for node, position in pos.items()
