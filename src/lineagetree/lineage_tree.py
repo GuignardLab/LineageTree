@@ -79,12 +79,16 @@ class LineageTree(
     """
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if name in vars(self):  # Property calls the setattr every time :O
-            return super().__setattr__(name, value)
-        warnings.warn(
-            "It is reccommended to use `lT.add_property`.",
-            category=SetAttrWarning,
-        )
+        if (
+            "_initialised" in self.__dict__
+            and not name.startswith("_")
+            and name not in self.__dict__
+        ):
+            warnings.warn(
+                "It is recommended to use `lT.add_property`.",
+                category=SetAttrWarning,
+                stacklevel=2,
+            )
         return super().__setattr__(name, value)
 
     def __eq__(self, other) -> bool:
@@ -241,7 +245,9 @@ class LineageTree(
                 True,
             )
         for prop in self.properties.forest_properties:
-            lT.add_property(prop, lT.properties.forest_properties[prop], False)
+            lT.add_property(
+                prop, self.properties.forest_properties[prop], False
+            )
         return lT
 
     def __init__(
@@ -291,7 +297,7 @@ class LineageTree(
             custom property. The property must be specified for every node and
             named differently from LineageTree's own attributes.
         """
-        warnings.filterwarnings("ignore", category=SetAttrWarning)
+
         self.__version__ = importlib.metadata.version("lineagetree")
         self.name = str(name) if name is not None else None
         self._temporal = temporal
@@ -459,9 +465,10 @@ class LineageTree(
 
         # custom properties
         for name, d in kwargs.items():
-            if name in self.__dict__:
+            if name in self.properties.list_properties():
                 warnings.warn(
-                    f"Attribute name {name} is reserved.", stacklevel=2
+                    f"Attribute name {name} is already in use. Attribute will be saved in LineageTree instead of the properties. It may be accessed through `lT.{name}`",
+                    stacklevel=2,
                 )
                 continue
             injected = False  # Flag to check if the value was injected in lT
@@ -477,5 +484,6 @@ class LineageTree(
                     print(
                         f"Property `{name}`, was not used in properties. Instead it canbe accessed by `lT.{name}`"
                     )
-
-        warnings.resetwarnings()
+            else:
+                self.add_property(name, d, False)
+        self.__dict__["_initialised"] = True

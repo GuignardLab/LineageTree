@@ -4,6 +4,7 @@ from collections.abc import Mapping
 
 from ..util_types import StaticTypedValueDict
 from warnings import warn
+import warnings
 
 if TYPE_CHECKING:
     from ..lineage_tree import LineageTree
@@ -149,9 +150,10 @@ class Properties:
                     warn(f"Label set to `{name}`")
                     break
             else:
-                raise RuntimeError(
+                warnings.warn(
                     "No valid string property exists. Consider setting the label manually by lT.properties.set_label(...)"
                 )
+                return {}
 
         assert self._default_label is not None
         if self.node_properties[self._default_label].data_type is not str:
@@ -256,6 +258,18 @@ def get_property(lT: LineageTree, name: str, default=None):
     """Function for getting properties from `lT.properties`, identical to accessing the
     properties object and receiving the attribute you want.
     """
+    if name in (
+        "node_properties",
+        "time_properties",
+        "forest_properties",
+        "_all_props",
+        "_lT",
+        "add_property",
+        "get_property",
+        "remove_property",
+        "list_all_properties",
+    ):
+        raise AttributeError(name)
     return getattr(lT.properties, name, default)
 
 

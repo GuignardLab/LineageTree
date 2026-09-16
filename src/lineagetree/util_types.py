@@ -71,7 +71,7 @@ class StaticTypedValueDict(UserDict):
             if not isinstance(data, Mapping):
                 value = next(iter(data))
                 if len(value) != 2:
-                    raise ValueError("`data` could not be converted to dict.")
+                    raise TypeError("`data` could not be converted to dict.")
                 self.data_type = type(next(iter(data))[1])
             else:
                 self.data_type = type(next(iter(data.values())))

@@ -625,6 +625,8 @@ def test_find_leaves():
 
 def test_get_subtree_nodes():
     assert lT1.get_chain_of_node(173618) == lT1.get_subtree_nodes(173618)
+    lintree = LineageTree(successor={1: [2], 2: [3]}, scalar=3)
+    lintree.get_subtree({1, 2, 3})
 
 
 def test_spatial_density():
@@ -632,6 +634,8 @@ def test_spatial_density():
         lT1.spatial_density(0, th=40)[110832], 7.460387957432594e-06
     )
     assert lT1.neighbours_in_radius(0, th=40)[110832] == {np.int64(110826)}
+    lT1.neighbours_in_radius(0, th=40)
+    lT1.neighbours_in_radius(0, th=20)
 
 
 def test_k_nearest_neighbours():
@@ -651,6 +655,11 @@ def test_k_nearest_neighbours():
             173.50879512,
         ],
     )
+
+
+def test_forest_properties_initialization():
+    lintree = LineageTree(successor={1: [2]}, scalar_val=3)
+    assert "scalar_val" in lintree.properties.list_properties()
 
 
 def test_properties():

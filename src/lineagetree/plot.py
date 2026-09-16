@@ -328,6 +328,8 @@ def plot_all_lineages(
         A dictionary that maps the axes to the root of the tree.
     """
     nrows = int(nrows)
+    if not lT.nodes:
+        raise Warning("Empty LinbeageTree cannot be plotted")
     if last_time_point_to_consider is None:
         last_time_point_to_consider = lT.t_b
     if nrows < 1 or not nrows:

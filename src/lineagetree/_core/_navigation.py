@@ -322,10 +322,12 @@ def get_labelled_ancestor(
     int
         Returns the first ancestor found that has a label otherwise `-1`.
     """
+    print(DeprecationWarning("Use gat ancstor with attibute instead."))
+
     if node not in lT.nodes:
         return -1
     ancestor = node
-    if labels is not None and labels not in lT.list_all_labels():
+    if labels is not None and labels not in lT.list_all_properties():
         raise ValueError("Label set not defined.")
     while lT.t_b <= lT._time.get(ancestor, lT.t_b - 1) and ancestor != -1:
         if ancestor in lT.properties.label:
@@ -367,6 +369,8 @@ def get_ancestor_with_attribute(
     attr_dict = getattr(lT.properties, attribute)
     if not isinstance(attr_dict, StaticTypedValueDict):
         raise ValueError("Please select a dict attribute")
+    if not attr_dict:
+        raise ValueError("Empty attribute mapping.")
     if node not in lT.nodes:
         return -1
     if node in attr_dict:

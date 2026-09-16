@@ -1,13 +1,22 @@
 from __future__ import annotations
 
 from itertools import combinations
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
+from collections.abc import Iterable
 
 import numpy as np
 from scipy.spatial import Delaunay, KDTree
 
 if TYPE_CHECKING:
     from ..lineage_tree import LineageTree
+
+# def to_lT(func, name:str|Iterable|None= None, time_property:bool|Iterable = False, overwrite:bool = False):
+#     def wrapper(*args):
+#         res = func(*args)
+
+#         if not isinstance(name,str) and isinstance(name, Iterable) and len(name) == len(res):
+#             ...
+#         ...
 
 
 def idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
@@ -75,7 +84,7 @@ def gabriel_graph(
         A dictionary that maps a node to the set of its neighbours.
     """
     if not lT.get_property("gabriel_graph"):
-        lT.add_property("gabriel_graph", {}, time_property=True)
+        lT.add_property("gabriel_graph", {}, time_property=False)
 
     if time is None:
         time = lT.time_nodes.keys()
@@ -173,10 +182,11 @@ def neighbours_in_radius(
                 for node, nb_idx in zip(nodes, idx)
             }
         )
-        #### TODO OVERWRITE
+    # add_lt()
     if not lT.get_property("neighbours_in_radius"):
         lT.add_property("neighbours_in_radius", neighbours, False)
     else:
+        lT.properties.neighbours_in_radius.clear()
         lT.properties.neighbours_in_radius.update(neighbours)
     return neighbours
 
@@ -215,6 +225,7 @@ def spatial_density(
     if not lT.get_property("spatial_density"):
         lT.add_property("spatial_density", spatial_density, False)
     else:
+        lT.properties.spatial_density.clear()
         lT.properties.spatial_density.update(spatial_density)
 
     return spatial_density
@@ -268,10 +279,12 @@ def k_nearest_neighbours(lT: LineageTree, k: int = 10) -> dict[int, set[int]]:
     if not lT.get_property("kn_graph"):
         lT.add_property("kn_graph", kn_graph, False)
     else:
+        lT.properties.kn_graph.clear()
         lT.properties.kn_graph.update(kn_graph)
     if not lT.get_property("kn_distances"):
         lT.add_property("kn_distances", kn_distances, False)
     else:
+        lT.properties.kn_distances.clear()
         lT.properties.kn_distances.update(kn_distances)
     return kn_graph, kn_distances
 
@@ -304,5 +317,6 @@ def spatial_edges(lT: LineageTree, th: int = 50) -> dict[int, set[int]]:
     if not lT.get_property("th_edges"):
         lT.add_property("th_edges", th_edges, False)
     else:
+        lT.properties.th_edges.clear()
         lT.properties.th_edges.update(th_edges)
     return th_edges
