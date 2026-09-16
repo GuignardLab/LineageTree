@@ -16,6 +16,12 @@ from lineagetree import LineageTree
 
 
 def export_to_csv():
+    """Write a hard-coded ASTEC lineage tree to a series of CSV files.
+
+    Produces ``spots.csv`` and ``links.csv`` describing the nodes and edges,
+    together with the fate tables ``fates{1,2,3}.csv`` and
+    ``fate_values{1,2,3}.csv``.
+    """
     tree = LineageTree("Astec-Pm10_properties.pkl", file_type="ASTEC")
 
     spots = [["id", "label", "timePoint", "x", "y", "z", "volume"]]
@@ -45,6 +51,19 @@ def export_to_csv():
 
 
 def write_fate(fates, fate_name, tree, fate_value_name):
+    """Write a fate table and its per-node values to two CSV files.
+
+    Parameters
+    ----------
+    fates : dict of {int: str}
+        Mapping from node id to fate label.
+    fate_name : str
+        Path of the CSV file listing the unique fate labels.
+    tree : LineageTree
+        The lineage tree providing the node ids.
+    fate_value_name : str
+        Path of the CSV file listing each node id with its fate value.
+    """
     all_fates = []
     for index in fates:
         all_fates.append(fates[index])
@@ -61,6 +80,15 @@ def write_fate(fates, fate_name, tree, fate_value_name):
 
 
 def write(file_path, data):
+    """Write rows of data to a CSV file.
+
+    Parameters
+    ----------
+    file_path : str
+        Path of the CSV file to create.
+    data : iterable of iterable
+        Rows to write, each an iterable of cell values.
+    """
     with open(file_path, mode="w", newline="") as file:
         writer = csv.writer(file)
         writer.writerows(data)

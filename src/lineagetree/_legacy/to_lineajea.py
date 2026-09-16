@@ -4,6 +4,19 @@ import csv
 def write_csv_from_lT_to_lineaja(
     lT, path_to, start: int = 0, finish: int = 300
 ):
+    """Export a lineage tree to a lineaja-compatible CSV file.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The lineage tree to export.
+    path_to : str or pathlib.Path
+        Destination path of the CSV file.
+    start : int, default=0
+        First time point (inclusive) to export.
+    finish : int, default=300
+        Last time point (exclusive) to export.
+    """
     csv_dict = {}
     for time in range(start, finish):
         for node in lT.time_nodes[time]:

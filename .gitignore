@@ -96,3 +96,5 @@ bak_*
 .coverage
 
 ty_check
+
+claude-outputs

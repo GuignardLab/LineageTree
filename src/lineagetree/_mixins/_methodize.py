@@ -5,10 +5,22 @@ from functools import wraps
 
 
 def _strip_first_param_from_doc(doc: str) -> str:
-    """
-    Best-effort removal for NumPy docstrings.
-    Only removes the first parameter if it's "lT: LineageTree".
-    Leaves other styles unchanged if patterns aren't found.
+    """Remove the first parameter entry from a NumPy-style docstring.
+
+    Best-effort removal that only drops the first parameter when its type is
+    ``LineageTree``. Docstrings that do not match the expected NumPy layout are
+    returned unchanged.
+
+    Parameters
+    ----------
+    doc : str
+        The docstring to process.
+
+    Returns
+    -------
+    str
+        The docstring with the leading ``lT : LineageTree`` parameter removed,
+        or the original docstring when no matching entry is found.
     """
     if not doc:
         return doc
@@ -116,12 +128,22 @@ def _strip_first_param_from_doc(doc: str) -> str:
 
 
 def methodize(func):
-    """
-    Turn a free function (cl, *args) into a method wrapper that:
-      - drops the first parameter in the visible signature,
-      - hides the first parameter in common docstring styles.
-    Usage:
-        Class.func = methodize(func)
+    """Wrap a free function so it behaves as a bound method.
+
+    The returned wrapper drops the first parameter from the visible signature
+    and hides the corresponding entry in the NumPy-style docstring, so that a
+    free function ``func(self, *args)`` can be attached to a class as a method.
+
+    Parameters
+    ----------
+    func : callable
+        The free function to wrap. Its first parameter is treated as ``self``.
+
+    Returns
+    -------
+    callable
+        A wrapper suitable for assignment as a class attribute, e.g.
+        ``Class.func = methodize(func)``.
     """
 
     @wraps(func)
@@ -134,11 +156,20 @@ def methodize(func):
 
 
 def attach_methods(cls, funcs):
-    """
-    Bulk attach: funcs is a dict {name: function} or a module.
-    Example:
-        import funcs as fmod
-        attach_methods(Class, fmod)
+    """Attach several methodised free functions to a class in bulk.
+
+    Parameters
+    ----------
+    cls : type
+        The class to which the methods are attached.
+    funcs : module or dict of {str: callable}
+        Either a module (its public, callable, non-underscored attributes are
+        used) or a mapping from method name to free function.
+
+    Raises
+    ------
+    TypeError
+        If ``funcs`` is neither a module nor a dict of callables.
     """
     if hasattr(funcs, "__dict__"):
         items = {
@@ -155,7 +186,32 @@ def attach_methods(cls, funcs):
         setattr(cls, name, methodize(f))
 
 
-def _should(name, obj, cls_module):
+def _should(name: str, obj: object, cls_module: str | None) -> bool:
+    """Decide whether ``obj`` should be automatically methodised.
+
+    A callable is eligible when:
+
+    - It is a plain :class:`types.FunctionType` (not a ``staticmethod``,
+      ``classmethod``, or ``property``).
+    - It was **not** defined inside the same module as the mixin class
+      (i.e. it was imported from a ``_core`` module).
+    - Its first parameter is positional (``POSITIONAL_ONLY`` or
+      ``POSITIONAL_OR_KEYWORD``).
+
+    Parameters
+    ----------
+    name : str
+        Attribute name (unused; kept for caller convenience).
+    obj : object
+        The object assigned to the class attribute.
+    cls_module : str or None
+        ``__module__`` of the mixin class being constructed.
+
+    Returns
+    -------
+    bool
+        ``True`` if ``obj`` should be wrapped by :func:`methodize`.
+    """
     if isinstance(obj, (staticmethod, classmethod, property)):
         return False
     if not isinstance(obj, types.FunctionType):
@@ -173,7 +229,38 @@ def _should(name, obj, cls_module):
 
 
 class AutoMethodizeMeta(type):
+    """Metaclass that automatically wraps imported free functions as bound methods.
+
+    When a mixin class is created with this metaclass, every function that
+    satisfies :func:`_should` (or every name listed in the optional
+    ``__methodize__`` class attribute) is replaced by a
+    :func:`methodize`-wrapped version. The net effect is that free functions
+    imported from the ``_core`` modules appear as ordinary instance methods
+    on the :class:`~lineagetree.LineageTree` class.
+
+    The ``lT : LineageTree`` first parameter is also stripped from the
+    visible method signature and from the NumPy-style docstring.
+    """
+
     def __new__(mcls, name, bases, ns, **kw):
+        """Create the new mixin class and attach methodised functions.
+
+        Parameters
+        ----------
+        name : str
+            Class name.
+        bases : tuple
+            Base classes.
+        ns : dict
+            Class namespace.
+        **kw
+            Additional keyword arguments forwarded to :func:`type.__new__`.
+
+        Returns
+        -------
+        type
+            The newly created class with methodised functions attached.
+        """
         cls = super().__new__(mcls, name, bases, ns, **kw)
 
         if "__methodize__" in ns:

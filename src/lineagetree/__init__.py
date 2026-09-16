@@ -1,3 +1,10 @@
+"""LineageTree: representation and analysis of cell lineage trees.
+
+This package exposes the :class:`~lineagetree.LineageTree` and
+:class:`~lineagetree.LineageTreeManager` classes along with a collection of
+loaders for reading lineage data from common file formats.
+"""
+
 __version__ = "3.2.0"
 from .lineage_tree import LineageTree
 from ._io._loaders import (
