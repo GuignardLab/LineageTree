@@ -22,7 +22,7 @@ UTED is label agnostic, meaning it can compare lineages without needing any prio
 
 ## Different Tree approximations - making UTED faster
 
-There are multiple ways to match 2 random trees that have more than 2 nodes, but the algorithm will try to find the **best** matching, the one that will need the least amount of operations to transform one tree into the other. Of course this proccess of checking multiple matchings needs computational power and time. To solve this problem, we developed some approximations to make computation more efficient.
+There are multiple ways to match 2 random trees that have more than 2 nodes, but the algorithm will try to find the **best** matching, the one that will need the least amount of operations to transform one tree into the other. Of course this process of checking multiple matchings needs computational power and time. To solve this problem, we developed some approximations to make computation more efficient.
 
 1. **Original Tree**: This algorithm is the simplest, as the dataset is used without changes to produce the distance. So the algorithm will either:
 
@@ -58,7 +58,7 @@ There are multiple ways to match 2 random trees that have more than 2 nodes, but
 
 To inspect any style:
 
-```python
+``` {.python notest}
 from LineageTree import tree_styles
 tree_styles.tree_style["simple"].value(parameters)
 ```
@@ -76,7 +76,7 @@ Thus, to overcome these limitations and convert them to a similarity measure we 
 
 Template to create new styles:
 
-```python
+``` {.python notest}
 from LineageTree import lineageTree
 from LineageTree.tree_styles import abstract_trees
 
@@ -133,7 +133,7 @@ This plot showcases several interesting aspects of the approximations:
 1. All of the approximations scale well, as they produce the same results for the same trees regardless of the length of the chains.
 
 2. The Original tree is very slow compared to the rest and the downsampled algorithm shines for bigger trees, as it proves to be extremely fast while being acuurate.
-3. It is easy to see where each approximation succeeds or fails, if we consider that comparing the original distances is the best result we can get. Downsampled tree, will almost always have the closes result to the origial tree. Considering DAll, normalized reduced tree performs very well for datasets with different time resolution.
+3. It is easy to see where each approximation succeeds or fails, if we consider that comparing the original distances is the best result we can get. Downsampled tree, will almost always have the closes result to the original tree. Considering DAll, normalized reduced tree performs very well for datasets with different time resolution.
 
 All in all, the downsampled tree is the best approximation to use for distance calculation. However, the **reduced** type algorithms match chains instead of nodes, meaning that in developmental biology terms, that it matches cell lifetimes together, which may prove an invaluable tool for developmental biology. All of the approximations have a use, so the user should select the appropriate one according to the specifics of the problem.
 

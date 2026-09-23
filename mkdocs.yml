@@ -1,4 +1,9 @@
 site_name: LineageTree documentation
+site_description: Import, analyse, compare and visualise cell lineage trees.
+site_url: https://guignardlab.github.io/LineageTree/
+repo_url: https://github.com/GuignardLab/LineageTree
+repo_name: GuignardLab/LineageTree
+edit_uri: edit/v3.x/docs/
 theme:
   name: material
   custom_dir: docs/overrides
@@ -17,39 +22,23 @@ theme:
       name: Switch to light mode
   features:
   - navigation.path
-  - navigation.expand
+  - navigation.sections
+  - navigation.indexes
   - content.code.annotate
+  - content.code.copy
+  - content.action.edit
    
 plugins:
   - spellcheck:
-      backends:  # the backends you want to use
-      - symspellpy  # as strings
-      - codespell:  # or nested configs
-          dictionaries: [clear, rare]
-
-      # known_words can also be a list of words
+      backends:
+        - codespell:
+            dictionaries: [clear, rare]
       known_words: known_words.txt
-
-      # ignore words in <code> tags
-      ignore_code: yes
-
-      # minimum length of words to consider
+      ignore_code: true
       min_length: 2
-
-      # maximum number of capital letters in a word
       max_capital: 1
-
-      # keep unicode characters
-      allow_unicode: no
-
-      # skip files entirely (supports Unix shell-style wildcards)
       skip_files:
-      - credits.md
-      - coverage.md
-      - reference/*
-
-      # whether to only check in strict mode
-      strict_only: yes
+        - reference/*
   - search
   - api-autonav:
       modules: ['src/lineagetree']
@@ -61,11 +50,12 @@ plugins:
         default_handler: python_xref
         handlers:
           python_xref:
+            paths: [src]
             inventories:
               - https://docs.python.org/3/objects.inv
               - https://numpy.org/doc/stable/objects.inv
-              - https://docs.pola.rs/api/python/stable/objects.inv
-              - http://docs.sqlalchemy.org/en/stable/objects.inv
+              - https://docs.scipy.org/doc/scipy/objects.inv
+              - https://matplotlib.org/stable/objects.inv
             options:
               docstring_section_style: table
               docstring_style: "numpy"
@@ -108,13 +98,14 @@ markdown_extensions:
       pygments_lang_class: true
       use_pygments: true
   - pymdownx.inlinehilite
-  - pymdownx.superfences
-  - pymdownx.extra:
-      pymdownx.superfences:
-        custom_fences:
-          - name: mermaid
-            class: mermaid
-            format: !!python/name:pymdownx.superfences.fence_code_format  # noqa
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format  # noqa
 extra_css:
   - styles/extra.css
 
