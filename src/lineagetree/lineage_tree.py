@@ -216,7 +216,7 @@ class LineageTree(
         successor: dict[int, Sequence] | None = None,
         predecessor: dict[int, int | Sequence] | None = None,
         time: dict[int, int] | None = None,
-        starting_time: int = 0,
+        starting_time: int | None = None,
         pos: dict[int, Iterable] | None = None,
         name: str | None = None,
         root_leaf_value: Sequence | None = None,
@@ -237,8 +237,9 @@ class LineageTree(
         time : dict of {int: int}, optional
             Dictionary assigning nodes to the time point they were recorded at.
             If None, all times are set relative to ``starting_time``.
-        starting_time : int, default=0
-            Starting time of the lineage tree.
+        starting_time : int, optional
+            Starting time of the lineage tree, used when ``time`` is not
+            given. Defaults to 0.
         pos : dict of {int: Iterable}, optional
             Dictionary assigning nodes to their positions.
         name : str, optional

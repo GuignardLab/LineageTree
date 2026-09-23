@@ -116,8 +116,11 @@ lT.get_subtree_nodes({node})
 # Unbroken chains (segments between division events)
 lT.all_chains
 
-# Nodes at a specific time point
-lT.nodes_at_t(t)
+# All nodes at a specific time point
+lT.time_nodes[t]
+
+# Nodes at time `t` that descend from `node`
+lT.nodes_at_t(t, node)
 ```
 
 ### Saving
@@ -141,17 +144,17 @@ score, path = lT.dtw(node_a, node_b)
 ### Spatial analysis
 
 ```python
-# KD-tree index at time t
-idx = lT.idx3d(t)
+# KD-tree index at time t, with the matching node ids
+kdtree, node_ids = lT.idx3d(t)
 
-# k nearest neighbours of a node
-neighbours = lT.k_nearest_neighbours(node, t, k=5)
+# k nearest neighbours (and their distances) of every node
+neighbours, distances = lT.k_nearest_neighbours(k=5)
 
 # Gabriel graph at time t
 g = lT.gabriel_graph(t)
 
-# Local cell density
-density = lT.spatial_density(t)
+# Local cell density at time t, counting neighbours within 50 units
+density = lT.spatial_density(t_b=t, t_e=t, th=50)
 ```
 
 ### Visualization
@@ -159,7 +162,7 @@ density = lT.spatial_density(t)
 ```python
 lT.plot_subtree(root_node)
 lT.plot_all_lineages()
-lT.draw_tree_graph()
+lT.plot_chain_histogram()
 
 # DTW visualizations
 lT.plot_dtw_trajectory(node_a, node_b)
@@ -171,12 +174,18 @@ lT.plot_dtw_heatmap(node_a, node_b)
 ```python
 from lineagetree import LineageTreeManager
 
+# Comparing across lineages needs the duration of a time point
+lT_1.time_resolution = 5  # minutes per time point
+lT_2.time_resolution = 10
+
 manager = LineageTreeManager()
-manager.add(lT_1)
+manager.add(lT_1)  # stored under lT_1.name, or pass add(lT_1, name="embryo 1")
 manager.add(lT_2)
 
 # Compare subtrees across lineages
-manager.cross_lineage_edit_distance(root_of_lT1, name_of_lT1,root_of_lT2, name_of_lT2)
+manager.cross_lineage_edit_distance(
+    root_of_lT1, lT_1.name, root_of_lT2, lT_2.name
+)
 ```
 
 ---
@@ -221,4 +230,4 @@ If you use LineageTree in your research, please cite the relevant tracking algor
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](https://github.com/GuignardLab/LineageTree/blob/v3.x/LICENSE).

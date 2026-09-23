@@ -7,6 +7,14 @@ from ..measure.spatial import (
     neighbours_in_radius,
 )
 
+from .._core._deprecated import (
+    compute_k_nearest_neighbours,
+    compute_neighbours_in_radius,
+    compute_spatial_density,
+    compute_spatial_edges,
+    get_gabriel_graph,
+    get_idx3d,
+)
 from ._methodize import AutoMethodizeMeta
 
 
@@ -19,3 +27,11 @@ class SpatialMixin(metaclass=AutoMethodizeMeta):
     spatial_edges = spatial_edges
     spatial_density = spatial_density
     neighbours_in_radius = neighbours_in_radius
+
+    # 3.2 names, deprecated in 3.3
+    get_idx3d = get_idx3d
+    get_gabriel_graph = get_gabriel_graph
+    compute_k_nearest_neighbours = compute_k_nearest_neighbours
+    compute_spatial_edges = compute_spatial_edges
+    compute_spatial_density = compute_spatial_density
+    compute_neighbours_in_radius = compute_neighbours_in_radius
