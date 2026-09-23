@@ -5,7 +5,7 @@ This package exposes the :class:`~lineagetree.LineageTree` and
 loaders for reading lineage data from common file formats.
 """
 
-__version__ = "3.2.0"
+__version__ = "3.3.0"
 from .lineage_tree import LineageTree
 from ._io._loaders import (
     read_from_ASTEC,
