@@ -98,3 +98,5 @@ bak_*
 ty_check
 
 claude-outputs
+# documentation images
+!docs/images/*.png
