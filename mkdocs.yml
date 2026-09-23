@@ -57,6 +57,9 @@ plugins:
               - https://docs.scipy.org/doc/scipy/objects.inv
               - https://matplotlib.org/stable/objects.inv
             options:
+              # LineageTree gets its methods from mixins at class creation,
+              # so they only exist at runtime: document the imported objects.
+              force_inspection: true
               docstring_section_style: table
               docstring_style: "numpy"
               filters:

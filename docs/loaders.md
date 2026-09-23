@@ -91,8 +91,15 @@ def template_load(path, name=None):
 
 ### API reference for existing loaders
 
-#### ::: lineagetree
-            options:
-                summary: true
-                filters:
-                    - "^read_"
+- [`read_from_mamut_xml`][lineagetree.read_from_mamut_xml]
+- [`read_from_mastodon`][lineagetree.read_from_mastodon]
+- [`read_from_mastodon_csv`][lineagetree.read_from_mastodon_csv]
+- [`read_from_ASTEC`][lineagetree.read_from_ASTEC]
+- [`read_from_tgmm_xml`][lineagetree.read_from_tgmm_xml]
+- [`read_from_swc`][lineagetree.read_from_swc]
+- [`read_from_bmf`][lineagetree.read_from_bmf]
+- [`read_from_binary`][lineagetree.read_from_binary]
+- [`read_from_csv`][lineagetree.read_from_csv]
+- [`read_from_txt_for_celegans`][lineagetree.read_from_txt_for_celegans]
+- [`read_from_txt_for_celegans_BAO`][lineagetree.read_from_txt_for_celegans_BAO]
+- [`read_from_txt_for_celegans_CAO`][lineagetree.read_from_txt_for_celegans_CAO]

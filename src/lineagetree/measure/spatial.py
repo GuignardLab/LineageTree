@@ -136,7 +136,7 @@ def neighbours_in_radius(
     t_b: int | None = None,
     t_e: int | None = None,
     th: float = 50,
-) -> dict[int, float]:
+) -> dict[int, set[int]]:
     """Compute the neighbours within radius ``th`` for nodes in a time range.
 
     The result is stored in ``lT.neighbours`` and returned.
@@ -210,7 +210,9 @@ def spatial_density(
     return spatial_density
 
 
-def k_nearest_neighbours(lT: LineageTree, k: int = 10) -> dict[int, set[int]]:
+def k_nearest_neighbours(
+    lT: LineageTree, k: int = 10
+) -> tuple[dict[int, np.ndarray], dict[int, np.ndarray]]:
     """Compute the k-nearest neighbours of every node.
 
     The output is written to the attribute ``kn_graph`` and returned.
@@ -224,9 +226,9 @@ def k_nearest_neighbours(lT: LineageTree, k: int = 10) -> dict[int, set[int]]:
 
     Returns
     -------
-    dict of {int: set of int}
+    dict of {int: numpy.ndarray}
         Dictionary that maps a node id to its ``k`` nearest neighbours.
-    dict of {int: set of float}
+    dict of {int: numpy.ndarray}
         Dictionary that maps a node id to the distances of its ``k`` nearest
         neighbours.
     """

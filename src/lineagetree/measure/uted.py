@@ -46,12 +46,12 @@ def unordered_tree_edit_distances_at_time_t(
     end_time : int
         The final time point the comparison algorithm will take into account.
         If None all nodes will be taken into account.
-    style : {"simple", "full", "downsampled", "normalized_simple"} or TreeApproximationTemplate subclass, default="simple"
+    style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
         Which tree approximation is going to be used for the comparisons.
     downsample : int, default=2
         The downsample factor for the downsampled tree approximation.
         Used only when `style="downsampled"`.
-    norm : {"max", "sum"}, default="max"
+    norm : {"max", "sum", None}, default="max"
         The normalization method to use.
     recompute : bool, default=False
         If True, forces to recompute the distances
@@ -185,9 +185,9 @@ def __unordereded_backtrace(
     end_time : int
         The final time point the comparison algorithm will take into account.
         If None all nodes will be taken into account.
-    norm : {"max", "sum"}, default="max"
+    norm : {"max", "sum", None}, default="max"
         The normalization method to use.
-    style : {"simple", "full", "downsampled", "normalized_simple"} or TreeApproximationTemplate subclass, default="simple"
+    style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
         Which tree approximation is going to be used for the comparisons.
     downsample : int, default=2
         The downsample factor for the downsampled tree approximation.
@@ -299,18 +299,23 @@ def unordered_tree_edit_distance(
     end_time : int, optional
         The final time point the comparison algorithm will take into account.
         If None or not provided all nodes will be taken into account.
-    norm : {"max", "sum"}, default="max"
+    norm : {"max", "sum", None}, default="max"
         The normalization method to use, defaults to 'max'.
-    style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate subclass, default="simple"
+    style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
         Which tree approximation is going to be used for the comparisons.
     downsample : int, default=2
         The downsample factor for the downsampled tree approximation.
         Used only when `style="downsampled"`.
+    return_norms : bool, default=False
+        If True, the normalization values of both trees are returned
+        alongside the distance.
 
     Returns
     -------
-    float
-        The normalized unordered tree edit distance between `n1` and `n2`
+    float or tuple of (float, tuple of (float, float))
+        The normalized unordered tree edit distance between `n1` and `n2`,
+        and, when ``return_norms`` is True, the normalization value of each
+        of the two trees.
     """
     parameters = (
         end_time,
@@ -348,7 +353,7 @@ def unordered_tree_edit_distance(
         times2=times2,
     )
 
-    if norm not in lT.norm_dict:
+    if norm not in lT._norm_dict:
         raise ValueError(
             "Select a viable normalization method (max, sum, None)"
         )
@@ -356,7 +361,7 @@ def unordered_tree_edit_distance(
     norm_values = (tree1.get_norm(n1), tree2.get_norm(n2))
     if return_norms:
         return cost, norm_values
-    return cost / lT.norm_dict[norm](norm_values)
+    return cost / lT._norm_dict[norm](norm_values)
 
 
 def plot_tree_distance_graphs(
@@ -392,9 +397,9 @@ def plot_tree_distance_graphs(
     end_time : int
         The final time point the comparison algorithm will take into account.
         If None all nodes will be taken into account.
-    norm : {"max", "sum"}, default="max"
+    norm : {"max", "sum", None}, default="max"
         The normalization method to use.
-    style : {"simple", "full", "downsampled", "normalized_simple} or TreeApproximationTemplate subclass, default="simple"
+    style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
         Which tree approximation is going to be used for the comparisons.
     downsample : int, default=2
         The downsample factor for the downsampled tree approximation.
@@ -461,7 +466,7 @@ def plot_tree_distance_graphs(
         times2=times2,
     )
 
-    if norm not in lT.norm_dict:
+    if norm not in lT._norm_dict:
         raise ValueError(
             "Select a viable normalization method (max, sum, None)"
         )
@@ -498,7 +503,7 @@ def plot_tree_distance_graphs(
                     corres1,
                     corres2,
                     delta_tmp,
-                    lT.norm_dict[norm],
+                    lT._norm_dict[norm],
                     tree1.get_norm(node_1),
                     tree2.get_norm(node_2),
                 )
@@ -529,7 +534,7 @@ def plot_tree_distance_graphs(
                         corres1,
                         corres2,
                         delta_tmp,
-                        lT.norm_dict[norm],
+                        lT._norm_dict[norm],
                         tree1.get_norm(node_1),
                         tree2.get_norm(node_2),
                     )
@@ -599,9 +604,9 @@ def labelled_mappings(
     end_time : int, optional
         The final time point the comparison algorithm will take into account.
         If None or not provided all nodes will be taken into account.
-    norm : {"max", "sum"}, default="max"
+    norm : {"max", "sum", None}, default="max"
         The normalization method to use, defaults to 'max'.
-    style : {"simple", "full", "downsampled", "normalized_simple} or TreeApproximationTemplate subclass, default="simple"
+    style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
         Which tree approximation is going to be used for the comparisons, defaults to 'simple'.
     downsample : int, default=2
         The downsample factor for the downsampled tree approximation.
@@ -639,7 +644,7 @@ def labelled_mappings(
         corres2,
     ) = tree2.edist
 
-    if norm not in lT.norm_dict:
+    if norm not in lT._norm_dict:
         raise ValueError(
             "Select a viable normalization method (max, sum, None)"
         )

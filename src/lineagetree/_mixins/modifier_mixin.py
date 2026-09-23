@@ -3,7 +3,6 @@ from .._core._modifier import (
     add_chain,
     add_root,
     get_next_id,
-    modifier,
     remove_nodes,
     stabilise_positions,
     smooth_trajectories,
@@ -19,7 +18,6 @@ class ModifierMixin(metaclass=AutoMethodizeMeta):
     add_chain = add_chain
     add_root = add_root
     get_next_id = get_next_id
-    modifier = modifier
     remove_nodes = remove_nodes
     stabilise_positions = stabilise_positions
     smooth_trajectories = smooth_trajectories
