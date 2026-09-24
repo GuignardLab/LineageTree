@@ -42,6 +42,11 @@ plugins:
   - search
   - api-autonav:
       modules: ['src/lineagetree']
+      module_options:
+        lineagetree:
+          # same filters as the global ones, plus the loaders, which are
+          # documented on the Loaders page instead
+          filters: ["!^_", "!^read_"]
       on_implicit_namespace_package: skip
       exclude_private: true
       exclude:
@@ -63,10 +68,8 @@ plugins:
               docstring_section_style: table
               docstring_style: "numpy"
               filters:
+                # exclude everything private; `!^_` also covers dunders
                 - "!^_"
-                - "!__"
-                - "^(?!.*_test)"
-                - "!conftest"
               group_by_category: true
               heading_level: 1
               # begin python-xref
