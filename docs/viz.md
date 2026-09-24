@@ -10,4 +10,7 @@ This way, the whole lineage can be plotted efficiently, even if the second graph
 
 ## API Reference
 
-### ::: lineagetree.plot
+- [`lT.plot_all_lineages`][lineagetree.lineage_tree.LineageTree.plot_all_lineages]
+- [`lT.plot_subtree`][lineagetree.lineage_tree.LineageTree.plot_subtree]
+- [`lT.plot_chain_histogram`][lineagetree.lineage_tree.LineageTree.plot_chain_histogram]
+- [`lT.draw_tree_graph`][lineagetree.lineage_tree.LineageTree.draw_tree_graph]

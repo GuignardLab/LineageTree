@@ -156,12 +156,11 @@ In these graphs, each matched chain is colored according to the value of its sub
 
 ## API reference
 
-### ::: lineagetree.measure.uted
-        options:
-            filters:
-                - "^unordered_tree_edit_distance$"
-                - "^unordered_tree_edit_distances_at_time_t$"
-                - "^clear_comparisons$"
-                - "^plot_tree_distance_graphs$"
-                - "^labelled_mappings$"
+- [`lT.unordered_tree_edit_distance`][lineagetree.lineage_tree.LineageTree.unordered_tree_edit_distance]
+- [`lT.unordered_tree_edit_distances_at_time_t`][lineagetree.lineage_tree.LineageTree.unordered_tree_edit_distances_at_time_t]
+- [`lT.labelled_mappings`][lineagetree.lineage_tree.LineageTree.labelled_mappings]
+- [`lT.plot_tree_distance_graphs`][lineagetree.lineage_tree.LineageTree.plot_tree_distance_graphs]
+- [`lT.clear_comparisons`][lineagetree.lineage_tree.LineageTree.clear_comparisons]
 
+Across two lineage trees, use
+[`LineageTreeManager.cross_lineage_edit_distance`][lineagetree.lineage_tree_manager.LineageTreeManager.cross_lineage_edit_distance].

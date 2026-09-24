@@ -115,7 +115,16 @@ def _strip_first_param_from_doc(doc: str) -> str:
                     break
 
             # Add the remaining parameters
-            out.extend(parsed_params)
+            if any(param.strip() for param in parsed_params):
+                out.extend(parsed_params)
+            else:
+                # `lT` was the only parameter: drop the now empty section.
+                out = out[:-2]
+                while out and not out[-1].strip():
+                    out.pop()
+                out.append("")
+                while i < len(lines) and not lines[i].strip():
+                    i += 1
 
             # Add the rest of the docstring
             out.extend(lines[i:])
@@ -151,6 +160,14 @@ def methodize(func):
         return func(self, *args, **kwargs)
 
     _method.__doc__ = _strip_first_param_from_doc(func.__doc__ or "")
+    signature = inspect.signature(func)
+    _method.__signature__ = signature.replace(
+        parameters=list(signature.parameters.values())[1:]
+    )
+    # `wraps` set `__wrapped__`; without removing it, `inspect` and the
+    # documentation generator unwrap to the free function and show its
+    # `lT` parameter again.
+    del _method.__wrapped__
 
     return _method
 
@@ -183,7 +200,13 @@ def attach_methods(cls, funcs):
         raise TypeError("funcs must be a module or dict of callables")
 
     for name, f in items.items():
-        setattr(cls, name, methodize(f))
+        method = methodize(f)
+        # Make the method belong to the mixin, so that documentation
+        # tools describe it as a method instead of an alias of the
+        # free function it wraps.
+        method.__module__ = cls.__module__
+        method.__qualname__ = f"{cls.__qualname__}.{name}"
+        setattr(cls, name, method)
 
 
 def _should(name: str, obj: object, cls_module: str | None) -> bool:

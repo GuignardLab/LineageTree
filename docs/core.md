@@ -33,19 +33,19 @@ The core properties of a LineageTree. The user may access them by ```lT.property
 
 Functions to access different data that is available in LineageTree.
 
-#### ::: lineagetree._core._navigation
-        options:
-            summary: true
-            filters:
-                - "change_labels"
-                - "find_leaves"
-                - "get_all_chains_of_subtree"
-                - "get_ancestor_at_t"
-                - "get_ancestor_with_attribute"
-                - "get_available_labels"
-                - "get_chain_of_node"
-                - "get_labelled_ancestor"
-                - "get_predecessors"
-                - "get_subtree_nodes"
-                - "get_successors"
-                - "nodes_at_t"
+Every function below is a method of `LineageTree`, called as
+`lT.get_successors(node)`. Follow a link for the full signature.
+
+- [`lT.get_successors`][lineagetree.lineage_tree.LineageTree.get_successors]
+- [`lT.get_predecessors`][lineagetree.lineage_tree.LineageTree.get_predecessors]
+- [`lT.get_subtree_nodes`][lineagetree.lineage_tree.LineageTree.get_subtree_nodes]
+- [`lT.get_all_chains_of_subtree`][lineagetree.lineage_tree.LineageTree.get_all_chains_of_subtree]
+- [`lT.get_chain_of_node`][lineagetree.lineage_tree.LineageTree.get_chain_of_node]
+- [`lT.nodes_at_t`][lineagetree.lineage_tree.LineageTree.nodes_at_t]
+- [`lT.get_ancestor_at_t`][lineagetree.lineage_tree.LineageTree.get_ancestor_at_t]
+- [`lT.get_ancestor_with_attribute`][lineagetree.lineage_tree.LineageTree.get_ancestor_with_attribute]
+- [`lT.get_shortest_path_and_last_common_ancestor`][lineagetree.lineage_tree.LineageTree.get_shortest_path_and_last_common_ancestor]
+- [`lT.find_leaves`][lineagetree.lineage_tree.LineageTree.find_leaves]
+- [`lT.get_available_labels`][lineagetree.lineage_tree.LineageTree.get_available_labels]
+- [`lT.get_labelled_ancestor`][lineagetree.lineage_tree.LineageTree.get_labelled_ancestor]
+- [`lT.change_labels`][lineagetree.lineage_tree.LineageTree.change_labels]
