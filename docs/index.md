@@ -30,7 +30,7 @@ This framework is complemented by the napari plugin [ReLAX](https://guignardlab.
 
 ## Quick Installation
 
-```python
+``` {.python notest}
 pip install LineageTree
 ```
 

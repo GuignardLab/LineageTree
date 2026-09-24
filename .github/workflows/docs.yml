@@ -1,0 +1,28 @@
+name: Documentation
+
+on:
+  pull_request:
+  push:
+    branches: [v3.x]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build the documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e ".[doc,test]"
+      - name: Build the site
+        run: mkdocs build
+      - name: Run the code examples in the documentation
+        run: |
+          # Every example is still marked `notest`, so pytest collects nothing
+          # and exits with code 5. The guard goes away once the pages are fixed.
+          pytest --markdown-docs --markdown-docs-syntax=superfences README.md docs/*.md || [ $? -eq 5 ]

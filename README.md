@@ -45,7 +45,7 @@ pip install .
 
 ### Loading a tree
 
-```python
+```python notest
 from lineagetree import LineageTree
 
 # From a saved .lT file
@@ -60,7 +60,7 @@ print(lT.t_b, lT.t_e)  # first and last time points
 
 ### Reading from tracking software
 
-```python
+```python notest
 from lineagetree import (
     read_from_ASTEC,
     read_from_mamut_xml,
@@ -91,7 +91,7 @@ lT = read_from_swc("path/to/morphology.swc")
 
 ### Building a tree programmatically
 
-```python
+```python notest
 from lineagetree import LineageTree
 
 # From a successor dictionary
@@ -105,7 +105,7 @@ lT = LineageTree(
 
 ### Tree navigation
 
-```python
+```python notest
 # Traverse successors / predecessors
 lT.get_successors(node)
 lT.get_predecessors(node)
@@ -122,7 +122,7 @@ lT.nodes_at_t(t)
 
 ### Saving
 
-```python
+```python notest
 lT.write("output.lT")          # pickle
 lT.write_to_svg("tree.svg")    # SVG visualization
 lT.write_to_tlp("tree.tlp")    # Tulip graph format
@@ -130,7 +130,7 @@ lT.write_to_tlp("tree.tlp")    # Tulip graph format
 
 ### Tree comparison
 
-```python
+```python notest
 # Unordered tree edit distance between two subtrees
 dist = lT.unordered_tree_edit_distance(node_a, node_b)
 
@@ -140,7 +140,7 @@ score, path = lT.dtw(node_a, node_b)
 
 ### Spatial analysis
 
-```python
+```python notest
 # KD-tree index at time t
 idx = lT.idx3d(t)
 
@@ -156,7 +156,7 @@ density = lT.spatial_density(t)
 
 ### Visualization
 
-```python
+```python notest
 lT.plot_subtree(root_node)
 lT.plot_all_lineages()
 lT.draw_tree_graph()
@@ -168,7 +168,7 @@ lT.plot_dtw_heatmap(node_a, node_b)
 
 ### Multi-tree workflows
 
-```python
+```python notest
 from lineagetree import LineageTreeManager
 
 manager = LineageTreeManager()
@@ -208,7 +208,7 @@ To build the documentation:
 
 ```shell
 pip install -e ".[doc]"
-cd docs && make html
+mkdocs serve
 ```
 
 ---

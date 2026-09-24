@@ -6,7 +6,7 @@ This tool may interest individuals with and without a background in computer sci
 ## Tree Graphs
  A tree graph is a hierarchical acyclic graph that contains nodes and edges, **LineageTree is a tree graph** that has at most 2 successors for one node. To create a demo tree the user can call
  
-```python
+``` {.python notest}
 from lineagetree import LineageTree
 lT = LineageTree(successors= {i:[i+1] for i in range(10)})
 ```
@@ -33,11 +33,11 @@ lT = LineageTree(successors= {i:[i+1] for i in range(10)})
   </li>
 
   <li>
-    <p><strong>Roots:</strong> Nodes with no predecessors. In LineageTree, by deafualt, a root has an empty tuple as predecessor. Multiple roots may exist. All roots can be accessed with <code>lT.roots</code>.</p>
+    <p><strong>Roots:</strong> Nodes with no predecessors. In LineageTree, by default, a root has an empty tuple as predecessor. Multiple roots may exist. All roots can be accessed with <code>lT.roots</code>.</p>
   </li>
 
   <li>
-    <p><strong>Leaves:</strong> Nodes with no successors. In LineageTree, by deafualt, a leaf has an empty tuple as successor. All leaves can be accessed with <code>lT.leaves</code>.</p>
+    <p><strong>Leaves:</strong> Nodes with no successors. In LineageTree, by default, a leaf has an empty tuple as successor. All leaves can be accessed with <code>lT.leaves</code>.</p>
   </li>
 
   <li>

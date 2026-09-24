@@ -13,7 +13,7 @@ Multiple well known formats are ready for import out of the box:
 
 The user may also decide to import their custom format. The bare minimum inormation needed to create a Lineage tree is the hierarchy of the nodes, which is a Python dictionary of the successors or the predecessors shown in the example:
 
- ```python
+ ``` {.python notest}
  
     successor/predecessor : {unique_node_id (int) : [next_unique_node_ids (int)]}
 
@@ -34,7 +34,7 @@ Other attributes that can be used to initiate a lineageTree file apart from the 
 
 ### Custom Loaders
 
-```python
+``` {.python notest}
 
 from pathlib import Path
 from LineageTree import lineageTree
