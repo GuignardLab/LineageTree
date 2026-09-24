@@ -586,19 +586,19 @@ def test_dynamic_property():
 
 
 def test_idx3d():
-    kdtree, idxs = lT1.idx3d(0)
+    kdtree, idxs = lT1.compute_idx3d(0)
     assert np.isclose(kdtree.query((0, 0, 0))[0], 1131.2352660153383)
     assert idxs[kdtree.query((0, 0, 0))[1]] == 110826
     assert idxs[kdtree.query((1000, 2000, 1000))[1]] == 132063
 
 
 def test_gabriel_graph():
-    gg = lT1.gabriel_graph(0)
+    gg = lT1.compute_gabriel_graph(0)
     assert gg[173618] == {110832, 168322}
-    gg_all = lT1.gabriel_graph()
+    gg_all = lT1.compute_gabriel_graph()
     gg_all_2 = {}
     for t in lT1.time_nodes:
-        gg_all_2.update(lT1.gabriel_graph(t))
+        gg_all_2.update(lT1.compute_gabriel_graph(t))
     assert gg_all == gg_all_2
 
 
@@ -634,18 +634,20 @@ def test_get_subtree_nodes():
 
 def test_spatial_density():
     assert np.isclose(
-        lT1.spatial_density(0, th=40)[110832], 7.460387957432594e-06
+        lT1.compute_spatial_density(0, th=40)[110832], 7.460387957432594e-06
     )
-    assert lT1.neighbours_in_radius(0, th=40)[110832] == {np.int64(110826)}
+    assert lT1.compute_neighbours_in_radius(0, th=40)[110832] == {
+        np.int64(110826)
+    }
 
 
 def test_k_nearest_neighbours():
     assert (
-        lT1.k_nearest_neighbours()[0][169994]
+        lT1.compute_k_nearest_neighbours()[0][169994]
         == [178396, 139163, 165681, 148361, 129276, 114722, 108588]
     ).all()
     assert np.allclose(
-        lT1.k_nearest_neighbours()[1][169994],
+        lT1.compute_k_nearest_neighbours()[1][169994],
         [
             34.39062611,
             50.72494649,
@@ -659,7 +661,7 @@ def test_k_nearest_neighbours():
 
 
 def test_spatial_edges():
-    assert lT1.spatial_edges()[129294] == {139162, 148358}
+    assert lT1.compute_spatial_edges()[129294] == {139162, 148358}
 
 
 def test_get_ancestor_at_t():
@@ -843,3 +845,56 @@ def test_get_shortest_path_and_last_common_ancestor():
         [],
         -1,
     )
+
+
+def test_track_length():
+    lt.compute_track_length(0)
+    lt.compute_track_length(1)
+
+
+def test_duration():
+    lt.compute_duration()
+
+
+def test_max_displacement():
+    lt.compute_max_displacement()
+
+
+def test_speed():
+    lt.compute_speed(0)
+    lt.compute_speed(1)
+
+
+def test_displacement():
+    lt.compute_displacement()
+
+
+def test_velocity():
+    lt.compute_velocity()
+
+
+def test_mean_squared_displacement():
+    lt.compute_mean_squared_displacement()
+
+
+def test_displacement_ratio():
+    lt.compute_displacement_ratio()
+
+
+def test_straightness():
+    lt.compute_straightness(0)
+    lt.compute_straightness(1)
+
+
+def test_asphericity():
+    lt.compute_asphericity(1)
+    lt.compute_asphericity(0)
+
+
+def test_angles():
+    lt.compute_angles(0)
+    lt.compute_angles(1)
+
+
+def test_overall_angle():
+    lt.compute_overall_angle()
