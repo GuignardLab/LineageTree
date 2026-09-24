@@ -1,0 +1,125 @@
+site_name: LineageTree documentation
+site_description: Import, analyse, compare and visualise cell lineage trees.
+site_url: https://guignardlab.github.io/LineageTree/
+repo_url: https://github.com/GuignardLab/LineageTree
+repo_name: GuignardLab/LineageTree
+edit_uri: edit/v3.x/docs/
+theme:
+  name: material
+  custom_dir: docs/overrides
+  palette:
+  - scheme: default
+    primary: indigo
+    accent: indigo
+    toggle:
+      icon: material/weather-night
+      name: Switch to dark mode
+  - scheme: slate
+    primary: indigo
+    accent: indigo
+    toggle:
+      icon: material/weather-sunny
+      name: Switch to light mode
+  features:
+  - navigation.path
+  - navigation.sections
+  - navigation.indexes
+  - content.code.annotate
+  - content.code.copy
+  - content.action.edit
+   
+plugins:
+  - spellcheck:
+      backends:
+        - codespell:
+            dictionaries: [clear, rare]
+      known_words: known_words.txt
+      ignore_code: true
+      min_length: 2
+      max_capital: 1
+      skip_files:
+        - reference/*
+  - search
+  - api-autonav:
+      modules: ['src/lineagetree']
+      on_implicit_namespace_package: skip
+      exclude_private: true
+      exclude:
+        - "lineagetree.conftest"
+  - mkdocstrings:
+        default_handler: python_xref
+        handlers:
+          python_xref:
+            paths: [src]
+            inventories:
+              - https://docs.python.org/3/objects.inv
+              - https://numpy.org/doc/stable/objects.inv
+              - https://docs.scipy.org/doc/scipy/objects.inv
+              - https://matplotlib.org/stable/objects.inv
+            options:
+              docstring_section_style: table
+              docstring_style: "numpy"
+              filters:
+                - "!^_"
+                - "!__"
+                - "^(?!.*_test)"
+                - "!conftest"
+              group_by_category: true
+              heading_level: 1
+              # begin python-xref
+              relative_crossrefs: true
+              check_crossrefs: true
+              # end python-xref
+              inherited_members: true
+              merge_init_into_class: true
+              parameter_headings: true
+              separate_signature: true
+              show_bases: true
+              show_if_no_docstring: false
+              show_root_heading: true
+              show_signature_annotations: true
+              show_symbol_type_heading: true
+              show_symbol_type_toc: true
+              show_inheritance_diagram: true
+              summary: true
+  # - mermaid2
+
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - tables
+  - admonition
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+      use_pygments: true
+  - pymdownx.inlinehilite
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format  # noqa
+extra_css:
+  - styles/extra.css
+
+          
+nav:
+  - Home: index.md
+  - Download and Import: getting-started.md
+  - Glossary: glossary.md
+  - Core Utility: core.md
+  - Initializing a LineageTree and accessing attributes: properties.md
+  - Loaders: loaders.md
+  - Visualization: viz.md
+  - Analysis:
+    - Uted: uted.md
+    - Dynamic Time Warping: dtw.md
+    - Spatial: spatial.md
+  # - API Reference: api.md

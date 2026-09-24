@@ -611,7 +611,7 @@ def labelled_mappings(
     -------
     dict mapping str to list of str
         - 'matched' The labels of the matched nodes of the alignment.
-        - 'unmatched' The labels of the unmatched nodes of the alginment.
+        - 'unmatched' The labels of the unmatched nodes of the alignment.
     """
     parameters = (
         end_time,
