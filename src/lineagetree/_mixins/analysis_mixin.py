@@ -8,6 +8,7 @@ from ..measure.uted import (
     unordered_tree_edit_distances_at_time_t,
 )
 
+from .._core._deprecated import calculate_dtw
 from ._methodize import AutoMethodizeMeta
 
 
@@ -16,6 +17,7 @@ class AnalysisMixin(metaclass=AutoMethodizeMeta):
 
     # DTW functions
     dtw = dtw
+    calculate_dtw = calculate_dtw  # 3.2 name, deprecated in 3.3
 
     # UTED functions
     clear_comparisons = clear_comparisons
