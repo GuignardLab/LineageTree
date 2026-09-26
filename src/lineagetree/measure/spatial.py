@@ -1,3 +1,10 @@
+"""Spatial neighbourhoods of the nodes at each time point.
+
+Neighbourhoods are computed among the nodes of a single time point. Unless
+stated otherwise, positions are multiplied by ``lT.spatial_resolution``
+first, so distances are in physical units.
+"""
+
 from __future__ import annotations
 
 from itertools import combinations
@@ -11,10 +18,10 @@ if TYPE_CHECKING:
 
 
 def idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
-    """Get a 3D KDTree for the dataset at time ``t``.
+    """Get a KDTree of the node positions at time ``t``.
 
-    The KDTree is stored in ``lT.kdtrees[t]`` and returned together with the
-    correspondence list.
+    Positions are multiplied by ``lT.spatial_resolution``. The KDTree is
+    cached in ``lT.kdtrees[t]``.
 
     Parameters
     ----------
@@ -25,12 +32,15 @@ def idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
 
     Returns
     -------
-    KDTree
-        The KDTree corresponding to the lineage tree at time ``t``.
+    scipy.spatial.KDTree
+        The KDTree of the positions of the nodes at time ``t``.
     numpy.ndarray
-        The correspondence list in the KDTree. If a query in the KDTree returns
-        the value ``i``, it corresponds to the id ``to_check_lT[i]`` in the
-        tree.
+        The node ids, in KDTree order: index ``i`` returned by a query on
+        the KDTree is the node ``ids[i]``.
+
+    Warnings
+    --------
+    The cached KDTree is not updated when positions change.
     """
     to_check_lT = list(lT.time_nodes[t])
 
@@ -53,26 +63,31 @@ def idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
 def gabriel_graph(
     lT: LineageTree, time: int | Iterable[int] | None = None
 ) -> dict[int, set[int]]:
-    """Build the Gabriel graph of the dataset for the given time point(s).
+    """Build the Gabriel graph of the nodes at the given time point(s).
 
-    The Gabriel graph is stored in ``lT.Gabriel_graph`` and returned.
-
-    .. warning::
-        The graph is not recomputed if already computed, even if the point
-        cloud has changed.
+    Two nodes are neighbours in the Gabriel graph when no other node lies
+    inside the sphere whose diameter is the segment between them. The graph
+    is built from the raw positions (``spatial_resolution`` is not applied)
+    and stored in ``lT.Gabriel_graph``.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     time : int or Iterable of int, optional
-        Time or iterable of times. If not given, the Gabriel graph is
-        calculated for all time points.
+        Time point(s) to compute the graph for. If not given, all time points
+        are computed.
 
     Returns
     -------
     dict of {int: set of int}
-        A dictionary that maps a node to the set of its neighbours.
+        ``lT.Gabriel_graph``: maps each node to the set of its neighbours. It
+        holds every time point computed so far, not only ``time``.
+
+    Warnings
+    --------
+    Time points already in ``lT.Gabriel_graph`` are not recomputed, even if
+    the positions have changed.
     """
     if not hasattr(lT, "Gabriel_graph"):
         lT.Gabriel_graph = {}
@@ -137,26 +152,26 @@ def neighbours_in_radius(
     t_e: int | None = None,
     th: float = 50,
 ) -> dict[int, set[int]]:
-    """Compute the neighbours within radius ``th`` for nodes in a time range.
-
-    The result is stored in ``lT.neighbours`` and returned.
+    """Find the neighbours of each node within a radius.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     t_b : int, optional
-        Starting time to look at. Defaults to the first time point.
+        First time point to consider. Defaults to the first time point of
+        the dataset.
     t_e : int, optional
-        Ending time to look at. Defaults to the last time point.
+        End of the time range, excluded. Defaults to the last time point of
+        the dataset, which is therefore left out.
     th : float, default=50
-        Size of the neighbourhood.
+        Radius of the neighbourhood.
 
     Returns
     -------
     dict of {int: set of int}
-        Dictionary that maps a node id to the set of its neighbours within
-        radius ``th``.
+        Maps each node in ``[t_b, t_e)`` to the other nodes of its time point
+        within distance ``th``.
     """
     neighbours = {}
     if t_b is None:
@@ -182,25 +197,28 @@ def spatial_density(
     t_e: int | None = None,
     th: float = 50,
 ) -> dict[int, float]:
-    """Compute the spatial density of nodes in a time range.
+    """Compute the spatial density around each node.
 
-    The result is stored in ``lT.spatial_density`` and returned.
+    The density of a node is the number of nodes within distance ``th``
+    (itself included) divided by the volume of the sphere of radius ``th``.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     t_b : int, optional
-        Starting time to look at. Defaults to the first time point.
+        First time point to consider. Defaults to the first time point of
+        the dataset.
     t_e : int, optional
-        Ending time to look at. Defaults to the last time point.
+        End of the time range, excluded. Defaults to the last time point of
+        the dataset, which is therefore left out.
     th : float, default=50
-        Size of the neighbourhood.
+        Radius of the neighbourhood.
 
     Returns
     -------
     dict of {int: float}
-        Dictionary that maps a node id to its spatial density.
+        Maps each node in ``[t_b, t_e)`` to its spatial density.
     """
     s_vol = 4 / 3.0 * np.pi * th**3
     spatial_density = {
@@ -213,9 +231,12 @@ def spatial_density(
 def k_nearest_neighbours(
     lT: LineageTree, k: int = 10
 ) -> tuple[dict[int, np.ndarray], dict[int, np.ndarray]]:
-    """Compute the k-nearest neighbours of every node.
+    """Find the k nearest neighbours of every node.
 
-    The output is written to the attribute ``kn_graph`` and returned.
+    Neighbours are searched among the other nodes of the same time point. A
+    node alone at its time point gets no entry, and a time point with fewer
+    than ``k + 1`` nodes gives fewer than ``k`` neighbours. The results are
+    stored in ``lT.kn_graph`` and ``lT.kn_distances``.
 
     Parameters
     ----------
@@ -227,10 +248,9 @@ def k_nearest_neighbours(
     Returns
     -------
     dict of {int: numpy.ndarray}
-        Dictionary that maps a node id to its ``k`` nearest neighbours.
+        Maps each node to its nearest neighbours, closest first.
     dict of {int: numpy.ndarray}
-        Dictionary that maps a node id to the distances of its ``k`` nearest
-        neighbours.
+        Maps each node to the distances to these neighbours.
     """
     lT.kn_graph = {}
     lT.kn_distances = {}
@@ -260,22 +280,23 @@ def k_nearest_neighbours(
     return lT.kn_graph, lT.kn_distances
 
 
-def spatial_edges(lT: LineageTree, th: int = 50) -> dict[int, set[int]]:
-    """Compute the neighbours at a distance ``th`` of every node.
+def spatial_edges(lT: LineageTree, th: float = 50) -> dict[int, set[int]]:
+    """Find the neighbours of every node within a distance, at all times.
 
-    The output is written to the attribute ``th_edges`` and returned.
+    Unlike [`neighbours_in_radius`][lineagetree.LineageTree.neighbours_in_radius],
+    all time points are used. The result is stored in ``lT.th_edges``.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     th : float, default=50
-        Distance below which two nodes are considered neighbours.
+        Distance within which two nodes are considered neighbours.
 
     Returns
     -------
     dict of {int: set of int}
-        Dictionary that maps a node id to its neighbours within distance
+        Maps each node to the other nodes of its time point within distance
         ``th``.
     """
     lT.th_edges = {}

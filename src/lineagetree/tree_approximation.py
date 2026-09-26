@@ -1,3 +1,13 @@
+"""Tree styles: simplified versions of subtrees used for tree comparison.
+
+Comparing whole subtrees node by node is exact but slow. A tree style turns
+the subtree spawned by a node into a smaller tree, and defines the cost of
+matching, inserting or deleting its nodes. The built-in styles are listed in
+[`tree_style`][lineagetree.tree_approximation.tree_style]; custom styles
+subclass
+[`TreeApproximationTemplate`][lineagetree.tree_approximation.TreeApproximationTemplate].
+"""
+
 from __future__ import annotations
 
 import warnings
@@ -12,19 +22,28 @@ if TYPE_CHECKING:
 
 
 class TreeApproximationTemplate(ABC):
-    """Template class to produce tree styles used to compare LineageTrees.
+    """Base class of the tree styles used to compare subtrees.
 
-    To add a new style, inherit this class or one of its children and add it to
-    the :class:`tree_style` enum, or use it directly on the function called.
+    To create a new style, subclass this class or one of the built-in styles
+    and pass the class itself as the ``style`` argument of the comparison
+    methods, e.g.
+    [`unordered_tree_edit_distance`][lineagetree.LineageTree.unordered_tree_edit_distance].
 
-    The main products of this class are:
+    A style implements four methods:
 
-    - a tree constructor (:meth:`get_tree`) that produces one dictionary of
-      arbitrary unique labels and one dictionary of the duration of each node,
-    - a :meth:`delta` function that handles the cost of comparing nodes to each
-      other,
-    - a normalization function that returns the length of the tree or any
-      integer.
+    - [`get_tree`][lineagetree.tree_approximation.TreeApproximationTemplate.get_tree]
+      builds the simplified tree: an adjacency dictionary and the duration
+      of each of its nodes;
+    - [`delta`][lineagetree.tree_approximation.TreeApproximationTemplate.delta]
+      gives the cost of matching two nodes, or of inserting or deleting one;
+    - [`get_norm`][lineagetree.tree_approximation.TreeApproximationTemplate.get_norm]
+      gives the size of a tree, used to normalise the distance;
+    - [`handle_resolutions`][lineagetree.tree_approximation.TreeApproximationTemplate.handle_resolutions]
+      gives the ``time_scale`` of each tree when comparing datasets with
+      different time resolutions.
+
+    The tree is built when the object is created and stored in ``tree``, and
+    its ``edist`` version in ``edist``.
     """
 
     def __init__(
@@ -44,13 +63,13 @@ class TreeApproximationTemplate(ABC):
         root : int
             Id of the node that is the root of the subtree to approximate.
         downsample : int, optional
-            Downsampling factor (used by :class:`downsample_tree`).
+            Downsampling factor (used by ``downsample_tree``).
         end_time : int, optional
             Last time point to include in the approximation. Defaults to
             ``lT.t_e``.
         time_scale : int, default=1
             Scaling factor applied to node durations, used to align trees
-            sampled at different time resolutions.
+            sampled at different time resolutions. 0 or None is read as 1.
 
         Raises
         ------
@@ -90,41 +109,46 @@ class TreeApproximationTemplate(ABC):
         gcd: int,
         downsample: int,
     ) -> tuple[int | float, int | float]:
-        """Handle different time resolutions.
+        """Compute the time scale of each tree for a cross-dataset comparison.
+
+        Used by
+        [`LineageTreeManager`][lineagetree.LineageTreeManager] to compare
+        datasets recorded at different time resolutions: the returned values
+        are passed as ``time_scale`` to the two trees.
 
         Parameters
         ----------
         time_resolution1 : int or float
-            Time resolution of the first dataset (extracted from
-            ``lT._time_resolution``).
+            Time resolution of the first dataset, as stored in
+            ``lT._time_resolution`` (ten times ``lT.time_resolution``).
         time_resolution2 : int or float
-            Time resolution of the second dataset (extracted from
-            ``lT._time_resolution``).
+            Time resolution of the second dataset, stored the same way.
         gcd : int
-            Greatest common divisor of the two time resolutions.
+            Greatest common divisor of the time resolutions of all the
+            datasets of the manager.
         downsample : int
             Downsampling factor.
 
         Returns
         -------
         int or float
-            The time resolution fix for the first dataset.
+            The time scale of the first tree.
         int or float
-            The time resolution fix for the second dataset.
+            The time scale of the second tree.
         """
 
     @abstractmethod
     def get_tree(self) -> tuple[dict, dict]:
-        """Get a tree version of the tree spawned by the root node.
+        """Build the simplified tree spawned by ``self.root``.
 
         Returns
         -------
         dict of {int: list of int}
-            An adjacency dictionary where the ids are those of the cells in the
-            original tree at their first time point (except for the root cell
-            if it was not at its first time point).
+            Adjacency dictionary of the simplified tree. Its ids are node
+            ids of the original tree, usually the first node of each chain
+            (``self.root`` for the first one).
         dict of {int: float}
-            Life time duration of each cell.
+            Duration of each node of the simplified tree.
         """
 
     @abstractmethod
@@ -137,18 +161,21 @@ class TreeApproximationTemplate(ABC):
         times1: dict[int, float],
         times2: dict[int, float],
     ) -> int | float:
-        """Compute the distance between two nodes inside a tree.
+        """Return the cost of matching, inserting or deleting nodes.
 
-        Behaves like a static method. ``corres1``/``corres2`` and
-        ``times1``/``times2`` should always be provided and are handled
-        accordingly by the specific ``delta`` of each tree style.
+        ``edist`` calls this function with ``x`` or ``y`` set to None for a
+        deletion or an insertion. The default implementation, used by the
+        ``simple`` style, costs a deletion or insertion the duration of the
+        node and a match the difference of the two durations.
 
         Parameters
         ----------
-        x : int
-            The first node to compare, using the names provided by edist.
-        y : int
-            The second node to compare, using the names provided by edist.
+        x : int or None
+            Node of the first tree, as numbered by edist, or None when ``y``
+            is inserted.
+        y : int or None
+            Node of the second tree, as numbered by edist, or None when ``x``
+            is deleted.
         corres1 : dict
             Dictionary mapping ``x`` ids to the corresponding id in the
             original tree.
@@ -156,14 +183,15 @@ class TreeApproximationTemplate(ABC):
             Dictionary mapping ``y`` ids to the corresponding id in the
             original tree.
         times1 : dict
-            The chain lengths of the tree that ``x`` is spawned from.
+            Durations of the nodes of the first tree, from
+            [`get_tree`][lineagetree.tree_approximation.TreeApproximationTemplate.get_tree].
         times2 : dict
-            The chain lengths of the tree that ``y`` is spawned from.
+            Durations of the nodes of the second tree.
 
         Returns
         -------
         int or float
-            The distance between ``x`` and ``y``.
+            The cost of the operation.
         """
         if x is None and y is None:
             return 0
@@ -177,23 +205,39 @@ class TreeApproximationTemplate(ABC):
 
     @abstractmethod
     def get_norm(self, root: int) -> int | float:
-        """Return the value used to normalize the edit distance.
+        """Return the size of a tree, used to normalise the edit distance.
 
         Parameters
         ----------
         root : int
-            The starting node of the subtree.
+            The node spawning the subtree.
 
         Returns
         -------
         int or float
-            The number of nodes of the tree according to each style, or the sum
-            of the lengths of all the nodes in the tree.
+            The size of the subtree, measured in a way that matches the
+            costs of ``delta`` (e.g. the cost of deleting the whole tree).
         """
 
     def _edist_format(
         self, adj_dict: dict
     ) -> tuple[list, list[list], dict[int, int]]:
+        """Convert an adjacency dictionary to the format used by edist.
+
+        Parameters
+        ----------
+        adj_dict : dict of {int: list of int}
+            The adjacency dictionary produced by ``get_tree``.
+
+        Returns
+        -------
+        list of int
+            The nodes, numbered from 0 in depth-first pre-order.
+        list of list of int
+            The successors of each node, in the same numbering.
+        dict of {int: int}
+            Maps the edist numbering back to the node ids of ``adj_dict``.
+        """
         inv_adj = {vi: k for k, v in adj_dict.items() for vi in v}
         roots = set(adj_dict).difference(inv_adj)
         nid2list = {}
@@ -218,10 +262,11 @@ class TreeApproximationTemplate(ABC):
 
 
 class mini_tree(TreeApproximationTemplate):
-    """Convert each branch to a node of length 1.
+    """Style that keeps only the branching pattern.
 
-    Extremely fast and useful for comparing synchronously developing cells.
-    Mainly used for testing.
+    Each chain becomes one node and durations are ignored: two trees are at
+    distance 0 when they divide in the same pattern. Extremely fast; useful
+    for comparing synchronously developing cells, and for testing.
     """
 
     def __init__(self, **kwargs):
@@ -234,9 +279,19 @@ class mini_tree(TreeApproximationTemplate):
         gcd,
         downsample: int,
     ) -> tuple[int | float, int | float]:
+        """Return ``(1, 1)``: durations are ignored."""
         return (1, 1)
 
     def get_tree(self):
+        """Build a tree with one node per chain, without durations.
+
+        Returns
+        -------
+        dict of {int: list of int}
+            Adjacency dictionary, keyed by the first node of each chain.
+        None
+            This style has no durations.
+        """
         if self.end_time is None:
             self.end_time = self.lT.t_e
         out_dict = {}
@@ -258,6 +313,7 @@ class mini_tree(TreeApproximationTemplate):
         return out_dict, None
 
     def get_norm(self, root) -> int:
+        """Return the number of chains of the subtree spawned by ``root``."""
         return len(
             self.lT.get_all_chains_of_subtree(root, end_time=self.end_time)
         )
@@ -266,6 +322,7 @@ class mini_tree(TreeApproximationTemplate):
         return super()._edist_format(adj_dict)
 
     def delta(self, x, y, corres1, corres2, times1, times2):
+        """Cost 1 to insert or delete a node, 0 to match two nodes."""
         if x is None and y is None:
             return 0
         if x is None:
@@ -276,10 +333,12 @@ class mini_tree(TreeApproximationTemplate):
 
 
 class simple_tree(TreeApproximationTemplate):
-    """Convert each branch to one node whose length is the cell's life cycle.
+    """Style where each chain becomes one node weighted by its length.
 
-    This method is fast but imprecise, especially for small trees (the
-    recommended tree height should be at least 100). Use with caution.
+    The default style. Matching two chains costs the difference of their
+    lengths, and inserting or deleting a chain costs its length. Fast, but
+    imprecise for small trees (the recommended tree height is at least 100
+    time points).
     """
 
     def __init__(self, **kwargs):
@@ -292,9 +351,25 @@ class simple_tree(TreeApproximationTemplate):
         gcd: int,
         downsample: int,
     ) -> tuple[int | float, int | float]:
+        """Scale each tree by its own time resolution.
+
+        Chain lengths are then multiplied by the time resolution of their
+        dataset, so that they are comparable across datasets.
+        """
         return (time_resolution1, time_resolution2)
 
     def get_tree(self) -> tuple[dict, dict]:
+        """Build a tree with one node per chain.
+
+        Chains are cut at ``end_time``.
+
+        Returns
+        -------
+        dict of {int: list of int}
+            Adjacency dictionary, keyed by the first node of each chain.
+        dict of {int: int}
+            Number of nodes of each chain, times ``time_scale``.
+        """
         if self.end_time is None:
             self.end_time = self.lT.t_e
         out_dict = {}
@@ -316,9 +391,14 @@ class simple_tree(TreeApproximationTemplate):
         return out_dict, self.times
 
     def delta(self, x, y, corres1, corres2, times1, times2):
+        """Cost of the length difference for a match, the length otherwise."""
         return super().delta(x, y, corres1, corres2, times1, times2)
 
     def get_norm(self, root) -> int:
+        """Return the number of nodes of the subtree, times ``time_scale``.
+
+        This is the cost of deleting the whole subtree.
+        """
         return (
             len(self.lT.get_subtree_nodes(root, end_time=self.end_time))
             * self.time_scale
@@ -326,7 +406,11 @@ class simple_tree(TreeApproximationTemplate):
 
 
 class downsample_tree(TreeApproximationTemplate):
-    """Downsamples a tree so every n nodes are being used as one."""
+    """Style that keeps one time point every ``downsample`` time points.
+
+    Each kept node costs 1 to insert or delete, and 0 to match. More precise
+    than the chain-based styles and faster than ``full``.
+    """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -345,6 +429,14 @@ class downsample_tree(TreeApproximationTemplate):
         gcd: int,
         downsample: int,
     ) -> tuple[int | float, int | float]:
+        """Compute the time scale of each tree from ``downsample``.
+
+        Raises
+        ------
+        Exception
+            If ``downsample`` is not a multiple of the least common multiple
+            of the two time resolutions.
+        """
         lcm = time_resolution1 * time_resolution2 / gcd
         if downsample % (lcm / 10) != 0:
             raise Exception(
@@ -356,6 +448,16 @@ class downsample_tree(TreeApproximationTemplate):
         )
 
     def get_tree(self) -> tuple[dict, dict]:
+        """Build a tree that keeps one time point every ``downsample``.
+
+        Returns
+        -------
+        dict of {int: list of int}
+            Adjacency dictionary linking each kept node to its descendants
+            ``downsample`` time points later.
+        dict of {int: int}
+            Duration of each kept node, always 1.
+        """
         self.out_dict = {}
         self.times = {}
         to_do = [self.root]
@@ -376,6 +478,7 @@ class downsample_tree(TreeApproximationTemplate):
         return self.out_dict, self.times
 
     def get_norm(self, root) -> float:  ###Temporary###
+        """Return the number of kept nodes in the subtree of ``root``."""
         return len(
             downsample_tree(
                 lT=self.lT,
@@ -387,6 +490,7 @@ class downsample_tree(TreeApproximationTemplate):
         )
 
     def delta(self, x, y, corres1, corres2, times1, times2):
+        """Cost 1 to insert or delete a node, 0 to match two nodes."""
         if x is None and y is None:
             return 0
         if x is None:
@@ -397,22 +501,23 @@ class downsample_tree(TreeApproximationTemplate):
 
 
 class normalized_simple_tree(simple_tree):
-    """Simple tree where the node-comparison cost is normalised by combined branch length.
+    """Style like ``simple`` where the cost of a match is relative.
 
-    Identical to :class:`simple_tree` except the ``delta`` function returns
-    ``|len_x - len_y| / (len_x + len_y)`` instead of the raw absolute
-    difference, so each pairwise cost lies in ``[0, 1)``. This makes the
-    distance less sensitive to the absolute duration of branches and more
-    sensitive to their relative lengths.
+    Identical to ``simple`` except that matching two chains costs
+    ``|len_x - len_y| / (len_x + len_y)`` instead of the raw difference, so
+    each match costs less than 1, and inserting or deleting a chain costs 1.
+    This makes the distance less sensitive to the absolute duration of
+    chains and more sensitive to their relative lengths.
 
     The norm is the number of chains in the subtree (not the total number of
-    nodes), matching the normalisation convention of :class:`mini_tree`.
+    nodes), as for ``mini``.
     """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def delta(self, x, y, corres1, corres2, times1, times2):
+        """Cost 1 to insert or delete, the relative length difference to match."""
         if x is None and y is None:
             return 0
         if x is None:
@@ -424,16 +529,17 @@ class normalized_simple_tree(simple_tree):
         )
 
     def get_norm(self, root) -> int:
+        """Return the number of chains of the subtree spawned by ``root``."""
         return len(
             self.lT.get_all_chains_of_subtree(root, end_time=self.end_time)
         )
 
 
 class full_tree(TreeApproximationTemplate):
-    """Use the whole tree without any approximation.
+    """Style that keeps every node, without approximation.
 
-    Perfect accuracy, but heavy on RAM and slow. Not recommended for use in
-    napari.
+    Each node costs 1 to insert or delete, and 0 to match. Exact, but heavy
+    on memory and slow. Not recommended for use in napari.
     """
 
     def _edist_format(
@@ -441,8 +547,8 @@ class full_tree(TreeApproximationTemplate):
     ) -> tuple[list, list[list], dict[int, int]]:
         """Format the custom tree style to the format needed by edist.
 
-        .. warning::
-            Modifying this function might break your code.
+        Unlike the default version, nodes added to rescale time (see
+        ``time_scale``) are mapped back to the node they were added for.
 
         Parameters
         ----------
@@ -492,6 +598,10 @@ class full_tree(TreeApproximationTemplate):
         gcd: int,
         downsample: int,
     ) -> tuple[int | float, int | float]:
+        """Compute how many times each node of each tree is repeated.
+
+        ``(1, 1)`` when both datasets have the same time resolution.
+        """
         if time_resolution1 == time_resolution2:
             return (1, 1)
         lcm = time_resolution1 * time_resolution2 / gcd
@@ -501,6 +611,18 @@ class full_tree(TreeApproximationTemplate):
         )
 
     def get_tree(self) -> tuple[dict, dict]:
+        """Build a tree with every node of the subtree, up to ``end_time``.
+
+        When ``time_scale`` is larger than 1, each node is followed by
+        ``time_scale - 1`` added nodes.
+
+        Returns
+        -------
+        dict of {int: list of int}
+            Adjacency dictionary of the tree.
+        dict
+            Empty: every node has the same duration.
+        """
         self.out_dict = {}
         self.times = {}
         self.corres_added_nodes = {}
@@ -530,12 +652,14 @@ class full_tree(TreeApproximationTemplate):
         return self.out_dict, self.times
 
     def get_norm(self, root) -> int:
+        """Return the number of nodes of the subtree, times ``time_scale``."""
         return (
             len(self.lT.get_subtree_nodes(root, end_time=self.end_time))
             * self.time_scale
         )
 
     def delta(self, x, y, corres1, corres2, times1, times2):
+        """Cost 1 to insert or delete a node, 0 to match two nodes."""
         if x is None and y is None:
             return 0
         if x is None:
@@ -546,23 +670,23 @@ class full_tree(TreeApproximationTemplate):
 
 
 class tree_style(Enum):
-    """Enumeration of built-in tree-approximation styles.
+    """The built-in tree styles, by the name used as ``style`` argument.
 
-    Each member maps a human-readable name to its corresponding
-    :class:`TreeApproximationTemplate` subclass.
+    From the fastest and least precise to the slowest and exact:
 
-    Members
-    -------
+    Attributes
+    ----------
     mini : mini_tree
-        Fastest; each branch becomes a node of cost 1.
+        Each chain becomes a node of cost 1; only the branching pattern
+        counts.
     simple : simple_tree
-        Each branch becomes a node weighted by branch length.
+        Each chain becomes a node weighted by its length. The default.
     normalized_simple : normalized_simple_tree
-        Like ``simple`` but cost is relative (in ``[0, 1)``).
+        Like ``simple``, but the cost of a match is relative (below 1).
     downsampled : downsample_tree
-        Samples every ``n`` time points.
+        Keeps one time point every ``downsample`` time points.
     full : full_tree
-        No approximation; every node is explicit.
+        No approximation; every node is kept.
     """
 
     mini = mini_tree

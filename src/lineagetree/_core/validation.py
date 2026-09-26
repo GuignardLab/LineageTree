@@ -54,7 +54,7 @@ class TreeValidator:
     def check_for_cycles(self) -> bool:
         """Check whether the tree contains any cycles.
 
-        Iterates over all nodes and calls :meth:`check_cc_cycles` on each
+        Iterates over all nodes and calls ``check_cc_cycles`` on each
         unvisited connected component.
 
         Returns

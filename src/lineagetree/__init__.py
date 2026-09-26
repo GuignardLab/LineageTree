@@ -1,8 +1,14 @@
 """LineageTree: representation and analysis of cell lineage trees.
 
-This package exposes the :class:`~lineagetree.LineageTree` and
-:class:`~lineagetree.LineageTreeManager` classes along with a collection of
-loaders for reading lineage data from common file formats.
+This package exposes two classes:
+
+- [`LineageTree`][lineagetree.LineageTree] holds one dataset (a forest of
+  lineage trees) and provides navigation, plotting and comparison methods;
+- [`LineageTreeManager`][lineagetree.LineageTreeManager] holds several
+  ``LineageTree`` objects to compare lineages across datasets.
+
+It also exposes one ``read_from_*`` loader per supported file format, and
+``LOADERS``, which lists the loaders by file extension.
 """
 
 __version__ = "3.3.1"

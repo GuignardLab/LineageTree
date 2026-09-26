@@ -65,9 +65,13 @@ def _deprecated_alias(func, old: str):
 
     alias.__name__ = alias.__qualname__ = old
     alias.__signature__ = inspect.signature(func)
+    new = func.__name__
     alias.__doc__ = (
-        f"Deprecated alias of ``{func.__name__}``.\n\n"
-        f".. deprecated:: 3.3\n    Use ``{func.__name__}`` instead."
+        f"Deprecated alias of ``{new}``, the name it had in 3.2.\n\n"
+        f"Use [`{new}`][lineagetree.LineageTree.{new}] instead: this name "
+        "will be removed in a future release.\n\n"
+        "Warns\n-----\n"
+        "DeprecationWarning\n    Every time it is called."
     )
     return alias
 
@@ -94,18 +98,21 @@ def compute_neighbours_in_radius(
 ) -> dict[int, int]:
     """Count the neighbours of each node within a radius, as 3.2 did.
 
-    .. deprecated:: 3.3
-        Use ``neighbours_in_radius``, which returns the neighbours
-        themselves rather than how many there are.
+    Deprecated since 3.3: use
+    [`neighbours_in_radius`][lineagetree.LineageTree.neighbours_in_radius],
+    which returns the neighbours themselves rather than how many there are.
+    This name will be removed in a future release.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     t_b : int, optional
-        First time point to consider.
+        First time point to consider. Defaults to the first time point of
+        the dataset.
     t_e : int, optional
-        Last time point to consider.
+        End of the time range, excluded. Defaults to the last time point of
+        the dataset.
     th : float, default=50
         Radius within which nodes count as neighbours.
 
@@ -113,6 +120,11 @@ def compute_neighbours_in_radius(
     -------
     dict of {int: int}
         Dictionary that maps a node id to its number of neighbours.
+
+    Warns
+    -----
+    DeprecationWarning
+        Every time it is called.
     """
     _warn("compute_neighbours_in_radius", "neighbours_in_radius")
     return {

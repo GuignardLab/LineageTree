@@ -15,18 +15,18 @@ def create_links_and_chains(
     roots: int | Iterable | None = None,
     end_time: int | None = None,
 ) -> dict[str, dict]:
-    """Generate the chains and their durations for a subtree spawned by nodes.
+    """Build a compact version of the subtrees spawned by some nodes.
 
-    Each chain is represented only by its start and end nodes (not the
-    intermediate time points) together with its duration.
+    Each chain is represented only by its first and last nodes (not the
+    intermediate time points) together with its duration. This is the input
+    of the plotting functions.
 
     Parameters
     ----------
     lT : LineageTree
-        The LineageTree that the user is working on.
-    roots : int or Iterable, optional
-        The root(s) from which the tree(s) will be generated. If None, all the
-        roots are selected.
+        The LineageTree instance.
+    roots : int or Iterable of int, optional
+        The node(s) spawning the subtree(s). If None, all the roots are used.
     end_time : int, optional
         The last time point to be considered. If None, the last time point of
         the dataset (``t_e``) is used.
@@ -34,10 +34,14 @@ def create_links_and_chains(
     Returns
     -------
     dict
-        A dictionary that contains:
-            - "links": The dictionary that contains the hierarchy of the nodes (only start and end of each chain)
-            - "times": The time distance between the start and the end of a chain
-            - "roots": The roots used
+        A dictionary with three keys:
+
+        - ``"links"``: maps the first node of each chain to its last node,
+          and the last node of each chain to the first nodes of the next
+          chains (an empty list for leaves);
+        - ``"times"``: maps the first node of each chain to its number of
+          nodes, and the last node of a dividing chain to 0;
+        - ``"root"``: the ``roots`` argument, unchanged.
     """
     if roots is None:
         to_do = set(lT.roots)
@@ -77,7 +81,7 @@ def _find_leaves_and_depths_iterative(
     Parameters
     ----------
     lnks_tms : dict
-        A dictionary created by create_links_and_chains.
+        A dictionary created by ``create_links_and_chains``.
     root : int
         The id of the root node.
 
@@ -168,16 +172,16 @@ def _assign_positions_iterative(
     Parameters
     ----------
     lnks_tms : dict
-        Dictionary produced by :func:`create_links_and_chains`, containing
+        Dictionary produced by ``create_links_and_chains``, containing
         ``'links'`` and ``'times'`` sub-dicts.
     root : int
         Id of the root node to start placement from.
     depths : dict mapping int to int
         Pre-computed depth (in display units) of each node, as returned by
-        :func:`_find_leaves_and_depths_iterative`.
+        ``_find_leaves_and_depths_iterative``.
     leaf_x_positions : dict mapping int to float
         Pre-computed x-coordinates of each leaf node, as returned by
-        :func:`_calculate_leaf_positions`.
+        ``_calculate_leaf_positions``.
     vert_gap : int
         Vertical distance (in display units) between successive depth levels.
     ycenter : int
@@ -231,29 +235,32 @@ def _assign_positions_iterative(
 def hierarchical_pos(
     lnks_tms: dict, root, width=1000, vert_gap=2, xcenter=0, ycenter=0
 ) -> dict[int, list[float]] | None:
-    """Calculates the position of each node on the tree graph with uniform leaf spacing.
+    """Compute the 2D position of each node of a tree graph.
+
+    Leaves are spread uniformly along the x-axis, and each time point moves
+    the nodes ``vert_gap`` further down.
 
     Parameters
     ----------
     lnks_tms : dict
-         a dictionary created by create_links_and_chains.
+        A dictionary created by ``create_links_and_chains``.
     root : int
-        The id of the node, usually it exists inside lnks_tms dictionary, however you may use your own root.
-    width : int, optional
-        Max width, will not change the graph but interacting with the graph takes this distance into account, by default 1000
-    vert_gap : int, optional
-        How far downwards each timepoint will go, by default 2
-    xcenter : int, optional
-        Where the root will be placed on the x axis, by default 0
-    ycenter : int, optional
-        Where the root will be placed on the y axis, by default 0
+        The node to start from, usually a key of ``lnks_tms["times"]``.
+    width : int, default=1000
+        Horizontal span of the leaves. It does not change the shape of the
+        graph, only its coordinates.
+    vert_gap : int, default=2
+        Vertical distance between two consecutive time points.
+    xcenter : int, default=0
+        Position of the root along the x-axis.
+    ycenter : int, default=0
+        Position of the root along the y-axis.
 
     Returns
     -------
-    dict mapping int to list of float
-        Provides a dictionary that contains the id of each node as keys and its 2-d position on the
-        tree graph as values. Leaves are uniformly spaced on the x-axis.
-        If the root requested does not exists, None is then returned
+    dict of {int: list of float} or None
+        Maps each node id to its ``[x, y]`` position on the tree graph, or
+        None if ``root`` is not in ``lnks_tms["times"]``.
     """
     if root not in lnks_tms["times"]:
         return None
@@ -310,10 +317,10 @@ def convert_style_to_number(
 class CompatibleUnpickler(pickle.Unpickler):
     """A pickle unpickler that handles legacy module paths.
 
-    When a :class:`~lineagetree.LineageTree` object was pickled under the old
-    module path ``LineageTree.lineageTree`` (pre-v2.0), normal unpickling
-    would fail with a :exc:`ModuleNotFoundError`. This subclass intercepts
-    the import and redirects it to the current path.
+    When a ``LineageTree`` object was pickled under the old module path
+    ``LineageTree.lineageTree`` (pre-v2.0), normal unpickling would fail with
+    a ``ModuleNotFoundError``. This subclass intercepts the import and
+    redirects it to the current path.
     """
 
     def find_class(self, module, name):
