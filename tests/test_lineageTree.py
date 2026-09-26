@@ -554,11 +554,14 @@ def test_depth():
 
 
 def test_leaves():
-    assert list(lT1.leaves)[0] == 181669
+    assert 181669 in lT1.leaves
+    assert all(not lT1.successor[leaf] for leaf in lT1.leaves)
+    assert len(lT1.leaves) == len(lT1.nodes) - len({p for p, _ in lT1.edges})
 
 
 def test_edges():
-    assert lT1.edges[0] == (106632, 106589)
+    assert (106632, 106589) in lT1.edges
+    assert len(lT1.edges) == len(lT1.nodes) - len(lT1.roots)
 
 
 def test_parenting():
@@ -616,8 +619,11 @@ def test_get_all_chains_of_subtree():
 
 
 def test_get_ancestor_with_attribute():
-    lT1.label.pop(178353)
-    assert lT1.get_ancestor_with_attribute(178353, "label") == 178336
+    label = lT1.label.pop(178353)
+    try:
+        assert lT1.get_ancestor_with_attribute(178353, "label") == 178336
+    finally:
+        lT1.label[178353] = label
 
 
 def test_get_subtree():
