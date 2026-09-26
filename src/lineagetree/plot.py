@@ -707,6 +707,8 @@ def plot_dtw_trajectory(
     ------
     ValueError
         If ``projection`` is not one of the values above.
+    ImportError
+        If ``projection="pca"`` and scikit-learn is not installed.
     """
     (
         distance,
@@ -792,11 +794,11 @@ def plot_dtw_trajectory(
         elif projection == "pca":
             try:
                 from sklearn.decomposition import PCA
-            except ImportError:
-                Warning(
-                    "scikit-learn is not installed, the PCA orientation cannot be used."
-                    "You can install scikit-learn with pip install"
-                )
+            except ImportError as error:
+                raise ImportError(
+                    "projection='pca' requires scikit-learn: "
+                    "pip install scikit-learn"
+                ) from error
 
             # Apply PCA
             pca = PCA(n_components=2)
@@ -832,12 +834,14 @@ def plot_dtw_trajectory(
             ax.set_xlabel(f"{x_percent:.0f}% of {x_label} position")
             ax.set_ylabel(f"{y_percent:.0f}% of {y_label} position")
         else:
-            raise ValueError("""Error: available projections are:
+            raise ValueError(
+                """Error: available projections are:
                     '3d' : for the 3d visualization
                     'xy' or None (default) : 2D projection of axis x and y
                     'xz' : 2D projection of axis x and z
                     'yz' : 2D projection of axis y and z
-                    'pca' : PCA projection""")
+                    'pca' : PCA projection"""
+            )
 
     connections = [[pos_chain1[i], pos_chain2[j]] for i, j in alignment]
 

@@ -67,9 +67,9 @@ class TreeApproximationTemplate(ABC):
         end_time : int, optional
             Last time point to include in the approximation. Defaults to
             ``lT.t_e``.
-        time_scale : int, default=1
+        time_scale : int or float, default=1
             Scaling factor applied to node durations, used to align trees
-            sampled at different time resolutions. 0 or None is read as 1.
+            sampled at different time resolutions. None is read as 1.
 
         Raises
         ------
@@ -81,9 +81,15 @@ class TreeApproximationTemplate(ABC):
         self.root: int = root
         self.downsample: int = downsample
         self.end_time: int = end_time if end_time else self.lT.t_e
-        self.time_scale: int = int(time_scale) if time_scale else 1
+        if time_scale is None:
+            time_scale = 1
         if time_scale <= 0:
             raise Exception("Please use a valid time_scale (Larger than 0)")
+        self.time_scale: int | float = (
+            int(time_scale)
+            if float(time_scale).is_integer()
+            else float(time_scale)
+        )
         self.tree: tuple = self.get_tree()
         self.edist = self._edist_format(self.tree[0])
 
@@ -429,7 +435,12 @@ class downsample_tree(TreeApproximationTemplate):
         gcd: int,
         downsample: int,
     ) -> tuple[int | float, int | float]:
-        """Compute the time scale of each tree from ``downsample``.
+        """Use the time resolution of each tree as its time scale.
+
+        ``downsample`` is then a duration in the unit of
+        ``lT.time_resolution``: each tree keeps one node every
+        ``downsample / time_resolution`` of its time points, so both trees
+        are sampled at the same absolute time step.
 
         Raises
         ------
@@ -442,10 +453,7 @@ class downsample_tree(TreeApproximationTemplate):
             raise Exception(
                 f"Use a valid downsampling rate (multiple of {lcm/10})"
             )
-        return (
-            downsample / (time_resolution2 / 10),
-            downsample / (time_resolution1 / 10),
-        )
+        return (time_resolution1 / 10, time_resolution2 / 10)
 
     def get_tree(self) -> tuple[dict, dict]:
         """Build a tree that keeps one time point every ``downsample``.

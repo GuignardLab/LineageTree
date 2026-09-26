@@ -1,8 +1,8 @@
 """Spatial neighbourhoods of the nodes at each time point.
 
-Neighbourhoods are computed among the nodes of a single time point. Unless
-stated otherwise, positions are multiplied by ``lT.spatial_resolution``
-first, so distances are in physical units.
+Neighbourhoods are computed among the nodes of a single time point.
+Positions are multiplied by ``lT.spatial_resolution`` first, so distances are
+in physical units.
 """
 
 from __future__ import annotations
@@ -67,8 +67,7 @@ def gabriel_graph(
 
     Two nodes are neighbours in the Gabriel graph when no other node lies
     inside the sphere whose diameter is the segment between them. The graph
-    is built from the raw positions (``spatial_resolution`` is not applied)
-    and stored in ``lT.Gabriel_graph``.
+    is stored in ``lT.Gabriel_graph``.
 
     Parameters
     ----------
@@ -104,7 +103,7 @@ def gabriel_graph(
             data_corres = {}
             data = []
             for i, C in enumerate(nodes):
-                data.append(lT.pos[C])
+                data.append(lT.pos[C] * lT.spatial_resolution)
                 data_corres[i] = C
 
             delaunay_graph = {}
@@ -259,8 +258,7 @@ def k_nearest_neighbours(
         if 1 < len(nodes):
             use_k = k if k < len(nodes) else len(nodes)
             idx3d, nodes = lT.idx3d(t)
-            pos = [lT.pos[c] for c in nodes]
-            distances, neighbs = idx3d.query(pos, use_k)
+            distances, neighbs = idx3d.query(idx3d.data, use_k)
             out = dict(
                 zip(
                     nodes,

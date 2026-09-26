@@ -282,6 +282,7 @@ def read_from_csv(
         C = unique_id
         corres[id_] = C
         positions[-1] = positions[-1] * z_mult
+        successor.setdefault(C, [])
         if pred in corres:
             M = corres[pred]
             successor.setdefault(M, []).append(C)
@@ -380,13 +381,14 @@ def read_from_ASTEC(
     """Read an XML or PKL file produced by ASTEC.
 
     ASTEC segments and tracks cells in 3D+t embryo images. The file must
-    contain the lineage (``cell_lineage``) and the barycenters
-    (``cell_barycenter``). Node ids are renumbered; the time of an ASTEC id
-    is ``id // 10**4``.
+    contain the lineage (``cell_lineage``). Node ids are renumbered; the time
+    of an ASTEC id is ``id // 10**4``.
 
-    The following properties are created when present in the file:
-    ``volume``, ``fate``, ``label`` (cell names), ``contact`` (contact
-    surfaces), and any other per-cell dictionary under its ASTEC name.
+    The ASTEC id of each node, modulo ``10**4``, is stored in the
+    ``image_label`` property. The following properties are created when
+    present in the file: ``volume``, ``fate``, ``label`` (cell names),
+    ``contact`` (contact surfaces), and any other per-cell dictionary under
+    its ASTEC name. Without barycenters, the nodes have no position.
 
     Parameters
     ----------
@@ -415,8 +417,7 @@ def read_from_ASTEC(
         properties["volume"] = {}
     if "cell_fate" in tmp_data:
         properties["fate"] = {}
-    if "cell_barycenter" in tmp_data:
-        pos = {}
+    pos = {}
     if "cell_name" in tmp_data:
         properties["label"] = {}
     lT2pkl = {}
@@ -493,6 +494,7 @@ def read_from_ASTEC(
                         pkl2lT.get(k, -1): v for k, v in value.items()
                     }
             properties[prop_name] = dictionary
+    properties["image_label"] = image_label
     if not name:
         tmp_name = Path(file_path).stem
         if name == "":
@@ -743,10 +745,9 @@ def read_from_txt_for_celegans_CAO(
     successor = {}
     time = {}
 
-    unique_id = 0
-    for unique_id, (label, t, z, x, y) in enumerate(map(split_line, raw)):
-        label[unique_id] = label
-        position = np.array([x, y, z], dtype=np.float)
+    for unique_id, (cell_name, t, z, x, y) in enumerate(map(split_line, raw)):
+        label[unique_id] = cell_name
+        position = np.array([x, y, z], dtype=float)
         time_nodes.setdefault(t, set()).add(unique_id)
         if reorder:
 
@@ -888,7 +889,6 @@ def read_from_tgmm_xml(
     LineageTree
         The lineage tree.
     """
-    unique_id = 0
     successor = {}
     pos = {}
     time_id = {}
@@ -899,11 +899,11 @@ def read_from_tgmm_xml(
     properties["C_lin"] = {}
     properties["coeffs"] = {}
     properties["intensity"] = {}
-    W = {}
+    unique_id = 0
     for t in range(tb, te + 1):
         tree = ET.parse(file_format.format(t=t))
         root = tree.getroot()
-        for unique_id, it in enumerate(root):
+        for it in root:
             if "-1.#IND" not in it.attrib["m"] and "nan" not in it.attrib["m"]:
                 M_id, positions, cell_id, svIdx, lin_id = (
                     int(it.attrib["parent"]),
@@ -930,7 +930,9 @@ def read_from_tgmm_xml(
                     )
                     positions = np.array(positions)
                     C = unique_id
+                    unique_id += 1
                     positions[-1] = positions[-1] * z_mult
+                    successor.setdefault(C, [])
                     if (t - 1, M_id) in time_id:
                         M = time_id[(t - 1, M_id)]
                         successor.setdefault(M, []).append(C)
@@ -942,7 +944,6 @@ def read_from_tgmm_xml(
                     properties["C_lin"][C] = lin_id
                     properties["intensity"][C] = max(alpha - alphaPrior, 0)
                     tmp = list(np.array(W) * nu)
-                    W[C] = np.array(W).reshape(3, 3)
                     properties["coeffs"][C] = (
                         tmp[:3] + tmp[4:6] + tmp[8:9] + list(positions)
                     )
@@ -1067,6 +1068,7 @@ def read_from_mastodon_csv(
         time[unique_id] = t
         label[unique_id] = spot[1]
         pos[unique_id] = np.array([x, y, z], dtype=float)
+        successor.setdefault(unique_id, [])
 
     for link in links:
         source = int(float(link[4]))
@@ -1120,6 +1122,7 @@ def read_from_mamut_xml(
     for attr in xml_attributes:
         properties[attr] = {}
     nodes = set()
+    successor = {}
     pos = {}
     time = {}
     properties["label"] = {}
@@ -1153,7 +1156,6 @@ def read_from_mamut_xml(
                     properties[attr][cell_id] = eval(cell.attrib[attr])
 
     properties["tracks"] = {}
-    successor = {}
     properties["track_name"] = {}
     for track in AllTracks:
         if "TRACK_DURATION" in track.attrib:
@@ -1177,6 +1179,10 @@ def read_from_mamut_xml(
                 properties["track_name"][s] = t_name
                 properties["track_name"][t] = t_name
                 properties["tracks"][t_id].append((s, t))
+    # spots in no track are single-node trees
+    linked = set(successor).union(*successor.values())
+    for cell_id in nodes.difference(linked):
+        successor[cell_id] = []
     if not name:
         tmp_name = Path(path).stem
         if name == "":

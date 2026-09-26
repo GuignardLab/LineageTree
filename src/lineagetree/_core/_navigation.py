@@ -186,13 +186,21 @@ def get_all_chains_of_subtree(
     Returns
     -------
     list of list of int
-        The chains, each a list of node ids in time order. The chain of
-        ``node`` comes first.
+        The chains, each a list of node ids in time order, cut at
+        ``end_time``. The chain of ``node`` comes first. Empty if ``node``
+        is after ``end_time``.
     """
-    if not end_time:
+    if end_time is None:
         end_time = lT.t_e
-    chains = [lT.get_successors(node)]
-    to_do = list(lT._successor[chains[0][-1]])
+    first_chain = lT.get_successors(node, end_time=end_time)
+    if end_time < lT._time[node]:
+        return []
+    chains = [first_chain]
+    to_do = (
+        list(lT._successor[first_chain[-1]])
+        if lT._time[first_chain[-1]] < end_time
+        else []
+    )
     while to_do:
         current = to_do.pop()
         chain = lT.get_successors(current, end_time=end_time)
@@ -247,35 +255,37 @@ def get_subtree_nodes(
         The node(s) spawning the subtree(s). They are included in the
         output.
     end_time : int, optional
-        Latest time point to traverse. Defaults to ``lT.t_e``.
+        Latest time point to include. Defaults to ``lT.t_e``.
     preorder : bool, default=False
-        Change the traversal order: nodes are then taken from the front of
-        the list of nodes still to visit instead of its back.
+        If True, visit the successors of a node in the order in which they
+        are stored in ``lT.successor``. Otherwise they are visited in the
+        reverse order, which is faster.
 
     Returns
     -------
     list of int
-        The node ids. With the default ``preorder=False``, the order is a
-        depth-first pre-order: a node comes before its successors.
+        The node ids, in depth-first pre-order: a node comes before its
+        successors, and a subtree is complete before the next one starts.
     """
-    if not end_time:
+    if end_time is None:
         end_time = lT.t_e
     if not isinstance(x, Iterable):
         to_do = [x]
     elif isinstance(x, Iterable):
         to_do = list(x)
+        if preorder:
+            to_do.reverse()
     subtree = []
     while to_do:
         curr = to_do.pop()
-        succ = lT._successor[curr]
-        if succ and end_time < lT._time.get(curr, end_time):
-            succ = []
+        if end_time < lT._time[curr]:
             continue
+        succ = lT._successor[curr]
         if preorder:
-            to_do = succ + to_do
+            to_do.extend(reversed(succ))
         else:
-            to_do += succ
-        subtree += [curr]
+            to_do.extend(succ)
+        subtree.append(curr)
     return subtree
 
 

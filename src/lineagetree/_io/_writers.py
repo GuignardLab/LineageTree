@@ -14,31 +14,40 @@ if TYPE_CHECKING:
 
 
 def _get_height(lT: LineageTree, c: int, done: dict) -> float:
-    """Recursively compute the height of a node times a space factor.
+    """Compute the horizontal position of a node and its descendants.
 
-    This function is specific to ``write_to_svg``.
+    The position of a node is the mean of the positions of its successors;
+    leaves must already be in ``done``. This function is specific to
+    ``write_to_svg``.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     c : int
-        Id of the node from which the height is computed.
-    done : dict of {int: list of int}
-        A dictionary that maps a node id to its vertical and horizontal
-        position.
+        Id of the node from which the positions are computed.
+    done : dict of {int: list of float}
+        Maps a node id to its ``[x, y]`` position. Filled in place.
 
     Returns
     -------
     float
-        The height of the node ``c``.
+        The horizontal position of the node ``c``.
     """
-    if c in done:
-        return done[c][0]
-    else:
-        P = np.mean([lT._get_height(di, done) for di in lT._successor[c]])
-        done[c] = [P, lT.vert_space_factor * lT._time[c]]
-        return P
+    to_do = [c]
+    while to_do:
+        curr = to_do[-1]
+        if curr in done:
+            to_do.pop()
+            continue
+        missing = [di for di in lT._successor[curr] if di not in done]
+        if missing:
+            to_do.extend(missing)
+            continue
+        to_do.pop()
+        x = np.mean([done[di][0] for di in lT._successor[curr]])
+        done[curr] = [x, lT.vert_space_factor * lT._time[curr]]
+    return done[c][0]
 
 
 def write_to_svg(
@@ -117,17 +126,19 @@ def write_to_svg(
         return lambda x: values_dict_nodes[x] * mult
 
     if roots is None:
-        roots = lT.roots
+        roots = list(lT.roots)
         if hasattr(lT, "image_label"):
             roots = [node for node in roots if lT.image_label[node] != 1]
+    else:
+        roots = list(roots)
 
     if node_size is None:
 
         def node_size(x):
             return vert_space_factor / 2.1
 
-    else:
-        values = np.array([lT._successor[node_size][c] for c in lT.nodes])
+    elif isinstance(node_size, str):
+        values = np.array([getattr(lT, node_size)[c] for c in lT.nodes])
         node_size = normalize_values(
             values, lT.nodes, 0.5, 0.5, vert_space_factor / 2.1
         )
@@ -148,7 +159,7 @@ def write_to_svg(
             cmap = colormaps[node_color_map]
         else:
             cmap = colormaps["viridis"]
-        values = np.array([lT._successor[node_color][c] for c in lT.nodes])
+        values = np.array([getattr(lT, node_color)[c] for c in lT.nodes])
         normed_vals = normalize_values(values, lT.nodes, 1, 0, 1)
 
         def node_color(x):
@@ -167,7 +178,7 @@ def write_to_svg(
             cmap = colormaps[node_color_map]
         else:
             cmap = colormaps["viridis"]
-        values = np.array([lT._successor[stroke_color][c] for c in lT.nodes])
+        values = np.array([getattr(lT, stroke_color)[c] for c in lT.nodes])
         normed_vals = normalize_values(values, lT.nodes, 1, 0, 1)
 
         def stroke_color(x):
@@ -197,7 +208,7 @@ def write_to_svg(
         while len(to_do) != 0:
             curr = to_do.pop(0)
             treated_nodes += [curr]
-            if not lT._successor[curr]:
+            if lT._successor[curr]:
                 if order_key is not None:
                     to_do += sorted(lT._successor[curr], key=order_key)
                 else:
@@ -315,6 +326,12 @@ def write_to_tlp(
           [`gabriel_graph`][lineagetree.LineageTree.gabriel_graph].
 
         If None, no spatial edges are written.
+
+    Raises
+    ------
+    ValueError
+        If ``spatial`` is not one of the values above, or if the
+        corresponding graph has not been computed.
     write_layout : bool, default=True
         Whether to write the spatial position as layout.
     node_properties : dict of {str: list}, optional
@@ -341,22 +358,31 @@ def write_to_tlp(
 
     def spatial_adjlist_to_set(s_g):
         s_edges = set()
-        for _t, gg in s_g.items():
-            for c, N in gg.items():
-                s_edges.update([tuple(sorted([c, ni])) for ni in N])
+        for c, N in s_g.items():
+            s_edges.update(tuple(sorted([int(c), int(ni)])) for ni in N)
         return s_edges
+
+    if spatial:
+        spatial_graphs = {
+            "gg": ("Gabriel_graph", "gabriel_graph"),
+            "kn": ("kn_graph", "k_nearest_neighbours"),
+            "ball": ("th_edges", "spatial_edges"),
+        }
+        if spatial.lower() not in spatial_graphs:
+            raise ValueError(
+                f"spatial should be one of 'ball', 'kn' or 'GG', not {spatial!r}."
+            )
+        attr, method = spatial_graphs[spatial.lower()]
+        if not hasattr(lT, attr):
+            raise ValueError(
+                f"Compute the spatial graph with lT.{method}() before "
+                f"writing it with spatial={spatial!r}."
+            )
+        s_edges = spatial_adjlist_to_set(getattr(lT, attr))
 
     with open(fname, "w") as f:
         f.write('(tlp "2.0"\n')
         f.write("(nodes ")
-
-        if spatial:
-            if spatial.lower() == "gg" and hasattr(lT, "Gabriel_graph"):
-                s_edges = spatial_adjlist_to_set(lT.Gabriel_graph)
-            elif spatial.lower() == "kn" and hasattr(lT, "kn_graph"):
-                s_edges = spatial_adjlist_to_set(lT.kn_graph)
-            elif spatial.lower() == "ball" and hasattr(lT, "th_edges"):
-                s_edges = spatial_adjlist_to_set(lT.th_edges)
 
         if not nodes_to_use:
             if t_max != np.inf or t_min > -1:
@@ -389,7 +415,9 @@ def write_to_tlp(
                             edges_to_use.append((n, d))
             if spatial:
                 edges_to_use += [
-                    e for e in s_edges if t_min < lT._time[e[0]] < t_max
+                    e
+                    for e in s_edges
+                    if e[0] in nodes_to_use and e[1] in nodes_to_use
                 ]
         nodes_to_use = set(nodes_to_use)
         if Names:
