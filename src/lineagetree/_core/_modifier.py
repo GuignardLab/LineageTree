@@ -16,7 +16,7 @@ def modifier(wrapped_func):
     Wrap any function that mutates the tree's topology, times, or positions
     with ``@modifier``. After the wrapped function returns, every backing
     attribute listed in ``self._protected_dynamic_properties`` is reset to
-    ``None``, causing :class:`dynamic_property` descriptors to recompute their
+    ``None``, causing ``dynamic_property`` descriptors to recompute their
     values on the next access.
 
     Re-entrant calls (modifier functions calling other modifier functions) are
@@ -59,30 +59,41 @@ def add_chain(
     downstream: bool,
     pos: Callable | None = None,
 ) -> int:
-    """Add a chain of a given length to a node.
+    """Add a chain of new nodes before or after a node.
 
-    The chain is added either as a successor or as a predecessor of ``node``.
-    If it is placed on top of a tree, all the nodes are moved ``length`` time
-    points down.
+    Each new node is one time point after (``downstream=True``) or before
+    (``downstream=False``) the previous one. Adding a chain downstream of a
+    node that already has successors makes that node divide.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     node : int
-        Id of the successor (predecessor if ``downstream`` is False).
+        The node to attach the chain to. With ``downstream=False`` it must
+        be a root.
     length : int
-        The length of the new chain.
+        Number of nodes to add. With 0, nothing is added and ``node`` is
+        returned.
     downstream : bool
-        If True, creates a chain that goes forwards in time, otherwise
-        backwards.
+        If True, the chain follows ``node`` in time; otherwise it precedes
+        it, and ``node`` stops being a root.
     pos : Callable, optional
-        Callable returning the position of the new nodes.
+        Not used yet; the new nodes get no position.
 
     Returns
     -------
     int
-        Id of the first node of the sublineage.
+        Id of the last node added: the new leaf when ``downstream`` is
+        True, the new root otherwise.
+
+    Raises
+    ------
+    ValueError
+        If ``length`` is negative.
+    Warning
+        If ``downstream`` is False and ``node`` has a predecessor, or the
+        chain would start before ``lT.t_b``.
     """
     if length == 0:
         return node
@@ -110,15 +121,15 @@ def add_chain(
 
 @modifier
 def add_root(lT: LineageTree, t: int, pos: list | None = None) -> int:
-    """Add a root at a specific timepoint.
+    """Add an isolated node, which is both a root and a leaf.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     t : int
-        The timepoint at which the node is added.
-    pos : list, optional
+        The time point of the new node.
+    pos : list or tuple, optional
         The position of the new node.
 
     Returns
@@ -137,7 +148,10 @@ def add_root(lT: LineageTree, t: int, pos: list | None = None) -> int:
 
 
 def get_next_id(lT) -> int:
-    """Compute the next authorized id and assign it.
+    """Return an unused node id and reserve it.
+
+    Ids listed in ``lT.next_id``, if any, are used first; otherwise the id
+    is one more than the largest id given so far.
 
     Parameters
     ----------
@@ -166,20 +180,21 @@ def _add_node(
     pos: Iterable | None = None,
     nid: int | None = None,
 ) -> int:
-    """Add a node as either a successor or a predecessor of another node.
+    """Add a node before or after existing nodes.
 
-    Does not handle time. You cannot enter both a successor and a predecessor.
+    The time of the new node is not set; the caller has to set it.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
-    succ : list, optional
-        List of ids of the nodes the new node is a successor to.
-    pred : list, optional
-        List of ids of the nodes the new node is a predecessor to.
-    pos : Iterable, optional
-        Position of the new node.
+    succ : list of int, optional
+        Successors of the new node, which becomes their predecessor.
+    pred : list of int, optional
+        One-element list holding the predecessor of the new node, which
+        becomes one of its successors.
+    pos : list, optional
+        Position of the new node. Ignored unless it is a ``list``.
     nid : int, optional
         Id value of the new node, to be used carefully. If None, the new id is
         automatically computed.
@@ -188,6 +203,12 @@ def _add_node(
     -------
     int
         Id of the new node.
+
+    Raises
+    ------
+    Warning
+        If neither ``succ`` nor ``pred`` is given; use
+        [`add_root`][lineagetree.LineageTree.add_root] instead.
     """
     if not succ and not pred:
         raise Warning(
@@ -214,14 +235,18 @@ def _add_node(
 
 @modifier
 def remove_nodes(lT: LineageTree, group: int | set | list) -> None:
-    """Remove a group of nodes from the LineageTree.
+    """Remove one or more nodes from the tree.
+
+    The nodes are also removed from every property of the tree that is a
+    dictionary. The successors of a removed node become roots.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
-    group : set of int or list of int or int
-        One or more nodes that are to be removed.
+    group : int or set of int or list of int
+        The node(s) to remove. Ids that are not nodes of the tree are
+        ignored.
     """
     if isinstance(group, int | float):
         group = {group}
@@ -349,12 +374,16 @@ def apply_trsf(m: np.ndarray, pos: np.ndarray):
 def stabilise_positions(lT: LineageTree) -> dict[int, np.ndarray]:
     """Register node positions to minimise inter-frame displacement.
 
-    Node positions at each time point are moved such that the sum of the
-    squared displacements between consecutive time points is minimal. The old
-    positions are kept in ``lT.old_pos``.
+    The positions of each time point are rotated and translated (a rigid
+    transformation) so that the sum of the squared displacements between
+    consecutive time points is minimal. ``lT.pos`` is replaced by the new
+    positions and the old ones are kept in ``lT.old_pos``. Positions must be
+    3D.
 
-    .. warning::
-        Strongly coordinated movements may be smoothed out significantly.
+    Warnings
+    --------
+    Strongly coordinated movements, such as a rotation of the whole
+    embryo, may be smoothed out significantly.
 
     Parameters
     ----------
@@ -449,8 +478,9 @@ def anchored_gaussian_smooth(data, sigma=1.5, anchor_strength=3.0):
 
     Examples
     --------
-    >>> anchored_gaussian_smooth([10, 12, 15, 20, 18, 16, 14], sigma=1.5)
-    array([...])
+    >>> out = anchored_gaussian_smooth([10, 12, 15, 20, 18, 16, 14], sigma=1.5)
+    >>> float(out[0]), float(out[-1])
+    (10.0, 14.0)
     """
     data = np.asarray(data, dtype=float)
 
@@ -482,25 +512,25 @@ def smooth_trajectories(lT: LineageTree, sigma=1.0, ancor_strength=3):
     independently smoothed using a Gaussian filter with soft endpoint
     constraints. The first and last positions of each chain are preserved
     exactly, while nearby points are partially constrained to reduce drift.
+    ``lT.pos`` is replaced by the smoothed positions and the old ones are
+    kept in ``lT.old_pos``.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     sigma : float, default=1.0
-        Standard deviation of the Gaussian kernel used for smoothing each
-        coordinate independently. Higher values produce smoother trajectories.
-        Default is 1.0.
+        Standard deviation, in time points, of the Gaussian kernel. Higher
+        values produce smoother trajectories.
     ancor_strength : float, default=3
         Controls the strength of endpoint anchoring. Smaller values enforce
-        stronger constraints near the start and end of each chain (less drift),
-        while larger values allow more global smoothing. Default is 3.
+        stronger constraints near the start and end of each chain (less
+        drift), while larger values allow more global smoothing.
 
     Returns
     -------
-    dict
-        Dictionary mapping each node in the lineage tree to its smoothed
-        3D position.
+    dict of {int: numpy.ndarray}
+        The new ``lT.pos``: each node mapped to its smoothed 3D position.
     """
     new_pos = {}
     for chain in lT.all_chains:

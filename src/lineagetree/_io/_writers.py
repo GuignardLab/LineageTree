@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 def _get_height(lT: LineageTree, c: int, done: dict) -> float:
     """Recursively compute the height of a node times a space factor.
 
-    This function is specific to :func:`write_to_svg`.
+    This function is specific to ``write_to_svg``.
 
     Parameters
     ----------
@@ -67,16 +67,17 @@ def write_to_svg(
     lT : LineageTree
         The LineageTree instance.
     file_name : str
-        Filesystem filename valid for ``open()``.
+        Path of the SVG file to create.
     roots : list of int, optional
-        List of node ids to be drawn. If None, all the nodes are drawn.
-        Defaults to ``lT.roots``.
+        The nodes whose subtrees are drawn. Defaults to all the roots
+        (except, for ASTEC data, those whose ``image_label`` is 1).
     draw_nodes : bool, default=True
         Whether to draw the nodes.
     draw_edges : bool, default=True
         Whether to draw the edges.
     order_key : Callable, optional
-        Function usable as the ``key`` argument of ``sort``/``sorted``.
+        Function usable as the ``key`` argument of ``sort``/``sorted``, used
+        to order the roots and the successors.
     vert_space_factor : float, default=0.5
         The vertical position of a node is its time; ``vert_space_factor`` is a
         multiplier to space nodes more or less in time.
@@ -103,9 +104,9 @@ def write_to_svg(
     positions : dict of {int: list of float}, optional
         Dictionary that maps a node id to a 2D position. If provided, it is used
         to position the nodes.
-    node_color_map : Callable or str, optional
-        The name of the colormap to use to colour the nodes, or a colormap
-        function.
+    node_color_map : str, optional
+        Name of the matplotlib colormap used when ``node_color`` or
+        ``stroke_color`` is a property name. Defaults to ``"viridis"``.
     """
 
     def normalize_values(v, nodes, _range, shift, mult):
@@ -281,9 +282,11 @@ def write_to_tlp(
     spatial: str | None = None,
     write_layout: bool = True,
     node_properties: dict | None = None,
-    Names: bool = False,
+    Names: str | bool = False,
 ) -> None:
-    """Write a lineage tree into a Tulip file.
+    """Write a lineage tree into a Tulip (``.tlp``) file.
+
+    Tulip is a graph visualisation tool (https://tulip.labri.fr).
 
     Parameters
     ----------
@@ -292,31 +295,35 @@ def write_to_tlp(
     fname : str
         Path to the Tulip file to create.
     t_min : int, default=-1
-        Minimum time to consider.
+        Nodes at ``t_min`` or earlier are left out.
     t_max : int, default=np.inf
-        Maximum time to consider.
+        Nodes after ``t_max`` are left out.
     nodes_to_use : list of int, optional
-        List of nodes to show in the graph. If None, ``lT.nodes`` is used
-        (taking into account ``t_min`` and ``t_max``).
+        The nodes to write. If None, all the nodes between ``t_min`` and
+        ``t_max`` are written.
     temporal : bool, default=True
         Whether the temporal links should be written.
     spatial : {"ball", "kn", "GG"}, optional
-        Build spatial edges from a spatial neighbourhood graph, which has to be
-        computed before running this function:
+        Also write spatial edges from a spatial neighbourhood graph, which
+        has to be computed before running this function:
 
-        - ``"ball"``: neighbours at a given distance,
-        - ``"kn"``: k-nearest neighbours,
-        - ``"GG"``: Gabriel graph.
+        - ``"ball"``: neighbours within a distance, from
+          [`spatial_edges`][lineagetree.LineageTree.spatial_edges],
+        - ``"kn"``: k nearest neighbours, from
+          [`k_nearest_neighbours`][lineagetree.LineageTree.k_nearest_neighbours],
+        - ``"GG"``: Gabriel graph, from
+          [`gabriel_graph`][lineagetree.LineageTree.gabriel_graph].
 
         If None, no spatial edges are written.
     write_layout : bool, default=True
         Whether to write the spatial position as layout.
     node_properties : dict of {str: list}, optional
-        A dictionary of properties to write. Each key (the property name) maps
-        to a pair of a dictionary (node id to property value) and a default
-        value for this property.
-    Names : bool, default=False
-        Only works with ASTEC outputs; if True, sort the nodes by their names.
+        Properties to write. Each key (the property name) maps to a pair made
+        of a dictionary (node id to property value) and a default value.
+    Names : str or bool, default=False
+        For ASTEC outputs only: the key of ``node_properties`` that holds the
+        cell names. The nodes are then written sorted by name. False to keep
+        the default order.
     """
 
     def format_names(names_which_matter):
@@ -466,14 +473,18 @@ def write_to_tlp(
 
 
 def write(lT: LineageTree, fname: str) -> None:
-    """Write a lineage tree on disk as an .lT file.
+    """Save the lineage tree to an ``.lT`` file.
+
+    The file can be read back with
+    [`LineageTree.load`][lineagetree.LineageTree.load].
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     fname : str
-        path to and name of the file to save
+        Path to and name of the file to save. The ``.lT`` extension is added
+        if missing.
     """
     if os.path.splitext(fname)[-1].upper() != ".LT":
         fname = os.path.extsep.join((fname, "lT"))

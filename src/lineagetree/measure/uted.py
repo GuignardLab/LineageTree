@@ -1,3 +1,12 @@
+"""Unordered tree edit distance (UTED) between the subtrees of a dataset.
+
+The distance is the constrained unordered tree edit distance of Zhang (1996),
+computed by ``edist``. The subtrees are first simplified with a tree style
+(see [`tree_style`][lineagetree.tree_approximation.tree_style]), and the
+alignments are cached on the tree so that the distance, its plot and its
+mappings are computed only once per pair of nodes.
+"""
+
 from __future__ import annotations
 
 import warnings
@@ -28,38 +37,47 @@ def unordered_tree_edit_distances_at_time_t(
     t: int,
     end_time: int | None = None,
     style: (
-        Literal["simple", "full", "downsampled", "normalized_simple"]
+        Literal["simple", "full", "downsampled", "normalized_simple", "mini"]
         | type[TreeApproximationTemplate]
     ) = "simple",
     downsample: int = 2,
     norm: Literal["max", "sum", None] = "max",
     recompute: bool = False,
 ) -> dict[tuple[int, int], float]:
-    """Compute all pairwise unordered tree edit distances (Zhang 1996) at time ``t``.
+    """Compute the tree edit distance between every pair of nodes at time ``t``.
+
+    Each pair of nodes at time ``t`` is compared with
+    [`unordered_tree_edit_distance`][lineagetree.LineageTree.unordered_tree_edit_distance].
+    The result is cached in ``lT.uted[t]``.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     t : int
-        time to look at
-    end_time : int
-        The final time point the comparison algorithm will take into account.
-        If None all nodes will be taken into account.
+        The time point whose nodes are compared.
+    end_time : int, optional
+        The last time point taken into account. If None, the whole subtrees
+        are compared.
     style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
-        Which tree approximation is going to be used for the comparisons.
+        The tree approximation used for the comparison; see
+        [`tree_style`][lineagetree.tree_approximation.tree_style].
     downsample : int, default=2
         The downsample factor for the downsampled tree approximation.
-        Used only when `style="downsampled"`.
+        Used only when ``style="downsampled"``.
     norm : {"max", "sum", None}, default="max"
-        The normalization method to use.
+        The normalization method; see
+        [`unordered_tree_edit_distance`][lineagetree.LineageTree.unordered_tree_edit_distance].
     recompute : bool, default=False
-        If True, forces to recompute the distances
+        If True, recompute the distances even if ``lT.uted[t]`` exists.
+        The cache does not depend on the other parameters, so use it after
+        changing any of them.
 
     Returns
     -------
-    dict mapping a tuple of tuple that contains 2 ints to float
-        a dictionary that maps a pair of node ids at time `t` to their unordered tree edit distance
+    dict of {tuple of (int, int): float}
+        Maps each pair of nodes at time ``t``, as a sorted tuple, to their
+        distance.
     """
     if not hasattr(lT, "uted"):
         lT.uted = {}
@@ -92,9 +110,11 @@ def __calculate_distance_of_sub_tree(
     norm1: int | float,
     norm2: int | float,
 ) -> float:
-    """Calculates the distance of the subtree of each node matched in a comparison.
-    DOES NOT CALCULATE THE DISTANCE FROM SCRATCH BUT USING THE ALIGNMENT.
-    TODO ITS BOUND TO CHANGE
+    """Calculate the distance of the subtree of a node matched in a comparison.
+
+    This does not calculate the distance from scratch but reuses the
+    existing alignment.
+
     Parameters
     ----------
     lT : LineageTree
@@ -106,7 +126,7 @@ def __calculate_distance_of_sub_tree(
     alignment : Alignment
         The alignment of the subtree
     corres1 : dict
-        The correspndance dictionary of the first lineage
+        The correspondence dictionary of the first lineage
     corres2 : dict
         The correspondance dictionary of the second lineage
     delta_tmp : Callable
@@ -143,8 +163,8 @@ def clear_comparisons(lT: LineageTree) -> None:
 
     Comparisons between subtrees are stored in ``lT._comparisons`` keyed by
     ``(end_time, style_id)`` to avoid redundant recomputation. This function
-    empties the cache. Call it when memory usage is a concern or when
-    parameters that affect the alignment (e.g. tree topology) have changed.
+    empties the cache. Call it when memory usage is a concern, or after
+    modifying the tree, since cached alignments are not updated.
 
     Parameters
     ----------
@@ -161,7 +181,7 @@ def __unordereded_backtrace(
     end_time: int | None = None,
     norm: Literal["max", "sum", None] = "max",
     style: (
-        Literal["simple", "normalized_simple", "full", "downsampled"]
+        Literal["simple", "normalized_simple", "full", "downsampled", "mini"]
         | type[TreeApproximationTemplate]
     ) = "simple",
     downsample: int = 2,
@@ -169,10 +189,11 @@ def __unordereded_backtrace(
     str,
     Alignment | tuple[TreeApproximationTemplate, TreeApproximationTemplate],
 ]:
-    """
-    Compute the unordered tree edit backtrace from Zhang 1996 between the trees spawned
-    by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
-    cost is given by the function delta (see edist doc for more information).
+    """Compute the unordered tree edit alignment between two subtrees.
+
+    The trees spawned by ``n1`` and ``n2`` are compared with the unordered
+    tree edit distance of Zhang (1996). The result is cached in
+    ``lT._comparisons``.
 
     Parameters
     ----------
@@ -182,24 +203,26 @@ def __unordereded_backtrace(
         id of the first node to compare
     n2 : int
         id of the second node to compare
-    end_time : int
-        The final time point the comparison algorithm will take into account.
-        If None all nodes will be taken into account.
+    end_time : int, optional
+        The last time point taken into account. If None, the whole subtrees
+        are compared.
     norm : {"max", "sum", None}, default="max"
-        The normalization method to use.
+        Not used.
     style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
-        Which tree approximation is going to be used for the comparisons.
+        The tree approximation used for the comparison.
     downsample : int, default=2
         The downsample factor for the downsampled tree approximation.
-        Used only when `style="downsampled"`.
+        Used only when ``style="downsampled"``.
 
     Returns
     -------
-    dict mapping str to Alignment or tuple of [TreeApproximationTemplate, TreeApproximationTemplate]
-        - 'alignment'
-            The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.
-        - 'trees'
-            A list of the two trees that have been mapped to each other.
+    dict
+        A dictionary with two keys:
+
+        - ``'alignment'``: the ``edist`` alignment between the two subtrees,
+        - ``'trees'``: the two tree approximations that were aligned.
+
+        Both are empty tuples when the two subtrees are empty.
     """
 
     parameters = (
@@ -275,47 +298,69 @@ def unordered_tree_edit_distance(
     end_time: int | None = None,
     norm: Literal["max", "sum", None] = "max",
     style: (
-        Literal["simple", "normalized_simple", "full", "downsampled"]
+        Literal["simple", "normalized_simple", "full", "downsampled", "mini"]
         | type[TreeApproximationTemplate]
     ) = "simple",
     downsample: int = 2,
     return_norms: bool = False,
 ) -> float | tuple[float, tuple[float, float]]:
-    """
-    Compute the unordered tree edit distance from Zhang 1996 between the trees spawned
-    by two nodes `n1` and `n2`. The topology of the trees are compared and the matching
-    cost is given by the function delta (see edist doc for more information).
-    The distance is normed by the function norm that takes the two list of nodes
-    spawned by the trees `n1` and `n2`.
+    """Compute the unordered tree edit distance between two subtrees.
+
+    The subtrees spawned by ``n1`` and ``n2`` are simplified according to
+    ``style``, then compared with the constrained unordered tree edit
+    distance of Zhang (1996): the minimal total cost of the node insertions,
+    deletions and substitutions that turn one tree into the other, where
+    the order of the successors does not matter. The cost of each operation
+    is given by the ``delta`` method of the style. The cost is then divided
+    by a norm computed from both trees, so that trees of different sizes can
+    be compared.
+
+    The alignment is cached; see
+    [`clear_comparisons`][lineagetree.LineageTree.clear_comparisons].
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     n1 : int
-        id of the first node to compare
+        The node spawning the first subtree.
     n2 : int
-        id of the second node to compare
+        The node spawning the second subtree.
     end_time : int, optional
-        The final time point the comparison algorithm will take into account.
-        If None or not provided all nodes will be taken into account.
+        The last time point taken into account. If None, the whole subtrees
+        are compared.
     norm : {"max", "sum", None}, default="max"
-        The normalization method to use, defaults to 'max'.
+        How the cost is normalised, from the norms of the two trees (see the
+        ``get_norm`` method of the style): ``"max"`` divides by the larger
+        one, ``"sum"`` by their sum, and None does not normalise.
     style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
-        Which tree approximation is going to be used for the comparisons.
+        The tree approximation used for the comparison; see
+        [`tree_style`][lineagetree.tree_approximation.tree_style].
     downsample : int, default=2
         The downsample factor for the downsampled tree approximation.
-        Used only when `style="downsampled"`.
+        Used only when ``style="downsampled"``.
     return_norms : bool, default=False
-        If True, the normalization values of both trees are returned
-        alongside the distance.
+        If True, return the cost before normalisation together with the
+        norms of the two trees, instead of the normalised distance.
 
     Returns
     -------
     float or tuple of (float, tuple of (float, float))
-        The normalized unordered tree edit distance between `n1` and `n2`,
-        and, when ``return_norms`` is True, the normalization value of each
-        of the two trees.
+        The normalised distance between the subtrees of ``n1`` and ``n2``.
+        With ``return_norms=True``, the tuple ``(cost, (norm1, norm2))``,
+        where ``cost`` is not normalised.
+
+    Raises
+    ------
+    ValueError
+        If ``norm`` is not one of the values above.
+
+    Examples
+    --------
+    >>> from lineagetree import LineageTree
+    >>> lT = LineageTree(successor={0: [1, 2], 1: [], 2: [3], 3: []})
+    >>> float(lT.unordered_tree_edit_distance(1, 2, norm="max"))
+    0.5
     """
     parameters = (
         end_time,
@@ -371,7 +416,7 @@ def plot_tree_distance_graphs(
     end_time: int | None = None,
     norm: Literal["max", "sum", None] = "max",
     style: (
-        Literal["simple", "normalized_simple", "full", "downsampled"]
+        Literal["simple", "normalized_simple", "full", "downsampled", "mini"]
         | type[TreeApproximationTemplate]
     ) = "simple",
     downsample: int = 2,
@@ -380,52 +425,60 @@ def plot_tree_distance_graphs(
     size: float = 10,
     lw: float = 0.3,
     ax: list[plt.Axes] | None = None,
-    vmin=None,
-    vmax=None,
-) -> tuple[plt.figure, plt.Axes]:
-    """
-    Plots the subtrees compared and colors them according to the quality of the matching of their subtree.
+    vmin: float | None = None,
+    vmax: float | None = None,
+) -> tuple[plt.Figure, list[plt.Axes]]:
+    """Plot two compared subtrees, coloured by how well they match.
+
+    The comparison is the one of
+    [`unordered_tree_edit_distance`][lineagetree.LineageTree.unordered_tree_edit_distance].
+    Each matched chain is coloured by the normalised distance between the
+    subtrees spawned by the two chains it is matched with; unmatched chains
+    are drawn in ``default_color``. The whole lineages containing ``n1`` and
+    ``n2`` are drawn, from their ancestor at the first time point.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     n1 : int
-        id of the first node to compare
+        The node spawning the first subtree.
     n2 : int
-        id of the second node to compare
-    end_time : int
-        The final time point the comparison algorithm will take into account.
-        If None all nodes will be taken into account.
+        The node spawning the second subtree.
+    end_time : int, optional
+        The last time point taken into account. If None, the whole subtrees
+        are compared.
     norm : {"max", "sum", None}, default="max"
-        The normalization method to use.
+        The normalization method; see
+        [`unordered_tree_edit_distance`][lineagetree.LineageTree.unordered_tree_edit_distance].
     style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
-        Which tree approximation is going to be used for the comparisons.
+        The tree approximation used for the comparison; see
+        [`tree_style`][lineagetree.tree_approximation.tree_style].
     downsample : int, default=2
         The downsample factor for the downsampled tree approximation.
-        Used only when `style="downsampled"`.
+        Used only when ``style="downsampled"``.
     colormap : str, default="cool"
-        The colormap used for matched nodes, defaults to "cool"
-    default_color : str
-        The color of the unmatched nodes, defaults to "black"
-    size : float
-        The size of the nodes, defaults to 10
-    lw : float
-        The width of the edges, defaults to 0.3
-    ax : np.ndarray, optional
-        The axes used, if not provided another set of axes is produced, defaults to None
-    vmin, vmax: float, optional
-        Values within the range ``[vmin, vmax]`` from the input data will be
-        linearly mapped to ``[0, 1]``.
-        *vmin* defaults to the 0.05 quantile of the values of the unordered tree edist distances of the subtrees.
-        *vmax* defaults to the 0.95 quantile of the values of the unordered tree edist distances of the subtrees.
+        Name of the matplotlib colormap used for matched nodes.
+    default_color : str, default="black"
+        The colour of the unmatched nodes.
+    size : float, default=10
+        The size of the nodes.
+    lw : float, default=0.3
+        The width of the edges.
+    ax : list of plt.Axes, optional
+        Two axes, one per subtree. If None, a new figure with two axes is
+        created.
+    vmin, vmax : float, optional
+        Distances in ``[vmin, vmax]`` are mapped linearly onto the colormap.
+        ``vmin`` defaults to the 5th percentile and ``vmax`` to the 95th
+        percentile of the distances.
 
     Returns
     -------
     plt.Figure
-            The figure of the plot
-    plt.Axes
-            The axes of the plot
+        The figure of the plot.
+    list of plt.Axes
+        The two axes of the plot.
     """
     parameters = (
         end_time,
@@ -584,39 +637,48 @@ def labelled_mappings(
     end_time: int | None = None,
     norm: Literal["max", "sum", None] = "max",
     style: (
-        Literal["simple", "normalized_simple", "full", "downsampled"]
+        Literal["simple", "normalized_simple", "full", "downsampled", "mini"]
         | type[TreeApproximationTemplate]
     ) = "simple",
     downsample: int = 2,
-) -> dict[str, list[str]]:
-    """
-    Returns the labels or IDs of all the nodes in the subtrees compared.
+) -> dict[str, list]:
+    """List which nodes are matched when comparing two subtrees.
 
+    The comparison is the one of
+    [`unordered_tree_edit_distance`][lineagetree.LineageTree.unordered_tree_edit_distance].
+    Nodes are reported by their label (see
+    [`labels`][lineagetree.LineageTree.labels]) or, when they have none, by
+    their id. With chain-based styles, each chain is reported by its first
+    node.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     n1 : int
-        id of the first node to compare
+        The node spawning the first subtree.
     n2 : int
-        id of the second node to compare
+        The node spawning the second subtree.
     end_time : int, optional
-        The final time point the comparison algorithm will take into account.
-        If None or not provided all nodes will be taken into account.
+        The last time point taken into account. If None, the whole subtrees
+        are compared.
     norm : {"max", "sum", None}, default="max"
-        The normalization method to use, defaults to 'max'.
+        The normalization method.
     style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
-        Which tree approximation is going to be used for the comparisons, defaults to 'simple'.
+        The tree approximation used for the comparison; see
+        [`tree_style`][lineagetree.tree_approximation.tree_style].
     downsample : int, default=2
         The downsample factor for the downsampled tree approximation.
         Used only when `style="downsampled"`.
 
     Returns
     -------
-    dict mapping str to list of str
-        - 'matched' The labels of the matched nodes of the alignment.
-        - 'unmatched' The labels of the unmatched nodes of the alignment.
+    dict
+        A dictionary with two keys:
+
+        - ``'matched'``: list of ``(node_of_tree1, node_of_tree2)`` pairs,
+        - ``'unmatched'``: list of the nodes of either tree that have no
+          match.
     """
     parameters = (
         end_time,

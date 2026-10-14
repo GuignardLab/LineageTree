@@ -1,3 +1,5 @@
+"""Dynamic time warping (DTW) between the trajectories of two chains."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -15,7 +17,7 @@ def __calculate_diag_line(dist_mat: np.ndarray) -> tuple[float, float]:
     Parameters
     ----------
     dist_mat : numpy.ndarray
-        Distance matrix obtained by the function :func:`dtw`.
+        Distance matrix obtained by the function ``dtw``.
 
     Returns
     -------
@@ -48,7 +50,7 @@ def __dp(
     Parameters
     ----------
     dist_mat : numpy.ndarray
-        Distance matrix obtained by the function :func:`dtw`.
+        Distance matrix obtained by the function ``dtw``.
     start_d : int, default=0
         Start delay.
     back_d : int, default=0
@@ -292,48 +294,63 @@ def dtw(
     tuple[float, tuple, np.ndarray, np.ndarray, np.ndarray]
     | tuple[float, tuple]
 ):
-    """Calculate the DTW distance between two chains.
+    """Compute the dynamic time warping distance between two chains.
+
+    The trajectories (successive positions) of the chains of ``nodes1`` and
+    ``nodes2`` are aligned in time so that the sum of the distances between
+    aligned positions is minimal. The distance is that sum divided by the
+    length of the alignment, i.e. the mean distance between aligned
+    positions. Positions are used as they are, without
+    ``spatial_resolution``, and must be 3D.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     nodes1 : int
-        First node whose chain is compared.
+        A node of the first chain; its whole chain is compared.
     nodes2 : int
-        Second node whose chain is compared.
+        A node of the second chain; its whole chain is compared.
     threshold : int, default=1000
-        Maximum number of points a chain can have.
+        Maximum number of points used to estimate the registration; longer
+        chains are resampled. Only used when ``regist`` is True.
     regist : bool, default=True
-        Whether to rotate and translate the trajectories.
+        Whether to first rotate and translate the first trajectory onto the
+        second one (rigid registration).
     start_d : int, default=0
-        Start delay.
+        Number of points that may be skipped at the start of either chain.
     back_d : int, default=0
-        End delay.
+        Number of points that may be skipped at the end of either chain.
     fast : bool, default=False
-        If True, use a faster version that might not find the optimal
-        alignment.
+        If True, only compute the alignment within a band around the
+        diagonal (Sakoe-Chiba band), which is faster but may miss the
+        optimal alignment.
     w : int, default=0
-        Window size.
+        Half-width of the band when ``fast`` is True. It is at least the
+        difference between the chain lengths.
     centered_band : bool, default=True
-        When running the fast algorithm, whether the window is centered.
+        When ``fast`` is True, whether to centre the band on the line joining
+        the corners of the distance matrix instead of on its diagonal.
     cost_mat_p : bool, default=False
-        Whether to also return the non-normalized cost matrix and trajectories.
+        Whether to also return the accumulated cost matrix and the
+        trajectories.
 
     Returns
     -------
     float
         DTW distance.
-    tuple of tuple
-        Alignment path.
+    list of tuple of int
+        The alignment, as ``(i, j)`` pairs matching the ``i``-th position of
+        the first chain with the ``j``-th position of the second.
     numpy.ndarray
-        Cost matrix. Only returned when ``cost_mat_p`` is True.
+        Accumulated cost matrix, of shape ``(len(chain1), len(chain2))``.
+        Only returned when ``cost_mat_p`` is True.
     numpy.ndarray
-        Rotated and translated positions of the first trajectory. Only
-        returned when ``cost_mat_p`` is True.
+        Positions of the first trajectory, registered onto the second one if
+        ``regist`` is True. Only returned when ``cost_mat_p`` is True.
     numpy.ndarray
-        Rotated and translated positions of the second trajectory. Only
-        returned when ``cost_mat_p`` is True.
+        Positions of the second trajectory. Only returned when
+        ``cost_mat_p`` is True.
     """
     nodes1_chain = lT.get_chain_of_node(nodes1)
     nodes2_chain = lT.get_chain_of_node(nodes2)

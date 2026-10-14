@@ -32,23 +32,37 @@ if TYPE_CHECKING:
 
 
 class LineageTreeManager:
-    """Container for multiple :class:`~lineagetree.LineageTree` objects.
+    """Container for several lineage trees, to compare them.
 
-    Provides named access to a collection of lineage trees and exposes
-    cross-lineage analysis methods such as :meth:`cross_lineage_edit_distance`
-    and :meth:`plot_tree_distance_graphs`.
+    Holds named [`LineageTree`][lineagetree.LineageTree] objects, typically
+    one per embryo, and compares lineages across them with
+    [`cross_lineage_edit_distance`][lineagetree.LineageTreeManager.cross_lineage_edit_distance].
 
-    Trees are stored in ``self.lineagetrees`` as an ordered dictionary keyed
-    by tree name (a ``str``). If a tree has no name, one is generated
-    automatically (``"Lineagetree 0"``, ``"Lineagetree 1"``, …).
+    Trees are stored in ``self.lineagetrees``, keyed by name. If a tree has
+    no name, one is generated (``"Lineagetree 0"``, ``"Lineagetree 1"``, …).
+    Every tree must have its
+    [`time_resolution`][lineagetree.LineageTree.time_resolution] set before
+    comparisons, so that datasets recorded at different frame rates can be
+    compared.
 
     Attributes
     ----------
     norm_dict : dict
-        Mapping from normalization name to function, shared with
-        :class:`~lineagetree.LineageTree`.
-    lineagetrees : dict mapping str to LineageTree
-        The managed collection.
+        Mapping from normalization name to function.
+    lineagetrees : dict of {str: LineageTree}
+        The managed trees, keyed by name.
+
+    Examples
+    --------
+    >>> from lineagetree import LineageTree, LineageTreeManager
+    >>> lT1 = LineageTree(successor={0: [1, 2], 1: [], 2: []}, name="embryo1")
+    >>> lT2 = LineageTree(
+    ...     successor={0: [1, 2], 1: [3], 2: [], 3: []}, name="embryo2"
+    ... )
+    >>> lT1.time_resolution = lT2.time_resolution = 1
+    >>> lTm = LineageTreeManager([lT1, lT2])
+    >>> float(lTm.cross_lineage_edit_distance(0, "embryo1", 0, "embryo2"))
+    0.25
     """
 
     norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
@@ -125,12 +139,15 @@ class LineageTreeManager:
 
     @property
     def gcd(self) -> int:
-        """Calculate the greatest common divisor of all tree resolutions.
+        """Greatest common divisor of the time resolutions of all the trees.
 
-        Returns
-        -------
-        int
-            The overall greatest common divisor.
+        Computed on ``lT._time_resolution``, i.e. ten times
+        ``lT.time_resolution``. 1 when the manager holds a single tree.
+
+        Raises
+        ------
+        ValueError
+            If the manager is empty.
         """
         if len(self) > 1:
             all_time_res = [
@@ -146,20 +163,30 @@ class LineageTreeManager:
             )
 
     def add(self, other_tree: LineageTree, name: str = ""):
-        """Add a new lineage tree object to the manager.
+        """Add a lineage tree to the manager.
 
-        A tree can be added either with :meth:`add` or with the ``+`` operator.
-        If a name is specified, the tree is stored under that name; otherwise
-        the existing name of the lineage tree is used.
+        A tree equal to one already in the manager (same topology and times)
+        is not added again. A tree added under an existing name replaces the
+        tree stored under that name.
 
         Parameters
         ----------
         other_tree : LineageTree
-            The lineage tree to be added.
+            The lineage tree to add.
         name : str, default=""
-            The name of the lineage tree to be added. Usually lineage trees are
-            named after the path they are read from, so this is the name most
-            of the time.
+            The name to store the tree under. If empty, the tree's own name
+            is used (loaders name trees after their file), or one is
+            generated and given to the tree.
+
+        Returns
+        -------
+        bool or None
+            False if an equal tree is already in the manager, None otherwise.
+
+        Raises
+        ------
+        Exception
+            If ``other_tree`` is not a ``LineageTree``.
         """
         if isinstance(other_tree, LineageTree):
             for tree in self.lineagetrees.values():
@@ -181,15 +208,21 @@ class LineageTreeManager:
             )
 
     def __add__(self, other: LineageTree):
+        """Add ``other`` to the manager in place; see ``add``.
+
+        Returns None, so write ``lTm + lT`` as a statement, not
+        ``lTm = lTm + lT``.
+        """
         self.add(other)
 
     def write(self, fname: str):
-        """Save the manager to disk.
+        """Save the manager and all its trees to a ``.lTM`` file.
 
         Parameters
         ----------
         fname : str
-            The path and name of the file to save.
+            The path and name of the file to save. The ``.lTM`` extension is
+            added if missing.
         """
         if os.path.splitext(fname)[-1].upper() != ".LTM":
             fname = os.path.extsep.join((fname, "lTM"))
@@ -205,18 +238,19 @@ class LineageTreeManager:
             f.close()
 
     def remove_embryo(self, key: str):
-        """Remove an embryo from the manager.
+        """Remove a lineage tree from the manager.
 
         Parameters
         ----------
         key : str
-            The name of the lineage tree to be removed.
+            The name of the lineage tree to remove. Unknown names are
+            ignored.
         """
         self.lineagetrees.pop(key, None)
 
     @classmethod
     def load(cls, fname: str) -> LineageTreeManager:
-        """Load a lineage tree manager from a ``.ltm`` file.
+        """Load a lineage tree manager from a ``.lTM`` file.
 
         Parameters
         ----------
@@ -227,6 +261,10 @@ class LineageTreeManager:
         -------
         LineageTreeManager
             The loaded manager.
+
+        Warnings
+        --------
+        ``.lTM`` files are pickles: only load files from sources you trust.
         """
         with open(fname, "br") as f:
             ltm = pkl.load(f)
@@ -242,7 +280,9 @@ class LineageTreeManager:
         end_time1: int | None = None,
         end_time2: int | None = None,
         style: (
-            Literal["simple", "normalized_simple", "full", "downsampled"]
+            Literal[
+                "simple", "normalized_simple", "full", "downsampled", "mini"
+            ]
             | type[TreeApproximationTemplate]
         ) = "simple",
         norm: Literal["max", "sum", None] = "max",
@@ -252,14 +292,11 @@ class LineageTreeManager:
         Alignment
         | tuple[TreeApproximationTemplate, TreeApproximationTemplate],
     ]:
-        """Compute the unordered tree edit backtrace between two lineages.
+        """Compute the unordered tree edit alignment between two lineages.
 
-        The unordered tree edit distance from Zhang 1996 is computed between the
-        trees spawned by node ``n1`` from ``embryo_1`` and node ``n2`` from
-        ``embryo_2``. The topologies of the trees are compared and the matching
-        cost is given by the ``delta`` function (see the edist documentation for
-        more information). The distance is normed by the ``norm`` function that
-        takes the two lists of nodes spawned by the trees ``n1`` and ``n2``.
+        The trees spawned by node ``n1`` of ``embryo_1`` and node ``n2`` of
+        ``embryo_2`` are compared with the unordered tree edit distance of
+        Zhang (1996). The result is cached in ``self._comparisons``.
 
         Parameters
         ----------
@@ -277,10 +314,10 @@ class LineageTreeManager:
         end_time2 : int, optional
             The final time point the comparison algorithm takes into account for
             the second dataset. If None, all nodes are taken into account.
-        style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate subclass, default="simple"
+        style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
             The approximation used to calculate the tree.
         norm : {"max", "sum", None}, default="max"
-            The normalization method used (not important for this function).
+            Not used.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
             Used only when ``style="downsampled"``.
@@ -428,7 +465,8 @@ class LineageTreeManager:
 
         Frees memory by erasing the cached alignment results stored in
         ``self._comparisons``. Call this when the cache grows too large or
-        after modifying trees in the manager.
+        after modifying trees in the manager, since cached alignments are not
+        updated.
         """
         self._comparisons.clear()
 
@@ -442,32 +480,36 @@ class LineageTreeManager:
         end_time2: int | None = None,
         norm: Literal["max", "sum", None] = "max",
         style: (
-            Literal["simple", "normalized_simple", "full", "downsampled"]
+            Literal[
+                "simple", "normalized_simple", "full", "downsampled", "mini"
+            ]
             | type[TreeApproximationTemplate]
         ) = "simple",
         downsample: int = 2,
         return_norms: bool = False,
     ) -> float | tuple[float, tuple[float, float]]:
-        """Compute the cross-lineage unordered tree edit distance.
+        """Compute the unordered tree edit distance between two lineages.
 
-        The unordered tree edit distance from Zhang 1996 is computed between the
-        trees spawned by nodes ``n1`` and ``n2``. The topologies of the trees
-        are compared and the matching cost is given by the ``delta`` function
-        (see the edist documentation for more information). Five styles (tree
-        approximations) are available and the user may add their own.
+        This is the cross-dataset version of
+        [`LineageTree.unordered_tree_edit_distance`][lineagetree.LineageTree.unordered_tree_edit_distance]:
+        the subtree spawned by ``n1`` in ``embryo_1`` is compared with the
+        subtree spawned by ``n2`` in ``embryo_2``. Durations are rescaled
+        with the time resolution of each tree, which must be set.
+
+        The alignment is cached; see
+        [`clear_comparisons`][lineagetree.LineageTreeManager.clear_comparisons].
 
         Parameters
         ----------
         n1 : int
-            Id of the first node to compare.
+            The node spawning the first subtree.
         embryo_1 : str
-            The name of the first embryo to be used (from
-            ``lTm.lineagetrees.keys()``).
+            The name of the tree ``n1`` belongs to (a key of
+            ``lTm.lineagetrees``).
         n2 : int
-            Id of the second node to compare.
+            The node spawning the second subtree.
         embryo_2 : str
-            The name of the second embryo to be used (from
-            ``lTm.lineagetrees.keys()``).
+            The name of the tree ``n2`` belongs to.
         end_time1 : int, optional
             The final time point the comparison algorithm takes into account for
             the first dataset. If None, all nodes are taken into account.
@@ -475,24 +517,33 @@ class LineageTreeManager:
             The final time point the comparison algorithm takes into account for
             the second dataset. If None, all nodes are taken into account.
         norm : {"max", "sum", None}, default="max"
-            The normalization method to use.
-        style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate subclass, default="simple"
-            Which tree approximation is used for the comparisons.
+            How the cost is normalised: ``"max"`` divides it by the larger of
+            the two tree norms, ``"sum"`` by their sum, and None does not
+            normalise.
+        style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
+            The tree approximation used for the comparison; see
+            [`tree_style`][lineagetree.tree_approximation.tree_style].
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
             Used only when ``style="downsampled"``.
         return_norms : bool, default=False
-            Whether to return the norms explicitly (mainly used for the napari
-            plugin).
+            If True, return the cost before normalisation together with the
+            norms of the two trees, instead of the normalised distance
+            (mainly used by the napari plugin).
 
         Returns
         -------
-        float
-            The normalized cross-lineage edit distance between ``n1`` and
-            ``n2``.
-        tuple of float, optional
-            The two normalization values. Returned only if ``return_norms`` is
-            True.
+        float or tuple of (float, tuple of (float, float))
+            The normalised distance between the two subtrees. With
+            ``return_norms=True``, the tuple ``(cost, (norm1, norm2))``, where
+            ``cost`` is not normalised.
+
+        Raises
+        ------
+        Warning
+            If the time resolution of either tree is not set.
+        ValueError
+            If ``norm`` is not one of the values above.
         """
 
         parameters = (
@@ -569,7 +620,9 @@ class LineageTreeManager:
         end_time2: int | None = None,
         norm: Literal["max", "sum"] | None = "max",
         style: (
-            Literal["simple", "normalized_simple", "full", "downsampled"]
+            Literal[
+                "simple", "normalized_simple", "full", "downsampled", "mini"
+            ]
             | type[TreeApproximationTemplate]
         ) = "simple",
         downsample: int = 2,
@@ -578,56 +631,62 @@ class LineageTreeManager:
         size: float = 10,
         lw: float = 0.3,
         ax: np.ndarray | None = None,
-        vmin=None,
-        vmax=None,
-    ) -> tuple[plt.figure, plt.Axes]:
-        """Plot the compared subtrees, coloured by matching quality.
+        vmin: float | None = None,
+        vmax: float | None = None,
+    ) -> tuple[plt.Figure, np.ndarray]:
+        """Plot two compared lineages, coloured by how well they match.
+
+        The comparison is the one of
+        [`cross_lineage_edit_distance`][lineagetree.LineageTreeManager.cross_lineage_edit_distance].
+        Each matched chain is coloured by the normalised distance between the
+        subtrees spawned by the two chains it is matched with.
 
         Parameters
         ----------
         n1 : int
-            Id of the first node to compare.
+            The node spawning the first subtree.
         embryo_1 : str
-            The name of the first embryo.
+            The name of the tree ``n1`` belongs to.
         n2 : int
-            Id of the second node to compare.
+            The node spawning the second subtree.
         embryo_2 : str
-            The name of the second embryo.
+            The name of the tree ``n2`` belongs to.
         end_time1 : int, optional
             The final time point the comparison algorithm takes into account for
             the first dataset. If None, all nodes are taken into account.
         end_time2 : int, optional
             The final time point the comparison algorithm takes into account for
             the second dataset. If None, all nodes are taken into account.
-        norm : {"max", "sum"}, default="max"
-            The normalization method to use.
-        style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate subclass, default="simple"
-            Which tree approximation is used for the comparisons.
+        norm : {"max", "sum", None}, default="max"
+            The normalization method; see
+            [`cross_lineage_edit_distance`][lineagetree.LineageTreeManager.cross_lineage_edit_distance].
+        style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
+            The tree approximation used for the comparison.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
             Used only when ``style="downsampled"``.
         colormap : str, default="cool"
-            The colormap used for matched nodes.
+            Name of the matplotlib colormap used for matched nodes.
         default_color : str, default="black"
             The colour of the unmatched nodes.
         size : float, default=10
             The size of the nodes.
         lw : float, default=0.3
             The width of the edges.
-        ax : numpy.ndarray, optional
-            The axes used. If None, another set of axes is produced.
+        ax : numpy.ndarray of plt.Axes, optional
+            Two axes, one per lineage. If None, a new figure with two axes is
+            created.
         vmin, vmax : float, optional
-            Values within the range ``[vmin, vmax]`` from the input data are
-            linearly mapped to ``[0, 1]``. ``vmin`` defaults to the 0.05
-            quantile and ``vmax`` to the 0.95 quantile of the unordered tree
-            edit distances of the subtrees.
+            Distances in ``[vmin, vmax]`` are mapped linearly onto the
+            colormap. ``vmin`` defaults to the 5th percentile and ``vmax`` to
+            the 95th percentile of the distances.
 
         Returns
         -------
         plt.Figure
             The matplotlib figure.
-        plt.Axes
-            The matplotlib axes.
+        numpy.ndarray of plt.Axes
+            The two axes.
         """
 
         parameters = (
@@ -807,45 +866,54 @@ class LineageTreeManager:
         end_time2: int | None = None,
         norm: Literal["max", "sum", None] = "max",
         style: (
-            Literal["simple", "normalized_simple", "full", "downsampled"]
+            Literal[
+                "simple", "normalized_simple", "full", "downsampled", "mini"
+            ]
             | type[TreeApproximationTemplate]
         ) = "simple",
         downsample: int = 2,
-    ) -> dict[str, list[str]]:
-        """Return the labels or ids of all the nodes in the compared subtrees.
+    ) -> dict[str, list]:
+        """List which nodes are matched when comparing two lineages.
+
+        The comparison is the one of
+        [`cross_lineage_edit_distance`][lineagetree.LineageTreeManager.cross_lineage_edit_distance].
+        Nodes are reported by their label or, when they have none, by their
+        id. With chain-based styles, each chain is reported by its first
+        node.
 
         Parameters
         ----------
         n1 : int
-            Id of the first node to compare.
+            The node spawning the first subtree.
         embryo_1 : str
-            The name of the first lineage.
+            The name of the tree ``n1`` belongs to.
         n2 : int
-            Id of the second node to compare.
+            The node spawning the second subtree.
         embryo_2 : str
-            The name of the second lineage.
+            The name of the tree ``n2`` belongs to.
         end_time1 : int, optional
             The final time point the comparison algorithm takes into account for
             the first dataset. If None, all nodes are taken into account.
         end_time2 : int, optional
             The final time point the comparison algorithm takes into account for
             the second dataset. If None, all nodes are taken into account.
-        norm : {"max", "sum"}, default="max"
-            The normalization method to use.
-        style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate subclass, default="simple"
-            Which tree approximation is used for the comparisons.
+        norm : {"max", "sum", None}, default="max"
+            The normalization method.
+        style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
+            The tree approximation used for the comparison.
         downsample : int, default=2
             The downsample factor for the downsampled tree approximation.
             Used only when ``style="downsampled"``.
 
         Returns
         -------
-        dict of {str: list of str}
+        dict
             A dictionary with two keys:
 
-            - ``'matched'``: the labels of the matched nodes of the alignment,
-            - ``'unmatched'``: the labels of the unmatched nodes of the
-              alignment.
+            - ``'matched'``: list of ``(node_of_tree1, node_of_tree2)``
+              pairs,
+            - ``'unmatched'``: list of ``(node, tree_name)`` pairs for the
+              nodes of either tree that have no match.
         """
 
         parameters = (

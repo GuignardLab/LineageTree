@@ -30,53 +30,47 @@ class LineageTree(
     AnalysisMixin,
     IOMixin,
 ):
-    """A lineage tree data structure with comprehensive analysis capabilities.
+    """A forest of cell lineage trees, with navigation and analysis methods.
 
-    A ``LineageTree`` is a directed forest (set of rooted trees) where nodes
-    represent biological cells at specific time points and edges encode
-    parent–daughter relationships. It is the central data structure of the
-    ``lineagetree`` library.
+    A ``LineageTree`` is a directed forest (a set of rooted trees). Each node
+    is an integer id that stands for one cell at one time point, and each edge
+    links a node to its successor at a later time point. A node has at most
+    one predecessor and any number of successors: one while the cell lives,
+    two or more when it divides, none at a leaf.
 
-    The class is composed of mixin classes that provide distinct capability
-    groups:
+    A *chain* is a maximal run of nodes in which every node but the last has
+    exactly one successor, i.e. the life of one cell between two divisions.
+    Many methods work on chains rather than on single nodes.
 
-    - :class:`~lineagetree._mixins.properties_mixin.PropertiesMixin` —
-      structural properties (roots, leaves, edges, …)
-    - :class:`~lineagetree._mixins.modifier_mixin.ModifierMixin` — mutation
-      (add/remove nodes, smooth trajectories, …)
-    - :class:`~lineagetree._mixins.navigation_mixin.NavigationMixin` —
-      tree traversal (ancestors, subtrees, chains, …)
-    - :class:`~lineagetree._mixins.plot_mixin.PlotMixin` — matplotlib-based
-      visualisation
-    - :class:`~lineagetree._mixins.spatial_mixin.SpatialMixin` — spatial
-      neighbourhood graphs (Gabriel graph, kNN, …)
-    - :class:`~lineagetree._mixins.analysis_mixin.AnalysisMixin` — pairwise
-      tree comparison (UTED, DTW)
-    - :class:`~lineagetree._mixins.io_mixin.IOMixin` — serialisation (pickle,
-      SVG, Tulip)
+    The methods come from mixins, grouped by capability: structural
+    properties (roots, leaves, edges, …), tree edits (adding and removing
+    nodes, smoothing trajectories, …), navigation (ancestors, subtrees,
+    chains, …), plotting, spatial neighbourhoods (Gabriel graph, k nearest
+    neighbours, …), tree comparison (unordered tree edit distance, dynamic
+    time warping) and writing to disk (pickle, SVG, Tulip).
 
-    The preferred way to create a ``LineageTree`` from a file is via one of
-    the ``read_from_*`` functions exposed in :mod:`lineagetree`, or via
-    :meth:`load` for ``.lT`` pickle files.
-
-    Parameters
-    ----------
-    successor : dict mapping int to Iterable, optional
-        See :meth:`__init__`.
-    predecessor : dict mapping int to int or Iterable, optional
-        See :meth:`__init__`.
+    To create a ``LineageTree`` from a file, use one of the ``read_from_*``
+    functions of the ``lineagetree`` package, or
+    [`LineageTree.load`][lineagetree.LineageTree.load] for ``.lT`` files.
 
     Examples
     --------
+    A cell (0) that divides into two daughters, each observed once:
+
     >>> from lineagetree import LineageTree
-    >>> lT = LineageTree(successor={0: [1, 2], 1: [], 2: []}, time={0: 0, 1: 1, 2: 1})
+    >>> lT = LineageTree(successor={0: [1, 2], 1: [], 2: []})
+    >>> sorted(lT.roots), sorted(lT.leaves)
+    ([0], [1, 2])
+    >>> dict(lT.time)
+    {0: 0, 1: 1, 2: 1}
     """
 
     def __eq__(self, other) -> bool:
         """Compare two ``LineageTree`` objects for structural equality.
 
         Two trees are considered equal when their successor, predecessor, and
-        time dictionaries are identical.
+        time dictionaries are identical. Positions, names and custom
+        properties are not compared.
 
         Parameters
         ----------
@@ -123,6 +117,12 @@ class LineageTree(
     def load(clf, fname: str):
         """Load a lineage tree from a ``.lT`` file.
 
+        ``.lT`` files are written by
+        [`LineageTree.write`][lineagetree.LineageTree.write]. Files written
+        by versions older than 2.0 are converted to the current format, and
+        attributes missing from older files (``time_resolution``,
+        ``spatial_resolution``, ``temporal``) are set to their defaults.
+
         Parameters
         ----------
         fname : str
@@ -132,6 +132,10 @@ class LineageTree(
         -------
         LineageTree
             The loaded lineage tree.
+
+        Warnings
+        --------
+        ``.lT`` files are pickles: only load files from sources you trust.
         """
         with open(fname, "br") as f:
             lT = CompatibleUnpickler(f).load()
@@ -179,18 +183,21 @@ class LineageTree(
     def get_subtree(self, node_list: set[int]) -> LineageTree:
         """Create a new lineage tree restricted to a set of nodes.
 
-        The new tree keeps the same edges and properties as this lineage tree,
-        but only the nodes in ``node_list`` are considered.
+        Only the nodes in ``node_list`` and the edges between them are kept.
+        Times, positions, the name and the custom properties are carried over.
+        Custom properties are passed as they are, so they may still hold
+        values for nodes that were dropped.
 
         Parameters
         ----------
         node_list : set of int
-            The nodes to keep.
+            The nodes to keep, for example the output of
+            [`get_subtree_nodes`][lineagetree.LineageTree.get_subtree_nodes].
 
         Returns
         -------
         LineageTree
-            The subtree lineage tree.
+            A new lineage tree; this one is left unchanged.
         """
         new_successors = {
             n: tuple(vi for vi in self.successor[n] if vi in node_list)
@@ -224,39 +231,58 @@ class LineageTree(
         temporal: bool = True,
         **kwargs,
     ):
-        """Create a LineageTree from minimal information, without a file.
+        """Create a LineageTree from dictionaries, without a file.
 
-        Either ``successor`` or ``predecessor`` should be specified.
+        The topology is given by either ``successor`` or ``predecessor``, not
+        both. Nodes that only appear as values (e.g. leaves missing from the
+        keys of ``successor``) are added automatically.
 
         Parameters
         ----------
-        successor : dict of {int: Sequence}, optional
-            Dictionary assigning nodes to their successors.
-        predecessor : dict of {int: int or Sequence}, optional
-            Dictionary assigning nodes to their predecessors.
+        successor : dict of {int: Sequence of int}, optional
+            Maps each node to its successors.
+        predecessor : dict of {int: int or Sequence of int}, optional
+            Maps each node to its predecessor, given either as an int or as a
+            sequence with at most one element.
         time : dict of {int: int}, optional
-            Dictionary assigning nodes to the time point they were recorded at.
-            If None, all times are set relative to ``starting_time``.
+            Maps each node to the time point it was recorded at. Times must
+            strictly increase along every edge. If None, roots are placed at
+            ``starting_time`` and each other node one time point after its
+            predecessor.
         starting_time : int, optional
-            Starting time of the lineage tree, used when ``time`` is not
-            given. Defaults to 0.
-        pos : dict of {int: Iterable}, optional
-            Dictionary assigning nodes to their positions.
+            Time point of the roots when ``time`` is not given. Defaults to 0.
+            Ignored, with a warning, when ``time`` is given.
+        pos : dict of {int: Iterable of float}, optional
+            Maps each node to its position. If given, every node needs one.
         name : str, optional
             Name of the lineage tree.
         root_leaf_value : Sequence, optional
-            Values of roots' predecessors and leaves' successors in the
-            successor and predecessor dictionaries. Defaults to
-            ``[None, (), [], set()]``.
-        spatial_resolution : Sequence, optional
-            Spatial resolution along each dimension of the positions. Defaults
-            to ones.
+            Values that mark a missing predecessor (root) or missing
+            successors (leaf) in ``successor`` or ``predecessor``. Defaults
+            to ``[None, (), [], set()]``.
+        spatial_resolution : Sequence of float, optional
+            Size of a unit of ``pos`` along each spatial dimension, used by
+            the spatial methods. Must have one value per dimension of the
+            positions. Defaults to ones.
         temporal : bool, default=True
-            Whether the tree structure has a time dimension.
+            Whether the tree has a time dimension. Set to False for static
+            trees such as neuron morphologies.
         **kwargs
-            Supported keyword arguments are dictionaries assigning nodes to any
-            custom property. The property must be specified for every node and
-            named differently from LineageTree's own attributes.
+            Custom node properties, each a dictionary mapping node ids to
+            values, e.g. ``volume={0: 12.5, 1: 11.0}``. Each one becomes an
+            attribute of the tree (``lT.volume``). A name already used by a
+            ``LineageTree`` attribute is skipped with a warning.
+
+        Raises
+        ------
+        ValueError
+            If both ``successor`` and ``predecessor`` are given, if a node has
+            more than one predecessor, if the graph has a cycle, if ``pos``
+            misses a node, if times do not strictly increase along an edge,
+            or if ``spatial_resolution`` does not match the dimension of the
+            positions.
+        TypeError
+            If a successor entry or ``root_leaf_value`` is not iterable.
         """
         self.__version__ = importlib.metadata.version("lineagetree")
         self.name = str(name) if name is not None else None

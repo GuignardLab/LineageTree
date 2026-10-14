@@ -15,31 +15,31 @@ def get_predecessors(
     start_time: int | None = None,
     end_time: int | None = None,
 ) -> list[int]:
-    """Compute the predecessors of a node up to a given depth.
+    """Return the predecessors of a node within its chain.
 
-    The predecessors of the node ``x`` are collected up to ``depth``
-    predecessors or the beginning of the life of ``x``, and returned as an
-    ordered list of ids.
+    Predecessors are collected backwards from ``x`` until the first node of
+    its chain (the node right after the last division), a root, or ``depth``
+    steps, whichever comes first.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     x : int
-        Id of the node to compute.
+        Id of the node to start from.
     depth : int, optional
-        Maximum number of predecessors to return.
+        Maximum number of predecessors to collect. If None, there is no
+        limit.
     start_time : int, optional
-        Earliest time point to include in the returned chain.
-        Defaults to ``lT.t_b`` (beginning of the dataset).
+        Earliest time point to include. Defaults to ``lT.t_b``.
     end_time : int, optional
-        Latest time point to include in the returned chain.
-        Defaults to ``lT.t_e`` (end of the dataset).
+        Latest time point to include. Defaults to ``lT.t_e``.
 
     Returns
     -------
     list of int
-        List of ids; the last id is ``x``.
+        Node ids in time order. The last one is ``x``, unless ``x`` is
+        outside ``[start_time, end_time]``.
     """
     if start_time is None:
         start_time = lT.t_b
@@ -75,26 +75,27 @@ def get_successors(
     depth: int | None = None,
     end_time: int | None = None,
 ) -> list[int]:
-    """Compute the successors of a node up to a given depth.
+    """Return the successors of a node within its chain.
 
-    The successors of the node ``x`` are collected up to ``depth`` successors
-    or the end of the life of ``x``, and returned as an ordered list of ids.
+    Successors are collected forwards from ``x`` until the last node of its
+    chain (a division or a leaf), ``end_time``, or ``depth`` steps, whichever
+    comes first.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     x : int
-        Id of the node to compute.
+        Id of the node to start from.
     depth : int, optional
-        Maximum number of successors to return.
+        Maximum number of successors to collect. If None, there is no limit.
     end_time : int, optional
-        Maximum time to consider.
+        Latest time point to include. Defaults to ``lT.t_e``.
 
     Returns
     -------
     list of int
-        List of ids; the first id is ``x``.
+        Node ids in time order; the first one is ``x``.
     """
     if end_time is None:
         end_time = lT.t_e
@@ -119,32 +120,42 @@ def get_chain_of_node(
     depth_succ: int | None = None,
     end_time: int | None = None,
 ) -> list[int]:
-    """Compute the chain of a node from its predecessors and successors.
+    """Return the chain a node belongs to.
 
-    The chain gathers up to ``depth_pred`` predecessors plus ``depth_succ``
-    successors of the node ``x``, returned as an ordered list of ids. If
-    ``depth`` is provided and not None, it overwrites both ``depth_pred`` and
-    ``depth_succ``. If all depths are None, the full chain is returned.
+    A chain is the life of one cell between two divisions: a run of nodes in
+    which every node but the last has exactly one successor. The chain is
+    the concatenation of
+    [`get_predecessors`][lineagetree.LineageTree.get_predecessors] and
+    [`get_successors`][lineagetree.LineageTree.get_successors] of ``x``.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     x : int
-        Id of the node to compute.
+        Id of a node of the chain.
     depth : int, optional
-        Maximum number of predecessors and successors to return.
+        Maximum number of predecessors and of successors of ``x`` to
+        include. Overrides ``depth_pred`` and ``depth_succ`` when given.
     depth_pred : int, optional
-        Maximum number of predecessors to return.
+        Maximum number of predecessors of ``x`` to include.
     depth_succ : int, optional
-        Maximum number of successors to return.
+        Maximum number of successors of ``x`` to include.
     end_time : int, optional
-        Maximum time to consider.
+        Latest time point to include. Defaults to ``lT.t_e``.
 
     Returns
     -------
     list of int
-        List of node ids.
+        Node ids of the chain, in time order. With no depth limit, this is
+        the whole chain.
+
+    Examples
+    --------
+    >>> from lineagetree import LineageTree
+    >>> lT = LineageTree(successor={0: [1], 1: [2], 2: [3, 4], 3: [], 4: []})
+    >>> lT.get_chain_of_node(1)
+    [0, 1, 2]
     """
     if end_time is None:
         end_time = lT.t_e
@@ -158,23 +169,25 @@ def get_chain_of_node(
 def get_all_chains_of_subtree(
     lT: LineageTree, node: int, end_time: int | None = None
 ) -> list[list[int]]:
-    """Compute all the chains of the subtree spawned by a given node.
+    """Return all the chains of the subtree spawned by a node.
 
-    Similar to :func:`get_all_chains`.
+    This is the subtree version of the ``all_chains`` property.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     node : int
-        The node from which we want to get its chains.
+        The node spawning the subtree. Its chain starts at ``node``, which
+        need not be the first node of a chain.
     end_time : int, optional
-        The time at which we want to stop the chains.
+        Latest time point to include. Defaults to ``lT.t_e``.
 
     Returns
     -------
     list of list of int
-        list of chains
+        The chains, each a list of node ids in time order. The chain of
+        ``node`` comes first.
     """
     if not end_time:
         end_time = lT.t_e
@@ -190,19 +203,19 @@ def get_all_chains_of_subtree(
 
 
 def find_leaves(lT: LineageTree, roots: int | Iterable) -> set[int]:
-    """Finds the leaves of a tree spawned by one or more nodes.
+    """Find the leaves of the subtrees spawned by one or more nodes.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
-    roots : int or Iterable
-        The roots of the trees spawning the leaves
+    roots : int or Iterable of int
+        The node(s) spawning the subtrees.
 
     Returns
     -------
-    set
-        The leaves of one or more trees.
+    set of int
+        The leaves of the subtrees.
     """
     if not isinstance(roots, Iterable):
         to_do = [roots]
@@ -224,27 +237,26 @@ def get_subtree_nodes(
     end_time: int | None = None,
     preorder: bool = False,
 ) -> list[int]:
-    """Compute the list of nodes of the subtree spawned by a node.
-
-    The default output order is Breadth First Traversal, unless ``preorder`` is
-    True, in which case the order is Depth First Traversal (DFT) preordered.
+    """Return the nodes of the subtree spawned by one or more nodes.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
-    x : int or Iterable
-        Id of the root node (or an iterable of root ids).
+    x : int or Iterable of int
+        The node(s) spawning the subtree(s). They are included in the
+        output.
     end_time : int, optional
-        The time at which to stop the traversal.
+        Latest time point to traverse. Defaults to ``lT.t_e``.
     preorder : bool, default=False
-        If True the output order is Depth First Traversal (DFT), otherwise it
-        is Breadth First Traversal (BFT).
+        Change the traversal order: nodes are then taken from the front of
+        the list of nodes still to visit instead of its back.
 
     Returns
     -------
     list of int
-        The ordered list of node ids.
+        The node ids. With the default ``preorder=False``, the order is a
+        depth-first pre-order: a node comes before its successors.
     """
     if not end_time:
         end_time = lT.t_e
@@ -268,27 +280,24 @@ def get_subtree_nodes(
 
 
 def get_ancestor_at_t(lT: LineageTree, n: int, time: int | None = None) -> int:
-    """Find the id of the ancestor of a given node at a given time.
-
-    If there is no ancestor, ``-1`` is returned. If ``time`` is None, the root
-    of the subtree that spawns the node ``n`` is returned.
+    """Find the ancestor of a node at a given time point.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     n : int
-        node for which to look the ancestor
+        The node whose ancestor is searched.
     time : int, optional
-        time at which the ancestor has to be found.
-        If `None` the ancestor at the first time point
-        will be found.
+        Time point of the ancestor. Defaults to ``lT.t_b``, the first time
+        point of the dataset.
 
     Returns
     -------
     int
-        the id of the ancestor at time `time`,
-        `-1` if there is no ancestor.
+        Id of the ancestor of ``n`` at ``time`` (``n`` itself if it is at
+        ``time``), or ``-1`` if ``n`` has no ancestor at that time or is not
+        a node of the tree.
     """
     if n not in lT.nodes:
         return -1
@@ -306,19 +315,21 @@ def get_ancestor_at_t(lT: LineageTree, n: int, time: int | None = None) -> int:
 
 
 def get_labelled_ancestor(lT: LineageTree, node: int) -> int:
-    """Find the first labelled ancestor and return its id, otherwise ``-1``.
+    """Find the closest ancestor of a node that has a label.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     node : int
-        The id of the node
+        The node to start from. It is returned if it has a label itself.
 
     Returns
     -------
     int
-        Returns the first ancestor found that has a label otherwise `-1`.
+        Id of the closest labelled ancestor (see
+        [`labels`][lineagetree.LineageTree.labels]), or ``-1`` if there is
+        none.
     """
     if node not in lT.nodes:
         return -1
@@ -333,11 +344,11 @@ def get_labelled_ancestor(lT: LineageTree, node: int) -> int:
 def get_ancestor_with_attribute(
     lT: LineageTree, node: int, attribute: str
 ) -> int:
-    """Find the first ancestor (inclusive of ``node``) that appears in a given attribute dict.
+    """Find the closest ancestor of a node that has a value for a property.
 
-    General purpose function to help with searching the first ancestor that
-    has an attribute. Similar to :func:`get_labelled_ancestor` and may make
-    it redundant.
+    General version of
+    [`get_labelled_ancestor`][lineagetree.LineageTree.get_labelled_ancestor]
+    for any custom property.
 
     Parameters
     ----------
@@ -380,24 +391,26 @@ def get_ancestor_with_attribute(
 
 def nodes_at_t(
     lT: LineageTree,
-    t: int,
+    t: int | None,
     r: int | Iterable[int],
 ) -> list[int]:
-    """Return the nodes at time ``t`` that are spawned by the node(s) ``r``.
+    """Return the descendants of one or more nodes at a given time point.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
-    t : int
-        Target time. If None, goes as far as possible.
+    t : int or None
+        The time point. If None, the last time point of the dataset
+        (``lT.t_e``) is used.
     r : int or Iterable of int
-        Id or list of ids of the spawning node(s).
+        The node(s) whose descendants are returned.
 
     Returns
     -------
     list of int
-        List of ids of the nodes at time ``t`` spawned by ``r``.
+        The descendants of ``r`` at time ``t``, including ``r`` itself if it
+        is at time ``t``.
     """
     if isinstance(r, Iterable):
         r = list(r)
@@ -417,7 +430,10 @@ def nodes_at_t(
 
 
 def get_available_labels(lT: LineageTree) -> list[str]:
-    """Return the list of all the available label dictionaries.
+    """List the properties that can be used as node labels.
+
+    A property qualifies when it is a non-empty dictionary that maps node ids
+    (``int``) to strings.
 
     Parameters
     ----------
@@ -427,8 +443,8 @@ def get_available_labels(lT: LineageTree) -> list[str]:
     Returns
     -------
     list of str
-        List of the names of all the available properties usable to label the
-        nodes.
+        The names of these properties, to pass to
+        [`change_labels`][lineagetree.LineageTree.change_labels].
     """
     available_labels = []
     for prop_name, prop in lT.__dict__.items():
@@ -450,30 +466,43 @@ def change_labels(
     new_labels_dict: dict[int, str] | None = None,
     only_first_node_in_chain: bool = False,
 ) -> None:
-    """Change the dictionary used as node labels.
+    """Change the property used as node labels.
 
-    The labels are replaced by the ``LineageTree`` attribute
-    ``new_labels_name``, which has to be a dictionary mapping node id to
-    string. If ``new_labels_dict`` is provided, it is used to label the cells.
-    If ``new_labels_name`` is not specified, the labels are reset.
+    The labels (see [`labels`][lineagetree.LineageTree.labels]) are taken
+    from the property ``new_labels_name``, or from ``new_labels_dict``,
+    which is then stored as a new property under that name.
 
-    One can decide to only label the first node of each chain instead of all
-    its nodes, which can help readability in the napari plugin reLAX.
+    Labelling only the first node of each chain can help readability, for
+    example in the napari plugin reLAX.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     new_labels_name : str, optional
-        The name of the dictionary to use (the list of potential dictionaries
-        can be found with ``lT.available_labels``). If not provided, the labels
-        are reset to ``"Unlabeled"``.
+        Name of the property to use as labels; see
+        [`get_available_labels`][lineagetree.LineageTree.get_available_labels]
+        for the candidates. If None, the labels are reset to the default
+        ``"Unlabeled"`` labels and ``new_labels_dict`` is ignored.
     new_labels_dict : dict of {int: str}, optional
-        The new names as a dictionary mapping each named node id to its string
-        label. If not provided and ``lT`` has a fitting attribute named
-        ``new_labels_name``, that attribute is used.
+        Labels to use, mapping node ids to strings. If None, the existing
+        property ``new_labels_name`` is used.
     only_first_node_in_chain : bool, default=False
-        If True, only labels the first node of each chain.
+        If True, only the first node of each chain is labelled.
+
+    Raises
+    ------
+    AttributeError
+        If ``new_labels_dict`` is None and the tree has no property named
+        ``new_labels_name``.
+    TypeError
+        If a label is not a ``str``.
+
+    Warns
+    -----
+    UserWarning
+        If no node of the tree gets a label; the labels are then left
+        unchanged.
     """
     store_new_labels = True
     if new_labels_name is not None:
@@ -519,24 +548,26 @@ def change_labels(
 def get_shortest_path_and_last_common_ancestor(
     lT: LineageTree, n1: int, n2: int
 ) -> tuple[list[int], int]:
-    """Returns the minimum path between 2 nodes and the last commmon ancestor
+    """Return the path between two nodes and their last common ancestor.
 
     Parameters
     ----------
     lT : LineageTree
-        The LineageTree object
+        The LineageTree instance.
     n1 : int
-        The first node
+        The first node.
     n2 : int
         The second node.
 
     Returns
     -------
-    tuple which contains
-        - list of int
-            The shortest path from n1 to n2, containing n1, n2 and ordered, if not shortest path returns [].
-        - int
-            The last common ancestor of the 2 nodes, if none returns -1.
+    list of int
+        The nodes on the path from ``n1`` to ``n2``, both included, going
+        through their last common ancestor. Empty if the nodes are in
+        different trees.
+    int
+        The last common ancestor of ``n1`` and ``n2``, or ``-1`` if the
+        nodes are in different trees.
     """
     left_side = [n1]
     right_side = [n2]

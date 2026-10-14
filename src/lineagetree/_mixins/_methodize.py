@@ -214,7 +214,7 @@ def _should(name: str, obj: object, cls_module: str | None) -> bool:
 
     A callable is eligible when:
 
-    - It is a plain :class:`types.FunctionType` (not a ``staticmethod``,
+    - It is a plain ``types.FunctionType`` (not a ``staticmethod``,
       ``classmethod``, or ``property``).
     - It was **not** defined inside the same module as the mixin class
       (i.e. it was imported from a ``_core`` module).
@@ -233,7 +233,7 @@ def _should(name: str, obj: object, cls_module: str | None) -> bool:
     Returns
     -------
     bool
-        ``True`` if ``obj`` should be wrapped by :func:`methodize`.
+        ``True`` if ``obj`` should be wrapped by ``methodize``.
     """
     if isinstance(obj, (staticmethod, classmethod, property)):
         return False
@@ -255,11 +255,11 @@ class AutoMethodizeMeta(type):
     """Metaclass that automatically wraps imported free functions as bound methods.
 
     When a mixin class is created with this metaclass, every function that
-    satisfies :func:`_should` (or every name listed in the optional
+    satisfies ``_should`` (or every name listed in the optional
     ``__methodize__`` class attribute) is replaced by a
-    :func:`methodize`-wrapped version. The net effect is that free functions
+    ``methodize``-wrapped version. The net effect is that free functions
     imported from the ``_core`` modules appear as ordinary instance methods
-    on the :class:`~lineagetree.LineageTree` class.
+    on the ``LineageTree`` class.
 
     The ``lT : LineageTree`` first parameter is also stripped from the
     visible method signature and from the NumPy-style docstring.
@@ -277,7 +277,7 @@ class AutoMethodizeMeta(type):
         ns : dict
             Class namespace.
         **kw
-            Additional keyword arguments forwarded to :func:`type.__new__`.
+            Additional keyword arguments forwarded to ``type.__new__``.
 
         Returns
         -------

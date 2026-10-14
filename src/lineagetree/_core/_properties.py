@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class dynamic_property(property):
     """A cached property descriptor that supports automatic cache invalidation.
 
-    Extends :class:`property` to add lazy evaluation and caching. The computed
+    Extends ``property`` to add lazy evaluation and caching. The computed
     value is stored in a backing attribute (named ``_<property_name>`` by
     default) on the instance. The backing attribute is set to ``None`` by the
     ``modifier`` decorator whenever the tree is mutated, triggering
@@ -24,13 +24,13 @@ class dynamic_property(property):
     Parameters
     ----------
     fget : callable, optional
-        Getter function, as for :class:`property`.
+        Getter function, as for ``property``.
     fset : callable, optional
-        Setter function, as for :class:`property`.
+        Setter function, as for ``property``.
     fdel : callable, optional
-        Deleter function, as for :class:`property`.
+        Deleter function, as for ``property``.
     doc : str, optional
-        Docstring, as for :class:`property`.
+        Docstring, as for ``property``.
     protected_name : str, optional
         Name of the backing attribute used to store the cached value.
         Defaults to ``'_<property_name>'``.
@@ -93,6 +93,8 @@ class dynamic_property(property):
 def _compute_all_chains(lT: LineageTree) -> tuple[tuple[int]]:
     """Compute all the chains of a given lineage tree.
 
+    Chains are listed in depth-first order, starting from the earliest root.
+
     Parameters
     ----------
     lT : LineageTree
@@ -115,7 +117,12 @@ def _compute_all_chains(lT: LineageTree) -> tuple[tuple[int]]:
 
 @property
 def successor(lT: LineageTree) -> MappingProxyType[int, tuple[int]]:
-    """Dictionary that maps a node to its successors."""
+    """Read-only mapping from each node to the tuple of its successors.
+
+    A leaf maps to an empty tuple. Use the methods of the tree, such as
+    [`add_chain`][lineagetree.LineageTree.add_chain] or
+    [`remove_nodes`][lineagetree.LineageTree.remove_nodes], to change it.
+    """
     if not hasattr(lT, "_protected_successor"):
         lT._protected_successor = MappingProxyType(lT._successor)
     return lT._protected_successor
@@ -123,7 +130,11 @@ def successor(lT: LineageTree) -> MappingProxyType[int, tuple[int]]:
 
 @property
 def predecessor(lT: LineageTree) -> MappingProxyType[int, tuple[int]]:
-    """Dictionary that maps a node to its predecessors."""
+    """Read-only mapping from each node to a tuple holding its predecessor.
+
+    The tuple is empty for a root and has one element otherwise, so the
+    predecessor of ``node`` is ``lT.predecessor[node][0]``.
+    """
     if not hasattr(lT, "_protected_predecessor"):
         lT._protected_predecessor = MappingProxyType(lT._predecessor)
     return lT._protected_predecessor
@@ -131,7 +142,7 @@ def predecessor(lT: LineageTree) -> MappingProxyType[int, tuple[int]]:
 
 @property
 def time(lT: LineageTree) -> MappingProxyType[int, int]:
-    """Dictionary that maps a node to its time."""
+    """Read-only mapping from each node to its time point."""
     if not hasattr(lT, "_protected_time"):
         lT._protected_time = MappingProxyType(lT._time)
     return lT._protected_time
@@ -139,19 +150,19 @@ def time(lT: LineageTree) -> MappingProxyType[int, int]:
 
 @dynamic_property
 def t_b(lT: LineageTree) -> int:
-    """The first timepoint of the lineage tree."""
+    """The first time point of the lineage tree."""
     return min(lT._time.values())
 
 
 @dynamic_property
 def t_e(lT: LineageTree) -> int:
-    """The last timepoint of the lineage tree."""
+    """The last time point of the lineage tree."""
     return max(lT._time.values())
 
 
 @dynamic_property
 def nodes(lT: LineageTree) -> frozenset[int]:
-    """Set of node ids of the lineage tree."""
+    """Frozen set of the node ids of the lineage tree."""
     return frozenset(lT._successor.keys())
 
 
@@ -163,7 +174,11 @@ def number_of_nodes(lT: LineageTree) -> int:
 
 @dynamic_property
 def depth(lT: LineageTree) -> dict[int, int]:
-    """The depth of each node in the lineage tree."""
+    """Dictionary that maps each node to its depth.
+
+    The depth of a node is the number of edges between it and its root, so
+    roots have depth 0.
+    """
     _depth = {r: 0 for r in lT.roots}
     for root in lT.roots:
         to_do = list(lT.successor[root])
@@ -176,19 +191,19 @@ def depth(lT: LineageTree) -> dict[int, int]:
 
 @dynamic_property
 def roots(lT: LineageTree) -> frozenset[int]:
-    """Set of roots of the lineage tree."""
+    """Frozen set of the roots, the nodes without a predecessor."""
     return frozenset({s for s, p in lT._predecessor.items() if p == ()})
 
 
 @dynamic_property
 def leaves(lT: LineageTree) -> frozenset[int]:
-    """Set of leaves of the lineage tree."""
+    """Frozen set of the leaves, the nodes without a successor."""
     return frozenset({p for p, s in lT._successor.items() if s == ()})
 
 
 @dynamic_property
 def edges(lT: LineageTree) -> tuple[tuple[int, int]]:
-    """Set of edges of the lineage tree."""
+    """Tuple of all the edges, as ``(predecessor, successor)`` pairs."""
     return tuple((p, si) for p, s in lT._successor.items() for si in s)
 
 
@@ -198,14 +213,16 @@ def labels(lT: LineageTree) -> dict[int, str]:
 
     Labels are determined by the following priority:
 
-    1. If ``lT._labels`` is already set (e.g. loaded from file), use it.
-    2. Else if ``lT.node_name`` exists, use it as the label dictionary.
-    3. Else apply a heuristic: label a root as ``"Unlabeled"`` only when at
-       least one of its leaves is far enough in time (≥ 1/4 of the full time
-       range) from the root.
+    1. If labels are already set (by a loader or by
+       [`change_labels`][lineagetree.LineageTree.change_labels]), use them.
+    2. Else if ``lT.node_name`` exists, label the first node of each chain
+       with it (``"Unlabeled"`` when the node has no name).
+    3. Else label as ``"Unlabeled"`` the roots that have at least one leaf
+       at least a quarter of the dataset's time span after them. Other nodes
+       get no label.
 
-    The name of the attribute that was used as labels is stored in
-    ``lT.labels_name``.
+    Nodes without a label are absent from the dictionary. The name of the
+    attribute used as labels is stored in ``lT.labels_name``.
     """
     if not hasattr(lT, "_labels"):
         if hasattr(lT, "node_name"):
@@ -228,16 +245,14 @@ def labels(lT: LineageTree) -> dict[int, str]:
 
 @property
 def time_resolution(lT: LineageTree) -> float:
-    """Time resolution of the lineage tree in minutes (or the unit chosen by the user).
+    """Time between two consecutive time points, in a unit of your choice.
 
-    Internally stored as ``int(_time_resolution * 10)`` to avoid floating-
-    point accumulation; the getter divides by 10 to restore the original
-    scale. A value of ``0`` means "unset / unknown".
+    It must be set before comparing lineages from different datasets with
+    [`LineageTreeManager`][lineagetree.LineageTreeManager]. ``0.0`` means
+    that it is not set.
 
-    Returns
-    -------
-    float
-        Time resolution. ``0.0`` when not set.
+    The value is stored as ``int(time_resolution * 10)``, so it is kept to
+    one decimal place: 2.35 is stored as 2.3.
     """
     if not hasattr(lT, "_time_resolution"):
         lT._time_resolution = 0
@@ -251,8 +266,8 @@ def time_resolution(lT, time_resolution: float) -> None:
     Parameters
     ----------
     time_resolution : float
-        Positive time resolution value. Non-positive values or ``None`` are
-        rejected and the resolution is reset to ``0`` with a warning.
+        Positive time resolution value. Non-positive values or ``None``
+        reset the resolution to ``0`` with a warning.
     """
     if time_resolution is not None and time_resolution > 0:
         lT._time_resolution = int(time_resolution * 10)
@@ -263,13 +278,16 @@ def time_resolution(lT, time_resolution: float) -> None:
 
 @dynamic_property
 def all_chains(lT: LineageTree) -> tuple[tuple[int]]:
-    """List of all chains in the tree, ordered in depth-first search."""
+    """Tuple of all the chains of the tree, each a tuple of node ids.
+
+    Chains are listed in depth-first order, starting from the earliest root.
+    """
     return _compute_all_chains(lT)
 
 
 @dynamic_property
 def time_nodes(lT: LineageTree) -> dict[int, set[int]]:
-    """Dictionary that maps a time to the set of nodes at that time."""
+    """Dictionary that maps each time point to the set of its nodes."""
     _time_nodes = {}
     for c, t in lT._time.items():
         _time_nodes.setdefault(t, set()).add(c)
@@ -285,7 +303,7 @@ def _m(lT: LineageTree, i: int, j: int) -> float:
     Returns ``np.inf`` when ``i`` is not an ancestor of ``j``.
 
     Results are memoised in ``lT._tmp_parenting`` (a temporary dict that is
-    deleted by :data:`parenting` after the full computation).
+    deleted by ``parenting`` after the full computation).
 
     Parameters
     ----------
@@ -328,12 +346,13 @@ def parenting(lT: LineageTree):
     to-leaf path.
 
     The matrix is computed on first access and stored in ``lT._parenting``
-    as a :class:`scipy.sparse.dok_array` of shape
+    as a ``scipy.sparse.dok_array`` of shape
     ``(max_node_id + 1, max_node_id + 1)``.
 
-    .. warning::
-        For trees with large node IDs the matrix can be very large in memory
-        even though it is sparse.
+    Warnings
+    --------
+    The computation visits every pair of nodes, so it is slow on large
+    trees. The matrix is not recomputed after the tree is modified.
     """
     if not hasattr(lT, "_parenting"):
         lT._parenting = dok_array((max(lT.nodes) + 1,) * 2)
@@ -352,7 +371,7 @@ def temporal(lT: LineageTree) -> bool:
 
     ``True`` for the standard use-case (cell tracking over time). ``False``
     for static trees such as neuron morphologies loaded via
-    :func:`read_from_swc`.
+    [`read_from_swc`][lineagetree.read_from_swc].
     """
     if not hasattr(lT, "_temporal"):
         lT._temporal = True
