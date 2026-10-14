@@ -790,19 +790,34 @@ def test_plot_chain_hist():
 
 
 def test_stabilise_positions():
-    new_pos = lT1.stabilise_positions()
-    assert np.isclose(
-        new_pos[148361], np.array([1019.66762163, 400.25591182, 287.54520521])
-    ).all()
-    lT1.pos = lT1.old_pos
+    raw_pos = {node: p.copy() for node, p in lT1.pos.items()}
+    try:
+        new_pos = lT1.stabilise_positions()
+        assert np.isclose(
+            new_pos[148361],
+            np.array([1019.66762163, 400.25591182, 287.54520521]),
+        ).all()
+        assert lT1.old_pos.keys() == raw_pos.keys()
+        assert all(
+            np.array_equal(lT1.old_pos[node], p) for node, p in raw_pos.items()
+        )
+    finally:
+        lT1.pos = raw_pos
 
 
 def test_smoothing():
-    new_pos = lt.smooth_trajectories()
-    assert np.isclose(
-        new_pos[1552], np.array([462.15385069, 907.17562352, 419.54303692])
-    ).all()
-    lt.pos = lt.old_pos
+    raw_pos = {node: p.copy() for node, p in lt.pos.items()}
+    try:
+        new_pos = lt.smooth_trajectories()
+        assert np.isclose(
+            new_pos[1552], np.array([462.15385069, 907.17562352, 419.54303692])
+        ).all()
+        assert lt.old_pos.keys() == raw_pos.keys()
+        assert all(
+            np.array_equal(lt.old_pos[node], p) for node, p in raw_pos.items()
+        )
+    finally:
+        lt.pos = raw_pos
 
 
 def test_get_shortest_path_and_last_common_ancestor():
