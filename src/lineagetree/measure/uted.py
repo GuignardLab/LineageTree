@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import warnings
 from collections.abc import Callable
 from functools import partial
@@ -8,17 +7,18 @@ from itertools import combinations
 from typing import TYPE_CHECKING, Literal
 
 import matplotlib as mpl
-import numpy as np
 import matplotlib.colors as mcolors
+import numpy as np
 from edist import uted
 from matplotlib import colormaps
 from matplotlib import pyplot as plt
 
-from ..tree_approximation import TreeApproximationTemplate, tree_style
 from .._core.utils import convert_style_to_number
+from ..tree_approximation import TreeApproximationTemplate, tree_style
 
 if TYPE_CHECKING:
     from edist.alignment import Alignment
+
     from ..lineage_tree import LineageTree
 
 
@@ -62,7 +62,7 @@ def unordered_tree_edit_distances_at_time_t(
     -------
     dict mapping a tuple of tuple that contains 2 ints to float
         a dictionary that maps a pair of node ids at time `t` to their unordered tree edit distance
-    """
+    """  # noqa: E501
     if not hasattr(lT, "uted"):
         lT.uted = {}
     elif t in lT.uted and not recompute:
@@ -94,8 +94,9 @@ def __calculate_distance_of_sub_tree(
     norm1: int | float,
     norm2: int | float,
 ) -> float:
-    """Calculates the distance of the subtree of each node matched in a comparison.
-    DOES NOT CALCULATE THE DISTANCE FROM SCRATCH BUT USING THE ALIGNMENT.
+    """Calculates the distance of the subtree of each node matched in a
+    comparison. DOES NOT CALCULATE THE DISTANCE FROM SCRATCH
+    BUT USING THE ALIGNMENT.
     TODO ITS BOUND TO CHANGE
     Parameters
     ----------
@@ -202,7 +203,7 @@ def __unordereded_backtrace(
             The alignment between the nodes by the subtrees spawned by the nodes n1,n2 and the normalization function.
         - 'trees'
             A list of the two trees that have been mapped to each other.
-    """
+    """  # noqa: E501
 
     parameters = (
         end_time,
@@ -212,7 +213,8 @@ def __unordereded_backtrace(
     lT._comparisons.setdefault(parameters, {})
     if len(lT._comparisons[parameters]) > 100:
         warnings.warn(
-            "More than 100 comparisons are saved, use clear_comparisons() to delete them.",
+            """More than 100 comparisons are saved,
+           use clear_comparisons() to delete them.""",
             stacklevel=2,
         )
     if isinstance(style, str):
@@ -318,7 +320,7 @@ def unordered_tree_edit_distance(
         The normalized unordered tree edit distance between `n1` and `n2`,
         and, when ``return_norms`` is True, the normalization value of each
         of the two trees.
-    """
+    """  # noqa: E501
     parameters = (
         end_time,
         convert_style_to_number(style=style, downsample=downsample),
@@ -386,7 +388,8 @@ def plot_tree_distance_graphs(
     vmax=None,
 ) -> tuple[plt.figure, plt.Axes]:
     """
-    Plots the subtrees compared and colors them according to the quality of the matching of their subtree.
+    Plots the subtrees compared and colors them according to the quality
+    of the matching of their subtree.
 
     Parameters
     ----------
@@ -428,7 +431,7 @@ def plot_tree_distance_graphs(
             The figure of the plot
     plt.Axes
             The axes of the plot
-    """
+    """  # noqa: E501
     parameters = (
         end_time,
         convert_style_to_number(style=style, downsample=downsample),
@@ -481,22 +484,16 @@ def plot_tree_distance_graphs(
             if m._left != -1 and m._right != -1:
                 node_1 = corres1[m._left]
                 node_2 = corres2[m._right]
-                if node_1 not in lT.roots and node_2 not in lT.roots:
-                    if lT.predecessor[node_2][
-                        0
-                    ] not in to_reverse_back and lT.successor[
-                        lT.predecessor[node_1][0]
-                    ].index(
-                        node_1
-                    ) != lT.successor[
-                        lT.predecessor[node_2][0]
-                    ].index(
-                        node_2
-                    ):
-                        lT._successor[lT.predecessor[node_2][0]] = list(
-                            reversed(lT.successor[lT.predecessor[node_2][0]])
-                        )
-                        to_reverse_back.append(lT.predecessor[node_2][0])
+                if (
+                    (node_1 not in lT.roots and node_2 not in lT.roots)
+                    and lT.predecessor[node_2][0] not in to_reverse_back
+                    and lT.successor[lT.predecessor[node_1][0]].index(node_1)
+                    != lT.successor[lT.predecessor[node_2][0]].index(node_2)
+                ):
+                    lT._successor[lT.predecessor[node_2][0]] = list(
+                        reversed(lT.successor[lT.predecessor[node_2][0]])
+                    )
+                    to_reverse_back.append(lT.predecessor[node_2][0])
                 cyc1 = lT.get_chain_of_node(node_1)
                 if len(cyc1) > 1:
                     node_1, *_, l_node_1 = cyc1
@@ -536,22 +533,16 @@ def plot_tree_distance_graphs(
             if m._left != -1 and m._right != -1:
                 node_1 = lT.get_chain_of_node(corres1[m._left])[0]
                 node_2 = lT.get_chain_of_node(corres2[m._right])[0]
-                if node_1 not in lT.roots and node_2 not in lT.roots:
-                    if lT.predecessor[node_2][
-                        0
-                    ] not in to_reverse_back and lT._successor[
-                        lT.predecessor[node_1][0]
-                    ].index(
-                        node_1
-                    ) != lT._successor[
-                        lT.predecessor[node_2][0]
-                    ].index(
-                        node_2
-                    ):
-                        lT._successor[lT.predecessor[node_2][0]] = list(
-                            reversed(lT.successor[lT.predecessor[node_2][0]])
-                        )
-                        to_reverse_back.append(lT.predecessor[node_2][0])
+                if (
+                    (node_1 not in lT.roots and node_2 not in lT.roots)
+                    and lT.predecessor[node_2][0] not in to_reverse_back
+                    and lT._successor[lT.predecessor[node_1][0]].index(node_1)
+                    != lT._successor[lT.predecessor[node_2][0]].index(node_2)
+                ):
+                    lT._successor[lT.predecessor[node_2][0]] = list(
+                        reversed(lT.successor[lT.predecessor[node_2][0]])
+                    )
+                    to_reverse_back.append(lT.predecessor[node_2][0])
 
                 if not colors.get(
                     lT.get_chain_of_node(node_1)[0]
@@ -571,7 +562,7 @@ def plot_tree_distance_graphs(
                             corres1,
                             corres2,
                             delta_tmp,
-                            lT.norm_dict[norm],
+                            lT._norm_dict[norm],
                             tree1.get_norm(node_1),
                             tree2.get_norm(node_2),
                         )
@@ -615,7 +606,7 @@ def plot_tree_distance_graphs(
     )
     for node in to_reverse_back:
         lT._successor[node] = list(reversed(lT._successor[node]))
-
+    print("PEos")
     cax = fig.add_axes([0.25, 0.10, 0.50, 0.01])
     for x in ax:
         for s in x.spines.values():
@@ -667,7 +658,7 @@ def labelled_mappings(
     dict mapping str to list of str
         - 'matched' The labels of the matched nodes of the alignment.
         - 'unmatched' The labels of the unmatched nodes of the alignment.
-    """
+    """  # noqa: E501
     parameters = (
         end_time,
         convert_style_to_number(style=style, downsample=downsample),
