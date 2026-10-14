@@ -12,6 +12,7 @@ from .._core._properties import (
     successor,
     t_b,
     t_e,
+    temporal,
     time,
     time_nodes,
     time_resolution,
@@ -39,3 +40,4 @@ class PropertiesMixin(metaclass=AutoMethodizeMeta):
     all_chains = all_chains
     time_nodes = time_nodes
     parenting = parenting
+    temporal = temporal

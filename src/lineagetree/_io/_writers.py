@@ -14,22 +14,24 @@ if TYPE_CHECKING:
 
 
 def _get_height(lT: LineageTree, c: int, done: dict) -> float:
-    """Recursively computes the height of a node within a tree times a space factor.
-    This function is specific to the function write_to_svg.
+    """Recursively compute the height of a node times a space factor.
+
+    This function is specific to :func:`write_to_svg`.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     c : int
-        id of a node in a lineage tree from which the height will be computed from
-    done : dict mapping int to list of two int
-        a dictionary that maps a node id to its vertical and horizontal position
+        Id of the node from which the height is computed.
+    done : dict of {int: list of int}
+        A dictionary that maps a node id to its vertical and horizontal
+        position.
 
     Returns
     -------
     float
-        the height of the node `c`
+        The height of the node ``c``.
     """
     if c in done:
         return done[c][0]
@@ -56,50 +58,54 @@ def write_to_svg(
     positions: dict | None = None,
     node_color_map: Callable | str | None = None,
 ) -> None:
-    """Writes the lineage tree to an SVG file.
-    Node and edges coloring and size can be provided.
+    """Write the lineage tree to an SVG file.
+
+    Node and edge colouring and size can be provided.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     file_name : str
-        filesystem filename valid for `open()`
-    roots : list of int, defaults to `lT.roots`
-        list of node ids to be drawn. If `None` or not provided all the nodes will be drawn. Default `None`
-    draw_nodes : bool, default True
-        wether to print the nodes or not
-    draw_edges : bool, default True
-        wether to print the edges or not
+        Filesystem filename valid for ``open()``.
+    roots : list of int, optional
+        List of node ids to be drawn. If None, all the nodes are drawn.
+        Defaults to ``lT.roots``.
+    draw_nodes : bool, default=True
+        Whether to draw the nodes.
+    draw_edges : bool, default=True
+        Whether to draw the edges.
     order_key : Callable, optional
-        function that would work for the attribute `key=` for the `sort`/`sorted` function
+        Function usable as the ``key`` argument of ``sort``/``sorted``.
     vert_space_factor : float, default=0.5
-        the vertical position of a node is its time. `vert_space_factor` is a
-        multiplier to space more or less nodes in time
+        The vertical position of a node is its time; ``vert_space_factor`` is a
+        multiplier to space nodes more or less in time.
     horizontal_space : float, default=1
-        space between two consecutive nodes
+        Space between two consecutive nodes.
     node_size : Callable or str, optional
-        a function that maps a node id to a `float` value that will determine the
-        radius of the node. The default function return the constant value `vertical_space_factor/2.1`
-        If a string is given instead and it is a property of the tree,
-        the the size will be mapped according to the property
+        A function that maps a node id to a float value determining the radius
+        of the node. The default returns the constant value
+        ``vert_space_factor / 2.1``. If a string is given and is a property of
+        the tree, the size is mapped according to that property.
     stroke_width : Callable, optional
-        a function that maps a node id to a `float` value that will determine the
-        width of the daughter edge.  The default function return the constant value `vertical_space_factor/2.1`
+        A function that maps a node id to a float value determining the width of
+        the daughter edge. The default returns the constant value
+        ``vert_space_factor / 2.2``.
     factor : float, default=1.0
-        scaling factor for nodes positions, default 1
+        Scaling factor for node positions.
     node_color : Callable or str, optional
-        a function that maps a node id to a triplet between 0 and 255.
-        The triplet will determine the color of the node. If a string is given instead and it is a property
-        of the tree, the the color will be mapped according to the property
-    node_color_map : Callable or str, optional
-        the name of the colormap to use to color the nodes, or a colormap function
+        A function that maps a node id to an RGB triplet between 0 and 255,
+        determining the colour of the node. If a string is given and is a
+        property of the tree, the colour is mapped according to that property.
     stroke_color : Callable, optional
-        a function that maps a node id to a triplet between 0 and 255.
-        The triplet will determine the color of the stroke of the inward edge.
-    positions : dict mapping int to list of two float, optional
-        dictionary that maps a node id to a 2D position.
-        Default `None`. If provided it will be used to position the nodes.
+        A function that maps a node id to an RGB triplet between 0 and 255,
+        determining the colour of the stroke of the inward edge.
+    positions : dict of {int: list of float}, optional
+        Dictionary that maps a node id to a 2D position. If provided, it is used
+        to position the nodes.
+    node_color_map : Callable or str, optional
+        The name of the colormap to use to colour the nodes, or a colormap
+        function.
     """
 
     def normalize_values(v, nodes, _range, shift, mult):
@@ -277,46 +283,44 @@ def write_to_tlp(
     node_properties: dict | None = None,
     Names: bool = False,
 ) -> None:
-    """Write a lineage tree into an understable tulip file.
+    """Write a lineage tree into a Tulip file.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     fname : str
-        path to the tulip file to create
+        Path to the Tulip file to create.
     t_min : int, default=-1
-        minimum time to consider
+        Minimum time to consider.
     t_max : int, default=np.inf
-        maximum time to consider
+        Maximum time to consider.
     nodes_to_use : list of int, optional
-        list of nodes to show in the graph,
-        if `None` then lT.nodes is used
-        (taking into account `t_min` and `t_max`)
+        List of nodes to show in the graph. If None, ``lT.nodes`` is used
+        (taking into account ``t_min`` and ``t_max``).
     temporal : bool, default=True
-        True if the temporal links should be printed
-    spatial : str, optional
-        Build spatial edges from a spatial neighbourhood graph.
-        The graph has to be computed before running this function
-        'ball': neighbours at a given distance,
-        'kn': k-nearest neighbours,
-        'GG': gabriel graph,
-        None: no spatial edges are writen.
-        Default None
+        Whether the temporal links should be written.
+    spatial : {"ball", "kn", "GG"}, optional
+        Build spatial edges from a spatial neighbourhood graph, which has to be
+        computed before running this function:
+
+        - ``"ball"``: neighbours at a given distance,
+        - ``"kn"``: k-nearest neighbours,
+        - ``"GG"``: Gabriel graph.
+
+        If None, no spatial edges are written.
     write_layout : bool, default=True
-        write the spatial position as layout if True
-        do not write spatial position otherwise
-    node_properties : dict mapping str to list of dict of properties and its default value, optional
-        a dictionary of properties to write
-        To a key representing the name of the property is
-        paired a dictionary that maps a node id to a property
-        and a default value for this property
-    Names : bool, default=True
-        Only works with ASTEC outputs, True to sort the nodes by their names
+        Whether to write the spatial position as layout.
+    node_properties : dict of {str: list}, optional
+        A dictionary of properties to write. Each key (the property name) maps
+        to a pair of a dictionary (node id to property value) and a default
+        value for this property.
+    Names : bool, default=False
+        Only works with ASTEC outputs; if True, sort the nodes by their names.
     """
 
     def format_names(names_which_matter):
-        """Return an ensured formated node names"""
+        """Return formatted node names."""
         tmp = {}
         for k, v in names_which_matter.items():
             tmp[k] = (

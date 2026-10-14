@@ -96,3 +96,7 @@ bak_*
 .coverage
 
 ty_check
+
+claude-outputs
+# documentation images
+!docs/images/*.png

@@ -1,4 +1,11 @@
-__version__ = "3.0.4"
+"""LineageTree: representation and analysis of cell lineage trees.
+
+This package exposes the :class:`~lineagetree.LineageTree` and
+:class:`~lineagetree.LineageTreeManager` classes along with a collection of
+loaders for reading lineage data from common file formats.
+"""
+
+__version__ = "3.3.1"
 from .lineage_tree import LineageTree
 from ._io._loaders import (
     read_from_ASTEC,
@@ -12,6 +19,7 @@ from ._io._loaders import (
     read_from_txt_for_celegans,
     read_from_txt_for_celegans_BAO,
     read_from_txt_for_celegans_CAO,
+    read_from_swc,
     LOADERS,
 )
 from .lineage_tree_manager import LineageTreeManager
@@ -30,5 +38,6 @@ __all__ = (
     "read_from_mastodon",
     "read_from_txt_for_celegans",
     "read_from_txt_for_celegans_CAO",
+    "read_from_swc",
     "LOADERS",
 )

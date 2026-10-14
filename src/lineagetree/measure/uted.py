@@ -37,7 +37,7 @@ def unordered_tree_edit_distances_at_time_t(
     norm: Literal["max", "sum", None] = "max",
     recompute: bool = False,
 ) -> dict[tuple[int, int], float]:
-    """Compute all the pairwise unordered tree edit distances from Zhang 996 between the trees spawned at time `t`
+    """Compute all pairwise unordered tree edit distances (Zhang 1996) at time ``t``.
 
     Parameters
     ----------
@@ -48,12 +48,12 @@ def unordered_tree_edit_distances_at_time_t(
     end_time : int
         The final time point the comparison algorithm will take into account.
         If None all nodes will be taken into account.
-    style : {"simple", "full", "downsampled", "normalized_simple"} or TreeApproximationTemplate subclass, default="simple"
+    style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
         Which tree approximation is going to be used for the comparisons.
     downsample : int, default=2
         The downsample factor for the downsampled tree approximation.
         Used only when `style="downsampled"`.
-    norm : {"max", "sum"}, default="max"
+    norm : {"max", "sum", None}, default="max"
         The normalization method to use.
     recompute : bool, default=False
         If True, forces to recompute the distances
@@ -140,7 +140,19 @@ def __calculate_distance_of_sub_tree(
     return res / norm([norm1, norm2])
 
 
-def clear_comparisons(lT: LineageTree):
+def clear_comparisons(lT: LineageTree) -> None:
+    """Clear all cached tree-edit-distance comparisons.
+
+    Comparisons between subtrees are stored in ``lT._comparisons`` keyed by
+    ``(end_time, style_id)`` to avoid redundant recomputation. This function
+    empties the cache. Call it when memory usage is a concern or when
+    parameters that affect the alignment (e.g. tree topology) have changed.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree instance whose comparison cache should be cleared.
+    """
     lT._comparisons.clear()
 
 
@@ -175,9 +187,9 @@ def __unordereded_backtrace(
     end_time : int
         The final time point the comparison algorithm will take into account.
         If None all nodes will be taken into account.
-    norm : {"max", "sum"}, default="max"
+    norm : {"max", "sum", None}, default="max"
         The normalization method to use.
-    style : {"simple", "full", "downsampled", "normalized_simple"} or TreeApproximationTemplate subclass, default="simple"
+    style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
         Which tree approximation is going to be used for the comparisons.
     downsample : int, default=2
         The downsample factor for the downsampled tree approximation.
@@ -198,7 +210,7 @@ def __unordereded_backtrace(
     )
     n1, n2 = sorted([n1, n2])
     lT._comparisons.setdefault(parameters, {})
-    if len(lT._comparisons) > 100:
+    if len(lT._comparisons[parameters]) > 100:
         warnings.warn(
             "More than 100 comparisons are saved, use clear_comparisons() to delete them.",
             stacklevel=2,
@@ -289,18 +301,23 @@ def unordered_tree_edit_distance(
     end_time : int, optional
         The final time point the comparison algorithm will take into account.
         If None or not provided all nodes will be taken into account.
-    norm : {"max", "sum"}, default="max"
+    norm : {"max", "sum", None}, default="max"
         The normalization method to use, defaults to 'max'.
-    style : {"simple", "normalized_simple", "full", "downsampled"} or TreeApproximationTemplate subclass, default="simple"
+    style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
         Which tree approximation is going to be used for the comparisons.
     downsample : int, default=2
         The downsample factor for the downsampled tree approximation.
         Used only when `style="downsampled"`.
+    return_norms : bool, default=False
+        If True, the normalization values of both trees are returned
+        alongside the distance.
 
     Returns
     -------
-    float
-        The normalized unordered tree edit distance between `n1` and `n2`
+    float or tuple of (float, tuple of (float, float))
+        The normalized unordered tree edit distance between `n1` and `n2`,
+        and, when ``return_norms`` is True, the normalization value of each
+        of the two trees.
     """
     parameters = (
         end_time,
@@ -314,6 +331,8 @@ def unordered_tree_edit_distance(
         tmp = __unordereded_backtrace(
             lT, n1, n2, end_time, norm, style, downsample
         )
+    if not tmp["trees"]:
+        return (0, (0, 0)) if return_norms else 0
     btrc = tmp["alignment"]
     tree1, tree2 = tmp["trees"]
     _, times1 = tree1.tree
@@ -336,7 +355,7 @@ def unordered_tree_edit_distance(
         times2=times2,
     )
 
-    if norm not in lT.norm_dict:
+    if norm not in lT._norm_dict:
         raise ValueError(
             "Select a viable normalization method (max, sum, None)"
         )
@@ -344,7 +363,7 @@ def unordered_tree_edit_distance(
     norm_values = (tree1.get_norm(n1), tree2.get_norm(n2))
     if return_norms:
         return cost, norm_values
-    return cost / lT.norm_dict[norm](norm_values)
+    return cost / lT._norm_dict[norm](norm_values)
 
 
 def plot_tree_distance_graphs(
@@ -380,9 +399,9 @@ def plot_tree_distance_graphs(
     end_time : int
         The final time point the comparison algorithm will take into account.
         If None all nodes will be taken into account.
-    norm : {"max", "sum"}, default="max"
+    norm : {"max", "sum", None}, default="max"
         The normalization method to use.
-    style : {"simple", "full", "downsampled", "normalized_simple} or TreeApproximationTemplate subclass, default="simple"
+    style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
         Which tree approximation is going to be used for the comparisons.
     downsample : int, default=2
         The downsample factor for the downsampled tree approximation.
@@ -422,6 +441,13 @@ def plot_tree_distance_graphs(
         tmp = __unordereded_backtrace(
             lT, n1, n2, end_time, norm, style, downsample
         )
+    if not tmp["trees"]:
+        fig, ax = (
+            plt.subplots(nrows=1, ncols=2, sharey=True)
+            if ax is None
+            else (ax[0].get_figure(), ax)
+        )
+        return fig, ax
     btrc: Alignment = tmp["alignment"]
     tree1, tree2 = tmp["trees"]
     _, times1 = tree1.tree
@@ -442,8 +468,10 @@ def plot_tree_distance_graphs(
         times2=times2,
     )
 
-    if norm not in lT.norm_dict:
-        raise Warning("Select a viable normalization method (max, sum, None)")
+    if norm not in lT._norm_dict:
+        raise ValueError(
+            "Select a viable normalization method (max, sum, None)"
+        )
     matched_right = []
     matched_left = []
     colors = {}
@@ -496,7 +524,7 @@ def plot_tree_distance_graphs(
                     corres1,
                     corres2,
                     delta_tmp,
-                    lT.norm_dict[norm],
+                    lT._norm_dict[norm],
                     tree1.get_norm(node_1),
                     tree2.get_norm(node_2),
                 )
@@ -626,9 +654,9 @@ def labelled_mappings(
     end_time : int, optional
         The final time point the comparison algorithm will take into account.
         If None or not provided all nodes will be taken into account.
-    norm : {"max", "sum"}, default="max"
+    norm : {"max", "sum", None}, default="max"
         The normalization method to use, defaults to 'max'.
-    style : {"simple", "full", "downsampled", "normalized_simple} or TreeApproximationTemplate subclass, default="simple"
+    style : {"simple", "normalized_simple", "full", "downsampled", "mini"} or TreeApproximationTemplate subclass, default="simple"
         Which tree approximation is going to be used for the comparisons, defaults to 'simple'.
     downsample : int, default=2
         The downsample factor for the downsampled tree approximation.
@@ -638,7 +666,7 @@ def labelled_mappings(
     -------
     dict mapping str to list of str
         - 'matched' The labels of the matched nodes of the alignment.
-        - 'unmatched' The labels of the unmatched nodes of the alginment.
+        - 'unmatched' The labels of the unmatched nodes of the alignment.
     """
     parameters = (
         end_time,
@@ -652,6 +680,8 @@ def labelled_mappings(
         tmp = __unordereded_backtrace(
             lT, n1, n2, end_time, norm, style, downsample
         )
+    if not tmp["trees"]:
+        return {"matched": [], "unmatched": []}
     btrc = tmp["alignment"]
     tree1, tree2 = tmp["trees"]
 
@@ -664,8 +694,10 @@ def labelled_mappings(
         corres2,
     ) = tree2.edist
 
-    if norm not in lT.norm_dict:
-        raise Warning("Select a viable normalization method (max, sum, None)")
+    if norm not in lT._norm_dict:
+        raise ValueError(
+            "Select a viable normalization method (max, sum, None)"
+        )
     matched = []
     unmatched = []
     if style not in ("full", "downsampled"):

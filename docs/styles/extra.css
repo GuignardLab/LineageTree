@@ -1,0 +1,336 @@
+
+.scrollable-left4 {
+  flex: 0 0 45%;             /* left column width */
+  display: flex;              /* make it a flex container */
+  flex-direction: column;     /* stack text vertically */
+  justify-content: center;    /* vertical centering inside left column */
+  align-items: flex-start;
+  text-align: left ;
+  height: auto;
+  padding-right: 2rem;
+}
+
+.fixed-right4 {
+  flex: 0 0 600px;            /* right column width */
+  display: flex;               /* flex for vertical centering */
+  flex-direction: column;
+  justify-content: center;     /* vertical centering inside right column */
+  align-items: right;         /* horizontal centering of image */
+  height: 100%;                /* match parent container height */
+  padding: 0;                  /* optional */
+}
+
+.fixed-right4 img {
+  max-width: 150%;
+  max-height: 150%;
+  object-fit: contain;
+}
+
+
+.scrollable-left1 {
+  flex: 0 0 50%;             /* left column width */
+  display: flex;              /* make it a flex container */
+  flex-direction: column;     /* stack text vertically */
+  justify-content: center;    /* vertical centering inside left column */
+  align-items: flex-start;
+  text-align: left ;
+  height: auto;
+  padding-right: 2rem;
+}
+
+.fixed-right1 {
+  flex: 0 0 500px;            /* right column width */
+  display: flex;               /* flex for vertical centering */
+  flex-direction: column;
+  justify-content: center;     /* vertical centering inside right column */
+  align-items: center;         /* horizontal centering of image */
+  height: 100%;                /* match parent container height */
+  padding: 0;                  /* optional */
+}
+
+.fixed-right1 img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.fixed-right3 {
+  flex: 1;          /* right column width */
+  display: flex;            
+  flex-direction: column;
+  justify-content: flex-start;  /* align to top */
+  align-items: flex-start;      /* align to left */
+  height: 350%;                
+  padding: 0;
+  position: sticky;
+
+}
+
+.fixed-right3 img {
+  width: 300%;                 /* or any size you like */
+  flex: none;
+}
+.split-container3 {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  max-width: auto;
+  min-height: 10vh;
+  /* overflow: hidden; */
+}
+
+
+
+.split-container {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  /* max-width: 1500px; */
+  min-height: 90vh;
+  /* overflow: hidden; */
+}
+
+.scrollable-left {
+  flex: 0 0 10%;
+  /* overflow-y: scroll; */
+  height: 100vh;
+  padding-right: 2rem;
+}
+
+.fixed-right {
+  flex: 0 0 500px;       /* width of the image area */
+  position: sticky;
+  top: 0;                 /* stick to top of viewport */
+  height: 100vh;
+  display: flex;
+  flex-direction: column; /* align items from top */
+  align-items: center;    /* horizontal centering */
+  justify-content: flex-start; /* push content to top */
+  padding-top: 5rem;      /* optional spacing from top */
+  overflow-y: auto;
+}
+
+.fixed-right img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+}
+.split-container1 {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  max-width: 1500px;
+  min-height: 10vh;
+  /* overflow: hidden; */
+  }
+/* Right sidebar flush to the right window edge */
+.md-sidebar--secondary {
+    right: 0 !important;          /* flush against right edge */
+    width: 200px;                 /* adjust width as needed */
+    padding-left: 2rem;
+    padding-right: 0;
+}
+
+
+/* Make main content respect the new sidebar width */
+.md-main {
+    margin-right: 1px !important;  /* same as .md-sidebar--secondary width */
+}
+
+/* Optional: scrollable right sidebar */
+.md-sidebar--secondary {
+    height: calc(100vh - var(--md-header-height));
+    overflow-y: auto;
+}
+
+/* Optional: reduce gap between content and sidebar */
+.md-main__inner {
+    max-width: calc(100% - 150px) !important;  /* content width minus sidebar */
+}
+
+
+@media (max-width: 1024px) {
+  /* Tablets and medium screens */
+  .split-container1 {
+    flex-direction: column;       /* stack text over image */
+    align-items: center;
+    max-height: none;
+  }
+
+  .scrollable-left1 {
+    flex: 1 1 auto;
+    width: 100%;
+    padding-right: 0;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  .fixed-right1 {
+    flex: 1 1 auto;
+    width: 80%;
+    height: auto;
+  }
+
+  .fixed-right1 img {
+    max-width: 80%;
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Mobile phones */
+  .split-container1 {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .scrollable-left1 {
+    width: 100%;
+    padding: 1rem;
+  }
+
+  .fixed-right1 {
+    width: 100%;
+    height: auto;
+    padding: 0;
+  }
+
+  .fixed-right1 img {
+    max-width: 90%;
+    max-height: 200px;
+  }
+}
+
+/* Style function/method names */
+.doc-heading code {
+    font-size: 1.1em;
+    font-weight: 600;
+    /* color: #2563eb;
+    background-color: #eff6ff; */
+    padding: 0.2em 0.5em;
+    border-radius: 4px;
+}
+
+/* Style the main docstring text */
+.doc-contents > p,
+.doc-contents > .admonition {
+    font-style: italic;
+    /* font-size: 0.9em; */
+    color: #64748b;
+    line-height: 1.6;
+}
+
+/* Keep code blocks in docstrings normal (not italic) */
+.doc-contents pre,
+.doc-contents code {
+    font-style: normal;
+    /* font-size: 0.85em; */
+}
+
+/* Style parameter descriptions */
+.doc-parameters .doc-parameter-description,
+.doc-returns .doc-return-description {
+    font-style: italic;
+    font-size: 0.88em;
+    color: #64748b;
+}
+
+/* Keep parameter names normal */
+.doc-parameter-name {
+    font-style: normal;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+/* Style for Examples section */
+.doc-section-title {
+    font-weight: 600;
+    font-size: 1em;
+    margin-top: 1em;
+}
+
+/* Alternative: If you want ALL docstring content smaller and italic */
+.doc-contents {
+    font-style: italic;
+    /* font-size: 0.9em; */
+    color: #64748b;
+}
+
+/* But keep headings within docstrings normal */
+.doc-contents h1,
+.doc-contents h2,
+.doc-contents h3,
+.doc-contents h4 {
+    font-style: normal;
+    font-weight: 600;
+}
+
+/* Style the function signature differently */
+.doc-signature {
+    /* background-color: #f8fafc; */
+    /* border-left: 3px solid #3b82f6; */
+    padding: 0.8em 1em;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95em;
+}
+
+/* Force each parameter on its own line */
+.doc-signature .n,
+.doc-signature .p {
+    display: inline;
+}
+
+.doc-signature .sig-param {
+    display: block;
+    padding-left: 2em;
+    text-indent: -2em;
+    margin-left: 2em;
+}
+
+/* Keep opening parenthesis with function name */
+.doc-signature .sig-paren:first-of-type {
+    display: inline;
+}
+
+/* Style the parameter list container */
+.doc-signature .sig-param-decl {
+    display: block;
+    padding-left: 1.5em;
+}
+
+/* Add proper indentation */
+span.sig-param {
+    display: block;
+    margin-left: 2em;
+    text-indent: 0;
+}
+
+/* Hover effect for function names
+.doc-heading:hover code {
+    background-color: #dbeafe;
+    transition: background-color 0.2s ease;
+}
+
+/* Add horizontal line between functions/methods */
+/* .doc.doc-object:not(:first-child) {
+    margin-top: 3em;
+    padding-top: 2em;
+    border-top: 2px solid #e2e8f0; */
+*/
+
+/* Alternative: Dashed line */
+
+.doc.doc-object:not(:first-child) {
+    margin-top: 3em;
+    padding-top: 2em;
+    border-top: 2px dashed #cbd5e1;
+}
+
+
+/* Alternative: Thicker line with gradient */
+
+.doc.doc-object:not(:first-child) {
+    margin-top: 3em;
+    padding-top: 2em;
+    border-top: 3px solid #94a3b8;
+}

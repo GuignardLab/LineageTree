@@ -8,12 +8,19 @@ from lineagetree import (
     LineageTreeManager,
     read_from_mamut_xml,
     read_from_mastodon,
+    read_from_swc,
     tree_approximation,
 )
 
 lT1 = read_from_mamut_xml("tests/data/test-mamut.xml")
 lT2 = read_from_mastodon("tests/data/test.mastodon")
 lt = LineageTree.load("tests/data/demo.lT")
+
+
+def test_swc_reader():
+    lT3 = read_from_swc("tests/data/204-2-6nj.CNG.swc")
+    assert len(lT3.nodes) == 603
+    assert not lT3.temporal
 
 
 def test_read_MaMuT_xml():
@@ -25,6 +32,9 @@ def test_read_MaMuT_xml():
     assert len(lT2.nodes) == 41
     assert len(lT2.successor) == 41
     assert len(lT2.find_leaves(40)) == 2
+    assert lT2.temporal
+    assert lT1.temporal
+    assert lt.temporal
 
 
 @pytest.fixture(scope="session")
@@ -576,15 +586,20 @@ def test_dynamic_property():
 
 
 def test_idx3d():
-    kdtree, idxs = lT1.get_idx3d(0)
+    kdtree, idxs = lT1.idx3d(0)
     assert np.isclose(kdtree.query((0, 0, 0))[0], 1131.2352660153383)
     assert idxs[kdtree.query((0, 0, 0))[1]] == 110826
     assert idxs[kdtree.query((1000, 2000, 1000))[1]] == 132063
 
 
 def test_gabriel_graph():
-    gg = lT1.get_gabriel_graph(0)
+    gg = lT1.gabriel_graph(0)
     assert gg[173618] == {110832, 168322}
+    gg_all = lT1.gabriel_graph()
+    gg_all_2 = {}
+    for t in lT1.time_nodes:
+        gg_all_2.update(lT1.gabriel_graph(t))
+    assert gg_all == gg_all_2
 
 
 def test_get_chain_of_node():
@@ -618,25 +633,33 @@ def test_get_subtree_nodes():
 
 
 def test_spatial_density():
-    density = list(lT1.compute_spatial_density(0, th=40).values())
-    assert np.count_nonzero(density) == 1669
+    assert np.isclose(
+        lT1.spatial_density(0, th=40)[110832], 7.460387957432594e-06
+    )
+    assert lT1.neighbours_in_radius(0, th=40)[110832] == {np.int64(110826)}
 
 
-def test_compute_k_nearest_neighbours():
-    assert lT1.compute_k_nearest_neighbours()[169994] == {
-        108588,
-        114722,
-        129276,
-        139163,
-        148361,
-        165681,
-        169994,
-        178396,
-    }
+def test_k_nearest_neighbours():
+    assert (
+        lT1.k_nearest_neighbours()[0][169994]
+        == [178396, 139163, 165681, 148361, 129276, 114722, 108588]
+    ).all()
+    assert np.allclose(
+        lT1.k_nearest_neighbours()[1][169994],
+        [
+            34.39062611,
+            50.72494649,
+            58.97813932,
+            71.48910824,
+            80.50930278,
+            171.6539282,
+            173.50879512,
+        ],
+    )
 
 
-def test_compute_spatial_edges():
-    assert lT1.compute_spatial_edges()[129294] == {139162, 148358}
+def test_spatial_edges():
+    assert lT1.spatial_edges()[129294] == {139162, 148358}
 
 
 def test_get_ancestor_at_t():
@@ -674,8 +697,8 @@ def test_nodes_at_t():
     assert lT1.nodes_at_t(65, 110832) == [112436]
 
 
-def test_calculate_dtw():
-    assert np.isclose(lT1.calculate_dtw(110832, 132129)[0], 25.550036305019194)
+def test_dtw():
+    assert np.isclose(lT1.dtw(110832, 132129)[0], 25.550036305019194)
 
 
 def test_create_new_style():
@@ -737,3 +760,86 @@ def test_change_labels():
         24: "left",
         25: "left",
     }
+
+
+def test_plot_chain_hist():
+    _, ax1 = lt.plot_chain_histogram()
+    _, ax2 = lt.plot_chain_histogram(with_leaves=True)
+    _, ax3 = lt.plot_chain_histogram(with_roots=True)
+    _, ax4 = lt.plot_chain_histogram(with_roots=True, with_leaves=True)
+    assert sum(p.get_height() for p in ax4.patches) == len(lt.all_chains)
+    assert sum(p.get_height() for p in ax3.patches) == (
+        len(lt.all_chains) - len(lt.leaves)
+    )
+    assert sum(p.get_height() for p in ax2.patches) == (
+        len(lt.all_chains) - len(lt.roots)
+    )
+    print(
+        sum(p.get_height() for p in ax1.patches),
+        len(lt.all_chains) - len(lt.leaves) - len(lt.roots),
+    )
+    assert sum(p.get_height() for p in ax1.patches) == (
+        len(lt.all_chains) - len(lt.leaves.union(lt.roots))
+    )
+
+
+def test_stabilise_positions():
+    new_pos = lT1.stabilise_positions()
+    assert np.isclose(
+        new_pos[148361], np.array([1019.66762163, 400.25591182, 287.54520521])
+    ).all()
+    lT1.pos = lT1.old_pos
+
+
+def test_smoothing():
+    new_pos = lt.smooth_trajectories()
+    assert np.isclose(
+        new_pos[1552], np.array([462.15385069, 907.17562352, 419.54303692])
+    ).all()
+    lt.pos = lt.old_pos
+
+
+def test_get_shortest_path_and_last_common_ancestor():
+    roots = list(lt.roots)
+    root = roots[0]
+    lca = lt.get_chain_of_node(root)[-1]
+    succ1, succ2 = lt.successor[lca]
+    n1 = lt.get_chain_of_node(succ1)[:10]
+    n2 = lt.get_chain_of_node(succ2)[:5]
+    assert (
+        lt.get_shortest_path_and_last_common_ancestor(n1[-1], n2[-1])[1] == 251
+    )
+    assert (
+        lt.get_shortest_path_and_last_common_ancestor(roots[1], roots[2])[1]
+        == -1
+    )
+    assert (
+        lt.get_shortest_path_and_last_common_ancestor(n1[-1], n2[-1])[0]
+        == n1[::-1] + [lca] + n2
+    )
+    assert (
+        lt.get_shortest_path_and_last_common_ancestor(n2[-1], n1[-1])[0]
+        == n2[::-1] + [lca] + n1
+    )
+
+    assert lt.get_shortest_path_and_last_common_ancestor(472, 29355)[0] == [
+        472,
+        162,
+        417,
+        149,
+        128,
+        251,
+        29501,
+        29500,
+        29499,
+        29498,
+        29355,
+    ]
+    assert (
+        lt.get_shortest_path_and_last_common_ancestor(6510, 387)[0]
+        == lt.get_shortest_path_and_last_common_ancestor(387, 6510)[0][::-1]
+    )
+    assert lt.get_shortest_path_and_last_common_ancestor(176, 29345) == (
+        [],
+        -1,
+    )
