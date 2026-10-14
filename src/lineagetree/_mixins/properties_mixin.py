@@ -9,6 +9,7 @@ from .._core._properties import (
     parenting,
     predecessor,
     roots,
+    spatial_resolution,
     successor,
     t_b,
     t_e,
@@ -41,3 +42,4 @@ class PropertiesMixin(metaclass=AutoMethodizeMeta):
     time_nodes = time_nodes
     parenting = parenting
     temporal = temporal
+    spatial_resolution = spatial_resolution

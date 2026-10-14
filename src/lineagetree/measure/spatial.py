@@ -1,8 +1,8 @@
 """Spatial neighbourhoods of the nodes at each time point.
 
-Neighbourhoods are computed among the nodes of a single time point.
-Positions are multiplied by ``lT.spatial_resolution`` first, so distances are
-in physical units.
+Neighbourhoods are computed among the nodes of a single time point, from
+``lT.pos``, which is already multiplied by ``lT.spatial_resolution``: distances
+are in physical units.
 """
 
 from __future__ import annotations
@@ -20,8 +20,7 @@ if TYPE_CHECKING:
 def idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
     """Get a KDTree of the node positions at time ``t``.
 
-    Positions are multiplied by ``lT.spatial_resolution``. The KDTree is
-    cached in ``lT.kdtrees[t]``.
+    The KDTree is cached in ``lT.kdtrees[t]``.
 
     Parameters
     ----------
@@ -40,7 +39,8 @@ def idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
 
     Warnings
     --------
-    The cached KDTree is not updated when positions change.
+    The cached KDTree is not updated when positions change, except through
+    ``lT.spatial_resolution``, which clears it.
     """
     to_check_lT = list(lT.time_nodes[t])
 
@@ -51,7 +51,7 @@ def idx3d(lT: LineageTree, t: int) -> tuple[KDTree, np.ndarray]:
         data_corres = {}
         data = []
         for i, C in enumerate(to_check_lT):
-            data.append(tuple(lT.pos[C] * lT.spatial_resolution))
+            data.append(tuple(lT.pos[C]))
             data_corres[i] = C
         idx3d = KDTree(data)
         lT.kdtrees[t] = idx3d
@@ -103,7 +103,7 @@ def gabriel_graph(
             data_corres = {}
             data = []
             for i, C in enumerate(nodes):
-                data.append(lT.pos[C] * lT.spatial_resolution)
+                data.append(lT.pos[C])
                 data_corres[i] = C
 
             delaunay_graph = {}

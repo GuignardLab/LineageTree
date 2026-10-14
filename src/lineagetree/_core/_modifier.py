@@ -50,6 +50,44 @@ def modifier(wrapped_func):
     return raising_flag
 
 
+def _set_position(lT: LineageTree, node: int, position) -> None:
+    """Set the position of ``node``, given in physical units.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree instance.
+    node : int
+        The node to place.
+    position : Iterable of float
+        Its position in physical units, like ``lT.pos``.
+    """
+    position = np.array(position, dtype=float)
+    lT.pos[node] = position
+    lT.raw_pos[node] = position / lT.spatial_resolution
+
+
+def _replace_positions(lT: LineageTree, new_pos: dict) -> None:
+    """Replace all positions, given in physical units, keeping the old ones.
+
+    The old positions are kept in ``lT.old_pos`` (physical units) and
+    ``lT.raw_pos`` is recomputed from the new ones.
+
+    Parameters
+    ----------
+    lT : LineageTree
+        The LineageTree instance.
+    new_pos : dict of {int: numpy.ndarray}
+        The new positions, in physical units.
+    """
+    lT.old_pos = lT.pos
+    lT.pos = new_pos
+    lT.raw_pos = {
+        node: position / lT.spatial_resolution
+        for node, position in new_pos.items()
+    }
+
+
 ###TODO pos can be callable and stay motionless (copy the position of the succ node, use something like optical flow)
 @modifier
 def add_chain(
@@ -130,7 +168,8 @@ def add_root(lT: LineageTree, t: int, pos: list | None = None) -> int:
     t : int
         The time point of the new node.
     pos : list or tuple, optional
-        The position of the new node.
+        The position of the new node, in physical units like ``lT.pos``.
+        ``lT.raw_pos`` gets it divided by ``lT.spatial_resolution``.
 
     Returns
     -------
@@ -142,7 +181,7 @@ def add_root(lT: LineageTree, t: int, pos: list | None = None) -> int:
     lT._predecessor[C_next] = ()
     lT._time[C_next] = t
     if isinstance(pos, (list, tuple)):
-        lT.pos[C_next] = np.array(pos)
+        _set_position(lT, C_next, pos)
     lT._changed_roots = True
     return C_next
 
@@ -194,7 +233,8 @@ def _add_node(
         One-element list holding the predecessor of the new node, which
         becomes one of its successors.
     pos : list, optional
-        Position of the new node. Ignored unless it is a ``list``.
+        Position of the new node, in physical units like ``lT.pos``.
+        Ignored unless it is a ``list``.
     nid : int, optional
         Id value of the new node, to be used carefully. If None, the new id is
         automatically computed.
@@ -229,7 +269,7 @@ def _add_node(
     else:
         lT._predecessor[C_next] = ()
     if isinstance(pos, list):
-        lT.pos[C_next] = pos
+        _set_position(lT, C_next, pos)
     return C_next
 
 
@@ -377,8 +417,8 @@ def stabilise_positions(lT: LineageTree) -> dict[int, np.ndarray]:
     The positions of each time point are rotated and translated (a rigid
     transformation) so that the sum of the squared displacements between
     consecutive time points is minimal. ``lT.pos`` is replaced by the new
-    positions and the old ones are kept in ``lT.old_pos``. Positions must be
-    3D.
+    positions and the old ones are kept in ``lT.old_pos``; ``lT.raw_pos`` is
+    updated to match. Positions must be 3D.
 
     Warnings
     --------
@@ -427,8 +467,7 @@ def stabilise_positions(lT: LineageTree) -> dict[int, np.ndarray]:
         pos = np.array([lT.pos[c] for c in nodes])
         new_pos.update(zip(nodes, apply_trsf(trsf, pos)))
 
-    lT.old_pos = lT.pos
-    lT.pos = new_pos
+    _replace_positions(lT, new_pos)
 
     return new_pos
 
@@ -513,7 +552,7 @@ def smooth_trajectories(lT: LineageTree, sigma=1.0, ancor_strength=3):
     constraints. The first and last positions of each chain are preserved
     exactly, while nearby points are partially constrained to reduce drift.
     ``lT.pos`` is replaced by the smoothed positions and the old ones are
-    kept in ``lT.old_pos``.
+    kept in ``lT.old_pos``; ``lT.raw_pos`` is updated to match.
 
     Parameters
     ----------
@@ -545,6 +584,5 @@ def smooth_trajectories(lT: LineageTree, sigma=1.0, ancor_strength=3):
             Z, sigma=sigma, anchor_strength=ancor_strength
         )
         new_pos.update(zip(chain, np.transpose([X_new, Y_new, Z_new])))
-    lT.old_pos = lT.pos
-    lT.pos = new_pos
+    _replace_positions(lT, new_pos)
     return lT.pos

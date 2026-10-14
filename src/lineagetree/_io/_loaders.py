@@ -16,6 +16,7 @@ import os
 import pickle as pkl
 import struct
 import xml.etree.ElementTree as ET
+from collections.abc import Sequence
 from pathlib import Path
 from warnings import warn
 
@@ -152,6 +153,7 @@ def read_from_bmf(
     pos_multipliers: tuple[float, float, float] = (1.0, 1.0, 1.0),
     translation: tuple[float, float, float] = (0.0, 0.0, 0.0),
     name: None | str = None,
+    spatial_resolution: Sequence[float] | None = None,
 ) -> LineageTree:
     """Read a lineage tree from a binary mesh format (BMF) file.
 
@@ -174,6 +176,11 @@ def read_from_bmf(
     name : str, optional
         Name of the lineage tree. Defaults to the file name without its
         extension.
+    spatial_resolution : Sequence of float, optional
+        Size of a unit of the positions (after ``pos_multipliers`` and
+        ``translation``) along each axis, e.g. the voxel size. ``lT.raw_pos``
+        keeps the positions as read and ``lT.pos`` holds them multiplied by
+        this resolution. Defaults to ones.
 
     Returns
     -------
@@ -206,6 +213,7 @@ def read_from_bmf(
     kwargs = {"mesh": lT_mesh} if store_meshes else {}
 
     lT = LineageTree(
+        spatial_resolution=spatial_resolution,
         predecessor=predecessor,
         time=times,
         pos=pos,
@@ -223,6 +231,7 @@ def read_from_csv(
     link: int = 1,
     delim: str = ",",
     name: None | str = None,
+    spatial_resolution: Sequence[float] | None = None,
 ) -> LineageTree:
     """Read a lineage tree from a CSV file.
 
@@ -248,6 +257,10 @@ def read_from_csv(
     name : str, optional
         Name of the lineage tree. Defaults to the file name without its
         extension.
+    spatial_resolution : Sequence of float, optional
+        Size of a unit of the positions (after ``z_mult``) along each axis,
+        e.g. the voxel size. ``lT.raw_pos`` keeps the positions as read and
+        ``lT.pos`` holds them multiplied by this resolution. Defaults to ones.
 
     Returns
     -------
@@ -293,7 +306,13 @@ def read_from_csv(
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-    return LineageTree(successor=successor, time=time, pos=pos, name=name)
+    return LineageTree(
+        spatial_resolution=spatial_resolution,
+        successor=successor,
+        time=time,
+        pos=pos,
+        name=name,
+    )
 
 
 def _read_from_ASTEC_xml(file_path: str) -> dict:
@@ -376,7 +395,10 @@ def _read_from_ASTEC_pkl(file_path: str, eigen: bool = False) -> dict:
 
 
 def read_from_ASTEC(
-    file_path: str, eigen: bool = False, name: None | str = None
+    file_path: str,
+    eigen: bool = False,
+    name: None | str = None,
+    spatial_resolution: Sequence[float] | None = None,
 ) -> LineageTree:
     """Read an XML or PKL file produced by ASTEC.
 
@@ -399,6 +421,10 @@ def read_from_ASTEC(
     name : str, optional
         Name of the lineage tree. Defaults to the file name without its
         extension.
+    spatial_resolution : Sequence of float, optional
+        Size of a unit of the positions along each axis, e.g. the voxel size.
+        ``lT.raw_pos`` keeps the positions as read and ``lT.pos`` holds them
+        multiplied by this resolution. Defaults to ones.
 
     Returns
     -------
@@ -501,11 +527,20 @@ def read_from_ASTEC(
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
     return LineageTree(
-        successor=successor, time=time, pos=pos, name=name, **properties
+        spatial_resolution=spatial_resolution,
+        successor=successor,
+        time=time,
+        pos=pos,
+        name=name,
+        **properties,
     )
 
 
-def read_from_binary(fname: str, name: None | str = None) -> LineageTree:
+def read_from_binary(
+    fname: str,
+    name: None | str = None,
+    spatial_resolution: Sequence[float] | None = None,
+) -> LineageTree:
     """Read a lineage tree from the legacy binary format.
 
     The file holds three int64 lengths, then the tree as an int64 sequence
@@ -519,6 +554,10 @@ def read_from_binary(fname: str, name: None | str = None) -> LineageTree:
     name : str, optional
         Name of the lineage tree. Defaults to the file name without its
         extension.
+    spatial_resolution : Sequence of float, optional
+        Size of a unit of the positions along each axis, e.g. the voxel size.
+        ``lT.raw_pos`` keeps the positions as read and ``lT.pos`` holds them
+        multiplied by this resolution. Defaults to ones.
 
     Returns
     -------
@@ -617,11 +656,19 @@ def read_from_binary(fname: str, name: None | str = None) -> LineageTree:
         if name == "":
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
-    return LineageTree(successor=successor, time=time, pos=pos, name=name)
+    return LineageTree(
+        spatial_resolution=spatial_resolution,
+        successor=successor,
+        time=time,
+        pos=pos,
+        name=name,
+    )
 
 
 def read_from_txt_for_celegans(
-    file: str, name: None | str = None
+    file: str,
+    name: None | str = None,
+    spatial_resolution: Sequence[float] | None = None,
 ) -> LineageTree:
     """Read a C. elegans lineage from a tab-separated text file.
 
@@ -638,6 +685,10 @@ def read_from_txt_for_celegans(
     name : str, optional
         Name of the lineage tree. Defaults to the file name without its
         extension.
+    spatial_resolution : Sequence of float, optional
+        Size of a unit of the positions along each axis, e.g. the voxel size.
+        ``lT.raw_pos`` keeps the positions as read and ``lT.pos`` holds them
+        multiplied by this resolution. Defaults to ones.
 
     Returns
     -------
@@ -684,7 +735,12 @@ def read_from_txt_for_celegans(
         name = tmp_name
     properties = {"_labels": _labels}
     return LineageTree(
-        successor=successor, time=time, pos=pos, name=name, **properties
+        spatial_resolution=spatial_resolution,
+        successor=successor,
+        time=time,
+        pos=pos,
+        name=name,
+        **properties,
     )
 
 
@@ -694,6 +750,7 @@ def read_from_txt_for_celegans_CAO(
     raw_size: np.ndarray | None = None,
     shape: float | None = None,
     name: str | None = None,
+    spatial_resolution: Sequence[float] | None = None,
 ) -> LineageTree:
     """Read a C. elegans lineage from the format of Cao et al.
 
@@ -720,6 +777,10 @@ def read_from_txt_for_celegans_CAO(
     name : str, optional
         Name of the lineage tree. Defaults to the file name without its
         extension.
+    spatial_resolution : Sequence of float, optional
+        Size of a unit of the positions along each axis, e.g. the voxel size.
+        ``lT.raw_pos`` keeps the positions as read and ``lT.pos`` holds them
+        multiplied by this resolution. Defaults to ones.
 
     Returns
     -------
@@ -788,7 +849,12 @@ def read_from_txt_for_celegans_CAO(
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
     return LineageTree(
-        successor=successor, time=time, pos=pos, label=label, name=name
+        spatial_resolution=spatial_resolution,
+        successor=successor,
+        time=time,
+        pos=pos,
+        label=label,
+        name=name,
     )
 
 
@@ -860,6 +926,7 @@ def read_from_tgmm_xml(
     te: int,
     z_mult: float = 1.0,
     name: None | str = None,
+    spatial_resolution: Sequence[float] | None = None,
 ) -> LineageTree:
     """Read a lineage tree from the XML outputs of TGMM.
 
@@ -883,6 +950,10 @@ def read_from_tgmm_xml(
     name : str, optional
         Name of the lineage tree. Defaults to the file name without its
         extension.
+    spatial_resolution : Sequence of float, optional
+        Size of a unit of the positions (after ``z_mult``) along each axis,
+        e.g. the voxel size. ``lT.raw_pos`` keeps the positions as read and
+        ``lT.pos`` holds them multiplied by this resolution. Defaults to ones.
 
     Returns
     -------
@@ -953,12 +1024,20 @@ def read_from_tgmm_xml(
             warn(f"Name set to default {tmp_name}", stacklevel=2)
         name = tmp_name
     return LineageTree(
-        successor=successor, time=time, pos=pos, name=name, **properties
+        spatial_resolution=spatial_resolution,
+        successor=successor,
+        time=time,
+        pos=pos,
+        name=name,
+        **properties,
     )
 
 
 def read_from_mastodon(
-    path: str, tag_set: str | None = None, name: str | None = None
+    path: str,
+    tag_set: str | None = None,
+    name: str | None = None,
+    spatial_resolution: Sequence[float] | None = None,
 ) -> LineageTree:
     """Read a lineage tree from a Mastodon project.
 
@@ -974,6 +1053,10 @@ def read_from_mastodon(
     name : str, optional
         Name of the lineage tree. Defaults to the file name without its
         extension.
+    spatial_resolution : Sequence of float, optional
+        Size of a unit of the positions along each axis, e.g. the voxel size.
+        ``lT.raw_pos`` keeps the positions as read and ``lT.pos`` holds them
+        multiplied by this resolution. Defaults to ones.
 
     Returns
     -------
@@ -1010,6 +1093,7 @@ def read_from_mastodon(
         name = tmp_name
 
     return LineageTree(
+        spatial_resolution=spatial_resolution,
         predecessor=predecessor,
         time=time,
         pos=pos,
@@ -1021,7 +1105,9 @@ def read_from_mastodon(
 
 
 def read_from_mastodon_csv(
-    paths: list[str], name: None | str = None
+    paths: list[str],
+    name: None | str = None,
+    spatial_resolution: Sequence[float] | None = None,
 ) -> LineageTree:
     """Read a lineage tree from the CSV export of Mastodon.
 
@@ -1036,6 +1122,10 @@ def read_from_mastodon_csv(
     name : str, optional
         Name of the lineage tree. Defaults to the file name without its
         extension.
+    spatial_resolution : Sequence of float, optional
+        Size of a unit of the positions along each axis, e.g. the voxel size.
+        ``lT.raw_pos`` keeps the positions as read and ``lT.pos`` holds them
+        multiplied by this resolution. Defaults to ones.
 
     Returns
     -------
@@ -1081,12 +1171,20 @@ def read_from_mastodon_csv(
         name = tmp_name
 
     return LineageTree(
-        successor=successor, time=time, pos=pos, label=label, name=name
+        spatial_resolution=spatial_resolution,
+        successor=successor,
+        time=time,
+        pos=pos,
+        label=label,
+        name=name,
     )
 
 
 def read_from_mamut_xml(
-    path: str, xml_attributes: list[str] | None = None, name: None | str = None
+    path: str,
+    xml_attributes: list[str] | None = None,
+    name: None | str = None,
+    spatial_resolution: Sequence[float] | None = None,
 ) -> LineageTree:
     """Read a lineage tree from a MaMuT (or TrackMate) XML file.
 
@@ -1105,6 +1203,10 @@ def read_from_mamut_xml(
     name : str, optional
         Name of the lineage tree. Defaults to the file name without its
         extension.
+    spatial_resolution : Sequence of float, optional
+        Size of a unit of the positions along each axis, e.g. the voxel size.
+        ``lT.raw_pos`` keeps the positions as read and ``lT.pos`` holds them
+        multiplied by this resolution. Defaults to ones.
 
     Returns
     -------
@@ -1190,6 +1292,7 @@ def read_from_mamut_xml(
         name = tmp_name
 
     return LineageTree(
+        spatial_resolution=spatial_resolution,
         successor=successor,
         time=time,
         pos=pos,
@@ -1198,7 +1301,9 @@ def read_from_mamut_xml(
     )
 
 
-def read_from_swc(swc_path: Path | str) -> LineageTree:
+def read_from_swc(
+    swc_path: Path | str, spatial_resolution: Sequence[float] | None = None
+) -> LineageTree:
     """Read a neuronal morphology tree from an SWC file.
 
     The SWC format stores a single rooted tree of 3D sample points with
@@ -1211,6 +1316,10 @@ def read_from_swc(swc_path: Path | str) -> LineageTree:
     ----------
     swc_path : str or Path
         Path to the ``.swc`` file to read.
+    spatial_resolution : Sequence of float, optional
+        Size of a unit of the positions along each axis, e.g. the voxel size.
+        ``lT.raw_pos`` keeps the positions as read and ``lT.pos`` holds them
+        multiplied by this resolution. Defaults to ones.
 
     Returns
     -------
@@ -1240,6 +1349,7 @@ def read_from_swc(swc_path: Path | str) -> LineageTree:
         properties["structure_id"][id_] = struct_id
 
     return LineageTree(
+        spatial_resolution=spatial_resolution,
         predecessor=predecessor,
         pos=pos,
         root_leaf_value=(-1,),

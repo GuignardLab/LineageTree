@@ -24,11 +24,11 @@ def _tree(resolution, seed=0, n=30):
 def _brute_force_knn(lT, node, k):
     t = lT.time[node]
     scaled = {
-        n: lT.pos[n] * lT.spatial_resolution
+        n: lT.raw_pos[n] * lT.spatial_resolution
         for n in lT.time_nodes[t]
         if n != node
     }
-    own = lT.pos[node] * lT.spatial_resolution
+    own = lT.raw_pos[node] * lT.spatial_resolution
     distances = {n: np.linalg.norm(p - own) for n, p in scaled.items()}
     closest = sorted(distances, key=distances.get)[:k]
     return closest, [distances[n] for n in closest]
@@ -54,7 +54,7 @@ def test_k_nearest_neighbours_with_few_nodes():
 
 def _brute_force_gabriel(lT, t):
     nodes = sorted(lT.time_nodes[t])
-    pos = {n: lT.pos[n] * lT.spatial_resolution for n in nodes}
+    pos = {n: lT.raw_pos[n] * lT.spatial_resolution for n in nodes}
     graph = {n: set() for n in nodes}
     for a, b in combinations(nodes, 2):
         centre = (pos[a] + pos[b]) / 2
