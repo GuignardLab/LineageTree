@@ -186,7 +186,8 @@ class LineageTree(
         Only the nodes in ``node_list`` and the edges between them are kept.
         Times, positions, the name and the custom properties are carried over.
         Custom properties are passed as they are, so they may still hold
-        values for nodes that were dropped.
+        values for nodes that were dropped. Ids that are not nodes of the
+        tree are ignored.
 
         Parameters
         ----------
@@ -199,14 +200,15 @@ class LineageTree(
         LineageTree
             A new lineage tree; this one is left unchanged.
         """
+        node_list = self.nodes.intersection(node_list)
         new_successors = {
             n: tuple(vi for vi in self.successor[n] if vi in node_list)
             for n in node_list
         }
         return LineageTree(
             successor=new_successors,
-            time=self._time,
-            pos=self.pos,
+            time={n: self._time[n] for n in node_list},
+            pos={n: self.pos[n] for n in node_list if n in self.pos},
             name=self.name,
             root_leaf_value=[
                 (),

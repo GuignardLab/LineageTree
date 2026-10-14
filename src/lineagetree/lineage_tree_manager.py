@@ -165,9 +165,9 @@ class LineageTreeManager:
     def add(self, other_tree: LineageTree, name: str = ""):
         """Add a lineage tree to the manager.
 
-        A tree equal to one already in the manager (same topology and times)
-        is not added again. A tree added under an existing name replaces the
-        tree stored under that name.
+        A tree already in the manager (the same object) is not added again.
+        A tree added under an existing name replaces the tree stored under
+        that name.
 
         Parameters
         ----------
@@ -181,7 +181,7 @@ class LineageTreeManager:
         Returns
         -------
         bool or None
-            False if an equal tree is already in the manager, None otherwise.
+            False if the tree is already in the manager, None otherwise.
 
         Raises
         ------
@@ -190,7 +190,7 @@ class LineageTreeManager:
         """
         if isinstance(other_tree, LineageTree):
             for tree in self.lineagetrees.values():
-                if tree == other_tree:
+                if tree is other_tree:
                     return False
             if name:
                 self.lineagetrees[name] = other_tree
@@ -207,13 +207,17 @@ class LineageTreeManager:
                 "Please add a LineageTree object or add time resolution to the LineageTree added."
             )
 
-    def __add__(self, other: LineageTree):
+    def __add__(self, other: LineageTree) -> LineageTreeManager:
         """Add ``other`` to the manager in place; see ``add``.
 
-        Returns None, so write ``lTm + lT`` as a statement, not
-        ``lTm = lTm + lT``.
+        Returns
+        -------
+        LineageTreeManager
+            The manager itself, so that ``lTm = lTm + lT`` and ``lTm += lT``
+            work.
         """
         self.add(other)
+        return self
 
     def write(self, fname: str):
         """Save the manager and all its trees to a ``.lTM`` file.
