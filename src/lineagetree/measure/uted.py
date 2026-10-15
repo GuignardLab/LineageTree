@@ -432,6 +432,8 @@ def plot_tree_distance_graphs(
     plt.Axes
             The axes of the plot
     """  # noqa: E501
+    import textwrap
+
     parameters = (
         end_time,
         convert_style_to_number(style=style, downsample=downsample),
@@ -606,7 +608,6 @@ def plot_tree_distance_graphs(
     )
     for node in to_reverse_back:
         lT._successor[node] = list(reversed(lT._successor[node]))
-    print("PEos")
     cax = fig.add_axes([0.25, 0.10, 0.50, 0.01])
     for x in ax:
         for s in x.spines.values():
@@ -614,6 +615,24 @@ def plot_tree_distance_graphs(
     sm = mpl.cm.ScalarMappable(cmap=cmap, norm=c_norm)
     sm.set_array([])
     fig.colorbar(sm, cax=cax, orientation="horizontal")
+
+    title_1 = lT.labels.get(n1, n1)
+    title_2 = lT.labels.get(n2, n2)
+
+    wrap_width = 30
+    ax[0].set_title(
+        textwrap.fill(title_1, width=wrap_width),
+        loc="center",
+        pad=10,
+    )
+    ax[1].set_title(
+        textwrap.fill(title_2, width=wrap_width),
+        loc="center",
+        pad=10,
+    )
+
+    fig = ax[0].get_figure()
+    fig.subplots_adjust(left=0.02, right=0.98, wspace=0.2)
 
     return ax[0].get_figure(), ax
 

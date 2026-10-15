@@ -639,6 +639,7 @@ class LineageTreeManager:
         plt.Axes
             The matplotlib axes.
         """  # noqa: E501
+        import textwrap
 
         parameters = (
             (end_time1, end_time2),
@@ -868,6 +869,24 @@ class LineageTreeManager:
         sm = mpl.cm.ScalarMappable(cmap=cmap, norm=c_norm)
         sm.set_array([])
         fig.colorbar(sm, cax=cax, orientation="horizontal")
+
+        title_1 = embryo_1 + "-" + str(self[embryo_1].labels.get(n1, n1))
+        title_2 = embryo_2 + "-" + str(self[embryo_2].labels.get(n2, n2))
+
+        wrap_width = 30
+        ax[0].set_title(
+            textwrap.fill(title_1, width=wrap_width),
+            loc="center",
+            pad=10,
+        )
+        ax[1].set_title(
+            textwrap.fill(title_2, width=wrap_width),
+            loc="center",
+            pad=10,
+        )
+
+        fig = ax[0].get_figure()
+        fig.subplots_adjust(left=0.02, right=0.98, wspace=0.2)
         return ax[0].get_figure(), ax
 
     def labelled_mappings(
