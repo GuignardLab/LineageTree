@@ -5,8 +5,9 @@ import pickle as pkl
 import warnings
 from collections.abc import Callable, Generator, Iterable
 from functools import partial
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, ClassVar, Literal
 
+import matplotlib as mpl
 import matplotlib.colors as mcolors
 import numpy as np
 from matplotlib import colormaps
@@ -18,14 +19,15 @@ try:
     from edist import uted
 except ImportError:
     warnings.warn(
-        "No edist installed therefore you will not be able to compute the tree edit distance.",
+        """No edist installed therefore you will not be able
+        to compute the tree edit distance.""",
         stacklevel=2,
     )
 import matplotlib.pyplot as plt
 from edist import uted
 
-from .tree_approximation import TreeApproximationTemplate
 from ._core.utils import convert_style_to_number
+from .tree_approximation import TreeApproximationTemplate
 
 if TYPE_CHECKING:
     from edist.alignment import Alignment
@@ -65,7 +67,11 @@ class LineageTreeManager:
     0.25
     """
 
-    norm_dict = {"max": max, "sum": sum, None: lambda x: 1}
+    norm_dict: ClassVar[dict[str | None, Callable]] = {
+        "max": max,
+        "sum": sum,
+        None: lambda x: 1,
+    }
 
     def __init__(self, lineagetree_list: Iterable[LineageTree] = ()):
         """Create a LineageTreeManager.
@@ -159,7 +165,8 @@ class LineageTreeManager:
             return 1
         else:
             raise ValueError(
-                "You cannot calculate the greatest common divisor of time resolutions with an empty manager."
+                """You cannot calculate the greatest common divisor
+                  of time resolutions with an empty manager."""
             )
 
     def add(self, other_tree: LineageTree, name: str = ""):
@@ -204,7 +211,8 @@ class LineageTreeManager:
                     self.lineagetrees[name].name = name
         else:
             raise Exception(
-                "Please add a LineageTree object or add time resolution to the LineageTree added."
+                """Please add a LineageTree object
+               or add time resolution to the LineageTree added."""
             )
 
     def __add__(self, other: LineageTree) -> LineageTreeManager:
@@ -334,7 +342,7 @@ class LineageTreeManager:
             - ``'alignment'``: the alignment between the nodes of the subtrees
               spawned by ``n1`` and ``n2``,
             - ``'trees'``: the two trees that have been mapped to each other.
-        """
+        """  # noqa: E501
         if (
             self[embryo_1].time_resolution <= 0
             or self[embryo_2].time_resolution <= 0
@@ -415,7 +423,8 @@ class LineageTreeManager:
         norm1: int | float,
         norm2: int | float,
     ) -> float:
-        """Calculate the distance of the subtree of a node matched in a comparison.
+        """Calculate the distance of the subtree of a node matched in a
+        comparison.
 
         This does not calculate the distance from scratch but reuses the
         existing alignment.
@@ -537,6 +546,7 @@ class LineageTreeManager:
 
         Returns
         -------
+
         float or tuple of (float, tuple of (float, float))
             The normalised distance between the two subtrees. With
             ``return_norms=True``, the tuple ``(cost, (norm1, norm2))``, where
@@ -548,7 +558,7 @@ class LineageTreeManager:
             If the time resolution of either tree is not set.
         ValueError
             If ``norm`` is not one of the values above.
-        """
+        """  # noqa: E501
 
         parameters = (
             (end_time1, end_time2),
@@ -574,7 +584,8 @@ class LineageTreeManager:
             )
         if len(self._comparisons) > 100:
             warnings.warn(
-                "More than 100 comparisons are saved, use clear_comparisons() to delete them.",
+                """More than 100 comparisons are saved,
+                use clear_comparisons() to delete them.""",
                 stacklevel=2,
             )
         btrc = tmp["alignment"]
@@ -691,7 +702,8 @@ class LineageTreeManager:
             The matplotlib figure.
         numpy.ndarray of plt.Axes
             The two axes.
-        """
+        """  # noqa: E501
+        import textwrap
 
         parameters = (
             (end_time1, end_time2),
@@ -742,10 +754,37 @@ class LineageTreeManager:
         matched_left = []
         colors1 = {}
         colors2 = {}
+        to_reverse_back = []
+
         if style not in ("full", "downsampled"):
             for m in btrc:
                 if m._left != -1 and m._right != -1:
-                    cyc1 = tree1.lT.get_chain_of_node(corres1[m._left])
+                    node_1 = corres1[m._left]
+                    node_2 = corres2[m._right]
+                    if (
+                        (
+                            node_1 not in tree1.lT.roots
+                            and node_2 not in tree2.lT.roots
+                        )
+                        and tree2.lT.predecessor[node_2] not in to_reverse_back
+                        and tree1.lT.successor[
+                            tree1.lT.predecessor[node_1][0]
+                        ].index(node_1)
+                        != tree2.lT.successor[
+                            tree2.lT.predecessor[node_2][0]
+                        ].index(node_2)
+                    ):
+                        tree2.lT._successor[
+                            tree2.lT.predecessor[node_2][0]
+                        ] = list(
+                            reversed(
+                                tree2.lT.successor[
+                                    tree2.lT.predecessor[node_2][0]
+                                ]
+                            )
+                        )
+                        to_reverse_back.append(tree2.lT.predecessor[node_2][0])
+                    cyc1 = tree1.lT.get_chain_of_node(node_1)
                     if len(cyc1) > 1:
                         node_1, *_, l_node_1 = cyc1
                         matched_left.append(node_1)
@@ -754,7 +793,7 @@ class LineageTreeManager:
                         node_1 = l_node_1 = cyc1.pop()
                         matched_left.append(node_1)
 
-                    cyc2 = tree2.lT.get_chain_of_node(corres2[m._right])
+                    cyc2 = tree2.lT.get_chain_of_node(node_2)
                     if len(cyc2) > 1:
                         node_2, *_, l_node_2 = cyc2
                         matched_right.append(node_2)
@@ -784,12 +823,37 @@ class LineageTreeManager:
         else:
             for m in btrc:
                 if m._left != -1 and m._right != -1:
+
                     node_1 = tree1.lT.get_chain_of_node(corres1[m._left])[0]
                     node_2 = tree2.lT.get_chain_of_node(corres2[m._right])[0]
                     if (
-                        tree1.lT.get_chain_of_node(node_1)[0] == node_1
-                        or tree2.lT.get_chain_of_node(node_2)[0] == node_2
-                        and (node_1 not in colors1 or node_2 not in colors2)
+                        (
+                            node_1 not in tree1.lT.roots
+                            and node_2 not in tree2.lT.roots
+                        )
+                        and tree2.lT.predecessor[node_2] not in to_reverse_back
+                        and tree1.lT.successor[
+                            tree1.lT.predecessor[node_1][0]
+                        ].index(node_1)
+                        != tree2.lT.successor[
+                            tree2.lT.predecessor[node_2][0]
+                        ].index(node_2)
+                    ):
+                        tree2.lT._successor[
+                            tree2.lT.predecessor[node_2][0]
+                        ] = list(
+                            reversed(
+                                tree2.lT.successor[
+                                    tree2.lT.predecessor[node_2][0]
+                                ]
+                            )
+                        )
+                        to_reverse_back.append(tree2.lT.predecessor[node_2][0])
+
+                    if not colors1.get(
+                        tree1.lT.get_chain_of_node(node_1)[0]
+                    ) or not colors2.get(
+                        tree2.lT.get_chain_of_node(node_2)[0]
                     ):
                         matched_left.append(node_1)
                         l_node_1 = tree1.lT.get_chain_of_node(node_1)[-1]
@@ -812,6 +876,14 @@ class LineageTreeManager:
                                 tree2.get_norm(node_2),
                             )
                         )
+                        for n1 in tree1.lT.get_chain_of_node(node_1):
+                            colors1[n1] = colors1[
+                                tree1.lT.get_chain_of_node(node_1)[0]
+                            ]
+                        for n2 in tree2.lT.get_chain_of_node(node_2):
+                            colors2[n2] = colors1[
+                                tree1.lT.get_chain_of_node(node_1)[0]
+                            ]
                         colors2[node_2] = colors1[node_1]
                         colors1[tree1.lT.get_chain_of_node(node_1)[-1]] = (
                             colors1[node_1]
@@ -820,14 +892,6 @@ class LineageTreeManager:
                             colors2[node_2]
                         )
 
-                        if tree1.lT.get_chain_of_node(node_1)[-1] != node_1:
-                            matched_left.append(
-                                tree1.lT.get_chain_of_node(node_1)[-1]
-                            )
-                        if tree2.lT.get_chain_of_node(node_2)[-1] != node_2:
-                            matched_right.append(
-                                tree2.lT.get_chain_of_node(node_2)[-1]
-                            )
         if ax is None:
             fig, ax = plt.subplots(nrows=1, ncols=2)
         cmap = colormaps[colormap]
@@ -858,6 +922,35 @@ class LineageTreeManager:
             lw=lw,
             ax=ax[1],
         )
+        for node in to_reverse_back:
+            tree2.lT._successor[node] = list(
+                reversed(tree2.lT._successor[node])
+            )
+        cax = fig.add_axes([0.25, 0.10, 0.50, 0.01])
+        for x in ax:
+            for s in x.spines.values():
+                s.set_visible(False)
+        sm = mpl.cm.ScalarMappable(cmap=cmap, norm=c_norm)
+        sm.set_array([])
+        fig.colorbar(sm, cax=cax, orientation="horizontal")
+
+        title_1 = str(embryo_1) + "-" + str(self[embryo_1].labels.get(n1, n1))
+        title_2 = str(embryo_2) + "-" + str(self[embryo_2].labels.get(n2, n2))
+
+        wrap_width = 30
+        ax[0].set_title(
+            textwrap.fill(title_1, width=wrap_width),
+            loc="center",
+            pad=10,
+        )
+        ax[1].set_title(
+            textwrap.fill(title_2, width=wrap_width),
+            loc="center",
+            pad=10,
+        )
+
+        fig = ax[0].get_figure()
+        fig.subplots_adjust(left=0.02, right=0.98, wspace=0.2)
         return ax[0].get_figure(), ax
 
     def labelled_mappings(
@@ -918,7 +1011,7 @@ class LineageTreeManager:
               pairs,
             - ``'unmatched'``: list of ``(node, tree_name)`` pairs for the
               nodes of either tree that have no match.
-        """
+        """  # noqa: E501
 
         parameters = (
             (end_time1, end_time2),
