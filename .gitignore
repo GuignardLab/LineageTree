@@ -100,3 +100,5 @@ ty_check
 claude-outputs
 # documentation images
 !docs/images/*.png
+
+.Claude_outputs
