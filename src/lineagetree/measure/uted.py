@@ -225,7 +225,7 @@ def __unordereded_backtrace(
         - ``'trees'``: the two tree approximations that were aligned.
 
         Both are empty tuples when the two subtrees are empty.
-    """
+    """  # noqa: E501
 
     parameters = (
         end_time,
@@ -483,6 +483,8 @@ def plot_tree_distance_graphs(
     list of plt.Axes
         The two axes of the plot.
     """  # noqa: E501
+    import textwrap
+
     parameters = (
         end_time,
         convert_style_to_number(style=style, downsample=downsample),
@@ -665,8 +667,8 @@ def plot_tree_distance_graphs(
     sm.set_array([])
     fig.colorbar(sm, cax=cax, orientation="horizontal")
 
-    title_1 = lT.labels.get(n1, n1)
-    title_2 = lT.labels.get(n2, n2)
+    title_1 = str(lT.labels.get(n1, n1))
+    title_2 = str(lT.labels.get(n2, n2))
 
     wrap_width = 30
     ax[0].set_title(
@@ -735,7 +737,7 @@ def labelled_mappings(
         - ``'matched'``: list of ``(node_of_tree1, node_of_tree2)`` pairs,
         - ``'unmatched'``: list of the nodes of either tree that have no
           match.
-    """
+    """  # noqa: E501
     parameters = (
         end_time,
         convert_style_to_number(style=style, downsample=downsample),

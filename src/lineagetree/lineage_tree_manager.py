@@ -703,6 +703,7 @@ class LineageTreeManager:
         numpy.ndarray of plt.Axes
             The two axes.
         """  # noqa: E501
+        import textwrap
 
         parameters = (
             (end_time1, end_time2),
@@ -933,8 +934,8 @@ class LineageTreeManager:
         sm.set_array([])
         fig.colorbar(sm, cax=cax, orientation="horizontal")
 
-        title_1 = embryo_1 + "-" + str(self[embryo_1].labels.get(n1, n1))
-        title_2 = embryo_2 + "-" + str(self[embryo_2].labels.get(n2, n2))
+        title_1 = str(embryo_1) + "-" + str(self[embryo_1].labels.get(n1, n1))
+        title_2 = str(embryo_2) + "-" + str(self[embryo_2].labels.get(n2, n2))
 
         wrap_width = 30
         ax[0].set_title(
