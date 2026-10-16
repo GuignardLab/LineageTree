@@ -49,6 +49,11 @@ class LineageTree(
     neighbours, …), tree comparison (unordered tree edit distance, dynamic
     time warping) and writing to disk (pickle, SVG, Tulip).
 
+    Positions are kept twice: ``raw_pos`` holds the values read from the
+    data, and ``pos`` holds them multiplied by ``spatial_resolution``, so
+    that every method works in physical units. Changing
+    ``spatial_resolution`` rescales ``pos``.
+
     To create a ``LineageTree`` from a file, use one of the ``read_from_*``
     functions of the ``lineagetree`` package, or
     [`LineageTree.load`][lineagetree.LineageTree.load] for ``.lT`` files.
@@ -63,6 +68,16 @@ class LineageTree(
     ([0], [1, 2])
     >>> dict(lT.time)
     {0: 0, 1: 1, 2: 1}
+
+    Positions in voxels, with anisotropic voxels:
+
+    >>> lT = LineageTree(
+    ...     successor={0: []},
+    ...     pos={0: [10, 10, 4]},
+    ...     spatial_resolution=(0.5, 0.5, 2),
+    ... )
+    >>> lT.pos[0].tolist(), lT.raw_pos[0].tolist()
+    ([5.0, 5.0, 8.0], [10.0, 10.0, 4.0])
     """
 
     def __eq__(self, other) -> bool:
@@ -100,6 +115,10 @@ class LineageTree(
         leading underscore).  This method remaps those to the current private
         names before calling ``__dict__.update``.
 
+        Files written before ``raw_pos`` existed stored the unscaled
+        positions in ``pos``: they become ``raw_pos``, and ``pos`` is
+        recomputed from the stored ``spatial_resolution``.
+
         Parameters
         ----------
         state : dict
@@ -111,7 +130,16 @@ class LineageTree(
             state["_predecessor"] = state["predecessor"]
         if "_time" not in state:
             state["_time"] = state["time"]
+        legacy_resolution = state.pop("spatial_resolution", None)
+        migrate = "raw_pos" not in state
+        if migrate:
+            state["raw_pos"] = {
+                node: np.array(position, dtype=float)
+                for node, position in state.get("pos", {}).items()
+            }
         self.__dict__.update(state)
+        if migrate or "_spatial_resolution" not in state:
+            self.spatial_resolution = legacy_resolution
 
     @classmethod
     def load(clf, fname: str):
@@ -121,7 +149,9 @@ class LineageTree(
         [`LineageTree.write`][lineagetree.LineageTree.write]. Files written
         by versions older than 2.0 are converted to the current format, and
         attributes missing from older files (``time_resolution``,
-        ``spatial_resolution``, ``temporal``) are set to their defaults.
+        ``spatial_resolution``, ``temporal``) are set to their defaults. In
+        files written before ``raw_pos`` existed, ``pos`` held the unscaled
+        positions: they become ``raw_pos`` and ``pos`` is rescaled.
 
         Parameters
         ----------
@@ -156,6 +186,7 @@ class LineageTree(
                     "_predecessor",
                     "_time",
                     "pos",
+                    "raw_pos",
                     "labels",
                 ]
                 + LineageTree._dynamic_properties
@@ -164,17 +195,13 @@ class LineageTree(
             lT = LineageTree(
                 successor=lT._successor,
                 time=lT._time,
-                pos=lT.pos,
+                pos=lT.raw_pos,
+                spatial_resolution=lT.spatial_resolution,
                 name=lT.name if hasattr(lT, "name") else None,
                 **properties,
             )
-        lT.pos = {
-            node: np.array(pos, dtype=float) for node, pos in lT.pos.items()
-        }
         if not hasattr(lT, "time_resolution"):
             lT.time_resolution = 1
-        if not hasattr(lT, "spatial_resolution"):
-            lT.spatial_resolution = np.ones(3)
         if not hasattr(lT, "_temporal"):
             lT._temporal = True
 
@@ -208,7 +235,8 @@ class LineageTree(
         return LineageTree(
             successor=new_successors,
             time={n: self._time[n] for n in node_list},
-            pos={n: self.pos[n] for n in node_list if n in self.pos},
+            pos={n: self.raw_pos[n] for n in node_list if n in self.raw_pos},
+            spatial_resolution=self.spatial_resolution,
             name=self.name,
             root_leaf_value=[
                 (),
@@ -255,7 +283,10 @@ class LineageTree(
             Time point of the roots when ``time`` is not given. Defaults to 0.
             Ignored, with a warning, when ``time`` is given.
         pos : dict of {int: Iterable of float}, optional
-            Maps each node to its position. If given, every node needs one.
+            Maps each node to its position, in the units of the data (e.g.
+            voxels). If given, every node needs one. The values are kept in
+            ``raw_pos``; ``pos`` holds them multiplied by
+            ``spatial_resolution``.
         name : str, optional
             Name of the lineage tree.
         root_leaf_value : Sequence, optional
@@ -263,9 +294,9 @@ class LineageTree(
             successors (leaf) in ``successor`` or ``predecessor``. Defaults
             to ``[None, (), [], set()]``.
         spatial_resolution : Sequence of float, optional
-            Size of a unit of ``pos`` along each spatial dimension, used by
-            the spatial methods. Must have one value per dimension of the
-            positions. Defaults to ones.
+            Size of a unit of ``pos`` along each spatial dimension (e.g. the
+            voxel size). Must have one positive value per dimension of the
+            positions. Defaults to ones, i.e. positions are used as given.
         temporal : bool, default=True
             Whether the tree has a time dimension. Set to False for static
             trees such as neuron morphologies.
@@ -282,7 +313,7 @@ class LineageTree(
             more than one predecessor, if the graph has a cycle, if ``pos``
             misses a node, if times do not strictly increase along an edge,
             or if ``spatial_resolution`` does not match the dimension of the
-            positions.
+            positions or is not positive.
         TypeError
             If a successor entry or ``root_leaf_value`` is not iterable.
         """
@@ -360,14 +391,16 @@ class LineageTree(
             )
 
         if pos is None or len(pos) == 0:
-            self.pos = {}
+            self.raw_pos = {}
         else:
             if self.nodes.difference(pos) != set():
                 raise ValueError("Please provide the position of all nodes.")
-            self.pos = {
+            self.raw_pos = {
                 node: np.array(position, dtype=float)
                 for node, position in pos.items()
             }
+        # rescaled by `spatial_resolution` at the end of `__init__`
+        self.pos = dict(self.raw_pos)
         if "labels" in kwargs:
             self._labels = kwargs["labels"]
             kwargs.pop("labels")
@@ -431,20 +464,4 @@ class LineageTree(
         if not hasattr(self, "_comparisons"):
             self._comparisons = {}
 
-        spatia_dimension = (
-            len(self.pos[next(iter(self.nodes))])
-            if self.nodes and self.pos
-            else 3
-        )
-        if self.nodes and spatial_resolution is not None:
-            if len(spatial_resolution) == spatia_dimension:
-                self.spatial_resolution = np.array(spatial_resolution)
-            else:
-                raise ValueError(
-                    "The spatial resolution should have the same dimension as the one of the positions:\n"
-                    f"{len(spatial_resolution)=}, spatial dimension={spatia_dimension}"
-                )
-        else:
-            self.spatial_resolution = spatial_resolution or np.ones(
-                spatia_dimension
-            )
+        self.spatial_resolution = spatial_resolution

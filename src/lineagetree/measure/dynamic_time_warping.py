@@ -300,8 +300,8 @@ def dtw(
     ``nodes2`` are aligned in time so that the sum of the distances between
     aligned positions is minimal. The distance is that sum divided by the
     length of the alignment, i.e. the mean distance between aligned
-    positions. Positions are used as they are, without
-    ``spatial_resolution``, and must be 3D.
+    positions. Positions are taken from ``lT.pos``, so they are in physical
+    units (see ``spatial_resolution``), and must be 3D.
 
     Parameters
     ----------

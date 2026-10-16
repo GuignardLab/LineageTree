@@ -276,6 +276,77 @@ def time_resolution(lT, time_resolution: float) -> None:
         lT._time_resolution = 0
 
 
+# Spatial graphs computed from `pos`; they are stale once `pos` is rescaled.
+_SPATIAL_CACHES = (
+    "kdtrees",
+    "Gabriel_graph",
+    "kn_graph",
+    "kn_distances",
+    "th_edges",
+)
+
+
+@property
+def spatial_resolution(lT: LineageTree) -> np.ndarray:
+    """Size of a unit of ``raw_pos`` along each spatial dimension.
+
+    ``lT.pos`` always holds ``lT.raw_pos`` multiplied by this resolution, so
+    positions, distances and spatial graphs are in physical units. Setting it
+    rescales ``lT.pos`` from ``lT.raw_pos`` and clears the cached spatial
+    graphs (``kdtrees``, ``Gabriel_graph``, ``kn_graph``, ``kn_distances``,
+    ``th_edges``).
+
+    Examples
+    --------
+    >>> from lineagetree import LineageTree
+    >>> lT = LineageTree(successor={0: []}, pos={0: [1, 2, 3]})
+    >>> lT.spatial_resolution = (1, 1, 5)
+    >>> lT.pos[0].tolist(), lT.raw_pos[0].tolist()
+    ([1.0, 2.0, 15.0], [1.0, 2.0, 3.0])
+    """
+    return lT._spatial_resolution
+
+
+@spatial_resolution.setter
+def spatial_resolution(lT: LineageTree, spatial_resolution) -> None:
+    """Set the resolution and rescale ``lT.pos`` from ``lT.raw_pos``.
+
+    Parameters
+    ----------
+    spatial_resolution : Sequence of float or None
+        One positive value per spatial dimension. None means ones.
+
+    Raises
+    ------
+    ValueError
+        If the number of values differs from the dimension of the
+        positions, or if a value is not positive.
+    """
+    raw_pos = getattr(lT, "raw_pos", {})
+    dimension = len(next(iter(raw_pos.values()))) if raw_pos else 3
+    if spatial_resolution is None:
+        spatial_resolution = np.ones(dimension)
+    spatial_resolution = np.array(spatial_resolution, dtype=float).ravel()
+    if raw_pos and len(spatial_resolution) != dimension:
+        raise ValueError(
+            "The spatial resolution should have the same dimension as the "
+            "one of the positions:\n"
+            f"len(spatial_resolution)={len(spatial_resolution)}, "
+            f"spatial dimension={dimension}"
+        )
+    if (spatial_resolution <= 0).any():
+        raise ValueError(
+            f"The spatial resolution should be positive, got {spatial_resolution}."
+        )
+    lT._spatial_resolution = spatial_resolution
+    lT.pos = {
+        node: position * spatial_resolution
+        for node, position in raw_pos.items()
+    }
+    for cache in _SPATIAL_CACHES:
+        lT.__dict__.pop(cache, None)
+
+
 @dynamic_property
 def all_chains(lT: LineageTree) -> tuple[tuple[int]]:
     """Tuple of all the chains of the tree, each a tuple of node ids.

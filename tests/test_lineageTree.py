@@ -789,35 +789,54 @@ def test_plot_chain_hist():
     )
 
 
+def _copy_positions(lT):
+    return (
+        {node: p.copy() for node, p in lT.pos.items()},
+        {node: p.copy() for node, p in lT.raw_pos.items()},
+    )
+
+
+def _restore_positions(lT, raw_pos):
+    lT.raw_pos = raw_pos
+    # recomputes `pos` from `raw_pos`
+    lT.spatial_resolution = lT.spatial_resolution
+
+
+def _check_moved_positions(lT, initial_pos):
+    """`old_pos` keeps the initial positions; `raw_pos` follows `pos`."""
+    assert lT.old_pos.keys() == initial_pos.keys()
+    assert all(
+        np.array_equal(lT.old_pos[node], p) for node, p in initial_pos.items()
+    )
+    assert all(
+        np.allclose(lT.raw_pos[node] * lT.spatial_resolution, p)
+        for node, p in lT.pos.items()
+    )
+
+
 def test_stabilise_positions():
-    raw_pos = {node: p.copy() for node, p in lT1.pos.items()}
+    initial_pos, raw_pos = _copy_positions(lT1)
     try:
         new_pos = lT1.stabilise_positions()
         assert np.isclose(
             new_pos[148361],
             np.array([1019.66762163, 400.25591182, 287.54520521]),
         ).all()
-        assert lT1.old_pos.keys() == raw_pos.keys()
-        assert all(
-            np.array_equal(lT1.old_pos[node], p) for node, p in raw_pos.items()
-        )
+        _check_moved_positions(lT1, initial_pos)
     finally:
-        lT1.pos = raw_pos
+        _restore_positions(lT1, raw_pos)
 
 
 def test_smoothing():
-    raw_pos = {node: p.copy() for node, p in lt.pos.items()}
+    initial_pos, raw_pos = _copy_positions(lt)
     try:
         new_pos = lt.smooth_trajectories()
         assert np.isclose(
             new_pos[1552], np.array([462.15385069, 907.17562352, 419.54303692])
         ).all()
-        assert lt.old_pos.keys() == raw_pos.keys()
-        assert all(
-            np.array_equal(lt.old_pos[node], p) for node, p in raw_pos.items()
-        )
+        _check_moved_positions(lt, initial_pos)
     finally:
-        lt.pos = raw_pos
+        _restore_positions(lt, raw_pos)
 
 
 def test_get_shortest_path_and_last_common_ancestor():
