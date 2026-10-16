@@ -14,31 +14,40 @@ if TYPE_CHECKING:
 
 
 def _get_height(lT: LineageTree, c: int, done: dict) -> float:
-    """Recursively compute the height of a node times a space factor.
+    """Compute the horizontal position of a node and its descendants.
 
-    This function is specific to :func:`write_to_svg`.
+    The position of a node is the mean of the positions of its successors;
+    leaves must already be in ``done``. This function is specific to
+    ``write_to_svg``.
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     c : int
-        Id of the node from which the height is computed.
-    done : dict of {int: list of int}
-        A dictionary that maps a node id to its vertical and horizontal
-        position.
+        Id of the node from which the positions are computed.
+    done : dict of {int: list of float}
+        Maps a node id to its ``[x, y]`` position. Filled in place.
 
     Returns
     -------
     float
-        The height of the node ``c``.
+        The horizontal position of the node ``c``.
     """
-    if c in done:
-        return done[c][0]
-    else:
-        P = np.mean([lT._get_height(di, done) for di in lT._successor[c]])
-        done[c] = [P, lT.vert_space_factor * lT._time[c]]
-        return P
+    to_do = [c]
+    while to_do:
+        curr = to_do[-1]
+        if curr in done:
+            to_do.pop()
+            continue
+        missing = [di for di in lT._successor[curr] if di not in done]
+        if missing:
+            to_do.extend(missing)
+            continue
+        to_do.pop()
+        x = np.mean([done[di][0] for di in lT._successor[curr]])
+        done[curr] = [x, lT.vert_space_factor * lT._time[curr]]
+    return done[c][0]
 
 
 def write_to_svg(
@@ -67,16 +76,17 @@ def write_to_svg(
     lT : LineageTree
         The LineageTree instance.
     file_name : str
-        Filesystem filename valid for ``open()``.
+        Path of the SVG file to create.
     roots : list of int, optional
-        List of node ids to be drawn. If None, all the nodes are drawn.
-        Defaults to ``lT.roots``.
+        The nodes whose subtrees are drawn. Defaults to all the roots
+        (except, for ASTEC data, those whose ``image_label`` is 1).
     draw_nodes : bool, default=True
         Whether to draw the nodes.
     draw_edges : bool, default=True
         Whether to draw the edges.
     order_key : Callable, optional
-        Function usable as the ``key`` argument of ``sort``/``sorted``.
+        Function usable as the ``key`` argument of ``sort``/``sorted``, used
+        to order the roots and the successors.
     vert_space_factor : float, default=0.5
         The vertical position of a node is its time; ``vert_space_factor`` is a
         multiplier to space nodes more or less in time.
@@ -103,9 +113,9 @@ def write_to_svg(
     positions : dict of {int: list of float}, optional
         Dictionary that maps a node id to a 2D position. If provided, it is used
         to position the nodes.
-    node_color_map : Callable or str, optional
-        The name of the colormap to use to colour the nodes, or a colormap
-        function.
+    node_color_map : str, optional
+        Name of the matplotlib colormap used when ``node_color`` or
+        ``stroke_color`` is a property name. Defaults to ``"viridis"``.
     """
 
     def normalize_values(v, nodes, _range, shift, mult):
@@ -116,17 +126,19 @@ def write_to_svg(
         return lambda x: values_dict_nodes[x] * mult
 
     if roots is None:
-        roots = lT.roots
+        roots = list(lT.roots)
         if hasattr(lT, "image_label"):
             roots = [node for node in roots if lT.image_label[node] != 1]
+    else:
+        roots = list(roots)
 
     if node_size is None:
 
         def node_size(x):
             return vert_space_factor / 2.1
 
-    else:
-        values = np.array([lT._successor[node_size][c] for c in lT.nodes])
+    elif isinstance(node_size, str):
+        values = np.array([getattr(lT, node_size)[c] for c in lT.nodes])
         node_size = normalize_values(
             values, lT.nodes, 0.5, 0.5, vert_space_factor / 2.1
         )
@@ -147,7 +159,7 @@ def write_to_svg(
             cmap = colormaps[node_color_map]
         else:
             cmap = colormaps["viridis"]
-        values = np.array([lT._successor[node_color][c] for c in lT.nodes])
+        values = np.array([getattr(lT, node_color)[c] for c in lT.nodes])
         normed_vals = normalize_values(values, lT.nodes, 1, 0, 1)
 
         def node_color(x):
@@ -166,7 +178,7 @@ def write_to_svg(
             cmap = colormaps[node_color_map]
         else:
             cmap = colormaps["viridis"]
-        values = np.array([lT._successor[stroke_color][c] for c in lT.nodes])
+        values = np.array([getattr(lT, stroke_color)[c] for c in lT.nodes])
         normed_vals = normalize_values(values, lT.nodes, 1, 0, 1)
 
         def stroke_color(x):
@@ -196,7 +208,7 @@ def write_to_svg(
         while len(to_do) != 0:
             curr = to_do.pop(0)
             treated_nodes += [curr]
-            if not lT._successor[curr]:
+            if lT._successor[curr]:
                 if order_key is not None:
                     to_do += sorted(lT._successor[curr], key=order_key)
                 else:
@@ -281,9 +293,11 @@ def write_to_tlp(
     spatial: str | None = None,
     write_layout: bool = True,
     node_properties: dict | None = None,
-    Names: bool = False,
+    Names: str | bool = False,
 ) -> None:
-    """Write a lineage tree into a Tulip file.
+    """Write a lineage tree into a Tulip (``.tlp``) file.
+
+    Tulip is a graph visualisation tool (https://tulip.labri.fr).
 
     Parameters
     ----------
@@ -292,31 +306,41 @@ def write_to_tlp(
     fname : str
         Path to the Tulip file to create.
     t_min : int, default=-1
-        Minimum time to consider.
+        Nodes at ``t_min`` or earlier are left out.
     t_max : int, default=np.inf
-        Maximum time to consider.
+        Nodes after ``t_max`` are left out.
     nodes_to_use : list of int, optional
-        List of nodes to show in the graph. If None, ``lT.nodes`` is used
-        (taking into account ``t_min`` and ``t_max``).
+        The nodes to write. If None, all the nodes between ``t_min`` and
+        ``t_max`` are written.
     temporal : bool, default=True
         Whether the temporal links should be written.
     spatial : {"ball", "kn", "GG"}, optional
-        Build spatial edges from a spatial neighbourhood graph, which has to be
-        computed before running this function:
+        Also write spatial edges from a spatial neighbourhood graph, which
+        has to be computed before running this function:
 
-        - ``"ball"``: neighbours at a given distance,
-        - ``"kn"``: k-nearest neighbours,
-        - ``"GG"``: Gabriel graph.
+        - ``"ball"``: neighbours within a distance, from
+          [`spatial_edges`][lineagetree.LineageTree.spatial_edges],
+        - ``"kn"``: k nearest neighbours, from
+          [`k_nearest_neighbours`][lineagetree.LineageTree.k_nearest_neighbours],
+        - ``"GG"``: Gabriel graph, from
+          [`gabriel_graph`][lineagetree.LineageTree.gabriel_graph].
 
         If None, no spatial edges are written.
+
+    Raises
+    ------
+    ValueError
+        If ``spatial`` is not one of the values above, or if the
+        corresponding graph has not been computed.
     write_layout : bool, default=True
         Whether to write the spatial position as layout.
     node_properties : dict of {str: list}, optional
-        A dictionary of properties to write. Each key (the property name) maps
-        to a pair of a dictionary (node id to property value) and a default
-        value for this property.
-    Names : bool, default=False
-        Only works with ASTEC outputs; if True, sort the nodes by their names.
+        Properties to write. Each key (the property name) maps to a pair made
+        of a dictionary (node id to property value) and a default value.
+    Names : str or bool, default=False
+        For ASTEC outputs only: the key of ``node_properties`` that holds the
+        cell names. The nodes are then written sorted by name. False to keep
+        the default order.
     """
 
     def format_names(names_which_matter):
@@ -334,22 +358,31 @@ def write_to_tlp(
 
     def spatial_adjlist_to_set(s_g):
         s_edges = set()
-        for _t, gg in s_g.items():
-            for c, N in gg.items():
-                s_edges.update([tuple(sorted([c, ni])) for ni in N])
+        for c, N in s_g.items():
+            s_edges.update(tuple(sorted([int(c), int(ni)])) for ni in N)
         return s_edges
+
+    if spatial:
+        spatial_graphs = {
+            "gg": ("Gabriel_graph", "gabriel_graph"),
+            "kn": ("kn_graph", "k_nearest_neighbours"),
+            "ball": ("th_edges", "spatial_edges"),
+        }
+        if spatial.lower() not in spatial_graphs:
+            raise ValueError(
+                f"spatial should be one of 'ball', 'kn' or 'GG', not {spatial!r}."
+            )
+        attr, method = spatial_graphs[spatial.lower()]
+        if not hasattr(lT, attr):
+            raise ValueError(
+                f"Compute the spatial graph with lT.{method}() before "
+                f"writing it with spatial={spatial!r}."
+            )
+        s_edges = spatial_adjlist_to_set(getattr(lT, attr))
 
     with open(fname, "w") as f:
         f.write('(tlp "2.0"\n')
         f.write("(nodes ")
-
-        if spatial:
-            if spatial.lower() == "gg" and hasattr(lT, "Gabriel_graph"):
-                s_edges = spatial_adjlist_to_set(lT.Gabriel_graph)
-            elif spatial.lower() == "kn" and hasattr(lT, "kn_graph"):
-                s_edges = spatial_adjlist_to_set(lT.kn_graph)
-            elif spatial.lower() == "ball" and hasattr(lT, "th_edges"):
-                s_edges = spatial_adjlist_to_set(lT.th_edges)
 
         if not nodes_to_use:
             if t_max != np.inf or t_min > -1:
@@ -382,7 +415,9 @@ def write_to_tlp(
                             edges_to_use.append((n, d))
             if spatial:
                 edges_to_use += [
-                    e for e in s_edges if t_min < lT._time[e[0]] < t_max
+                    e
+                    for e in s_edges
+                    if e[0] in nodes_to_use and e[1] in nodes_to_use
                 ]
         nodes_to_use = set(nodes_to_use)
         if Names:
@@ -466,14 +501,18 @@ def write_to_tlp(
 
 
 def write(lT: LineageTree, fname: str) -> None:
-    """Write a lineage tree on disk as an .lT file.
+    """Save the lineage tree to an ``.lT`` file.
+
+    The file can be read back with
+    [`LineageTree.load`][lineagetree.LineageTree.load].
 
     Parameters
     ----------
     lT : LineageTree
         The LineageTree instance.
     fname : str
-        path to and name of the file to save
+        Path to and name of the file to save. The ``.lT`` extension is added
+        if missing.
     """
     if os.path.splitext(fname)[-1].upper() != ".LT":
         fname = os.path.extsep.join((fname, "lT"))
