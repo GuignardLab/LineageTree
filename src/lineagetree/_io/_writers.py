@@ -13,7 +13,12 @@ if TYPE_CHECKING:
     from ..lineage_tree import LineageTree
 
 
-def _get_height(lT: LineageTree, c: int, done: dict) -> float:
+def _get_height(
+    lT: LineageTree,
+    c: int,
+    done: dict,
+    vert_space_factor: float | None = None,
+) -> float:
     """Compute the horizontal position of a node and its descendants.
 
     The position of a node is the mean of the positions of its successors;
@@ -28,12 +33,17 @@ def _get_height(lT: LineageTree, c: int, done: dict) -> float:
         Id of the node from which the positions are computed.
     done : dict of {int: list of float}
         Maps a node id to its ``[x, y]`` position. Filled in place.
+    vert_space_factor : float, optional
+        Multiplier from the time of a node to its vertical position.
+        Defaults to ``lT.vert_space_factor`` if the tree has one, else 1.
 
     Returns
     -------
     float
         The horizontal position of the node ``c``.
     """
+    if vert_space_factor is None:
+        vert_space_factor = getattr(lT, "vert_space_factor", 1)
     to_do = [c]
     while to_do:
         curr = to_do[-1]
@@ -46,7 +56,7 @@ def _get_height(lT: LineageTree, c: int, done: dict) -> float:
             continue
         to_do.pop()
         x = np.mean([done[di][0] for di in lT._successor[curr]])
-        done[curr] = [x, lT.vert_space_factor * lT._time[curr]]
+        done[curr] = [x, vert_space_factor * lT._time[curr]]
     return done[c][0]
 
 
@@ -69,7 +79,11 @@ def write_to_svg(
 ) -> None:
     """Write the lineage tree to an SVG file.
 
-    Node and edge colouring and size can be provided.
+    The leaves are placed from left to right in depth-first order, so that
+    the subtrees of two sister cells never overlap, and every other node is
+    centred above its successors. Time runs downwards. The canvas fits the
+    drawn nodes, with a small margin. Node and edge colouring and size can
+    be provided.
 
     Parameters
     ----------
@@ -184,98 +198,100 @@ def write_to_svg(
         def stroke_color(x):
             return [k * 255 for k in cmap(normed_vals(x))[:-1]]
 
-    prev_x = 0
-    lT.vert_space_factor = vert_space_factor
     if order_key is not None:
         roots.sort(key=order_key)
     treated_nodes = []
-
     pos_given = positions is not None
     if not pos_given:
-        positions = dict(
-            zip(
-                lT.nodes,
-                [
-                    [0.0, 0.0],
-                ]
-                * len(lT.nodes),
-                strict=True,
-            ),
-        )
-    for _i, r in enumerate(roots):
+        positions = {}
+    prev_x = 0
+    for r in roots:
+        # depth-first, so that the leaves of every subtree are next to each
+        # other, whatever the times at which the leaves end
         r_leaves = []
         to_do = [r]
-        while len(to_do) != 0:
-            curr = to_do.pop(0)
-            treated_nodes += [curr]
-            if lT._successor[curr]:
-                if order_key is not None:
-                    to_do += sorted(lT._successor[curr], key=order_key)
-                else:
-                    to_do += lT._successor[curr]
+        while to_do:
+            curr = to_do.pop()
+            treated_nodes.append(curr)
+            successors = list(lT._successor[curr])
+            if order_key is not None:
+                successors.sort(key=order_key)
+            if successors:
+                to_do.extend(reversed(successors))
             else:
-                r_leaves += [curr]
-        r_pos = {
-            leave: [
-                prev_x + horizontal_space * (1 + j),
-                lT.vert_space_factor * lT._time[leave],
-            ]
-            for j, leave in enumerate(r_leaves)
-        }
-        lT._get_height(r, r_pos)
-        prev_x = np.max(list(r_pos.values()), axis=0)[0]
+                r_leaves.append(curr)
         if not pos_given:
+            r_pos = {
+                leaf: [
+                    prev_x + horizontal_space * (1 + j),
+                    vert_space_factor * lT._time[leaf],
+                ]
+                for j, leaf in enumerate(r_leaves)
+            }
+            _get_height(lT, r, r_pos, vert_space_factor)
+            prev_x = max(x for x, _ in r_pos.values())
             positions.update(r_pos)
 
+    # frame the drawing: the canvas starts at the drawn nodes, with a margin
+    # for the nodes and the edges at its borders
+    margin = 1 + max(
+        [node_size(c) for c in treated_nodes] if draw_nodes else [0], default=0
+    )
+    margin += max([stroke_width(c) for c in treated_nodes], default=0)
+    if treated_nodes:
+        xy = factor * np.array(
+            [positions[c] for c in treated_nodes], dtype=float
+        )
+        low = xy.min(axis=0) - margin
+        size = xy.max(axis=0) - low + margin
+    else:
+        low, size = np.zeros(2), np.zeros(2)
+
+    def coords(node):
+        x, y = factor * np.asarray(positions[node], dtype=float) - low
+        return float(x), float(y)
+
     dwg = svgwrite.Drawing(
-        file_name,
-        profile="tiny",
-        size=factor * np.max(list(positions.values()), axis=0),
+        file_name, profile="tiny", size=(float(size[0]), float(size[1]))
     )
     if draw_edges and not draw_nodes and not coloring_edges:
         to_do = set(treated_nodes)
         while len(to_do) > 0:
             curr = to_do.pop()
-            c_chain = lT.get_chain_of_node(curr)
-            x1, y1 = positions[c_chain[0]]
-            x2, y2 = positions[c_chain[-1]]
+            c_chain = [n for n in lT.get_chain_of_node(curr) if n in positions]
             dwg.add(
                 dwg.line(
-                    (factor * x1, factor * y1),
-                    (factor * x2, factor * y2),
+                    coords(c_chain[0]),
+                    coords(c_chain[-1]),
                     stroke=svgwrite.rgb(0, 0, 0),
                 )
             )
             for si in lT._successor[c_chain[-1]]:
-                x3, y3 = positions[si]
                 dwg.add(
                     dwg.line(
-                        (factor * x2, factor * y2),
-                        (factor * x3, factor * y3),
+                        coords(c_chain[-1]),
+                        coords(si),
                         stroke=svgwrite.rgb(0, 0, 0),
                     )
                 )
             to_do.difference_update(c_chain)
     else:
         for c in treated_nodes:
-            x1, y1 = positions[c]
             for si in lT._successor[c]:
-                x2, y2 = positions[si]
                 if draw_edges:
                     dwg.add(
                         dwg.line(
-                            (factor * x1, factor * y1),
-                            (factor * x2, factor * y2),
+                            coords(c),
+                            coords(si),
                             stroke=svgwrite.rgb(*(stroke_color(si))),
                             stroke_width=svgwrite.pt(stroke_width(si)),
                         )
                     )
         for c in treated_nodes:
-            x1, y1 = positions[c]
             if draw_nodes:
                 dwg.add(
                     dwg.circle(
-                        (factor * x1, factor * y1),
+                        coords(c),
                         node_size(c),
                         fill=svgwrite.rgb(*(node_color(c))),
                     )
