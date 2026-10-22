@@ -1,0 +1,23 @@
+{
+  "C.elegans": {
+    "filename": "c.elegans.smoothed.lT",
+    "url": "https://zenodo.org/records/17061487/files/c.elegans.smoothed.lT?download=1",
+    "md5": "d5575e4f287253ba85c6aca387df932c",
+    "description": "C. elegans embryo WT-EMB08 (Li et al. 2019), with the positions of its cells and, mapped on them, 104 tissue-reporter recordings of the RNAi screen of Du et al. 2015",
+    "size_mb": 41.6
+  },
+  "C.elegans_wild_types": {
+    "filename": "celegans_bao_wild_types.lTM.xz",
+    "url": null,
+    "md5": "315e4d5bde99c2ddfd649285e6bd12c4",
+    "description": "30 wild-type C. elegans embryos lineaged by the Bao lab with a tissue reporter (10 per strain: pha-4, nhr-25, cnd-1), as a LineageTreeManager, xz-compressed",
+    "size_mb": 3.79
+  },
+  "C.elegans_RNAi_screen": {
+    "filename": "celegans_bao_rnai_screen.lTM.xz",
+    "url": null,
+    "md5": "4c3276efc40049072cc5e09658bbfdc5",
+    "description": "The 1,322 C. elegans embryos of the RNAi screen of Du et al. 2015 (204 genes, tissue reporters pha-4, nhr-25, cnd-1), as a LineageTreeManager, xz-compressed",
+    "size_mb": 111.93
+  }
+}

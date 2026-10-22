@@ -1,0 +1,6 @@
+# Data files: downloaded on first use (see datasets.json),
+# or made by prepare_bao_datasets.py
+*.lT
+*.lTM
+*.xz
+*.part
