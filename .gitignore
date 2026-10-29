@@ -102,3 +102,4 @@ claude-outputs
 !docs/images/*.png
 
 .Claude_outputs
+notebooks/data
