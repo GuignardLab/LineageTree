@@ -15,17 +15,19 @@ from functools import partial
 from itertools import combinations
 from typing import TYPE_CHECKING, Literal
 
-import numpy as np
+import matplotlib as mpl
 import matplotlib.colors as mcolors
+import numpy as np
 from edist import uted
 from matplotlib import colormaps
 from matplotlib import pyplot as plt
 
-from ..tree_approximation import TreeApproximationTemplate, tree_style
 from .._core.utils import convert_style_to_number
+from ..tree_approximation import TreeApproximationTemplate, tree_style
 
 if TYPE_CHECKING:
     from edist.alignment import Alignment
+
     from ..lineage_tree import LineageTree
 
 
@@ -78,7 +80,7 @@ def unordered_tree_edit_distances_at_time_t(
     dict of {tuple of (int, int): float}
         Maps each pair of nodes at time ``t``, as a sorted tuple, to their
         distance.
-    """
+    """  # noqa: E501
     if not hasattr(lT, "uted"):
         lT.uted = {}
     elif t in lT.uted and not recompute:
@@ -223,7 +225,7 @@ def __unordereded_backtrace(
         - ``'trees'``: the two tree approximations that were aligned.
 
         Both are empty tuples when the two subtrees are empty.
-    """
+    """  # noqa: E501
 
     parameters = (
         end_time,
@@ -233,7 +235,8 @@ def __unordereded_backtrace(
     lT._comparisons.setdefault(parameters, {})
     if len(lT._comparisons[parameters]) > 100:
         warnings.warn(
-            "More than 100 comparisons are saved, use clear_comparisons() to delete them.",
+            """More than 100 comparisons are saved,
+           use clear_comparisons() to delete them.""",
             stacklevel=2,
         )
     if isinstance(style, str):
@@ -361,7 +364,7 @@ def unordered_tree_edit_distance(
     >>> lT = LineageTree(successor={0: [1, 2], 1: [], 2: [3], 3: []})
     >>> float(lT.unordered_tree_edit_distance(1, 2, norm="max"))
     0.5
-    """
+    """  # noqa: E501
     parameters = (
         end_time,
         convert_style_to_number(style=style, downsample=downsample),
@@ -479,7 +482,9 @@ def plot_tree_distance_graphs(
         The figure of the plot.
     list of plt.Axes
         The two axes of the plot.
-    """
+    """  # noqa: E501
+    import textwrap
+
     parameters = (
         end_time,
         convert_style_to_number(style=style, downsample=downsample),
@@ -526,10 +531,23 @@ def plot_tree_distance_graphs(
     matched_right = []
     matched_left = []
     colors = {}
+    to_reverse_back = []
     if style not in ("full", "downsampled"):
         for m in btrc:
             if m._left != -1 and m._right != -1:
-                cyc1 = lT.get_chain_of_node(corres1[m._left])
+                node_1 = corres1[m._left]
+                node_2 = corres2[m._right]
+                if (
+                    (node_1 not in lT.roots and node_2 not in lT.roots)
+                    and lT.predecessor[node_2][0] not in to_reverse_back
+                    and lT.successor[lT.predecessor[node_1][0]].index(node_1)
+                    != lT.successor[lT.predecessor[node_2][0]].index(node_2)
+                ):
+                    lT._successor[lT.predecessor[node_2][0]] = list(
+                        reversed(lT.successor[lT.predecessor[node_2][0]])
+                    )
+                    to_reverse_back.append(lT.predecessor[node_2][0])
+                cyc1 = lT.get_chain_of_node(node_1)
                 if len(cyc1) > 1:
                     node_1, *_, l_node_1 = cyc1
                     matched_left.append(node_1)
@@ -538,7 +556,7 @@ def plot_tree_distance_graphs(
                     node_1 = l_node_1 = cyc1.pop()
                     matched_left.append(node_1)
 
-                cyc2 = lT.get_chain_of_node(corres2[m._right])
+                cyc2 = lT.get_chain_of_node(node_2)
                 if len(cyc2) > 1:
                     node_2, *_, l_node_2 = cyc2
                     matched_right.append(node_2)
@@ -566,34 +584,46 @@ def plot_tree_distance_graphs(
     else:
         for m in btrc:
             if m._left != -1 and m._right != -1:
-                node_1 = corres1[m._left]
-                node_2 = corres2[m._right]
-
+                node_1 = lT.get_chain_of_node(corres1[m._left])[0]
+                node_2 = lT.get_chain_of_node(corres2[m._right])[0]
                 if (
-                    lT.get_chain_of_node(node_1)[0] == node_1
-                    or lT.get_chain_of_node(node_2)[0] == node_2
-                ) and (node_1 not in colors or node_2 not in colors):
+                    (node_1 not in lT.roots and node_2 not in lT.roots)
+                    and lT.predecessor[node_2][0] not in to_reverse_back
+                    and lT._successor[lT.predecessor[node_1][0]].index(node_1)
+                    != lT._successor[lT.predecessor[node_2][0]].index(node_2)
+                ):
+                    lT._successor[lT.predecessor[node_2][0]] = list(
+                        reversed(lT.successor[lT.predecessor[node_2][0]])
+                    )
+                    to_reverse_back.append(lT.predecessor[node_2][0])
+
+                if not colors.get(
+                    lT.get_chain_of_node(node_1)[0]
+                ) or not colors.get(lT.get_chain_of_node(node_2)[0]):
                     matched_left.append(node_1)
                     l_node_1 = lT.get_chain_of_node(node_1)[-1]
                     matched_left.append(l_node_1)
                     matched_right.append(node_2)
                     l_node_2 = lT.get_chain_of_node(node_2)[-1]
                     matched_right.append(l_node_2)
-                    colors[node_1] = __calculate_distance_of_sub_tree(
-                        lT,
-                        node_1,
-                        node_2,
-                        btrc,
-                        corres1,
-                        corres2,
-                        delta_tmp,
-                        lT._norm_dict[norm],
-                        tree1.get_norm(node_1),
-                        tree2.get_norm(node_2),
+                    colors[lT.get_chain_of_node(node_1)[0]] = (
+                        __calculate_distance_of_sub_tree(
+                            lT,
+                            node_1,
+                            node_2,
+                            btrc,
+                            corres1,
+                            corres2,
+                            delta_tmp,
+                            lT._norm_dict[norm],
+                            tree1.get_norm(node_1),
+                            tree2.get_norm(node_2),
+                        )
                     )
-                    colors[l_node_1] = colors[node_1]
-                    colors[node_2] = colors[node_1]
-                    colors[l_node_2] = colors[node_1]
+                    for n1 in lT.get_chain_of_node(node_1):
+                        colors[n1] = colors[lT.get_chain_of_node(node_1)[0]]
+                    for n2 in lT.get_chain_of_node(node_2):
+                        colors[n2] = colors[lT.get_chain_of_node(node_1)[0]]
     if ax is None:
         fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True)
     cmap = colormaps[colormap]
@@ -627,6 +657,34 @@ def plot_tree_distance_graphs(
         lw=lw,
         ax=ax[1],
     )
+    for node in to_reverse_back:
+        lT._successor[node] = list(reversed(lT._successor[node]))
+    cax = fig.add_axes([0.25, 0.10, 0.50, 0.01])
+    for x in ax:
+        for s in x.spines.values():
+            s.set_visible(False)
+    sm = mpl.cm.ScalarMappable(cmap=cmap, norm=c_norm)
+    sm.set_array([])
+    fig.colorbar(sm, cax=cax, orientation="horizontal")
+
+    title_1 = str(lT.labels.get(n1, n1))
+    title_2 = str(lT.labels.get(n2, n2))
+
+    wrap_width = 30
+    ax[0].set_title(
+        textwrap.fill(title_1, width=wrap_width),
+        loc="center",
+        pad=10,
+    )
+    ax[1].set_title(
+        textwrap.fill(title_2, width=wrap_width),
+        loc="center",
+        pad=10,
+    )
+
+    fig = ax[0].get_figure()
+    fig.subplots_adjust(left=0.02, right=0.98, wspace=0.2)
+
     return ax[0].get_figure(), ax
 
 
@@ -679,7 +737,7 @@ def labelled_mappings(
         - ``'matched'``: list of ``(node_of_tree1, node_of_tree2)`` pairs,
         - ``'unmatched'``: list of the nodes of either tree that have no
           match.
-    """
+    """  # noqa: E501
     parameters = (
         end_time,
         convert_style_to_number(style=style, downsample=downsample),
