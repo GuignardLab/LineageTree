@@ -97,4 +97,5 @@ bak_*
 
 ty_check
 
-claude-outputs
+.Claude_outputs
+notebooks/data
