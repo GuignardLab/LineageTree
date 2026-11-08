@@ -490,6 +490,7 @@ def plot_tree_distance_graphs(
         convert_style_to_number(style=style, downsample=downsample),
     )
     n1, n2 = sorted([n1, n2])
+    r1, r2 = n1, n2
     lT._comparisons.setdefault(parameters, {})
     if lT._comparisons[parameters].get((n1, n2)):
         tmp = lT._comparisons[parameters][(n1, n2)]
@@ -667,8 +668,8 @@ def plot_tree_distance_graphs(
     sm.set_array([])
     fig.colorbar(sm, cax=cax, orientation="horizontal")
 
-    title_1 = str(lT.labels.get(n1, n1))
-    title_2 = str(lT.labels.get(n2, n2))
+    title_1 = str(lT.labels.get(r1, r1))
+    title_2 = str(lT.labels.get(r2, r2))
 
     wrap_width = 30
     ax[0].set_title(

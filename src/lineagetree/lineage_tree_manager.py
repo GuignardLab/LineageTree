@@ -712,6 +712,7 @@ class LineageTreeManager:
         n1_embryo, n2_embryo = sorted(
             ((n1, embryo_1), (n2, embryo_2)), key=lambda x: x[0]
         )
+        r1, r2 = n1, n2
         self._comparisons.setdefault(parameters, {})
         if self._comparisons[parameters].get((n1, n2)):
             tmp = self._comparisons[parameters][(n1_embryo, n2_embryo)]
@@ -934,8 +935,8 @@ class LineageTreeManager:
         sm.set_array([])
         fig.colorbar(sm, cax=cax, orientation="horizontal")
 
-        title_1 = str(embryo_1) + "-" + str(self[embryo_1].labels.get(n1, n1))
-        title_2 = str(embryo_2) + "-" + str(self[embryo_2].labels.get(n2, n2))
+        title_1 = str(embryo_1) + "-" + str(self[embryo_1].labels.get(r1, r1))
+        title_2 = str(embryo_2) + "-" + str(self[embryo_2].labels.get(r2, r2))
 
         wrap_width = 30
         ax[0].set_title(
