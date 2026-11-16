@@ -137,7 +137,6 @@ select = [
     "RUF",  # Ruff-specific rules
 ]
 
-target-version = "py313"
 
 [tool.ty.environment]
 root = ["./src", ]
